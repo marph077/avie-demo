@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Avie — Deine Begleiterin</title>
+<title>avie — Deine Begleiterin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -135,7 +135,7 @@ html, body {
 }
 .splash-bloom {
   animation: bloomIn 0.9s ease both;
-  margin-bottom: 28px;
+  margin-bottom: 8px;
 }
 @keyframes bloomIn {
   from { opacity: 0; transform: scale(0.7) rotate(-15deg); }
@@ -153,8 +153,8 @@ html, body {
   font-size: 12px;
   font-weight: 400;
   color: var(--text-muted);
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-transform: none;
   animation: fadeUp 0.7s 0.5s ease both;
   margin-bottom: 4px;
 }
@@ -169,7 +169,7 @@ html, body {
   line-height: 1.6;
 }
 
-/* ── Slide 2: Was Avie ist ── */
+/* ── Slide 2: Was avie ist ── */
 .slide-2 { background: #EDE6F5; padding: 0; }
 
 .ob-header {
@@ -245,7 +245,7 @@ html, body {
   font-weight: 300;
 }
 
-/* ── Slide 3: Was Avie nicht ist ── */
+/* ── Slide 3: Was avie nicht ist ── */
 .slide-3 { background: #EDE6F5; }
 .ob-limit-card {
   background: rgba(45,27,78,0.04);
@@ -859,7 +859,7 @@ html, body {
   font-weight: 300;
 }
 
-/* Avie greeting card */
+/* avie greeting card */
 .home-greeting-card {
   background: var(--plum);
   border-radius: 18px;
@@ -1260,22 +1260,22 @@ html, body {
 
       <!-- SLIDE 1: Splash -->
       <div class="slide slide-1" id="slide-0">
-        <svg class="splash-bloom" width="90" height="90" viewBox="0 0 90 90" fill="none">
-          <g transform="translate(45,45)">
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.2)" transform="rotate(0)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.65)" transform="rotate(45)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.2)" transform="rotate(90)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.65)" transform="rotate(135)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.2)" transform="rotate(180)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.65)" transform="rotate(225)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.2)" transform="rotate(270)"/>
-            <ellipse rx="9" ry="20" fill="rgba(255,255,255,0.65)" transform="rotate(315)"/>
+        <svg class="splash-bloom" width="200" height="200" viewBox="0 0 200 200" fill="none">
+          <g transform="translate(100,100)">
+            <ellipse rx="18" ry="44" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/>
+            <ellipse rx="18" ry="44" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/>
+            <ellipse rx="18" ry="44" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/>
+            <ellipse rx="18" ry="44" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/>
+            <ellipse rx="18" ry="44" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/>
+            <ellipse rx="18" ry="44" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/>
+            <ellipse rx="18" ry="44" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/>
+            <ellipse rx="18" ry="44" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/>
           </g>
-          <circle cx="45" cy="45" r="11" fill="#D4863A"/>
+          <circle cx="100" cy="100" r="22" fill="#D4863A"/>
         </svg>
         <div class="splash-name">avie</div>
-        <div class="splash-claim">Avie Lab</div>
-        <div class="splash-sub">Deine persönliche Begleiterin für weibliches Wohlbefinden.</div>
+        <div class="splash-claim">seen by avie</div>
+        <div class="splash-sub">Die Antworten sind oft schon da.<br>avie hilft, sie zu erkennen.</div>
 
         <div class="ob-nav">
           <div class="ob-dots">
@@ -1297,35 +1297,36 @@ html, body {
       <div class="slide slide-2" id="slide-1">
         <div class="ob-header">
           <div class="ob-header-label">Was ist avie?</div>
-          <div class="ob-header-title">Deine Begleiterin — nicht noch eine App.</div>
+          <div class="ob-header-title">Deine Begleiterin, die Stress, Energie, Hormone und Alltag im Zusammenhang versteht – bevor Überlastung entsteht.</div>
         </div>
         <div class="ob-body">
           <div class="ob-card">
             <div class="ob-card-icon">💬</div>
             <div class="ob-card-text">
               <h4>Echte Gespräche</h4>
-              <p>Avie hört zu — ohne zu urteilen, ohne Ratschläge aufzuzwingen. Einfach da sein.</p>
+              <p>avie hört zu und unterstützt dich dabei, deinen Körper und deine Bedürfnisse besser zu verstehen.</p>
             </div>
           </div>
           <div class="ob-card">
             <div class="ob-card-icon">🌀</div>
             <div class="ob-card-text">
               <h4>Belastung erkennen</h4>
-              <p>Avie hilft dir, Muster zu sehen — Stress, Energie, Erschöpfung — bevor sie zum Problem werden.</p>
+              <p>avie hilft dir, Stress, Energie und Erschöpfung einzuordnen – damit du Warnsignale frühzeitig erkennst, bevor Überforderung zur Normalität wird.</p>
             </div>
           </div>
           <div class="ob-card">
-            <div class="ob-card-icon">💜</div>
+            <div class="ob-card-icon">🌸</div>
             <div class="ob-card-text">
               <h4>Dich verstanden fühlen</h4>
-              <p>Kein Tool, kein Tracker. Eine Begleiterin, die weibliche Lebensrealität wirklich kennt.</p>
+              <p>Kein Tool, kein Tracker. Eine Begleiterin, die nicht nur deinen Körper sieht, sondern auch das Leben dahinter.</p>
             </div>
           </div>
         </div>
         <div class="ob-nav">
           <div class="ob-dots">
-            <div class="ob-dot"></div>
             <div class="ob-dot active"></div>
+            <div class="ob-dot"></div>
+            <div class="ob-dot"></div>
             <div class="ob-dot"></div>
             <div class="ob-dot"></div>
             <div class="ob-dot"></div>
@@ -1344,15 +1345,15 @@ html, body {
         <div class="ob-body">
           <div class="ob-limit-card">
             <div class="ob-limit-icon">🩺</div>
-            <div class="ob-limit-text"><strong>Keine Ärztin.</strong> Avie stellt keine Diagnosen und ersetzt keine medizinische Beratung. Bei gesundheitlichen Fragen wende dich an Fachpersonen.</div>
+            <div class="ob-limit-text"><strong>Keine Ärztin.</strong> avie stellt keine Diagnosen und ersetzt keine medizinische Beratung. Bei gesundheitlichen Fragen wende dich an Fachpersonen.</div>
           </div>
           <div class="ob-limit-card">
             <div class="ob-limit-icon">🧠</div>
-            <div class="ob-limit-text"><strong>Keine Therapeutin.</strong> Avie begleitet dich — aber behandelt nicht. Psychologische Unterstützung bekommst du bei ausgebildeten Fachleuten.</div>
+            <div class="ob-limit-text"><strong>Keine Therapeutin.</strong> avie begleitet dich — aber behandelt nicht. Psychologische Unterstützung bekommst du bei ausgebildeten Fachleuten.</div>
           </div>
           <div class="ob-limit-card">
             <div class="ob-limit-icon">📊</div>
-            <div class="ob-limit-text"><strong>Kein Tracking-Tool.</strong> Avie optimiert dich nicht. Sie versteht dich.</div>
+            <div class="ob-limit-text"><strong>Kein Tracking-Tool.</strong> avie optimiert dich nicht. Sie versteht dich.</div>
           </div>
           <div class="ob-crisis">
             <p>In einer ernsten Krise? Bitte wende dich an die <strong>Telefonseelsorge: 0800 111 0 111</strong> (kostenlos, 24/7).</p>
@@ -1437,7 +1438,7 @@ html, body {
           </div>
           <div class="consent-item" id="c3" onclick="toggleConsent('c3')">
             <div class="consent-check" id="c3-check"></div>
-            <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den Nutzungsbedingungen von Avie Lab zu.</div>
+            <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den Nutzungsbedingungen von avie Lab zu.</div>
           </div>
         </div>
         <div class="ob-nav" style="background:transparent; border-top:1px solid rgba(255,255,255,0.1);">
@@ -1467,7 +1468,7 @@ html, body {
           <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
               <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Ich werde dich jeden Tag begleiten — da ist es schön, wenn ich weiß wie du heißt. 💜</div>
+                <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Schön, dass du hier bist. Wie heißt du?</div>
               </div>
             </div>
 
@@ -1562,7 +1563,7 @@ html, body {
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
               <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Ich hab alles was ich brauche. 🌸 Danke, dass du mir vertraust — ich werde gut auf dich aufpassen.</div>
+                <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Passt. Dann können wir loslegen. 🌸</div>
               </div>
             </div>
           </div>
@@ -1634,7 +1635,7 @@ html, body {
       <div style="display:flex;gap:10px;align-items:flex-end;">
         <div style="width:34px;height:34px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
         <div style="background:white;border-radius:18px;border-bottom-left-radius:4px;padding:14px 16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.07);max-width:88%;">
-          <div style="font-size:14px;color:#2D1B4E;line-height:1.58;" id="main-avie-greeting">Guuuuten Morgen ☀️ Du bist in der <strong>Lutealphase</strong> — Östrogen sinkt, Progesteron steigt. Das erklärt, warum du dich heute vielleicht etwas schwerer fühlst. Ganz normal. 💜<br><br>Wie geht es dir gerade wirklich?</div>
+          <div style="font-size:14px;color:#2D1B4E;line-height:1.58;" id="main-avie-greeting">Guuuuten Morgen ☀️ Du bist in der <strong>Lutealphase</strong> — Östrogen sinkt, Progesteron steigt. Das erklärt, warum du dich heute vielleicht etwas schwerer fühlst. Ganz normal. 💜<br><br>Wie geht's dir heute?</div>
         </div>
       </div>
 
@@ -2039,7 +2040,7 @@ const GUIDE_STEPS = [
     text: `Das hier ist dein <strong>Hauptbildschirm</strong> — ich stelle dir jeden Morgen eine Frage und gebe dir Kontext zu deiner aktuellen Körpersituation.`,
     target: 'avie-bubble-area',
     calloutTop: '52%',
-    label: 'Avie-Frage'
+    label: 'avie-Frage'
   },
   {
     text: `Mit diesen <strong>Stimmungs-Chips</strong> antwortest du auf meine Frage 🌀 — ein Tippen reicht. Ich passe dann meine Empfehlungen für heute an.`,
@@ -2057,7 +2058,7 @@ const GUIDE_STEPS = [
     text: `Das war's schon. 🌸 Du bestimmst das Tempo — schreib mir einfach, wenn du magst. Ich freue mich auf dich.`,
     target: null,
     calloutTop: '40%',
-    label: 'Los geht\'s'
+    label: "Los geht's"
   }
 ];
 
@@ -2087,7 +2088,7 @@ function onNameBlur(input) {
 function showNameReply(name) {
   const q1wrap   = document.getElementById('kl-q1-wrap');
   const replyText = document.getElementById('name-reply-text');
-  if (replyText) replyText.innerHTML = `Schön, dass du da bist, <strong>${name}</strong>. 🌸 Ich freue mich auf unsere gemeinsame Zeit.`;
+  if (replyText) replyText.innerHTML = `Hey <strong>${name}</strong>. 👋 Schön, dass du da bist.`;
   if (q1wrap) { q1wrap.style.display = 'flex'; q1wrap.style.flexDirection = 'column'; }
   const chat = document.getElementById('kl-chat');
   setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
@@ -2098,21 +2099,21 @@ const klAnswers = {};
 
 const KL_REPLIES = {
   alter: {
-    '18-24': 'Anfang Zwanzig — eine intensive Zeit. Ich passe meine Tipps auf diese Phase an.',
-    '25-34': 'Mitte bis Ende Zwanzig — oft viel auf einmal: Job, Beziehungen, eigene Erwartungen.',
-    '35-44': 'Mitte Dreißig bis Vierzig — oft die Zeit wo Frauen anfangen, sich selbst mehr zu priorisieren.',
-    '45+':   'Ab Mitte Vierzig — hormonell oft eine besondere Zeit. Ich behalte das im Blick.'
+    '18-24': 'Anfang Zwanzig — viel passiert in dieser Zeit.',
+    '25-34': 'Mitte bis Ende Zwanzig — da ist oft gleichzeitig viel los.',
+    '35-44': 'Mitte Dreißig bis Vierzig — eine Zeit wo viele anfangen, anders auf sich zu schauen.',
+    '45+':   'Ab Mitte Vierzig — hormonell eine besondere Phase, das fließt mit ein.'
   },
   kinder: {
-    'keine':    'Verstanden — kein Mental Load durch Kinder. Andere Formen von Verantwortung kommen trotzdem vor.',
-    'ja-klein': 'Kleine Kinder — das bedeutet weniger Schlaf, mehr Verantwortung, weniger Zeit für dich. Ich weiß das.',
-    'ja-gross': 'Ältere Kinder — die Anforderungen ändern sich, aber der mentale Load bleibt oft hoch.'
+    'keine':    'Alles klar.',
+    'ja-klein': 'Kleine Kinder — weniger Schlaf, weniger Zeit für dich. Das spielt eine Rolle.',
+    'ja-gross': 'Ältere Kinder — der mentale Load bleibt oft unterschätzt.'
   },
   lifestyle: {
-    'job-intensiv':  'Job sehr intensiv — dann ist Erholung nicht optional, sondern notwendig. Ich helfe dir dabei.',
-    'ausgewogen':    'Eher ausgewogen — das ist eine gute Basis. Ich helfe dir, das zu halten wenn es schwieriger wird.',
-    'zuhause':       'Viel zuhause — das hat eigene Herausforderungen. Grenzen setzen, eigene Bedürfnisse sehen.',
-    'unberechenbar': 'Sehr unberechenbar — dann braucht dein Körper besonders kluge Routinen. Das können wir zusammen herausfinden.'
+    'job-intensiv':  'Job sehr intensiv — dann ist Erholung keine Option, sondern Pflicht.',
+    'ausgewogen':    'Eher ausgewogen — gute Basis.',
+    'zuhause':       'Viel zuhause — hat eigene Herausforderungen, die oft unsichtbar bleiben.',
+    'unberechenbar': 'Sehr unberechenbar — dann sind kleine, verlässliche Anker besonders wichtig.'
   }
 };
 
@@ -2127,8 +2128,7 @@ document.addEventListener('click', function(e) {
   const parent = chip.closest('[id^="kl-chips"], div[style*="padding-left:42px"]') || chip.parentNode;
   parent.querySelectorAll('.kl-chip').forEach(b => b.classList.remove('selected'));
   chip.classList.add('selected');
-  // Disable all chips in group after selection
-  parent.querySelectorAll('.kl-chip').forEach(b => { b.style.pointerEvents = 'none'; });
+  // Keep chips clickable so user can change their answer
 
   const chat = document.getElementById('kl-chat');
 
@@ -2218,7 +2218,7 @@ function personalizeApp() {
     }
 
     greet += (kinderCtx[kinder] || '') + (lifestyleCtx[lifestyle] || '');
-    greet += '<br><br>Wie geht es dir gerade wirklich?';
+    greet += "<br><br>Wie geht's dir heute?";
     return greet;
   }
 
@@ -2365,6 +2365,7 @@ function showGuide() {
   const old = document.getElementById('guide');
   if (old) old.remove();
   const tpl = document.getElementById('guide-tpl');
+  if (!tpl) return;
   const g = tpl.content.cloneNode(true);
   document.querySelector('.phone').appendChild(g);
   guideStep = 0;
@@ -2403,7 +2404,7 @@ function renderGuideStep() {
 
   // Button label
   const btn = document.getElementById('guide-next-btn');
-  btn.textContent = guideStep === total - 1 ? 'Los geht\'s ✦' : 'Weiter →';
+  btn.textContent = guideStep === total - 1 ? "Los geht's ✦" : 'Weiter →';
 
   // Dots
   const dotsEl = document.getElementById('guide-dots');
@@ -2433,8 +2434,8 @@ function renderGuideStep() {
 
   if (spotData) {
     const s = spotData;
-    const t = s.t, l = s.l ?? 0, w = s.w, h = s.h;
-    const r = s.r ?? (390 - l - w);
+    const t = s.t, l = s.l || 0, w = s.w, h = s.h;
+    const r = s.r || (390 - l - w);
     const b = 812 - t - h;
     spotlight.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px; opacity:1; border-radius:${l===0?'0':'12px'};`;
     maskTop.style.cssText    = `top:0; left:0; right:0; height:${t}px;`;
@@ -2499,7 +2500,7 @@ function buildAnalysisSteps() {
   // Read current dashboard state
   const cd = window.cycleData;
   const mb = window.manualBodyData;
-  const hasOura = !cd && document.querySelector('#score-cards [data-score="energie"] [style*="26px"]')?.textContent === '62';
+  const hasOura = !cd && !!document.querySelector('#score-cards [data-score="energie"]');
 
   // Collect values
   const phase      = cd ? cd.phase      : 'Lutealphase';
@@ -2788,7 +2789,7 @@ const MOOD_TIPS = {
     tips: [
       { type: 'tip-good',    icon: '💪', cat: 'Energie nutzen',     title: 'Heute ist ein guter Tag für Herausforderungen',  body: 'Deine Stimmung übertrumpft die Scores — nutze das Fenster für Dinge die sonst schwerer fallen. <strong>Kreativer Output, Gespräche, neue Projekte</strong> passen heute gut.' },
       { type: 'tip-good',    icon: '🏃‍♀️', cat: 'Bewegung',          title: 'Moderates Training heute möglich',               body: 'Wenn du dich gut fühlst trotz Lutealphase, kannst du <strong>etwas aktiver</strong> sein — aber höre auf deinen Körper, nicht auf den Ehrgeiz.' },
-      { type: 'tip-gentle',  icon: '📓', cat: 'Reflektieren',        title: 'Notier dir wie du dich fühlst',                  body: 'Gute Tage in der Lutealphase sind wertvoll. <strong>Was hat heute geholfen?</strong> Schlaf, Ernährung, Pausen? Avie lernt daraus.' },
+      { type: 'tip-gentle',  icon: '📓', cat: 'Reflektieren',        title: 'Notier dir wie du dich fühlst',                  body: 'Gute Tage in der Lutealphase sind wertvoll. <strong>Was hat heute geholfen?</strong> Schlaf, Ernährung, Pausen? avie lernt daraus.' },
     ]
   },
   'müde': {
@@ -2828,7 +2829,7 @@ const MOOD_TIPS = {
     tips: [
       { type: 'tip-rest',    icon: '🛋️', cat: 'Erlaubnis zur Pause',  title: 'Heute darf weniger sein — wirklich',            body: 'Kein schlechtes Gewissen. <strong>Dein Körper braucht heute Fürsorge</strong>, keine Performance. Was ist das Minimum das heute sein muss?' },
       { type: 'tip-gentle',  icon: '🌸', cat: 'Sanfte Selbstfürsorge', title: 'Kleine Wärme-Momente einbauen',                 body: 'Warmes Essen, ein Bad, eine Decke. <strong>Kleine Komfort-Rituale</strong> wirken in schwierigen Momenten überraschend stark.' },
-      { type: 'tip-caution', icon: '💬', cat: 'Nicht alleine tragen',  title: 'Avie ist da — schreib mir',                    body: 'Wenn es mehr ist als Müdigkeit — <strong>sprich mit mir</strong>. Manchmal hilft es, einfach auszusprechen was schwer ist.' },
+      { type: 'tip-caution', icon: '💬', cat: 'Nicht alleine tragen',  title: 'avie ist da — schreib mir',                    body: 'Wenn es mehr ist als Müdigkeit — <strong>sprich mit mir</strong>. Manchmal hilft es, einfach auszusprechen was schwer ist.' },
     ]
   }
 };
@@ -2906,23 +2907,23 @@ function showDashboard() {
 
 
       <div id="score-cards" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex-shrink:0;">
-        <div style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.25);">
+        <div data-open-manual onclick="showManualBodyInput()" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.35);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
           <div style="font-size:18px;filter:grayscale(1);opacity:0.4;">⚡</div>
           <div style="font-size:20px;color:#D0C8E0;font-weight:300;line-height:1;">—</div>
           <div style="font-size:10px;color:#C0B0D0;text-align:center;">Energie</div>
-          <div style="font-size:9px;color:#D0C8E0;margin-top:2px;">kein Gerät</div>
+          <div style="font-size:9px;color:#9B7FC0;margin-top:2px;">+ eintragen</div>
         </div>
-        <div style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.25);">
+        <div data-open-manual onclick="showManualBodyInput()" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.35);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
           <div style="font-size:18px;filter:grayscale(1);opacity:0.4;">😴</div>
           <div style="font-size:20px;color:#D0C8E0;font-weight:300;line-height:1;">—</div>
           <div style="font-size:10px;color:#C0B0D0;text-align:center;">Schlaf</div>
-          <div style="font-size:9px;color:#D0C8E0;margin-top:2px;">kein Gerät</div>
+          <div style="font-size:9px;color:#9B7FC0;margin-top:2px;">+ eintragen</div>
         </div>
-        <div style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.25);">
+        <div data-open-manual onclick="showManualBodyInput()" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.35);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
           <div style="font-size:18px;filter:grayscale(1);opacity:0.4;">🌀</div>
           <div style="font-size:20px;color:#D0C8E0;font-weight:300;line-height:1;">—</div>
           <div style="font-size:10px;color:#C0B0D0;text-align:center;">Stress</div>
-          <div style="font-size:9px;color:#D0C8E0;margin-top:2px;">kein Gerät</div>
+          <div style="font-size:9px;color:#9B7FC0;margin-top:2px;">+ eintragen</div>
         </div>
       </div>
 
@@ -3053,6 +3054,11 @@ function showDashboard() {
   if (wearableBtn) wearableBtn.addEventListener('click', showOuraConnect);
   if (cycleBtn)    cycleBtn.addEventListener('click',    showCycleInput);
 
+  // Wire locked score card clicks to open manual input
+  div.querySelectorAll('[data-open-manual]').forEach(function(el) {
+    el.addEventListener('click', showManualBodyInput);
+  });
+
   // Wire zyklus & körperdaten info clicks
   div.querySelectorAll('[data-info]').forEach(function(el) {
     el.addEventListener('click', function() {
@@ -3178,7 +3184,7 @@ function showProfile() {
       </div>
 
       <!-- Avie-Statistik -->
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;">Avie & ich</div>
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;">avie & ich</div>
       <div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
           <div>
@@ -3297,7 +3303,7 @@ function showOuraConnect() {
         <div style="text-align:center;padding:24px 0;">
           <div style="font-size:56px;margin-bottom:16px;">✅</div>
           <div style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:#2D1B4E;margin-bottom:8px;">Oura Ring verbunden!</div>
-          <div style="font-size:13px;color:#6B5A88;line-height:1.55;margin-bottom:20px;">Avie liest jetzt deine Körperdaten. Die Werte im Dashboard werden ab morgen früh aktualisiert.</div>
+          <div style="font-size:13px;color:#6B5A88;line-height:1.55;margin-bottom:20px;">avie liest jetzt deine Körperdaten. Die Werte im Dashboard werden ab morgen früh aktualisiert.</div>
           <button onclick="connectOuraSuccess(this)" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Super, los geht's ✓</button>
         </div>`;
     }, 2000);
@@ -3322,14 +3328,16 @@ function showCycleInput() {
     <div class="score-popup">
       <div class="score-popup-handle"></div>
       <div style="font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#2D1B4E;margin-bottom:6px;">Zyklus eingeben</div>
-      <div style="font-size:13px;color:#6B5A88;margin-bottom:20px;line-height:1.5;">Avie berechnet daraus deine aktuelle Phase, die nächste Periode und deine Hormonkurve.</div>
+      <div style="font-size:13px;color:#6B5A88;margin-bottom:20px;line-height:1.5;">avie berechnet daraus deine aktuelle Phase, die nächste Periode und deine Hormonkurve.</div>
 
       <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
         <div>
           <div style="font-size:11px;font-weight:600;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Erster Tag der letzten Periode</div>
+          <div style="display:flex;justify-content:center;">
           <input type="date" id="cycle-last-period" value="${defaultDateStr}" max="${maxDate}"
-            style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.25);background:#F7F4FC;font-family:inherit;font-size:14px;color:#2D1B4E;outline:none;box-sizing:border-box;"
+            style="width:100%;max-width:280px;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.25);background:#F7F4FC;font-family:inherit;font-size:14px;color:#2D1B4E;outline:none;box-sizing:border-box;"
             onfocus="this.style.borderColor='#9B7FC0'" onblur="this.style.borderColor='rgba(155,127,192,0.25)'"/>
+          </div>
         </div>
         <div>
           <div style="font-size:11px;font-weight:600;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Durchschnittliche Zykluslänge</div>
@@ -3463,7 +3471,7 @@ function showManualBodyInput() {
     const stressLabels = ['', 'Sehr entspannt', 'Eher ruhig', 'Leicht angespannt', 'Gestresst', 'Sehr gestresst'];
 
     return `
-      <div class="score-popup" style="max-height:85vh;overflow-y:auto;">
+      <div class="score-popup" style="max-height:95vh;overflow-y:auto;">
         <div style="width:36px;height:4px;border-radius:2px;background:#EBE4F5;margin:0 auto 16px;"></div>
 
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
@@ -3477,16 +3485,17 @@ function showManualBodyInput() {
         <!-- Schlaf -->
         <div style="background:#F7F4FC;border-radius:14px;padding:14px 16px;margin-bottom:12px;">
           <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9B7FC0;margin-bottom:12px;">😴 Schlaf letzte Nacht</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-            <div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-end;justify-content:center;">
+            <div style="text-align:center;">
               <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Ins Bett um</div>
               <input type="time" id="mb-bed" value="${manualData.bedTime}"
-                style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:14px;color:#2D1B4E;outline:none;box-sizing:border-box;"/>
+                style="width:120px;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:16px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"/>
             </div>
-            <div>
+            <div style="font-size:18px;color:#A090BC;padding-bottom:10px;">→</div>
+            <div style="text-align:center;">
               <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Aufgewacht um</div>
               <input type="time" id="mb-wake" value="${manualData.wakeTime}"
-                style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:14px;color:#2D1B4E;outline:none;box-sizing:border-box;"/>
+                style="width:120px;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:16px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"/>
             </div>
           </div>
           <div style="text-align:center;font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:${sleepColor};" id="mb-sleep-display">${sleep.str}</div>
@@ -3512,7 +3521,7 @@ function showManualBodyInput() {
         </div>
 
         <button id="mb-save" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:10px;">Werte speichern →</button>
-        <button id="mb-skip" style="width:100%;padding:12px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:transparent;color:#A090BC;font-family:inherit;font-size:13px;cursor:pointer;">Später eingeben</button>
+        <button id="mb-skip" style="width:100%;padding:12px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:transparent;color:#A090BC;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Später eingeben</button>
       </div>`;
   }
 
@@ -3697,9 +3706,9 @@ function removeDashWearableBanner() {
         scoreCards.style.transition = 'opacity 0.4s';
         scoreCards.style.opacity = '0';
         setTimeout(() => {
-          const e = window.manualBodyData?.energyScore || 62;
-          const sl = window.manualBodyData?.sleepStr || '6h 48m';
-          const st = window.manualBodyData?.stressScore || 38;
+          const e = (window.manualBodyData && window.manualBodyData.energyScore) || 62;
+          const sl = (window.manualBodyData && window.manualBodyData.sleepStr) || '6h 48m';
+          const st = (window.manualBodyData && window.manualBodyData.stressScore) || 38;
           scoreCards.innerHTML = `
             <div data-score="energie" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:1px solid rgba(155,127,192,0.12);box-shadow:0 2px 10px rgba(45,27,78,0.07);">
               <div style="font-size:18px;">⚡</div>
@@ -3774,7 +3783,7 @@ function showVerlauf() {
     dayCards.push({ key, dayName, dayNum, entry, isToday });
   }
 
-  // Avie pattern insight
+  // avie pattern insight
   const entries = dayCards.filter(d => d.entry);
   const moodCounts = {};
   entries.forEach(d => { moodCounts[d.entry.short] = (moodCounts[d.entry.short] || 0) + 1; });
@@ -3798,417 +3807,48 @@ function showVerlauf() {
     const dayColor = d.isToday ? 'rgba(255,255,255,0.55)' : '#A090BC';
     const numColor = d.isToday ? 'white' : d.entry ? '#2D1B4E' : '#C0B0D0';
     const emoji    = d.entry ? d.entry.emoji : '';
-    const short    = d.entry ? `<div style="font-size:9px;color:${d.isToday?'rgba(255,255,255,0.7)':'#9B7FC0'};margin-top:2px;text-align:center;line-height:1.2;">${d.entry.short}</div>` : '';
+    const short    = d.entry ? '<div style="font-size:9px;color:' + (d.isToday ? 'rgba(255,255,255,0.7)' : '#9B7FC0') + ';margin-top:2px;text-align:center;line-height:1.2;">' + d.entry.short + '</div>' : '';
     return `<div style="background:${bg};border:${border};border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:72px;justify-content:center;">
       <div style="font-size:10px;color:${dayColor};font-weight:500;">${d.dayName}</div>
       <div style="font-size:13px;font-weight:600;color:${numColor};">${d.dayNum}</div>
-      ${emoji ? `<div style="font-size:18px;">${emoji}</div>` : '<div style="width:18px;height:18px;border-radius:50%;background:rgba(155,127,192,0.1);"></div>'}
+      ${emoji ? '<div style="font-size:18px;">' + emoji + '</div>' : '<div style="width:18px;height:18px;border-radius:50%;background:rgba(155,127,192,0.1);"></div>'}
       ${short}
     </div>`;
   }).join('');
 
-  const listHTML = dayCards.filter(d => d.entry).reverse().map(d => {
-    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EBE4F5;">
-      <div style="font-size:22px;flex-shrink:0;">${d.entry.emoji}</div>
-      <div style="flex:1;">
-        <div style="font-size:13px;font-weight:500;color:#2D1B4E;">${d.entry.short}</div>
-        <div style="font-size:11px;color:#A090BC;margin-top:1px;">${d.dayName}, ${d.dayNum}. · ${d.entry.time}</div>
-      </div>
-      <div style="font-size:11px;color:#C0B0D0;">Tag ${19 - (6 - dayCards.indexOf(dayCards.find(x => x.key === d.key)))}</div>
-    </div>`;
+
+  const listHTML = dayCards.filter(function(d) { return d.entry; }).reverse().map(function(d) {
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EBE4F5;">' +
+      '<div style="font-size:22px;flex-shrink:0;">' + d.entry.emoji + '</div>' +
+      '<div style="flex:1;"><div style="font-size:13px;font-weight:500;color:#2D1B4E;">' + d.entry.short + '</div>' +
+      '<div style="font-size:11px;color:#A090BC;margin-top:1px;">' + d.dayName + ', ' + d.dayNum + '. · ' + d.entry.time + '</div></div>' +
+      '</div>';
   }).join('');
 
   const div = document.createElement('div');
   div.id = 'verlauf-overlay';
   div.style.cssText = 'position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;background:#EDE6F5;overflow:hidden;animation:dashIn 0.35s cubic-bezier(0.4,0,0.2,1) both;';
 
-  div.innerHTML = `
-    <div style="background:#2D1B4E;padding:52px 24px 22px;flex-shrink:0;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.05);pointer-events:none;"></div>
-      <div style="font-size:10px;font-weight:500;letter-spacing:0.15em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:6px;">Mein Verlauf</div>
-      <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:white;line-height:1.2;">Die letzte Woche.</div>
-    </div>
-
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none;">
-
-      <!-- 7-Tage Grid -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
-        ${gridHTML}
-      </div>
-
-      <!-- Avie Beobachtung -->
-      <div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;margin-bottom:10px;">Avies Beobachtung</div>
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;">🌸</div>
-          <div style="font-size:13px;color:#4A3A6A;line-height:1.6;font-weight:300;">${avieInsight}</div>
-        </div>
-      </div>
-
-      <!-- Zyklus Timeline -->
-      <div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;margin-bottom:12px;">Wo du gerade stehst</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(to right,#9B7FC0 68%,rgba(155,127,192,0.2) 68%);"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:#A090BC;margin-bottom:12px;">
-          <span>Menstruation</span><span>Follikel</span><span>Ovulation</span><span style="color:#2D1B4E;font-weight:600;">Luteal ◀</span>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1;background:#EDE6F5;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:10px;color:#A090BC;">Heute</div>
-            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2D1B4E;">Tag 19</div>
-          </div>
-          <div style="flex:1;background:#EDE6F5;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:10px;color:#A090BC;">Phase</div>
-            <div style="font-size:12px;font-weight:500;color:#9B7FC0;margin-top:2px;">Luteal</div>
-          </div>
-          <div style="flex:1;background:#EDE6F5;border-radius:10px;padding:10px;text-align:center;">
-            <div style="font-size:10px;color:#A090BC;">Nächste</div>
-            <div style="font-size:12px;font-weight:500;color:#2D1B4E;margin-top:2px;">in 9 Tg.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mood Liste -->
-      ${listHTML ? `<div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;margin-bottom:4px;">Einträge</div>
-        ${listHTML}
-      </div>` : ''}
-
-    </div>
-
-    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;">
-      <button onclick="document.getElementById('verlauf-overlay').remove()" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button>
-    </div>
-  `;
+  div.innerHTML = '<div style="background:#2D1B4E;padding:52px 24px 22px;flex-shrink:0;position:relative;overflow:hidden;">' +
+    '<div style="font-size:10px;font-weight:500;letter-spacing:0.15em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:6px;">Mein Verlauf</div>' +
+    '<div style="font-family:\'DM Serif Display\',Georgia,serif;font-size:24px;color:white;line-height:1.2;">Die letzte Woche.</div></div>' +
+    '<div style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:none;">' +
+    '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">' + gridHTML + '</div>' +
+    '<div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">' +
+    '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;margin-bottom:10px;">avies Beobachtung</div>' +
+    '<div style="display:flex;gap:10px;align-items:flex-start;"><div style="font-size:14px;flex-shrink:0;">🌸</div>' +
+    '<div style="font-size:13px;color:#4A3A6A;line-height:1.6;font-weight:300;">' + avieInsight + '</div></div></div>' +
+    (listHTML ? '<div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">' +
+    '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;margin-bottom:4px;">Einträge</div>' +
+    listHTML + '</div>' : '') +
+    '</div>' +
+    '<div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;">' +
+    '<button onclick="document.getElementById(\'verlauf-overlay\').remove()" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button></div>';
 
   document.querySelector('.phone').appendChild(div);
 }
 
-function showOnboarding() {
-  consents.c1 = consents.c2 = consents.c3 = false;
-  ['c1','c2','c3'].forEach(id => {
-    document.getElementById(id).classList.remove('checked');
-    document.getElementById(id+'-check').textContent = '';
-  });
-  document.getElementById('startBtn').disabled = true;
-  updateSlides();
-  document.getElementById('onboarding').style.display = 'flex';
-  document.getElementById('app').classList.remove('visible');
-}
 
-// ── Chat ──
-function updateClock() {
-  const d = new Date();
-  document.getElementById('clock').textContent =
-    d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
-}
-setInterval(updateClock, 10000);
-
-const AVATAR = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-  <g transform="translate(9,9)">
-    <ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(0)"/>
-    <ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/>
-    <ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(90)"/>
-    <ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/>
-    <ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(180)"/>
-    <ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/>
-    <ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(270)"/>
-    <ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/>
-  </g>
-  <circle cx="9" cy="9" r="2.2" fill="#D4863A"/>
-</svg>`;
-
-function selectChip(el) {
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-}
-function autoH(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
-}
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-}
-function now() {
-  const d = new Date();
-  return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
-}
-function addMsg(text, who) {
-  const msgs = document.getElementById('messages');
-  const row = document.createElement('div');
-  row.className = 'msg-row' + (who === 'user' ? ' user' : '');
-  row.innerHTML = who === 'avie'
-    ? `<div class="msg-avatar">${AVATAR}</div><div><div class="bubble avie">${text}</div><div class="msg-time">${now()}</div></div>`
-    : `<div><div class="bubble user">${text}</div><div class="msg-time">${now()}</div></div>`;
-  msgs.appendChild(row);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-function showTyping() {
-  const msgs = document.getElementById('messages');
-  const row = document.createElement('div');
-  row.id = 'typing'; row.className = 'typing-row';
-  row.innerHTML = `<div class="msg-avatar">${AVATAR}</div><div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-  msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
-}
-function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
-
-// ── Mood History (letzte 7 Tage) ──
-const moodHistory = {}; // { 'YYYY-MM-DD': { mood, label, emoji } }
-
-function todayKey() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-
-function recordMood(label) {
-  const key = todayKey();
-  const emojiMap = {
-    '✨ Gut drauf': '✨', '😴 Müde': '😴', '🌀 Gestresst': '🌀',
-    '💭 Nachdenklich': '💭', '💪 Motiviert': '💪', '🌧 Nicht so toll': '🌧'
-  };
-  const shortMap = {
-    '✨ Gut drauf': 'Gut drauf', '😴 Müde': 'Müde', '🌀 Gestresst': 'Gestresst',
-    '💭 Nachdenklich': 'Nachdenklich', '💪 Motiviert': 'Motiviert', '🌧 Nicht so toll': 'Nicht so toll'
-  };
-  moodHistory[key] = {
-    label: label,
-    short: shortMap[label] || label,
-    emoji: emojiMap[label] || '💜',
-    time: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-  };
-  // Seed demo data for past 6 days
-  if (Object.keys(moodHistory).length === 1) seedDemoHistory();
-}
-
-function seedDemoHistory() {
-  const demoMoods = [
-    { short: 'Müde',         emoji: '😴', label: '😴 Müde' },
-    { short: 'Gestresst',    emoji: '🌀', label: '🌀 Gestresst' },
-    { short: 'Müde',         emoji: '😴', label: '😴 Müde' },
-    { short: 'Nachdenklich', emoji: '💭', label: '💭 Nachdenklich' },
-    { short: 'Gut drauf',    emoji: '✨', label: '✨ Gut drauf' },
-    { short: 'Nicht so toll',emoji: '🌧', label: '🌧 Nicht so toll' },
-  ];
-  for (let i = 1; i <= 6; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-    moodHistory[key] = { ...demoMoods[i-1], time: '08:32' };
-  }
-}
-
-// ── Avie Chat — Claude API ──
-const chatHistory = [];
-
-function buildSystemPrompt() {
-  const name      = userName || 'du';
-  const alter     = klAnswers.alter     || 'unbekannt';
-  const kinder    = klAnswers.kinder    || 'unbekannt';
-  const lifestyle = klAnswers.lifestyle || 'unbekannt';
-  const kinderTxt = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
-  const lifeTxt   = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
-
-  // Build real körper context from dashboard data
-  const cd = window.cycleData;
-  const mb = window.manualBodyData;
-  let koerperContext = '';
-  if (cd) {
-    koerperContext += `- Zyklusphase: ${cd.phase}, Tag ${cd.cycleDay} von ${cd.selectedLen} (nächste Periode in ~${cd.daysLeft} Tagen)\n`;
-    koerperContext += `- Hormone: ${cd.hormoneVal}\n`;
-  } else {
-    koerperContext += `- Zyklusphase: Lutealphase, Tag 19 von ~28 (Demo-Daten)\n`;
-  }
-  if (mb) {
-    koerperContext += `- Schlaf letzte Nacht: ${mb.sleepStr}\n`;
-    koerperContext += `- Energie-Score: ${mb.energyScore}/100 (selbst eingeschätzt)\n`;
-    koerperContext += `- Stress-Score: ${mb.stressScore}/100 (selbst eingeschätzt)\n`;
-  } else if (!cd) {
-    koerperContext += `- HRV: 42 ms (leicht unter Durchschnitt) — Demo-Daten\n`;
-    koerperContext += `- Schlaf: 6h 48m — Demo-Daten\n`;
-    koerperContext += `- Energie-Score: 62/100 — Demo-Daten\n`;
-  }
-
-  return `Du bist avie — eine warme, direkte, empathische KI-Begleiterin für weibliches Wohlbefinden.
-
-Die Nutzerin heißt ${name}. Alter: ${alter}. ${kinderTxt[kinder] || ''}. Alltag: ${lifeTxt[lifestyle] || ''}.
-
-Aktueller Körperkontext:
-${koerperContext}
-Nutze diese Daten aktiv im Gespräch — verbinde was die Nutzerin sagt mit dem was ihr Körper zeigt.
-
-Deine Persönlichkeit:
-- Warm und direkt — kein therapeutisches Geschwätz, keine leeren Floskeln
-- Du verstehst weibliche Biologie, Hormone, Zyklus tief
-- Du verbindest Körperdaten mit dem was die Nutzerin erzählt
-- Du fragst eine Frage auf einmal — nie mehrere
-- Du gibst keine ungebetenen Ratschläge — erst zuhören, dann fragen
-- Du weißt wann es ernst wird und verweist bei echten Krisen an professionelle Hilfe
-- Antworte auf Deutsch, in 2-4 Sätzen, nie länger
-- Keine Bullet Points, keine Listen — nur natürliche Sprache`;
-}
-
-async function callAvie(userMessage) {
-  chatHistory.push({ role: 'user', content: userMessage });
-
-  const response = await fetch('https://avie-proxy.hoyer2707.workers.dev', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1000,
-      system: buildSystemPrompt(),
-      messages: chatHistory
-    })
-  });
-
-  const data = await response.json();
-  const reply = data.content?.[0]?.text || 'Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜';
-  chatHistory.push({ role: 'assistant', content: reply });
-  return reply;
-}
-
-async function send() {
-  const inp = document.getElementById('inp');
-  const text = inp.value.trim();
-  if (!text) return;
-  inp.value = ''; inp.style.height = 'auto';
-  const qr = document.getElementById('qr');
-  if (qr) qr.remove();
-  addMsg(text, 'user');
-  showTyping();
-  try {
-    const reply = await callAvie(text);
-    removeTyping();
-    addMsg(reply, 'avie');
-  } catch (err) {
-    removeTyping();
-    addMsg('Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜', 'avie');
-  }
-}
-
-async function sendQR(btn, text) {
-  const qr = document.getElementById('qr');
-  if (qr) qr.remove();
-  addMsg(text, 'user');
-  showTyping();
-  try {
-    const reply = await callAvie(text);
-    removeTyping();
-    addMsg(reply, 'avie');
-  } catch (err) {
-    removeTyping();
-    addMsg('Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜', 'avie');
-  }
-}
-
-
-
-// ── Dashboard mood chips ──
-function dashMood(btn, label) {
-  btn.closest('[id="mood-row"]').querySelectorAll('button').forEach(b => {
-    b.style.borderColor = 'rgba(155,127,192,0.3)';
-    b.style.background  = 'transparent';
-    b.style.color       = '#6B5A88';
-    b.style.fontWeight  = '400';
-  });
-  btn.style.borderColor = '#D4863A';
-  btn.style.background  = 'rgba(212,134,58,0.1)';
-  btn.style.color       = '#D4863A';
-  btn.style.fontWeight  = '500';
-}
-
-// ── Score info popups ──
-const SCORE_INFO = {
-  energie: {
-    icon: '⚡', iconBg: 'rgba(212,134,58,0.12)', iconColor: '#D4863A',
-    title: 'Energie-Score', num: '62', numColor: '#D4863A',
-    components: [
-      { dot: '#D4863A', text: '<strong>HRV (42 ms)</strong> — deine Herzratenvariabilität ist heute leicht unter deinem Durchschnitt. Sie ist der stärkste Indikator für deine körperliche Erholung.' },
-      { dot: '#9B7FC0', text: '<strong>Schlafqualität (6h 48m)</strong> — Tiefschlaf und REM-Phasen beeinflussen, wie erholt du aufwachst.' },
-      { dot: '#9B7FC0', text: '<strong>Zyklusphase (Luteal, Tag 19)</strong> — In der Lutealphase sinkt der Energielevel natürlicherweise. Das ist kein Fehler deines Körpers.' },
-      { dot: '#7BC47F', text: '<strong>Ruhepuls (58 bpm)</strong> — Im normalen Bereich, leicht erhöht durch Lutealphase.' },
-    ],
-    tips: [
-      { dot: '#D4863A', text: 'Heute <strong>kein intensives Training</strong> — sanfte Bewegung schont deine HRV und lässt sie sich erholen.' },
-      { dot: '#9B7FC0', text: '<strong>30 Min. früher ins Bett</strong> — jede Stunde Schlaf mehr hebt den Energiescore morgen messbar.' },
-      { dot: '#7BC47F', text: '<strong>Magnesium am Abend</strong> — unterstützt Tiefschlaf und HRV-Regeneration in der Lutealphase.' },
-    ]
-  },
-  schlaf: {
-    icon: '😴', iconBg: 'rgba(155,127,192,0.12)', iconColor: '#9B7FC0',
-    title: 'Schlaf-Score', num: '74', numColor: '#2D1B4E',
-    components: [
-      { dot: '#2D1B4E', text: '<strong>Gesamtdauer (6h 48m)</strong> — knapp unter dem empfohlenen Ziel von 7–8h. In der Lutealphase oft etwas weniger tief.' },
-      { dot: '#9B7FC0', text: '<strong>Tiefschlaf (1h 12m)</strong> — körperliche Regeneration, Immunsystem, Gewebewachstum. Dein Wert liegt im unteren Normalbereich.' },
-      { dot: '#D4863A', text: '<strong>REM-Schlaf (1h 44m)</strong> — emotionale Verarbeitung, Gedächtnis. Heute gut.' },
-      { dot: '#7BC47F', text: '<strong>Schlafeffizienz</strong> — wie viel Zeit im Bett du wirklich schläfst. Aktuell solid.' },
-    ],
-    tips: [
-      { dot: '#9B7FC0', text: '<strong>Kein Koffein nach 14 Uhr</strong> — besonders in der Lutealphase reagierst du empfindlicher darauf.' },
-      { dot: '#D4863A', text: '<strong>Raumtemperatur 17–19°C</strong> — dein Körper kühlt sich für Tiefschlaf ab. In der Lutealphase ist es schwerer, weil du wärmer bist.' },
-      { dot: '#7BC47F', text: '<strong>10 Min. ruhige Routine</strong> vor dem Schlafen — Progesteron ist dein natürliches Schlafmittel, nutze es mit Stille.' },
-    ]
-  },
-  stress: {
-    icon: '🌀', iconBg: 'rgba(100,149,237,0.1)', iconColor: '#5A88CC',
-    title: 'Stress-Score', num: '38', numColor: '#2D1B4E',
-    components: [
-      { dot: '#D4863A', text: '<strong>HRV-Variabilität</strong> — niedrigere HRV zeigt, dass dein Nervensystem unter Last ist. Heute leicht erhöhter Stress erkennbar.' },
-      { dot: '#5A88CC', text: '<strong>Atemfrequenz</strong> — aus Oura-Daten der Nacht abgeleitet. Leicht erhöht, was auf Anspannung hinweist.' },
-      { dot: '#9B7FC0', text: '<strong>Zyklus-Kontext</strong> — in der Lutealphase sinkt die Stresstoleranz durch hormonelle Veränderungen. Der Score berücksichtigt das.' },
-      { dot: '#7BC47F', text: '<strong>Bewegung gestern</strong> — moderate Aktivität wirkt stressreduzierend. Positiver Faktor heute.' },
-    ],
-    tips: [
-      { dot: '#5A88CC', text: '<strong>4-7-8 Atemübung</strong> — 4 Sek. einatmen, 7 halten, 8 ausatmen. Aktiviert den Parasympathikus sofort.' },
-      { dot: '#D4863A', text: '<strong>Keine großen Entscheidungen heute</strong> — der präfrontale Kortex arbeitet unter Stress weniger präzise.' },
-      { dot: '#7BC47F', text: '<strong>15 Min. Spaziergang</strong> draußen — Tageslicht und moderate Bewegung senken Cortisol nachweislich.' },
-    ]
-  }
-};
-
-function showScoreInfo(key) {
-  const info = SCORE_INFO[key];
-  const phone = document.querySelector('.phone');
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'score-popup-backdrop';
-  backdrop.onclick = (e) => { if (e.target === backdrop) backdrop.remove(); };
-
-  const componentsHTML = info.components.map(r =>
-    `<div class="score-popup-row">
-      <div class="score-popup-dot" style="background:${r.dot};"></div>
-      <div class="score-popup-text">${r.text}</div>
-    </div>`
-  ).join('');
-
-  const tipsHTML = info.tips.map(r =>
-    `<div class="score-popup-row">
-      <div class="score-popup-dot" style="background:${r.dot};"></div>
-      <div class="score-popup-text">${r.text}</div>
-    </div>`
-  ).join('');
-
-  backdrop.innerHTML = `
-    <div class="score-popup">
-      <div class="score-popup-handle"></div>
-      <div class="score-popup-header">
-        <div class="score-popup-icon" style="background:${info.iconBg};">${info.icon}</div>
-        <div class="score-popup-title">${info.title}</div>
-        <div class="score-popup-num" style="color:${info.numColor};">${info.num}</div>
-      </div>
-      <div class="score-popup-section">Wie setzt sich der Score zusammen?</div>
-      ${componentsHTML}
-      <div class="score-popup-section">Tipps um den Wert zu steigern</div>
-      ${tipsHTML}
-      <button class="score-popup-close" onclick="this.closest('.score-popup-backdrop').remove()">Verstanden ✓</button>
-    </div>`;
-
-  phone.appendChild(backdrop);
-}
 
 
 function openTopicSheet() {
@@ -4230,6 +3870,196 @@ function closeTopicSheet() {
   document.getElementById('topic-sheet').classList.remove('open');
   const bd = document.getElementById('topic-backdrop');
   if (bd) bd.classList.remove('open');
+}
+
+// ── Mood History ──
+const moodHistory = {};
+
+function todayKey() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function recordMood(label) {
+  var key = todayKey();
+  var emojiMap = { '✨ Gut drauf':'✨','😴 Müde':'😴','🌀 Gestresst':'🌀','💭 Nachdenklich':'💭','💪 Motiviert':'💪','🌧 Nicht so toll':'🌧' };
+  var shortMap = { '✨ Gut drauf':'Gut drauf','😴 Müde':'Müde','🌀 Gestresst':'Gestresst','💭 Nachdenklich':'Nachdenklich','💪 Motiviert':'Motiviert','🌧 Nicht so toll':'Nicht so toll' };
+  moodHistory[key] = { label:label, short:shortMap[label]||label, emoji:emojiMap[label]||'💜', time:now() };
+  if (Object.keys(moodHistory).length === 1) seedDemoHistory();
+}
+
+function seedDemoHistory() {
+  var demoMoods = [
+    { short:'Müde',         emoji:'😴' },
+    { short:'Gestresst',    emoji:'🌀' },
+    { short:'Müde',         emoji:'😴' },
+    { short:'Nachdenklich', emoji:'💭' },
+    { short:'Gut drauf',    emoji:'✨' },
+    { short:'Nicht so toll',emoji:'🌧' },
+  ];
+  for (var i = 1; i <= 6; i++) {
+    var d = new Date();
+    d.setDate(d.getDate() - i);
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    moodHistory[key] = Object.assign({}, demoMoods[i-1], { time:'08:32' });
+  }
+}
+
+// ── Clock & Chat utilities ──
+function updateClock() {
+  var d = new Date();
+  var el = document.getElementById('clock');
+  if (el) el.textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function now() {
+  var d = new Date();
+  return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function addMsg(text, who) {
+  var msgs = document.getElementById('messages');
+  if (!msgs) return;
+  var row = document.createElement('div');
+  row.className = 'msg-row ' + who;
+  var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="9" cy="9" r="2.2" fill="#D4863A"/></svg>';
+  if (who === 'avie') {
+    row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div><div class="bubble avie">' + text + '</div><div class="msg-time">' + now() + '</div></div>';
+  } else {
+    row.innerHTML = '<div><div class="bubble user">' + text + '</div><div class="msg-time">' + now() + '</div></div>';
+  }
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  var msgs = document.getElementById('messages');
+  if (!msgs) return;
+  var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/></g><circle cx="9" cy="9" r="2.2" fill="#D4863A"/></svg>';
+  var row = document.createElement('div');
+  row.className = 'typing-row'; row.id = 'typing-indicator';
+  row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  var el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function selectChip(el) {
+  document.querySelectorAll('.chip').forEach(function(c) { c.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+function autoH(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function showOnboarding() {
+  var slideEls2 = document.querySelectorAll('.slide');
+  currentSlide = 0;
+  consents.c1 = consents.c2 = consents.c3 = false;
+  ['c1','c2','c3'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('checked');
+    var ch = document.getElementById(id+'-check');
+    if (ch) ch.textContent = '';
+  });
+  var sb = document.getElementById('startBtn');
+  if (sb) sb.disabled = true;
+  updateSlides();
+  document.getElementById('onboarding').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+}
+
+// ── Avie Chat — Claude API ──
+const chatHistory = [];
+
+function buildSystemPrompt() {
+  const name      = userName || 'du';
+  const alter     = klAnswers.alter     || 'unbekannt';
+  const kinder    = klAnswers.kinder    || 'unbekannt';
+  const lifestyle = klAnswers.lifestyle || 'unbekannt';
+  const kinderTxt = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
+  const lifeTxt   = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
+  const cd = window.cycleData;
+  const mb = window.manualBodyData;
+  let koerperContext = '';
+  if (cd) {
+    koerperContext += '- Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + ' (nächste Periode in ~' + cd.daysLeft + ' Tagen)\n';
+    koerperContext += '- Hormone: ' + cd.hormoneVal + '\n';
+  } else {
+    koerperContext += '- Zyklusphase: Lutealphase, Tag 19 von ~28 (Demo-Daten)\n';
+  }
+  if (mb) {
+    koerperContext += '- Schlaf letzte Nacht: ' + mb.sleepStr + '\n';
+    koerperContext += '- Energie-Score: ' + mb.energyScore + '/100\n';
+    koerperContext += '- Stress-Score: ' + mb.stressScore + '/100\n';
+  } else {
+    koerperContext += '- HRV: 42 ms (Demo-Daten)\n- Schlaf: 6h 48m (Demo-Daten)\n- Energie-Score: 62/100 (Demo-Daten)\n';
+  }
+  return 'Du bist avie — eine warme, direkte KI-Begleiterin für weibliches Wohlbefinden.\n\nDie Nutzerin heißt ' + name + '. Alter: ' + alter + '. ' + (kinderTxt[kinder] || '') + '. Alltag: ' + (lifeTxt[lifestyle] || '') + '.\n\nAktueller Körperkontext:\n' + koerperContext + '\nDeine Persönlichkeit:\n- Locker und direkt — wie eine Freundin die wirklich zuhört\n- Du nimmst die Nutzerin ernst, ohne aufzudrängen\n- Du fragst eine Frage auf einmal — nie mehrere\n- Kein "ich passe auf dich auf" — einfach da sein\n- Antworte auf Deutsch, in 2-4 Sätzen\n- Keine Bullet Points, keine Listen';
+}
+
+function callAvie(userMessage) {
+  chatHistory.push({ role: 'user', content: userMessage });
+  return fetch('https://avie-proxy.hoyer2707.workers.dev', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 1000,
+      system: buildSystemPrompt(),
+      messages: chatHistory
+    })
+  }).then(function(response) {
+    return response.json();
+  }).then(function(data) {
+    var reply = (data.content && data.content[0] && data.content[0].text) || 'Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜';
+    chatHistory.push({ role: 'assistant', content: reply });
+    return reply;
+  });
+}
+
+function send() {
+  var inp = document.getElementById('inp');
+  var text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  var qr = document.getElementById('qr');
+  if (qr) qr.remove();
+  addMsg(text, 'user');
+  showTyping();
+  callAvie(text).then(function(reply) {
+    removeTyping();
+    addMsg(reply, 'avie');
+  }).catch(function() {
+    removeTyping();
+    addMsg('Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜', 'avie');
+  });
+}
+
+function sendQR(btn, text) {
+  var qr = document.getElementById('qr');
+  if (qr) qr.remove();
+  addMsg(text, 'user');
+  showTyping();
+  callAvie(text).then(function(reply) {
+    removeTyping();
+    addMsg(reply, 'avie');
+  }).catch(function() {
+    removeTyping();
+    addMsg('Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜', 'avie');
+  });
 }
 
 function openChatDirect(tipTitle, tipBody, tipCat) {
@@ -4285,7 +4115,7 @@ Wann könntest du das heute noch einbauen?`;
 
   // ── FRÜHER INS BETT / SCHLAF ──
   else if (titleKey.includes('bett') || titleKey.includes('schlaf') || catKey.includes('schlaf')) {
-    const sleepNote = mb ? `Du hast heute ${mb.sleepStr} geschlafen — ` : '';
+    const sleepNote = mb ? ('Du hast heute ' + mb.sleepStr + ' geschlafen — ') : '';
     opener = `${sleepNote ? sleepNote + 'das war zu wenig. ' : ''}Schlaf ist gerade das Wichtigste was du für dich tun kannst. 🌙<br><br>
 <strong>Heute Abend: Schlaf-Vorbereitung</strong><br><br>
 <strong>90 Min vor dem Schlafen:</strong> Kein Bildschirm mehr, oder Nachtmodus an<br>
@@ -4314,7 +4144,7 @@ Was davon könntest du heute noch umsetzen?`;
 <strong>✓ Okay bis 12 Uhr:</strong> 1–2 Tassen Kaffee oder Schwarztee<br>
 <strong>✓ Okay bis 15 Uhr:</strong> Matcha — enthält L-Theanin, dämpft die Cortisol-Spitze<br>
 <strong>✗ Danach:</strong> Koffein stört deinen Schlaf auch wenn du es nicht merkst — in dieser Phase besonders stark<br><br>
-${mb && mb.stressScore > 60 ? `Dein Stresslevel ist heute erhöht (${mb.stressScore}) — Koffein verstärkt Cortisol. Heute wäre Matcha oder warmes Wasser mit Zitrone die klügere Wahl.` : 'Warmes Wasser mit Zitrone oder Ingwertee sind gute Alternativen nachmittags.'}<br><br>
+${mb && mb.stressScore > 60 ? ('Dein Stresslevel ist heute erhöht (' + mb.stressScore + ') — Koffein verstärkt Cortisol. Heute wäre Matcha oder warmes Wasser mit Zitrone die klügere Wahl.') : 'Warmes Wasser mit Zitrone oder Ingwertee sind gute Alternativen nachmittags.'}<br><br>
 Wo stehst du gerade beim Koffein heute?`;
   }
 
@@ -4324,7 +4154,7 @@ Wo stehst du gerade beim Koffein heute?`;
 <strong>Prioritäten-Check für heute</strong><br><br>
 Schreib mir kurz: Was steht heute noch auf deiner Liste?<br><br>
 Ich helfe dir dann einzuschätzen was <strong>wirklich heute</strong> sein muss, was morgen kann — und was du getrost streichen darfst.<br><br>
-${mb && mb.energyScore < 60 ? `Mit deinem heutigen Energielevel (${mb.energyScore}) ist es besonders wichtig, die eine wirklich wichtige Sache zu identifizieren — und alles andere loszulassen.` : `In der ${phase} kostet Entscheidungen treffen mehr Energie als sonst. Weniger ist heute mehr.`}`;
+${mb && mb.energyScore < 60 ? ('Mit deinem heutigen Energielevel (' + mb.energyScore + ') ist es besonders wichtig, die eine wirklich wichtige Sache zu identifizieren — und alles andere loszulassen.') : `In der ${phase} kostet Entscheidungen treffen mehr Energie als sonst. Weniger ist heute mehr.`}`;
   }
 
   // ── BEWEGUNG / SPORT ──
@@ -4338,7 +4168,7 @@ ${mb && mb.energyScore < 60 ? `Mit deinem heutigen Energielevel (${mb.energyScor
 <strong>Yoga/Pilates:</strong> Immer eine gute Wahl in der ${phase}<br><br>
 <strong>Wichtig:</strong> Hör auf deinen Körper während der Übung. Wenn du merkst dass du leer wirst — stop. Lieber 20 Minuten gut als 45 Minuten gegen den Körper.<br><br>
 Was hast du heute geplant?`
-      : `Mit deinem heutigen Energielevel (${mb?.energyScore || '—'}) würde ich intensives Training nicht empfehlen. 🌿<br><br>
+      : `Mit deinem heutigen Energielevel (${(mb && mb.energyScore) || '—'}) würde ich intensives Training nicht empfehlen. 🌿<br><br>
 <strong>Was heute passt:</strong><br><br>
 <strong>Spazieren:</strong> 20 Min, ohne Podcast<br>
 <strong>Sanftes Yoga:</strong> Yin oder Restorative — geht auch 15 Min auf der Matte zuhause<br>
@@ -4358,13 +4188,12 @@ Du kannst direkt hier antworten. Ich höre zu und helfe dir das einzuordnen. �
 
   // ── AVIE / REDEN / NICHT ALLEINE ──
   else if (catKey.includes('avie') || catKey.includes('nicht alleine') || catKey.includes('mit avie')) {
-    opener = `Ich bin ganz hier. 💜<br><br>
-${name ? `${name}, w` : 'W'}as trägst du gerade mit dir? Du musst nicht wissen wie du es erklärst — fang einfach irgendwo an. Manchmal ist der erste Satz der schwierigste.`;
+    opener = 'Ich bin da. 💜<br><br>' + (name ? name + ', w' : 'W') + 'as trägst du gerade mit dir? Du musst nicht wissen wie du es erklärst — fang einfach irgendwo an. Manchmal ist der erste Satz der schwierigste.';;
   }
 
   // ── FALLBACK ──
   else {
-    opener = `Ich bin ganz da für dich. 💜<br><br>Was beschäftigt dich bei "<strong>${tipTitle}</strong>" heute konkret? Ich möchte verstehen wie es dir wirklich geht — nicht nur einen Tipp geben.`;
+    opener = `Ich bin da. 💜<br><br>Was beschäftigt dich bei "<strong>${tipTitle}</strong>" heute konkret? Ich möchte verstehen wie es dir wirklich geht — nicht nur einen Tipp geben.`;
   }
 
   addMsg(opener, 'avie');

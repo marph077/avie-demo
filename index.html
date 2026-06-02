@@ -135,7 +135,7 @@ html, body {
 }
 .splash-bloom {
   animation: bloomIn 0.9s ease both;
-  margin-bottom: 8px;
+  margin-bottom: 0px;
 }
 @keyframes bloomIn {
   from { opacity: 0; transform: scale(0.7) rotate(-15deg); }
@@ -196,7 +196,7 @@ html, body {
 }
 .ob-header-title {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 28px;
   color: white;
   line-height: 1.15;
   letter-spacing: -0.3px;
@@ -212,24 +212,23 @@ html, body {
 }
 
 .ob-card {
-  background: white;
+  background: rgba(45,27,78,0.04);
   border-radius: 16px;
   padding: 18px 20px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(155,127,192,0.2);
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  box-shadow: 0 2px 10px rgba(45,27,78,0.05);
 }
 .ob-card-icon {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: var(--lav-light);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 22px;
   flex-shrink: 0;
 }
 .ob-card-text h4 {
@@ -283,20 +282,22 @@ html, body {
 .ob-data-row {
   display: flex;
   gap: 12px;
-  align-items: center;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: rgba(45,27,78,0.04);
+  border: 1px solid rgba(155,127,192,0.2);
+  border-radius: 14px;
 }
 .ob-data-row:last-child { border-bottom: none; }
 .ob-data-icon {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--lav-light);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 .ob-data-text h4 { font-size: 13px; font-weight: 500; color: var(--plum); margin-bottom: 2px; }
@@ -312,7 +313,7 @@ html, body {
   background: rgba(155,127,192,0.12);
 }
 .slide-6 .ob-header-label { color: #9B7FC0; }
-.slide-6 .ob-header-title { color: #2D1B4E; font-size: 22px; }
+.slide-6 .ob-header-title { color: #2D1B4E; font-size: 28px; }
 .slide-6 .ob-body { background: #EDE6F5; padding: 16px 20px; gap: 16px; }
 .slide-6 .ob-nav { background: #EDE6F5; border-top: 1px solid rgba(155,127,192,0.2); }
 .slide-6 .ob-back { color: #6B5A88; border-color: rgba(155,127,192,0.3); }
@@ -336,13 +337,15 @@ html, body {
   color: white;
   border-color: #2D1B4E;
 }
-.slide-5 { background: var(--plum); }
-.slide-5 .ob-header { background: transparent; padding-top: 60px; }
+.slide-5 { background: #EDE6F5; }
+.slide-5 .ob-header { background: #2D1B4E; padding-top: 60px; }
 .slide-5 .ob-body { background: transparent; }
+.slide-5 .ob-header-label { color: rgba(255,255,255,0.5); }
+.slide-5 .ob-header-title { color: white; }
 
 .consent-item {
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(45,27,78,0.04);
+  border: 1px solid rgba(155,127,192,0.2);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -351,14 +354,14 @@ html, body {
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
-.consent-item:hover { background: rgba(255,255,255,0.12); }
-.consent-item.checked { background: rgba(212,134,58,0.12); border-color: rgba(212,134,58,0.4); }
+.consent-item:hover { background: rgba(45,27,78,0.07); }
+.consent-item.checked { background: rgba(212,134,58,0.07); border-color: rgba(212,134,58,0.4); }
 
 .consent-check {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(155,127,192,0.3);
   background: transparent;
   flex-shrink: 0;
   display: flex;
@@ -375,11 +378,11 @@ html, body {
 }
 .consent-text {
   font-size: 13px;
-  color: rgba(255,255,255,0.75);
+  color: #4A3A6A;
   line-height: 1.55;
   font-weight: 300;
 }
-.consent-text strong { color: white; font-weight: 500; }
+.consent-text strong { color: #2D1B4E; font-weight: 500; }
 
 /* ═══════════════════════════════
    ONBOARDING NAV (bottom)
@@ -392,7 +395,7 @@ html, body {
   flex-shrink: 0;
 }
 .slide-1 .ob-nav { background: transparent; }
-.slide-5 .ob-nav { background: transparent; }
+.slide-5 .ob-nav { background: #EDE6F5; border-top: 1px solid rgba(155,127,192,0.2); }
 .slide-2 .ob-nav, .slide-3 .ob-nav, .slide-4 .ob-nav { background: #EDE6F5; border-top: 1px solid var(--border); }
 
 /* progress dots */
@@ -457,6 +460,15 @@ html, body {
 .slide-2 .ob-next:disabled, .slide-3 .ob-next:disabled, .slide-4 .ob-next:disabled {
   background: var(--lav-light);
   color: var(--text-muted);
+}
+.slide-5 .ob-back {
+  border-color: rgba(155,127,192,0.3);
+  color: #2D1B4E;
+}
+.slide-5 .ob-next:disabled {
+  background: rgba(155,127,192,0.12);
+  color: rgba(45,27,78,0.35);
+  cursor: not-allowed;
 }
 
 @keyframes fadeUp {
@@ -1273,11 +1285,13 @@ html, body {
           </g>
           <circle cx="100" cy="100" r="22" fill="#D4863A"/>
         </svg>
-        <div class="splash-name">avie</div>
-        <div class="splash-claim">seen by avie</div>
-        <div class="splash-sub">Die Antworten sind oft schon da.<br>avie hilft, sie zu erkennen.</div>
+        <div style="text-align:center;padding:0 0 8px;">
+          <div class="splash-name">avie</div>
+          <div class="splash-claim">seen by avie</div>
+          <div class="splash-sub">Die Antworten sind oft schon da.<br>avie hilft, sie zu erkennen.</div>
+        </div>
 
-        <div class="ob-nav">
+        <div class="ob-nav" style="margin-top:48px;">
           <div class="ob-dots">
             <div class="ob-dot active"></div>
             <div class="ob-dot"></div>
@@ -1297,7 +1311,7 @@ html, body {
       <div class="slide slide-2" id="slide-1">
         <div class="ob-header">
           <div class="ob-header-label">Was ist avie?</div>
-          <div class="ob-header-title">Deine Begleiterin, die Stress, Energie, Hormone und Alltag im Zusammenhang versteht – bevor Überlastung entsteht.</div>
+          <div class="ob-header-title">Dein Körper. Dein Alltag. Endlich im Zusammenhang.</div>
         </div>
         <div class="ob-body">
           <div class="ob-card">
@@ -1340,7 +1354,7 @@ html, body {
       <div class="slide slide-3" id="slide-2">
         <div class="ob-header">
           <div class="ob-header-label">Wichtig zu wissen</div>
-          <div class="ob-header-title">Was avie nicht ist.</div>
+          <div class="ob-header-title">Was avie nicht ist — und nicht sein will.</div>
         </div>
         <div class="ob-body">
           <div class="ob-limit-card">
@@ -1424,7 +1438,7 @@ html, body {
       <!-- SLIDE 5: Consent -->
       <div class="slide slide-5" id="slide-4">
         <div class="ob-header">
-          <div class="ob-header-label" style="color:rgba(255,255,255,0.5)">Fast geschafft</div>
+          <div class="ob-header-label" style="color:rgba(255,255,255,0.5);">Fast geschafft</div>
           <div class="ob-header-title">Drei kurze Bestätigungen.</div>
         </div>
         <div class="ob-body" style="gap:14px;">
@@ -1441,7 +1455,7 @@ html, body {
             <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den Nutzungsbedingungen von avie Lab zu.</div>
           </div>
         </div>
-        <div class="ob-nav" style="background:transparent; border-top:1px solid rgba(255,255,255,0.1);">
+        <div class="ob-nav">
           <div class="ob-dots">
             <div class="ob-dot"></div>
             <div class="ob-dot"></div>
@@ -1466,7 +1480,7 @@ html, body {
         <div id="kl-chat" style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:#EDE6F5;">
 
           <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Schön, dass du hier bist. Wie heißt du?</div>
               </div>
@@ -1490,13 +1504,13 @@ html, body {
           <!-- Avie antwortet auf Name + fragt Alter -->
           <div id="kl-q1-wrap" style="display:none;flex-direction:column;gap:14px;">
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="name-reply-text"></span></div>
               </div>
             </div>
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Und damit ich dich noch besser verstehe — wie alt bist du?</div>
               </div>
@@ -1512,13 +1526,13 @@ html, body {
           <!-- Avie antwortet auf Alter + fragt Kinder -->
           <div id="kl-q2-wrap" style="display:none;flex-direction:column;gap:14px;">
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="kl-reply-alter"></span></div>
               </div>
             </div>
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Hast du Kinder?</div>
               </div>
@@ -1533,13 +1547,13 @@ html, body {
           <!-- Avie antwortet auf Kinder + fragt Alltag -->
           <div id="kl-q3-wrap" style="display:none;flex-direction:column;gap:14px;">
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="kl-reply-kinder"></span></div>
               </div>
             </div>
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Wie würdest du deinen Alltag beschreiben?</div>
               </div>
@@ -1555,13 +1569,13 @@ html, body {
           <!-- Abschluss -->
           <div id="kl-done-wrap" style="display:none;flex-direction:column;gap:14px;">
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="kl-reply-lifestyle"></span></div>
               </div>
             </div>
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
                 <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Passt. Dann können wir loslegen. 🌸</div>
               </div>
@@ -1633,7 +1647,7 @@ html, body {
       <div style="font-size:11px;color:#A090BC;text-align:center;font-weight:300;letter-spacing:0.04em;">Sonntag, 31. Mai</div>
 
       <div style="display:flex;gap:10px;align-items:flex-end;">
-        <div style="width:34px;height:34px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg></div>
+        <div style="width:34px;height:34px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
         <div style="background:white;border-radius:18px;border-bottom-left-radius:4px;padding:14px 16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.07);max-width:88%;">
           <div style="font-size:14px;color:#2D1B4E;line-height:1.58;" id="main-avie-greeting">Guuuuten Morgen ☀️ Du bist in der <strong>Lutealphase</strong> — Östrogen sinkt, Progesteron steigt. Das erklärt, warum du dich heute vielleicht etwas schwerer fühlst. Ganz normal. 💜<br><br>Wie geht's dir heute?</div>
         </div>
@@ -3450,7 +3464,7 @@ function showManualBodyInput() {
   const bd = document.createElement('div');
   bd.className = 'score-popup-backdrop';
 
-  const BLOOM = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="1.8" ry="3.8" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="1.8" ry="3.8" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="8" cy="8" r="2" fill="#D4863A"/></svg>';
+  const BLOOM = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="8" cy="8" r="1.7" fill="#D4863A"/></svg>';
 
   let manualData = { bedTime: '23:00', wakeTime: '07:00', energy: 3, stress: 3, steps: '' };
 
@@ -3922,7 +3936,7 @@ function addMsg(text, who) {
   if (!msgs) return;
   var row = document.createElement('div');
   row.className = 'msg-row ' + who;
-  var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="9" cy="9" r="2.2" fill="#D4863A"/></svg>';
+  var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="9" cy="9" r="2" fill="#D4863A"/></svg>';
   if (who === 'avie') {
     row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div><div class="bubble avie">' + text + '</div><div class="msg-time">' + now() + '</div></div>';
   } else {

@@ -1781,190 +1781,6 @@ html, body {
 </div><!-- /phone -->
 
   <!-- ══ DASHBOARD OVERLAY ══ -->
-  <template id="dashboard-tpl">
-  <div id="dashboard">
-    <div class="dash-status">
-      <span class="dash-status-time" id="dash-clock">9:41</span>
-      <div class="dash-status-icons"><span>●●●</span><span>🔋</span></div>
-    </div>
-
-    <div class="dash-header-band">
-      <div class="dash-greeting">Guten Morgen, ${userName} ✦</div>
-      <div class="dash-headline">Dein Körper zeigt dir heute <span>etwas Wichtiges.</span></div>
-      <div class="dash-avie-msg">
-        <div class="dash-avie-icon">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <g transform="translate(7,7)">
-              <ellipse rx="1.6" ry="3.2" fill="#D4C8E8" transform="rotate(0)"/>
-              <ellipse rx="1.6" ry="3.2" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/>
-              <ellipse rx="1.6" ry="3.2" fill="#D4C8E8" transform="rotate(90)"/>
-              <ellipse rx="1.6" ry="3.2" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/>
-              <ellipse rx="1.6" ry="3.2" fill="#D4C8E8" transform="rotate(180)"/>
-              <ellipse rx="1.6" ry="3.2" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/>
-              <ellipse rx="1.6" ry="3.2" fill="#D4C8E8" transform="rotate(270)"/>
-              <ellipse rx="1.6" ry="3.2" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/>
-            </g>
-            <circle cx="7" cy="7" r="1.8" fill="#D4863A"/>
-          </svg>
-        </div>
-        <div class="dash-avie-text">
-          Du bist in der <strong>Lutealphase</strong> — Östrogen sinkt, Progesteron steigt. Das erklärt, warum du dich heute vielleicht <strong>etwas schwerer</strong> oder sensibler fühlst. Ganz normal. 💜
-        </div>
-      </div>
-    </div>
-
-    <!-- Score cards -->
-    <div class="dash-scores-row">
-      <div class="dash-score-card highlight">
-        <div class="dash-score-emoji">⚡</div>
-        <div class="dash-score-num">62</div>
-        <div class="dash-score-label">Energie</div>
-      </div>
-      <div class="dash-score-card">
-        <div class="dash-score-emoji">😴</div>
-        <div class="dash-score-num">74</div>
-        <div class="dash-score-label">Schlaf</div>
-      </div>
-      <div class="dash-score-card">
-        <div class="dash-score-emoji">🌀</div>
-        <div class="dash-score-num">38</div>
-        <div class="dash-score-label">Stress</div>
-      </div>
-    </div>
-
-    <div class="dash-scroll">
-
-      <!-- Zyklus -->
-      <div class="dash-section-label">Zyklus</div>
-      <div class="dash-zyklus-card">
-        <div class="dash-zyklus-top">
-          <div class="dash-zyklus-title">Tag 19 von ~28</div>
-          <div class="dash-zyklus-phase">Lutealphase</div>
-        </div>
-        <div class="dash-zyklus-bar"><div class="dash-zyklus-fill"></div></div>
-        <div class="dash-zyklus-labels">
-          <span>Menstruation</span><span>Follikel</span><span>Ovulation</span><span>Luteal</span>
-        </div>
-        <div class="dash-zyklus-info">
-          <div>
-            <div class="dash-zyklus-item-label">Nächste Periode</div>
-            <div class="dash-zyklus-item-val">in ~9 Tagen</div>
-            <div class="dash-zyklus-item-sub">ca. 9. Juni</div>
-          </div>
-          <div>
-            <div class="dash-zyklus-item-label">Aktuelle Hormone</div>
-            <div class="dash-zyklus-item-val">↑ Progesteron</div>
-            <div class="dash-zyklus-item-sub">↓ Östrogen sinkt</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Avie Empfehlungen — vertikal -->
-      <div class="dash-section-label">Körperdaten · Oura Ring</div>
-
-      <div style="background:white;border-radius:14px;overflow:hidden;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #EBE4F5;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#D4863A;flex-shrink:0;"></div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:#A090BC;margin-bottom:1px;">HRV (Herzratenvariabilität)</div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">42 ms</div>
-            <div style="font-size:11px;color:#A090BC;font-weight:300;">Ø letzte 7 Tage: 48 ms</div>
-          </div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;font-weight:500;background:rgba(212,134,58,0.12);color:#D4863A;flex-shrink:0;">leicht niedrig</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #EBE4F5;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#9B7FC0;flex-shrink:0;"></div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:#A090BC;margin-bottom:1px;">Schlaf gestern</div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">6h 48m</div>
-            <div style="font-size:11px;color:#A090BC;font-weight:300;">Tiefschlaf 1h 12m · REM 1h 44m</div>
-          </div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;font-weight:500;background:rgba(155,127,192,0.15);color:#9B7FC0;flex-shrink:0;">okay</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #EBE4F5;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#7BC47F;flex-shrink:0;"></div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:#A090BC;margin-bottom:1px;">Ruhepuls</div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">58 bpm</div>
-            <div style="font-size:11px;color:#A090BC;font-weight:300;">Lutealphase: leicht erhöht — normal</div>
-          </div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;font-weight:500;background:rgba(123,196,127,0.12);color:#4A9E50;flex-shrink:0;">normal</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#9B7FC0;flex-shrink:0;"></div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:#A090BC;margin-bottom:1px;">Körpertemperatur</div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">+0.4°C</div>
-            <div style="font-size:11px;color:#A090BC;font-weight:300;">Erhöht nach Ovulation — Tag 19 ✓</div>
-          </div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;font-weight:500;background:rgba(155,127,192,0.15);color:#9B7FC0;flex-shrink:0;">erwartet</div>
-        </div>
-      </div>
-
-            <div class="dash-section-label">avies Empfehlungen für heute</div>
-
-      <div style="background:white;border-radius:16px;border:1.5px solid #D4863A;box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;flex-shrink:0;">
-        <div style="width:40px;height:40px;border-radius:12px;background:rgba(212,134,58,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏃‍♀️</div>
-        <div class="dash-tip-content">
-          <div class="dash-tip-cat">Bewegung</div>
-          <div class="dash-tip-title">Sanft bewegen — kein Hochleistungstag</div>
-          <div class="dash-tip-body">Deine HRV liegt <strong>unter deinem Schnitt</strong> und du bist in der Lutealphase. Intensivtraining erzeugt jetzt mehr Stress als Energie. <strong>Yoga, Spazieren, Dehnen</strong> passen heute viel besser.</div>
-          <button class="dash-tip-action tip-caution-action" onclick="closeDashboard()">Mit avie besprechen →</button>
-        </div>
-      </div>
-
-      <div style="background:white;border-radius:16px;border:1.5px solid #7BA8E0;box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;flex-shrink:0;">
-        <div style="width:40px;height:40px;border-radius:12px;background:rgba(212,134,58,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🧘‍♀️</div>
-        <div class="dash-tip-content">
-          <div class="dash-tip-cat">Stress & Mental Load</div>
-          <div class="dash-tip-title">Heute bewusst Puffer einplanen</div>
-          <div class="dash-tip-body">Sinkendes Östrogen macht dich sensibler für Reize. Meetings und Konflikte kosten gerade <strong>mehr Energie als sonst</strong>. Kleine bewusste Pausen helfen.</div>
-          <button class="dash-tip-action tip-rest-action" onclick="closeDashboard()">Atemübung mit avie →</button>
-        </div>
-      </div>
-
-      <div style="background:white;border-radius:16px;border:1.5px solid #9B7FC0;box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;flex-shrink:0;">
-        <div style="width:40px;height:40px;border-radius:12px;background:rgba(212,134,58,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🌙</div>
-        <div class="dash-tip-content">
-          <div class="dash-tip-cat">Schlaf</div>
-          <div class="dash-tip-title">Früher ins Bett heute</div>
-          <div class="dash-tip-body"><strong>6h 48m</strong> ist etwas wenig. In der Lutealphase brauchen viele Frauen <strong>30–60 Min. mehr Schlaf</strong>. Progesteron macht müder — das ist normal.</div>
-          <button class="dash-tip-action tip-gentle-action" onclick="closeDashboard()">Schlafroutine besprechen →</button>
-        </div>
-      </div>
-
-      <div style="background:white;border-radius:16px;border:1.5px solid #9B7FC0;box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;flex-shrink:0;">
-        <div style="width:40px;height:40px;border-radius:12px;background:rgba(212,134,58,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🥗</div>
-        <div class="dash-tip-content">
-          <div class="dash-tip-cat">Ernährung</div>
-          <div class="dash-tip-title">Magnesium & wärmendes Essen</div>
-          <div class="dash-tip-body">Magnesiumspiegel sinkt in der Lutealphase — das kann <strong>Stimmungsschwankungen</strong> verstärken. Nüsse, dunkle Schokolade, warme Mahlzeiten helfen heute.</div>
-          <button class="dash-tip-action tip-gentle-action" onclick="closeDashboard()">Mehr erfahren →</button>
-        </div>
-      </div>
-
-      <div style="background:white;border-radius:16px;border:1.5px solid #7BC47F;box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;flex-shrink:0;">
-        <div style="width:40px;height:40px;border-radius:12px;background:rgba(212,134,58,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">✨</div>
-        <div class="dash-tip-content">
-          <div class="dash-tip-cat">Dein Stärke-Fenster</div>
-          <div class="dash-tip-title">In ~9 Tagen: volle Energie zurück</div>
-          <div class="dash-tip-body">Nach deiner Periode startet die <strong>Follikelphase</strong> — Östrogen steigt, HRV und Energie kommen zurück. Dein Hochleistungsfenster. <strong>Jetzt schon einplanen.</strong></div>
-          <button class="dash-tip-action tip-good-action" onclick="closeDashboard()">Mit avie planen →</button>
-        </div>
-      </div>
-
-    </div><!-- /dash-scroll -->
-
-    <div class="dash-cta" style="gap:10px;">
-      <button class="dash-cta-analyse" onclick="startDashAnalysis()">
-        <span style="font-size:15px;">🔍</span><span>Analyse</span>
-      </button>
-      <button class="dash-cta-main" onclick="closeDashboard()" style="display:flex;align-items:center;justify-content:center;gap:8px;flex:1.3;"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="2" ry="4.4" fill="rgba(255,255,255,0.35)" transform="rotate(0)"/><ellipse rx="2" ry="4.4" fill="white" transform="rotate(45)" opacity="0.85"/><ellipse rx="2" ry="4.4" fill="rgba(255,255,255,0.35)" transform="rotate(90)"/><ellipse rx="2" ry="4.4" fill="white" transform="rotate(135)" opacity="0.85"/><ellipse rx="2" ry="4.4" fill="rgba(255,255,255,0.35)" transform="rotate(180)"/><ellipse rx="2" ry="4.4" fill="white" transform="rotate(225)" opacity="0.85"/><ellipse rx="2" ry="4.4" fill="rgba(255,255,255,0.35)" transform="rotate(270)"/><ellipse rx="2" ry="4.4" fill="white" transform="rotate(315)" opacity="0.85"/></g><circle cx="9" cy="9" r="2.2" fill="#D4863A"/></svg><span>Mit avie sprechen</span></button>
-    </div>
-  </div>
-  </template>
-
-    <!-- ══ APP GUIDE TEMPLATE ══ -->
   <template id="guide-tpl">
   <div id="guide">
     <div class="guide-mask-top" id="guide-mask-top"></div>
@@ -2004,6 +1820,9 @@ html, body {
   </template>
 
 <script>
+// ── Global BLOOM logo ──
+var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="9" cy="9" r="2" fill="#D4863A"/></svg>';
+
 // ── Onboarding state ──
 let currentSlide = 0;
 const totalSlides = 6;
@@ -2778,6 +2597,68 @@ function showBodyInfo(key) {
   phone.appendChild(backdrop);
 }
 
+const SCORE_INFO = {
+  energie: {
+    icon: '⚡', iconBg: 'rgba(212,134,58,0.12)',
+    title: 'Energie-Score',
+    components: [
+      { dot: '#D4863A', text: '<strong>Energie-Score</strong> — deine selbst eingeschätzte Energie auf einer Skala von 1–5, umgerechnet auf 100.' },
+      { dot: '#9B7FC0', text: '<strong>In der Lutealphase</strong> ist niedrige Energie normal — Progesteron erhöht den Schlafbedarf und senkt den Antrieb.' },
+      { dot: '#A090BC', text: '<strong>Kombination zählt</strong> — Energie + HRV + Schlaf zusammen geben avie das beste Bild.' },
+    ],
+    tips: [
+      { dot: '#D4863A', text: '<strong>Energie schützen</strong> — heute nur das Nötigste. Unnötige Entscheidungen kosten mehr als du denkst.' },
+      { dot: '#9B7FC0', text: '<strong>Kurze Pausen</strong> alle 90 Minuten laden die Energie besser auf als Koffein.' },
+      { dot: '#7BC47F', text: '<strong>Proteinreiches Frühstück</strong> stabilisiert den Blutzucker und verhindert den Mittags-Einbruch.' },
+    ]
+  },
+  schlaf: {
+    icon: '😴', iconBg: 'rgba(155,127,192,0.12)',
+    title: 'Schlaf',
+    components: [
+      { dot: '#9B7FC0', text: '<strong>Schlafdauer</strong> — wie viele Stunden du geschlafen hast. Ideal sind 7–9 Stunden.' },
+      { dot: '#D4863A', text: '<strong>Lutealphase-Effekt</strong> — Progesteron macht schläfriger, stört aber oft den Tiefschlaf.' },
+      { dot: '#7BC47F', text: '<strong>Qualität über Quantität</strong> — 7h mit viel Tiefschlaf sind besser als 9h mit vielen Unterbrechungen.' },
+    ],
+    tips: [
+      { dot: '#9B7FC0', text: '<strong>Schlafenszeit vorziehen</strong> — in der Lutealphase 30–60 Min. früher als sonst.' },
+      { dot: '#D4863A', text: '<strong>Kein Koffein nach 14 Uhr</strong> — in dieser Phase bist du empfindlicher.' },
+      { dot: '#7BC47F', text: '<strong>Raum kühler</strong> — 17–19°C, dein Körper ist jetzt wärmer als sonst.' },
+    ]
+  },
+  stress: {
+    icon: '🌀', iconBg: 'rgba(107,143,212,0.12)',
+    title: 'Stress-Score',
+    components: [
+      { dot: '#6B8FD4', text: '<strong>Stress-Score</strong> — dein selbst eingeschätztes Stresslevel von 1–5, umgerechnet auf 100.' },
+      { dot: '#9B7FC0', text: '<strong>Lutealphase-Effekt</strong> — die Stresstoleranz ist hormonell niedriger. Dasselbe fühlt sich mehr an.' },
+      { dot: '#D4863A', text: '<strong>Chronischer Stress</strong> senkt HRV, stört Schlaf und verschlimmert PMS-Symptome.' },
+    ],
+    tips: [
+      { dot: '#6B8FD4', text: '<strong>4-7-8 Atemübung</strong> — 3 Runden, aktiviert sofort den Parasympathikus.' },
+      { dot: '#9B7FC0', text: '<strong>Reize reduzieren</strong> — Nachrichten, Social Media heute auf Minimum.' },
+      { dot: '#7BC47F', text: '<strong>Spazieren ohne Podcast</strong> — 20 Minuten unstrukturierte Bewegung senkt Cortisol.' },
+    ]
+  }
+};
+
+function showScoreInfo(key) {
+  const info = SCORE_INFO[key];
+  if (!info) return;
+  const phone = document.querySelector('.phone');
+  const backdrop = document.createElement('div');
+  backdrop.className = 'score-popup-backdrop';
+  backdrop.onclick = function(e) { if (e.target === backdrop) backdrop.remove(); };
+  const compsHTML = info.components.map(function(r) {
+    return '<div class="score-popup-row"><div class="score-popup-dot" style="background:' + r.dot + ';"></div><div class="score-popup-text">' + r.text + '</div></div>';
+  }).join('');
+  const tipsHTML = info.tips.map(function(r) {
+    return '<div class="score-popup-row"><div class="score-popup-dot" style="background:' + r.dot + ';"></div><div class="score-popup-text">' + r.text + '</div></div>';
+  }).join('');
+  backdrop.innerHTML = '<div class="score-popup"><div class="score-popup-handle"></div><div class="score-popup-header"><div class="score-popup-icon" style="background:' + info.iconBg + ';">' + info.icon + '</div><div class="score-popup-title">' + info.title + '</div></div><div class="score-popup-section">Was das bedeutet</div>' + compsHTML + '<div class="score-popup-section">Tipps für heute</div>' + tipsHTML + '<button class="score-popup-close" onclick="this.closest(\'.score-popup-backdrop\').remove()">Verstanden ✓</button></div>';
+  phone.appendChild(backdrop);
+}
+
 function switchDashTab(tab) {
   const root = document.getElementById('dashboard') || document.getElementById('app');
   const sk = root.querySelector('#dash-screen-koerper');
@@ -2910,10 +2791,10 @@ function showDashboard() {
         <div style="font-size:22px;flex-shrink:0;margin-top:1px;">⌚</div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:600;color:#2D1B4E;margin-bottom:2px;">Kein Wearable verbunden</div>
-          <div style="font-size:11px;color:#6B5A88;line-height:1.5;margin-bottom:10px;">Verbinde deinen Oura Ring oder trag deinen Zyklus manuell ein — damit avie echte Körperdaten für dich nutzen kann.</div>
+          <div style="font-size:11px;color:#6B5A88;line-height:1.5;margin-bottom:10px;">Verbinde dein Wearable oder trag deine Werte manuell ein — damit avie echte Körperdaten für dich nutzen kann.</div>
           <div style="display:flex;gap:8px;">
-            <button data-wearable-connect style="flex:1;padding:8px 12px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;">💍 Oura verbinden</button>
-            <button data-cycle-input style="flex:1;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:12px;font-weight:400;cursor:pointer;">🌸 Manuell eingeben</button>
+            <button data-wearable-connect style="flex:1;padding:8px 12px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;">⌚ Wearable verbinden</button>
+            <button onclick="showManualBodyInput()" style="flex:1;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:12px;font-weight:400;cursor:pointer;">✏️ Manuell eingeben</button>
           </div>
         </div>
       </div>
@@ -2944,11 +2825,11 @@ function showDashboard() {
       <div class="dash-section-label">Zyklus</div>
 
       <!-- Zyklus locked -->
-      <div id="zyklus-locked" style="background:white;border-radius:14px;border:1px dashed rgba(155,127,192,0.25);flex-shrink:0;">
+      <div id="zyklus-locked" onclick="showCycleInput()" style="background:white;border-radius:14px;border:1px dashed rgba(155,127,192,0.35);flex-shrink:0;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
         <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
           <div style="font-size:26px;filter:grayscale(1);opacity:0.3;">🌸</div>
           <div style="font-size:13px;font-weight:500;color:#C0B0D0;">Kein Zyklus eingetragen</div>
-          <div style="font-size:11px;color:#D0C8E0;line-height:1.5;">Verbinde dein Wearable oder gib<br>deinen Zyklus manuell ein.</div>
+          <div style="font-size:11px;color:#9B7FC0;line-height:1.5;">Tippe hier um deinen Zyklus einzutragen</div>
         </div>
       </div>
 
@@ -2956,7 +2837,10 @@ function showDashboard() {
       <div id="zyklus-real" style="display:none;" class="dash-zyklus-card">
         <div class="dash-zyklus-top">
           <div class="dash-zyklus-title" id="zy-title">Tag — von —</div>
-          <div class="dash-zyklus-phase" id="zy-phase">—</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="dash-zyklus-phase" id="zy-phase">—</div>
+            <button onclick="showCycleInput()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(155,127,192,0.3);background:transparent;color:#9B7FC0;cursor:pointer;font-family:inherit;">✏️ bearbeiten</button>
+          </div>
         </div>
         <div class="dash-zyklus-bar"><div class="dash-zyklus-fill" id="zy-fill"></div></div>
         <div class="dash-zyklus-labels"><span>Menstruation</span><span>Follikel</span><span>Ovulation</span><span>Luteal</span></div>
@@ -2974,257 +2858,54 @@ function showDashboard() {
         </div>
       </div>
 
-      <div class="dash-section-label">Körperdaten · Oura Ring</div>
+      <div class="dash-section-label">Körperdaten · Wearable</div>
       <div id="koerper-card" style="background:white;border-radius:14px;border:1.5px dashed rgba(155,127,192,0.3);flex-shrink:0;">
         <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
           <div style="font-size:28px;filter:grayscale(1);opacity:0.35;">⌚</div>
           <div style="font-size:13px;font-weight:500;color:#C0B0D0;">Keine Daten verfügbar</div>
-          <div style="font-size:11px;color:#D0C8E0;line-height:1.5;">Verbinde deinen Oura Ring oder gib<br>deinen Zyklus manuell ein.</div>
+          <div style="font-size:11px;color:#D0C8E0;line-height:1.5;">Verbinde dein Wearable oder<br>gib deine Werte manuell ein.</div>
         </div>
       </div>
-      <div id="koerper-card-real" style="background:white;border-radius:14px;border:2px solid #9B7FC0;box-shadow:0 4px 16px rgba(45,27,78,0.12);flex-shrink:0;display:none;">
-        <div data-info="hrv" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #D4C8E8;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F9F7FF'" onmouseout="this.style.background=''">\n          <div style="width:8px;height:8px;border-radius:50%;background:#D4863A;flex-shrink:0;"></div>
-          <div style="flex:1;"><div style="font-size:11px;color:#A090BC;">HRV</div><div style="font-size:13px;font-weight:500;color:#2D1B4E;">42 ms</div><div style="font-size:11px;color:#A090BC;">Ø 48 ms letzte Woche</div></div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;background:rgba(212,134,58,0.12);color:#D4863A;">niedrig</div>
+      <div id="koerper-card-real" style="background:white;border-radius:14px;border:1px solid rgba(155,127,192,0.2);box-shadow:0 2px 10px rgba(45,27,78,0.06);flex-shrink:0;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9B7FC0;">Körperdaten</div>
+          <button onclick="showManualBodyInput()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(155,127,192,0.3);background:transparent;color:#9B7FC0;cursor:pointer;font-family:inherit;">✏️ bearbeiten</button>
         </div>
-        <div data-info="schlaf-detail" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #D4C8E8;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F9F7FF'" onmouseout="this.style.background=''">\n          <div style="width:8px;height:8px;border-radius:50%;background:#9B7FC0;flex-shrink:0;"></div>
-          <div style="flex:1;"><div style="font-size:11px;color:#A090BC;">Schlaf</div><div style="font-size:13px;font-weight:500;color:#2D1B4E;">6h 48m</div><div style="font-size:11px;color:#A090BC;">Tiefschlaf 1h 12m · REM 1h 44m</div></div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;background:rgba(155,127,192,0.15);color:#9B7FC0;">okay</div>
-        </div>
-        <div data-info="puls" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #D4C8E8;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F9F7FF'" onmouseout="this.style.background=''">\n          <div style="width:8px;height:8px;border-radius:50%;background:#7BC47F;flex-shrink:0;"></div>
-          <div style="flex:1;"><div style="font-size:11px;color:#A090BC;">Ruhepuls</div><div style="font-size:13px;font-weight:500;color:#2D1B4E;">58 bpm</div><div style="font-size:11px;color:#A090BC;">Lutealphase: leicht erhöht</div></div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;background:rgba(123,196,127,0.12);color:#4A9E50;">normal</div>
-        </div>
-        <div data-info="temp" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F9F7FF'" onmouseout="this.style.background=''">\n          <div style="width:8px;height:8px;border-radius:50%;background:#9B7FC0;flex-shrink:0;"></div>
-          <div style="flex:1;"><div style="font-size:11px;color:#A090BC;">Körpertemperatur</div><div style="font-size:13px;font-weight:500;color:#2D1B4E;">+0.4°C</div><div style="font-size:11px;color:#A090BC;">Erhöht nach Ovulation — Tag 19 ✓</div></div>
-          <div style="font-size:10px;padding:3px 9px;border-radius:8px;background:rgba(155,127,192,0.15);color:#9B7FC0;">erwartet</div>
-        </div>
-      </div>
-      </div>
-
-    
-    <div style="padding:12px 16px 28px;background:#EDE6F5;display:flex;gap:10px;flex-shrink:0;border-top:1px solid rgba(155,127,192,0.15);margin-top:auto;">
-      <button id="dash-analyse-btn" style="flex:1;padding:13px 14px;border-radius:20px;border:1.5px solid #2D1B4E;background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <span style="font-size:16px;">🔍</span><span>Analysieren</span>
-      </button>
-      <button id="dash-chat-btn" style="flex:1;padding:13px 14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(45,27,78,0.2);">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="2" ry="4.2" fill="rgba(255,255,255,0.35)" transform="rotate(0)"/><ellipse rx="2" ry="4.2" fill="white" transform="rotate(45)" opacity="0.85"/><ellipse rx="2" ry="4.2" fill="rgba(255,255,255,0.35)" transform="rotate(90)"/><ellipse rx="2" ry="4.2" fill="white" transform="rotate(135)" opacity="0.85"/><ellipse rx="2" ry="4.2" fill="rgba(255,255,255,0.35)" transform="rotate(180)"/><ellipse rx="2" ry="4.2" fill="white" transform="rotate(225)" opacity="0.85"/><ellipse rx="2" ry="4.2" fill="rgba(255,255,255,0.35)" transform="rotate(270)"/><ellipse rx="2" ry="4.2" fill="white" transform="rotate(315)" opacity="0.85"/></g><circle cx="9" cy="9" r="2.2" fill="#D4863A"/></svg><span>Mit avie sprechen</span>
-      </button>
-    </div>
-  </div>`;
-
-  document.querySelector('.phone').appendChild(div);
-
-
-
-  div.querySelectorAll('[data-mood-label]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      // Update chip styles
-      div.querySelectorAll('[data-mood-label]').forEach(function(b) {
-        b.style.borderColor = 'rgba(155,127,192,0.25)';
-        b.style.background  = '#F7F4FC';
-        b.style.color       = '#6B5A88';
-        b.style.fontWeight  = '400';
-      });
-      this.style.borderColor = '#2D1B4E';
-      this.style.background  = '#2D1B4E';
-      this.style.color       = 'white';
-      this.style.fontWeight  = '500';
-
-      // Show avie feedback message
-      const label = this.dataset.moodLabel.toLowerCase().replace(/^[^\s]+\s/, '').trim();
-      const moodKey = Object.keys(MOOD_TIPS).find(k => this.dataset.moodLabel.toLowerCase().includes(k));
-      const feedbackWrap = div.querySelector('#mood-feedback');
-      const feedbackText = div.querySelector('#mood-feedback-text');
-      if (feedbackWrap && feedbackText && moodKey) {
-        feedbackWrap.style.display = 'block';
-        feedbackText.textContent = MOOD_TIPS[moodKey].avieMsg;
-      }
-
-      // Update tips
-      const container = div.querySelector('#tips-container');
-      if (moodKey) buildTips(moodKey, container);
-    });
-  });
-
-  // Wire tab buttons
-  div.querySelectorAll('[data-tab]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      switchDashTab(this.dataset.tab);
-    });
-  });
-
-  // Wire analyse button
-  const analyseBtn = div.querySelector('[data-analyse]') || div.querySelector('#dash-analyse-btn');
-  if (analyseBtn) analyseBtn.addEventListener('click', startDashAnalysis);
-
-  // Wire chat button
-  const chatBtn = div.querySelector('#dash-chat-btn');
-  if (chatBtn) chatBtn.addEventListener('click', closeDashboard);
-
-  // Wire wearable banner buttons
-  const wearableBtn = div.querySelector('[data-wearable-connect]');
-  const cycleBtn    = div.querySelector('[data-cycle-input]');
-  if (wearableBtn) wearableBtn.addEventListener('click', showOuraConnect);
-  if (cycleBtn)    cycleBtn.addEventListener('click',    showCycleInput);
-
-  // Wire locked score card clicks to open manual input
-  div.querySelectorAll('[data-open-manual]').forEach(function(el) {
-    el.addEventListener('click', showManualBodyInput);
-  });
-
-  // Wire zyklus & körperdaten info clicks
-  div.querySelectorAll('[data-info]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      showBodyInfo(this.dataset.info);
-    });
-  });
-
-  // Wire score card clicks via data-score attribute
-  div.querySelectorAll('[data-score]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      showScoreInfo(this.dataset.score);
-    });
-  });
-
-  // Wire dropdown toggle directly on live element
-  const toggleBtn = div.querySelector('[data-action="toggle-body"]');
-  const details   = div.querySelector('.dash-body-details');
-  const chevron   = div.querySelector('.dash-body-chevron');
-  if (toggleBtn && details) {
-    details.style.display = 'none';
-    toggleBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const isOpen = details.style.display === 'flex';
-      details.style.display = isOpen ? 'none' : 'flex';
-      details.style.flexDirection = 'column';
-      if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-    });
-  }
-}
-
-// ── Profil ──
-function showProfile() {
-  const old = document.getElementById('profile-overlay');
-  if (old) old.remove();
-
-  const BLOOM = '<svg width="44" height="44" viewBox="0 0 44 44" fill="none"><g transform="translate(22,22)"><ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(0)"/><ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(45)" opacity="0.88"/><ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(90)"/><ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(135)" opacity="0.88"/><ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(180)"/><ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(225)" opacity="0.88"/><ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(270)"/><ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(315)" opacity="0.88"/></g><circle cx="22" cy="22" r="5.2" fill="#D4863A"/></svg>';
-
-  const div = document.createElement('div');
-  div.id = 'profile-overlay';
-  div.style.cssText = 'position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;background:#EDE6F5;overflow:hidden;animation:dashIn 0.35s cubic-bezier(0.4,0,0.2,1) both;';
-
-  div.innerHTML = `
-    <div style="background:#2D1B4E;padding:52px 24px 28px;flex-shrink:0;position:relative;overflow:hidden;">
-      <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.05);pointer-events:none;"></div>
-      <div style="font-size:10px;font-weight:500;letter-spacing:0.15em;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:6px;">Mein Profil</div>
-
-      <!-- Avatar + Name -->
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:4px;">
-        <div style="width:56px;height:56px;border-radius:50%;background:rgba(155,127,192,0.3);border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          ${BLOOM}
-        </div>
-        <div>
-          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:white;line-height:1.1;" id="profile-username">${userName}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px;">Mitglied seit Mai 2025</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 24px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;">
-
-      <!-- Zyklus-Einstellungen -->
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;">Zyklus</div>
-      <div style="background:white;border-radius:16px;overflow:hidden;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #EBE4F5;">
-          <div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Zyklus-Länge</div>
-            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Durchschnitt der letzten 3 Monate</div>
-          </div>
-          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2D1B4E;">~28 Tage</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #EBE4F5;">
-          <div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Letzte Periode</div>
-            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Startdatum</div>
-          </div>
-          <div style="font-size:13px;color:#2D1B4E;font-weight:500;">13. Mai 2025</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
-          <div>
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Aktuelle Phase</div>
-            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Tag 19 von ~28</div>
-          </div>
-          <div style="padding:4px 12px;border-radius:20px;background:rgba(155,127,192,0.12);color:#9B7FC0;font-size:12px;font-weight:500;">Lutealphase</div>
-        </div>
-      </div>
-
-      <!-- Persönliche Infos -->
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;">Persönliches</div>
-      <div style="background:white;border-radius:16px;overflow:hidden;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #EBE4F5;">
-          <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Alter</div>
-          <div style="font-size:13px;color:#6B5A88;" id="profile-alter">32 Jahre</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #EBE4F5;">
-          <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Kinder</div>
-          <div style="font-size:13px;color:#6B5A88;" id="profile-kinder">Keine (noch nicht)</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
-          <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Alltag</div>
-          <div style="font-size:13px;color:#6B5A88;" id="profile-lifestyle">Job sehr intensiv</div>
-        </div>
-      </div>
-
-      <!-- Verbindungen -->
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;">Verbindungen</div>
-      <div style="background:white;border-radius:16px;overflow:hidden;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #EBE4F5;">
-          <div style="width:36px;height:36px;border-radius:10px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💍</div>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Oura Ring</div>
-            <div style="font-size:11px;color:#A090BC;">HRV · Schlaf · Temperatur · Aktivität</div>
-          </div>
-          <div style="padding:4px 10px;border-radius:8px;background:rgba(123,196,127,0.12);color:#4A9E50;font-size:11px;font-weight:500;">Verbunden</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🍎</div>
-          <div style="flex:1;">
-            <div style="font-size:13px;font-weight:500;color:#2D1B4E;">Apple Health</div>
-            <div style="font-size:11px;color:#A090BC;">Schritte · Aktivität</div>
-          </div>
-          <div style="padding:4px 10px;border-radius:8px;background:rgba(155,127,192,0.1);color:#9B7FC0;font-size:11px;font-weight:500;">Verbinden</div>
-        </div>
-      </div>
-
-      <!-- Avie-Statistik -->
-      <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;">avie & ich</div>
-      <div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.06);">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
-          <div>
-            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#2D1B4E;">12</div>
-            <div style="font-size:10px;color:#A090BC;margin-top:2px;">Gespräche</div>
-          </div>
-          <div style="border-left:1px solid #EBE4F5;border-right:1px solid #EBE4F5;">
-            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#2D1B4E;">7</div>
-            <div style="font-size:10px;color:#A090BC;margin-top:2px;">Tage dabei</div>
-          </div>
-          <div>
-            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:24px;color:#D4863A;">💜</div>
-            <div style="font-size:10px;color:#A090BC;margin-top:2px;">Mood geloggt</div>
-          </div>
+        <div id="koerper-card-real-content" style="padding:0 16px 12px;">
         </div>
       </div>
 
     </div>
 
-    <!-- Close -->
-    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;">
-      <button onclick="document.getElementById('profile-overlay').remove()" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button>
+    <!-- CTA -->
+    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;display:flex;gap:10px;">
+      <button id="dash-analyse-btn" style="flex:1;padding:14px;border-radius:20px;border:1.5px solid #2D1B4E;background:transparent;color:#2D1B4E;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">🔍 Analysieren</button>
+      <button id="dash-chat-btn" style="flex:1;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#D4863A;display:inline-block;"></span>Mit avie sprechen</button>
     </div>
   `;
 
   document.querySelector('.phone').appendChild(div);
+
+  // Restore data if already entered
+  if (window.manualBodyData) {
+    var mb = window.manualBodyData;
+    var sleep = { str: mb.sleepStr || '—', mins: mb.sleepMins || 0 };
+    setTimeout(function() {
+      updateManualScoreCards(mb.energyScore, sleep, mb.stressScore);
+    }, 100);
+  }
+  if (window.cycleData) {
+    setTimeout(function() {
+      populateZyklusCard(window.cycleData);
+    }, 150);
+  }
+
+  // Auto-open body input if no data entered yet today
+  setTimeout(function() {
+    if (!window.manualBodyData) {
+      showManualBodyInput();
+    }
+  }, 600);
 
   // Fill from klAnswers
   const alterLabels = {'18-24':'18–24 Jahre','25-34':'25–34 Jahre','35-44':'35–44 Jahre','45+':'45+ Jahre'};
@@ -3290,7 +2971,7 @@ function showOuraConnect() {
       <div class="score-popup-handle"></div>
       <div style="text-align:center;padding:8px 0 16px;">
         <div style="font-size:48px;margin-bottom:12px;">💍</div>
-        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:#2D1B4E;margin-bottom:6px;">Oura Ring verbinden</div>
+        <div style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:#2D1B4E;margin-bottom:6px;">Wearable verbinden</div>
         <div style="font-size:13px;color:#6B5A88;line-height:1.55;">avie liest HRV, Schlaf, Temperatur und Aktivität direkt aus deinem Ring. Deine Daten verlassen nie dein Gerät.</div>
       </div>
       <div style="background:#F7F4FC;border-radius:14px;padding:14px 16px;margin-bottom:16px;">
@@ -3316,7 +2997,7 @@ function showOuraConnect() {
       bd.querySelector('.score-popup').innerHTML = `
         <div style="text-align:center;padding:24px 0;">
           <div style="font-size:56px;margin-bottom:16px;">✅</div>
-          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:#2D1B4E;margin-bottom:8px;">Oura Ring verbunden!</div>
+          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:#2D1B4E;margin-bottom:8px;">Wearable verbunden!</div>
           <div style="font-size:13px;color:#6B5A88;line-height:1.55;margin-bottom:20px;">avie liest jetzt deine Körperdaten. Die Werte im Dashboard werden ab morgen früh aktualisiert.</div>
           <button onclick="connectOuraSuccess(this)" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Super, los geht's ✓</button>
         </div>`;
@@ -3453,7 +3134,6 @@ function showCycleInput() {
       removeDashWearableBanner();
       personalizeApp();
       refreshGreeting();
-      setTimeout(() => showManualBodyInput(), 600);
     }, 1200);
   });
 }
@@ -3461,160 +3141,270 @@ function showCycleInput() {
 // ── Manuelle Körperdaten Eingabe ──
 function showManualBodyInput() {
   const phone = document.querySelector('.phone');
+  const old = document.getElementById('mb-overlay');
+  if (old) old.remove();
+
+  const manualData = window.manualBodyData || { bedTime: '23:00', wakeTime: '07:00', energy: 3, stress: 3, recovery: '', hrv: '', rhr: '', deep: '', rem: '', temp: '' };
+
+  const energyLabels = ['', 'Sehr niedrig', 'Niedrig', 'Okay', 'Gut', 'Top'];
+  const stressLabels = ['', 'Sehr entspannt', 'Entspannt', 'Leicht angespannt', 'Gestresst', 'Sehr gestresst'];
+
   const bd = document.createElement('div');
+  bd.id = 'mb-overlay';
   bd.className = 'score-popup-backdrop';
+  bd.onclick = function(e) { if (e.target === bd) bd.remove(); };
 
-  const BLOOM = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><g transform="translate(8,8)"><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="1.4" ry="3.3" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="1.4" ry="3.3" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="8" cy="8" r="1.7" fill="#D4863A"/></svg>';
+  let mbStep = 1;
 
-  let manualData = { bedTime: '23:00', wakeTime: '07:00', energy: 3, stress: 3, steps: '' };
-
-  function calcSleep(bed, wake) {
-    const [bh, bm] = bed.split(':').map(Number);
-    const [wh, wm] = wake.split(':').map(Number);
-    let mins = (wh * 60 + wm) - (bh * 60 + bm);
-    if (mins < 0) mins += 24 * 60;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return { h, m, str: `${h}h ${m > 0 ? m + 'm' : ''}`.trim(), mins };
-  }
-
-  function renderContent() {
-    const sleep = calcSleep(manualData.bedTime, manualData.wakeTime);
-    const sleepColor = sleep.mins >= 420 ? '#4A9E50' : sleep.mins >= 360 ? '#9B7FC0' : '#D4863A';
-    const energyLabels = ['', 'Sehr niedrig', 'Eher niedrig', 'Okay', 'Gut', 'Sehr gut'];
-    const stressLabels = ['', 'Sehr entspannt', 'Eher ruhig', 'Leicht angespannt', 'Gestresst', 'Sehr gestresst'];
-
-    return `
-      <div class="score-popup" style="max-height:95vh;overflow-y:auto;">
-        <div style="width:36px;height:4px;border-radius:2px;background:#EBE4F5;margin:0 auto 16px;"></div>
-
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <div style="width:36px;height:36px;border-radius:10px;background:#EBE4F5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${BLOOM}</div>
-          <div>
-            <div style="font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2D1B4E;line-height:1.2;">Deine heutigen Werte</div>
-            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Ohne Wearable — gib ein was du weißt</div>
-          </div>
-        </div>
-
-        <!-- Schlaf -->
-        <div style="background:#F7F4FC;border-radius:14px;padding:14px 16px;margin-bottom:12px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9B7FC0;margin-bottom:12px;">😴 Schlaf letzte Nacht</div>
-          <div style="display:flex;gap:10px;margin-bottom:10px;align-items:flex-end;justify-content:center;">
-            <div style="text-align:center;">
-              <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Ins Bett um</div>
-              <input type="time" id="mb-bed" value="${manualData.bedTime}"
-                style="width:120px;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:16px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"/>
-            </div>
-            <div style="font-size:18px;color:#A090BC;padding-bottom:10px;">→</div>
-            <div style="text-align:center;">
-              <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Aufgewacht um</div>
-              <input type="time" id="mb-wake" value="${manualData.wakeTime}"
-                style="width:120px;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:16px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"/>
+  function renderStep() {
+    const pages = {
+      1: `
+        <div class="score-popup" style="max-height:95vh;overflow-y:auto;">
+          <div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 20px;"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:#EDE6F5;display:flex;align-items:center;justify-content:center;font-size:18px;">😴</div>
+            <div>
+              <div style="font-size:16px;font-weight:600;color:#2D1B4E;">Deine heutigen Werte</div>
+              <div style="font-size:12px;color:#A090BC;">Schritt 1 von 3 — Schlaf</div>
             </div>
           </div>
-          <div style="text-align:center;font-family:'DM Serif Display',Georgia,serif;font-size:22px;color:${sleepColor};" id="mb-sleep-display">${sleep.str}</div>
-          <div style="text-align:center;font-size:11px;color:#A090BC;margin-top:2px;" id="mb-sleep-label">${sleep.mins >= 420 ? 'Gut geschlafen ✓' : sleep.mins >= 360 ? 'Etwas wenig' : 'Zu wenig Schlaf'}</div>
-        </div>
 
-        <!-- Energie -->
-        <div style="background:#F7F4FC;border-radius:14px;padding:14px 16px;margin-bottom:12px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D4863A;margin-bottom:10px;">⚡ Energielevel heute</div>
-          <div style="display:flex;gap:6px;">
-            ${[1,2,3,4,5].map(n => `<button class="mb-energy-btn" data-val="${n}" style="flex:1;padding:10px 4px;border-radius:10px;border:1.5px solid ${manualData.energy===n?'#D4863A':'rgba(155,127,192,0.2)'};background:${manualData.energy===n?'#D4863A':'white'};color:${manualData.energy===n?'white':'#6B5A88'};font-family:inherit;font-size:13px;font-weight:${manualData.energy===n?'600':'400'};cursor:pointer;">${n}</button>`).join('')}
+          <div style="display:flex;gap:4px;margin-bottom:20px;">
+            <div style="flex:1;height:3px;border-radius:2px;background:#2D1B4E;"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#E0D8F0;"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#E0D8F0;"></div>
           </div>
-          <div style="text-align:center;font-size:11px;color:#A090BC;margin-top:6px;" id="mb-energy-label">${energyLabels[manualData.energy]}</div>
-        </div>
 
-        <!-- Stress -->
-        <div style="background:#F7F4FC;border-radius:14px;padding:14px 16px;margin-bottom:16px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#5A88CC;margin-bottom:10px;">🌀 Stresslevel heute</div>
-          <div style="display:flex;gap:6px;">
-            ${[1,2,3,4,5].map(n => `<button class="mb-stress-btn" data-val="${n}" style="flex:1;padding:10px 4px;border-radius:10px;border:1.5px solid ${manualData.stress===n?'#5A88CC':'rgba(155,127,192,0.2)'};background:${manualData.stress===n?'#5A88CC':'white'};color:${manualData.stress===n?'white':'#6B5A88'};font-family:inherit;font-size:13px;font-weight:${manualData.stress===n?'600':'400'};cursor:pointer;">${n}</button>`).join('')}
+          <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9B7FC0;margin-bottom:14px;">😴 Schlaf letzte Nacht</div>
+            <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;justify-content:center;">
+              <div style="text-align:center;">
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Ins Bett um</div>
+                <input type="time" id="mb-bed" value="${manualData.bedTime}"
+                  style="width:120px;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:16px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"/>
+              </div>
+              <div style="font-size:18px;color:#A090BC;padding-bottom:10px;">→</div>
+              <div style="text-align:center;">
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Aufgewacht um</div>
+                <input type="time" id="mb-wake" value="${manualData.wakeTime}"
+                  style="width:120px;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:16px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"/>
+              </div>
+            </div>
+            <div id="mb-sleep-display" style="text-align:center;font-size:22px;font-weight:700;color:#4A9E50;margin-bottom:2px;">—</div>
+            <div id="mb-sleep-label" style="text-align:center;font-size:11px;color:#A090BC;">Bettzeit und Aufwachzeit eingeben</div>
           </div>
-          <div style="text-align:center;font-size:11px;color:#A090BC;margin-top:6px;" id="mb-stress-label">${stressLabels[manualData.stress]}</div>
-        </div>
 
-        <button id="mb-save" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:10px;">Werte speichern →</button>
-        <button id="mb-skip" style="width:100%;padding:12px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:transparent;color:#A090BC;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Später eingeben</button>
-      </div>`;
-  }
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button onclick="document.getElementById('mb-overlay').remove()" style="flex:1;padding:12px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:transparent;color:#A090BC;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Später</button>
+            <button id="mb-next-1" style="flex:2;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Weiter →</button>
+          </div>
+        </div>`,
 
-  bd.innerHTML = renderContent();
-  phone.appendChild(bd);
+      2: `
+        <div class="score-popup" style="max-height:95vh;overflow-y:auto;">
+          <div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 20px;"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:#EDE6F5;display:flex;align-items:center;justify-content:center;font-size:18px;">⚡</div>
+            <div>
+              <div style="font-size:16px;font-weight:600;color:#2D1B4E;">Deine heutigen Werte</div>
+              <div style="font-size:12px;color:#A090BC;">Schritt 2 von 3 — Energie & Stress</div>
+            </div>
+          </div>
 
-  function rewire() {
-    const energyLabels = ['', 'Sehr niedrig', 'Eher niedrig', 'Okay', 'Gut', 'Sehr gut'];
-    const stressLabels = ['', 'Sehr entspannt', 'Eher ruhig', 'Leicht angespannt', 'Gestresst', 'Sehr gestresst'];
+          <div style="display:flex;gap:4px;margin-bottom:20px;">
+            <div style="flex:1;height:3px;border-radius:2px;background:#2D1B4E;"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#2D1B4E;"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#E0D8F0;"></div>
+          </div>
 
-    bd.querySelectorAll('.mb-energy-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        manualData.energy = parseInt(this.dataset.val);
-        bd.querySelector('#mb-energy-label').textContent = energyLabels[manualData.energy];
-        bd.querySelectorAll('.mb-energy-btn').forEach(b => {
-          const active = parseInt(b.dataset.val) === manualData.energy;
-          b.style.background = active ? '#D4863A' : 'white';
-          b.style.borderColor = active ? '#D4863A' : 'rgba(155,127,192,0.2)';
-          b.style.color = active ? 'white' : '#6B5A88';
-          b.style.fontWeight = active ? '600' : '400';
-        });
-      });
-    });
+          <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9B7FC0;margin-bottom:12px;">⚡ Energielevel heute</div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
+              ${[1,2,3,4,5].map(function(n){
+                var sel = manualData.energy === n;
+                return '<div class="mb-energy-btn" data-val="'+n+'" style="width:52px;height:52px;border-radius:12px;border:1.5px solid '+(sel?'#D4863A':'rgba(155,127,192,0.2)')+';background:'+(sel?'#D4863A':'white')+';color:'+(sel?'white':'#2D1B4E')+';font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;">'+n+'</div>';
+              }).join('')}
+            </div>
+            <div id="mb-energy-label" style="text-align:center;font-size:11px;color:#A090BC;">${energyLabels[manualData.energy] || 'Okay'}</div>
+          </div>
 
-    bd.querySelectorAll('.mb-stress-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        manualData.stress = parseInt(this.dataset.val);
-        bd.querySelector('#mb-stress-label').textContent = stressLabels[manualData.stress];
-        bd.querySelectorAll('.mb-stress-btn').forEach(b => {
-          const active = parseInt(b.dataset.val) === manualData.stress;
-          b.style.background = active ? '#5A88CC' : 'white';
-          b.style.borderColor = active ? '#5A88CC' : 'rgba(155,127,192,0.2)';
-          b.style.color = active ? 'white' : '#6B5A88';
-          b.style.fontWeight = active ? '600' : '400';
-        });
-      });
-    });
+          <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9B7FC0;margin-bottom:12px;">🌀 Stresslevel heute</div>
+            <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
+              ${[1,2,3,4,5].map(function(n){
+                var sel = manualData.stress === n;
+                return '<div class="mb-stress-btn" data-val="'+n+'" style="width:52px;height:52px;border-radius:12px;border:1.5px solid '+(sel?'#6B8FD4':'rgba(155,127,192,0.2)')+';background:'+(sel?'#6B8FD4':'white')+';color:'+(sel?'white':'#2D1B4E')+';font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;">'+n+'</div>';
+              }).join('')}
+            </div>
+            <div id="mb-stress-label" style="text-align:center;font-size:11px;color:#A090BC;">${stressLabels[manualData.stress] || 'Leicht angespannt'}</div>
+          </div>
 
-    ['#mb-bed','#mb-wake'].forEach(sel => {
-      bd.querySelector(sel).addEventListener('input', function() {
-        manualData.bedTime  = bd.querySelector('#mb-bed').value;
-        manualData.wakeTime = bd.querySelector('#mb-wake').value;
-        const s = calcSleep(manualData.bedTime, manualData.wakeTime);
-        const col = s.mins >= 420 ? '#4A9E50' : s.mins >= 360 ? '#9B7FC0' : '#D4863A';
-        bd.querySelector('#mb-sleep-display').textContent = s.str;
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="mb-back-2" style="flex:1;padding:14px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:transparent;color:#6B5A88;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">← Zurück</button>
+            <button id="mb-next-2" style="flex:2;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Weiter →</button>
+          </div>
+        </div>`,
+
+      3: `
+        <div class="score-popup" style="max-height:95vh;overflow-y:auto;">
+          <div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 20px;"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:36px;height:36px;border-radius:10px;background:#EDE6F5;display:flex;align-items:center;justify-content:center;font-size:18px;">⌚</div>
+            <div>
+              <div style="font-size:16px;font-weight:600;color:#2D1B4E;">Deine heutigen Werte</div>
+              <div style="font-size:12px;color:#A090BC;">Schritt 3 von 3 — Wearable (optional)</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:4px;margin-bottom:20px;">
+            <div style="flex:1;height:3px;border-radius:2px;background:#2D1B4E;"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#2D1B4E;"></div>
+            <div style="flex:1;height:3px;border-radius:2px;background:#2D1B4E;"></div>
+          </div>
+
+          <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:16px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9B7FC0;margin-bottom:14px;">⌚ Wearable Daten</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div>
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Recovery Score (0–100)</div>
+                <input type="number" id="mb-recovery" min="0" max="100" placeholder="z.B. 72"
+                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:15px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"
+                  value="${manualData.recovery || ''}"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">HRV (ms)</div>
+                <input type="number" id="mb-hrv" min="10" max="120" placeholder="z.B. 42"
+                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:15px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"
+                  value="${manualData.hrv || ''}"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Ruhepuls (bpm)</div>
+                <input type="number" id="mb-rhr" min="35" max="100" placeholder="z.B. 58"
+                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:15px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"
+                  value="${manualData.rhr || ''}"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Temp. Abw. (°C)</div>
+                <input type="number" id="mb-temp" min="-2" max="3" step="0.1" placeholder="z.B. +0.2"
+                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:15px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"
+                  value="${manualData.temp || ''}"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">Tiefschlaf (min)</div>
+                <input type="number" id="mb-deep" min="0" max="200" placeholder="z.B. 90"
+                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:15px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"
+                  value="${manualData.deep || ''}"/>
+              </div>
+              <div>
+                <div style="font-size:11px;color:#A090BC;margin-bottom:5px;">REM-Schlaf (min)</div>
+                <input type="number" id="mb-rem" min="0" max="200" placeholder="z.B. 100"
+                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:inherit;font-size:15px;color:#2D1B4E;outline:none;box-sizing:border-box;text-align:center;"
+                  value="${manualData.rem || ''}"/>
+              </div>
+            </div>
+            <div style="font-size:11px;color:#C0B0D0;text-align:center;">Funktioniert mit Oura, Apple Watch, Garmin & Co.</div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button id="mb-back-3" style="flex:1;padding:14px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:transparent;color:#6B5A88;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">← Zurück</button>
+            <button id="mb-save" style="flex:2;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Speichern ✓</button>
+          </div>
+        </div>`
+    };
+
+    bd.innerHTML = pages[mbStep];
+
+    // Step 1 handlers
+    if (mbStep === 1) {
+      function calcSleep() {
+        var bed = bd.querySelector('#mb-bed').value;
+        var wake = bd.querySelector('#mb-wake').value;
+        if (!bed || !wake) return;
+        var bh = parseInt(bed.split(':')[0]), bm = parseInt(bed.split(':')[1]);
+        var wh = parseInt(wake.split(':')[0]), wm = parseInt(wake.split(':')[1]);
+        var mins = (wh * 60 + wm) - (bh * 60 + bm);
+        if (mins < 0) mins += 24 * 60;
+        var h = Math.floor(mins / 60), m = mins % 60;
+        var str = h + 'h' + (m ? ' ' + m + 'm' : '');
+        var col = mins >= 420 ? '#4A9E50' : mins >= 360 ? '#D4863A' : '#C0392B';
+        var lbl = mins >= 420 ? 'Gut geschlafen ✓' : mins >= 360 ? 'Etwas wenig' : 'Zu wenig Schlaf';
+        bd.querySelector('#mb-sleep-display').textContent = str;
         bd.querySelector('#mb-sleep-display').style.color = col;
-        bd.querySelector('#mb-sleep-label').textContent = s.mins >= 420 ? 'Gut geschlafen ✓' : s.mins >= 360 ? 'Etwas wenig' : 'Zu wenig Schlaf';
+        bd.querySelector('#mb-sleep-label').textContent = lbl;
+        manualData.bedTime = bed; manualData.wakeTime = wake;
+        manualData._sleepStr = str; manualData._sleepMins = mins;
+      }
+      bd.querySelector('#mb-bed').addEventListener('change', calcSleep);
+      bd.querySelector('#mb-wake').addEventListener('change', calcSleep);
+      calcSleep();
+      bd.querySelector('#mb-next-1').addEventListener('click', function() {
+        mbStep = 2; renderStep();
       });
-    });
+    }
 
-    bd.querySelector('#mb-save').addEventListener('click', function() {
-      manualData.bedTime  = bd.querySelector('#mb-bed').value;
-      manualData.wakeTime = bd.querySelector('#mb-wake').value;
-      const sleep = calcSleep(manualData.bedTime, manualData.wakeTime);
-      const energyScore = Math.round(manualData.energy * 20);
-      const stressScore = Math.round((6 - manualData.stress) * 20);
+    // Step 2 handlers
+    if (mbStep === 2) {
+      bd.querySelectorAll('.mb-energy-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          manualData.energy = parseInt(this.dataset.val);
+          bd.querySelectorAll('.mb-energy-btn').forEach(function(b) {
+            var sel = parseInt(b.dataset.val) === manualData.energy;
+            b.style.background = sel ? '#D4863A' : 'white';
+            b.style.color = sel ? 'white' : '#2D1B4E';
+            b.style.borderColor = sel ? '#D4863A' : 'rgba(155,127,192,0.2)';
+          });
+          bd.querySelector('#mb-energy-label').textContent = energyLabels[manualData.energy];
+        });
+      });
+      bd.querySelectorAll('.mb-stress-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          manualData.stress = parseInt(this.dataset.val);
+          bd.querySelectorAll('.mb-stress-btn').forEach(function(b) {
+            var sel = parseInt(b.dataset.val) === manualData.stress;
+            b.style.background = sel ? '#6B8FD4' : 'white';
+            b.style.color = sel ? 'white' : '#2D1B4E';
+            b.style.borderColor = sel ? '#6B8FD4' : 'rgba(155,127,192,0.2)';
+          });
+          bd.querySelector('#mb-stress-label').textContent = stressLabels[manualData.stress];
+        });
+      });
+      bd.querySelector('#mb-back-2').addEventListener('click', function() { mbStep = 1; renderStep(); });
+      bd.querySelector('#mb-next-2').addEventListener('click', function() { mbStep = 3; renderStep(); });
+    }
 
-      // Store for analysis
-      window.manualBodyData = {
-        energyScore, sleepStr: sleep.str, sleepMins: sleep.mins, stressScore
-      };
-
-      // Refresh homescreen greeting and mood tips with new data
-      personalizeApp();
-      refreshGreeting();
-
-      // Update score cards with manual values
-      updateManualScoreCards(energyScore, sleep, stressScore);
-
-      this.textContent = '✓ Gespeichert!';
-      this.style.background = '#4A9E50';
-      setTimeout(() => bd.remove(), 1000);
-    });
-
-    bd.querySelector('#mb-skip').addEventListener('click', () => bd.remove());
+    // Step 3 handlers
+    if (mbStep === 3) {
+      bd.querySelector('#mb-back-3').addEventListener('click', function() { mbStep = 2; renderStep(); });
+      bd.querySelector('#mb-save').addEventListener('click', function() {
+        var sleep = { str: manualData._sleepStr || '—', mins: manualData._sleepMins || 0 };
+        var energyScore = Math.round((manualData.energy / 5) * 100);
+        var stressScore  = Math.round((manualData.stress / 5) * 100);
+        window.manualBodyData = {
+          energyScore: energyScore,
+          sleepStr:    sleep.str,
+          sleepMins:   sleep.mins,
+          stressScore: stressScore,
+          recovery: bd.querySelector('#mb-recovery').value || null,
+          hrv:      bd.querySelector('#mb-hrv').value      || null,
+          rhr:      bd.querySelector('#mb-rhr').value      || null,
+          deep:     bd.querySelector('#mb-deep').value     || null,
+          rem:      bd.querySelector('#mb-rem').value      || null,
+          temp:     bd.querySelector('#mb-temp').value     || null
+        };
+        bd.remove();
+        personalizeApp();
+        refreshGreeting();
+        updateManualScoreCards(energyScore, sleep, stressScore);
+        removeDashWearableBanner();
+        rewireDashCTA();
+      });
+    }
   }
 
-  rewire();
+  phone.appendChild(bd);
+  renderStep();
 }
+
 
 function rewireDashCTA() {
   const dash = document.getElementById('dashboard');
@@ -3659,6 +3449,65 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
     });
     rewireDashCTA();
   }, 300);
+
+  // Also populate körperdaten card with manual Oura values
+  const mb = window.manualBodyData;
+  if (!mb) return;
+  const koerperLocked = dash.querySelector('#koerper-card');
+  const koerperReal   = dash.querySelector('#koerper-card-real');
+
+  // Build real card rows from manual data
+  setTimeout(() => {
+    const sleepCol = sleep.mins >= 420 ? '#4A9E50' : sleep.mins >= 360 ? '#D4863A' : '#C0392B';
+    const sleepTag = sleep.mins >= 420 ? 'okay' : sleep.mins >= 360 ? 'etwas wenig' : 'zu wenig';
+    const hrvVal   = mb.hrv  ? mb.hrv  + ' ms'  : '—';
+    const rhrVal   = mb.rhr  ? mb.rhr  + ' bpm' : '—';
+    const tempVal  = mb.temp ? (mb.temp > 0 ? '+' : '') + mb.temp + '°C' : '—';
+    const hrvTag   = mb.hrv  ? (mb.hrv < 35 ? 'niedrig' : mb.hrv < 55 ? 'normal' : 'gut') : '';
+    const rhrTag   = mb.rhr  ? (mb.rhr < 50 ? 'niedrig' : mb.rhr <= 70 ? 'normal' : 'erhöht') : '';
+
+    const row = (emoji, label, val, sub, tag, tagCol) => `
+      <div data-info="${label.toLowerCase()}" style="padding:12px 0;border-bottom:1px solid #EBE4F5;cursor:pointer;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:#A090BC;margin-bottom:3px;">${label}</div>
+            <div style="font-size:15px;font-weight:500;color:#2D1B4E;">${emoji} ${val}</div>
+            ${sub ? '<div style="font-size:11px;color:#A090BC;margin-top:2px;">' + sub + '</div>' : ''}
+          </div>
+          ${tag ? '<span style="font-size:10px;padding:3px 9px;border-radius:20px;background:' + tagCol + ';color:white;">' + tag + '</span>' : ''}
+        </div>
+      </div>`;
+
+    const newHTML =
+      row('😴', 'Schlaf', sleep.str, mb.deep || mb.rem ? (mb.deep ? 'Tief: ' + mb.deep + 'min' : '') + (mb.deep && mb.rem ? ' · ' : '') + (mb.rem ? 'REM: ' + mb.rem + 'min' : '') : 'manuell', sleepTag, sleepCol) +
+      (mb.recovery ? row('🔋', 'Recovery Score', mb.recovery + '/100', '', mb.recovery >= 70 ? 'gut' : mb.recovery >= 50 ? 'okay' : 'niedrig', mb.recovery >= 70 ? '#4A9E50' : mb.recovery >= 50 ? '#D4863A' : '#C0392B') : '') +
+      (mb.hrv  ? row('💓', 'HRV', mb.hrv + ' ms', '', mb.hrv < 35 ? 'niedrig' : mb.hrv < 55 ? 'normal' : 'gut', mb.hrv < 35 ? '#C0392B' : mb.hrv < 55 ? '#D4863A' : '#4A9E50') : '') +
+      (mb.rhr  ? row('❤️', 'Ruhepuls', mb.rhr + ' bpm', '', mb.rhr <= 60 ? 'gut' : mb.rhr <= 70 ? 'normal' : 'erhöht', mb.rhr <= 60 ? '#4A9E50' : mb.rhr <= 70 ? '#D4863A' : '#C0392B') : '') +
+      (mb.temp ? row('🌡️', 'Körpertemperatur', (mb.temp > 0 ? '+' : '') + mb.temp + '°C', 'Abweichung vom Schnitt', '', '') : '');
+
+    if (koerperLocked) {
+      koerperLocked.style.animation = 'dashOut 0.3s ease both';
+      koerperLocked.addEventListener('animationend', () => {
+        koerperLocked.remove();
+        if (koerperReal) {
+          const content = koerperReal.querySelector('#koerper-card-real-content') || koerperReal;
+          content.innerHTML = newHTML;
+          koerperReal.style.display = 'block';
+          koerperReal.style.animation = 'dashIn 0.35s ease both';
+          koerperReal.querySelectorAll('[data-info]').forEach(el => {
+            el.addEventListener('click', () => showBodyInfo(el.dataset.info));
+          });
+        }
+        rewireDashCTA();
+      });
+    } else if (koerperReal && koerperReal.style.display !== 'none') {
+      const content = koerperReal.querySelector('#koerper-card-real-content') || koerperReal;
+      content.innerHTML = newHTML;
+      koerperReal.querySelectorAll('[data-info]').forEach(el => {
+        el.addEventListener('click', () => showBodyInfo(el.dataset.info));
+      });
+    }
+  }, 500);
 }
 
 function populateZyklusCard(data) {
@@ -3691,10 +3540,11 @@ function populateZyklusCard(data) {
     locked.remove();
     real.style.display = 'block';
     real.style.animation = 'dashIn 0.35s ease both';
-    // Wire info click
-    real.dataset.info = 'zyklus';
     real.style.cursor = 'pointer';
-    real.addEventListener('click', () => showBodyInfo('zyklus'));
+    real.addEventListener('click', function(e) {
+      if (e.target.closest('button')) return; // ignore bearbeiten button
+      showBodyInfo('zyklus');
+    });
   });
 }
 
@@ -3936,7 +3786,6 @@ function addMsg(text, who) {
   if (!msgs) return;
   var row = document.createElement('div');
   row.className = 'msg-row ' + who;
-  var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="1.6" ry="3.8" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="1.6" ry="3.8" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="9" cy="9" r="2" fill="#D4863A"/></svg>';
   if (who === 'avie') {
     row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div><div class="bubble avie">' + text + '</div><div class="msg-time">' + now() + '</div></div>';
   } else {
@@ -3949,7 +3798,7 @@ function addMsg(text, who) {
 function showTyping() {
   var msgs = document.getElementById('messages');
   if (!msgs) return;
-  var BLOOM = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><g transform="translate(9,9)"><ellipse rx="2" ry="4.2" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="2" ry="4.2" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/></g><circle cx="9" cy="9" r="2.2" fill="#D4863A"/></svg>';
+
   var row = document.createElement('div');
   row.className = 'typing-row'; row.id = 'typing-indicator';
   row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div class="typing-bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
@@ -4013,9 +3862,15 @@ function buildSystemPrompt() {
     koerperContext += '- Zyklusphase: Lutealphase, Tag 19 von ~28 (Demo-Daten)\n';
   }
   if (mb) {
-    koerperContext += '- Schlaf letzte Nacht: ' + mb.sleepStr + '\n';
-    koerperContext += '- Energie-Score: ' + mb.energyScore + '/100\n';
-    koerperContext += '- Stress-Score: ' + mb.stressScore + '/100\n';
+    koerperContext += '- Schlaf: ' + mb.sleepStr + '\n';
+    koerperContext += '- Energie (selbst): ' + mb.energyScore + '/100\n';
+    koerperContext += '- Stress (selbst): ' + mb.stressScore + '/100\n';
+    if (mb.recovery) koerperContext += '- Recovery Score: ' + mb.recovery + '/100\n';
+    if (mb.hrv)      koerperContext += '- HRV: ' + mb.hrv + ' ms\n';
+    if (mb.rhr)      koerperContext += '- Ruhepuls: ' + mb.rhr + ' bpm\n';
+    if (mb.deep)     koerperContext += '- Tiefschlaf: ' + mb.deep + ' min\n';
+    if (mb.rem)      koerperContext += '- REM-Schlaf: ' + mb.rem + ' min\n';
+    if (mb.temp)     koerperContext += '- Körpertemperatur: ' + (mb.temp > 0 ? '+' : '') + mb.temp + '\xb0C\n';
   } else {
     koerperContext += '- HRV: 42 ms (Demo-Daten)\n- Schlaf: 6h 48m (Demo-Daten)\n- Energie-Score: 62/100 (Demo-Daten)\n';
   }

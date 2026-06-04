@@ -2022,36 +2022,75 @@ function personalizeApp() {
   function buildGreeting() {
     const cd = window.cycleData;
     const mb = window.manualBodyData;
-    const phase    = cd ? cd.phase    : 'Lutealphase';
-    const cycleDay = cd ? cd.cycleDay : 19;
+    const phase    = cd ? cd.phase    : null;
+    const cycleDay = cd ? cd.cycleDay : null;
 
-    const kinderCtx = {
-      'keine':    '',
-      'ja-klein': ' Mit kleinen Kindern weißt du, wie wenig Zeit für dich bleibt.',
-      'ja-gross': ' Auch mit größeren Kindern bleibt der mentale Load hoch.'
-    };
-    const lifestyleCtx = {
-      'job-intensiv':  ' Dein intensiver Job macht Erholung heute besonders wichtig.',
-      'ausgewogen':    '',
-      'zuhause':       ' Auch zuhause gibt es unsichtbare Lasten — dein Körper spürt das.',
-      'unberechenbar': ' Dein unberechenbarer Alltag macht es schwerer, auf Signale zu hören.'
-    };
+    // Build time-aware greeting
+    const hour = new Date().getHours();
+    const timeGreet = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
 
-    let greet = `Guuuuten Morgen ☀️ Du bist in der <strong>${phase}</strong>`;
-    if (cd) greet += `, Tag ${cycleDay} von ${cd.selectedLen}`;
-    greet += ' —';
-    if (phase === 'Lutealphase') greet += ' Östrogen sinkt, Progesteron steigt.';
-    else if (phase === 'Follikelphase') greet += ' Östrogen steigt, du bist im Aufschwung.';
-    else if (phase === 'Ovulation') greet += ' du bist auf dem Energiegipfel.';
-    else greet += ' dein Körper erholt sich.';
-
-    if (mb) {
-      if (mb.sleepMins < 360) greet += ` Dein Schlaf war mit ${mb.sleepStr} kurz — sei heute sanft mit dir.`;
-      else if (mb.energyScore < 50) greet += ` Deine Energie ist heute niedrig (${mb.energyScore}) — das ist okay.`;
+    // No data at all
+    if (!cd && !mb) {
+      return timeGreet + ' 👋<br><br>Trag heute deine Werte ins Dashboard ein — dann kann avie dir wirklich zeigen was gerade in deinem Körper los ist.<br><br>Wie geht\'s dir heute?';
     }
 
-    greet += (kinderCtx[kinder] || '') + (lifestyleCtx[lifestyle] || '');
-    greet += "<br><br>Wie geht's dir heute?";
+    let parts = [];
+
+    // 1. Zyklusphase
+    if (cd) {
+      const phaseDesc = {
+        'Lutealphase':   'Progesteron steigt, Östrogen sinkt — die Stresstoleranz ist hormonal niedriger als in anderen Phasen. Dasselbe fühlt sich gerade mehr an.',
+        'Follikelphase': 'Östrogen steigt — du bist hormonell im Aufschwung. Konzentration und Belastbarkeit sind gerade auf deiner Seite.',
+        'Ovulation':     'Östrogen und LH auf dem Höhepunkt — die Phase mit der höchsten Energie und Kommunikationsstärke.',
+        'Menstruation':  'Östrogen und Progesteron sind niedrig — der Körper regeneriert sich. Weniger verlangen ist heute Stärke.'
+      };
+      parts.push('Du bist in der <strong>' + cd.phase + '</strong>, Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '. ' + (phaseDesc[cd.phase] || ''));
+    }
+
+    // 2. Schlaf
+    if (mb && mb.sleepMins) {
+      if (mb.sleepMins < 300) {
+        parts.push('Dein Schlaf war mit <strong>' + mb.sleepStr + '</strong> sehr kurz — das belastet Konzentration, Stimmung und Stresstoleranz direkt.' + (phase === 'Lutealphase' ? ' In der Lutealphase ist der Schlafbedarf ohnehin höher, das verstärkt sich.' : ''));
+      } else if (mb.sleepMins < 360) {
+        parts.push('Mit <strong>' + mb.sleepStr + '</strong> Schlaf bist du etwas unter dem was dein Körper gerade braucht.' + (phase === 'Lutealphase' ? ' In der Lutealphase erholt sich das Nervensystem langsamer.' : ''));
+      } else if (mb.sleepMins >= 420) {
+        parts.push('Dein Schlaf war mit <strong>' + mb.sleepStr + '</strong> gut — eine wichtige Basis für heute.');
+      }
+    }
+
+    // 3. HRV / Recovery
+    if (mb && mb.hrv) {
+      const hrv = parseInt(mb.hrv);
+      if (hrv < 35) {
+        parts.push('Deine HRV liegt bei <strong>' + mb.hrv + ' ms</strong> — das ist niedrig und zeigt: dein Nervensystem ist gerade unter Belastung. Kleine Reize kosten heute mehr.');
+      } else if (hrv < 55) {
+        parts.push('HRV <strong>' + mb.hrv + ' ms</strong> — im mittleren Bereich. Dein Nervensystem hat heute Puffer, aber keinen Überschuss.');
+      }
+    } else if (mb && mb.recovery) {
+      const rec = parseInt(mb.recovery);
+      if (rec < 50) {
+        parts.push('Dein Recovery Score liegt bei <strong>' + mb.recovery + '</strong> — dein Körper ist noch nicht erholt. Weniger fordern heute ist keine Schwäche.');
+      } else if (rec >= 70) {
+        parts.push('Recovery Score <strong>' + mb.recovery + '</strong> — dein Körper ist gut erholt. Ein guter Tag um Dinge anzugehen die dir wichtig sind.');
+      }
+    }
+
+    // 4. Energie & Stress
+    if (mb) {
+      const lowEnergy = mb.energyScore < 50;
+      const highStress = mb.stressScore > 65;
+      if (lowEnergy && highStress) {
+        parts.push('Niedrige Energie (<strong>' + mb.energyScore + '</strong>) und erhöhter Stress (<strong>' + mb.stressScore + '</strong>) zusammen — das ist eine Kombination die den Körper doppelt belastet.');
+      } else if (lowEnergy) {
+        parts.push('Deine Energie liegt heute bei <strong>' + mb.energyScore + '</strong> — dein Körper signalisiert: nicht auf Hochtouren fahren.');
+      } else if (highStress) {
+        parts.push('Stresslevel <strong>' + mb.stressScore + '</strong> — dein Nervensystem läuft bereits auf erhöhtem Niveau.');
+      }
+    }
+
+    let greet = timeGreet + ' 👋<br><br>';
+    greet += parts.join('<br><br>');
+    greet += '<br><br>Wie geht\'s dir heute wirklich?';
     return greet;
   }
 
@@ -2097,6 +2136,99 @@ function refreshGreeting() {
   }
 }
 
+function buildMoodExplanation(moodKey) {
+  const cd = window.cycleData;
+  const mb = window.manualBodyData;
+  const phase = cd ? cd.phase : null;
+
+  // Base mood descriptions
+  const moodBase = {
+    'müde':          'Müdigkeit',
+    'gestresst':     'Stress',
+    'gut drauf':     'gute Energie',
+    'nachdenklich':  'nachdenkliche Stimmung',
+    'motiviert':     'Motivation',
+    'nicht so toll': 'ein schlechtes Gefühl'
+  };
+
+  const reasons = [];
+
+  // Explain mood through data
+  if (moodKey === 'müde' || moodKey === 'nicht so toll') {
+    if (mb && mb.sleepMins && mb.sleepMins < 360) {
+      reasons.push('Dein Schlaf war heute nur <strong>' + mb.sleepStr + '</strong> — das reicht nicht für Erholung.');
+    }
+    if (mb && mb.energyScore && mb.energyScore < 50) {
+      reasons.push('Energie bei <strong>' + mb.energyScore + '</strong> — dein Körper signalisiert: Reserven leer.');
+    }
+    if (mb && mb.hrv && parseInt(mb.hrv) < 40) {
+      reasons.push('HRV <strong>' + mb.hrv + ' ms</strong> — dein Nervensystem ist belastet.');
+    }
+    if (phase === 'Lutealphase') {
+      reasons.push('In der <strong>Lutealphase</strong> braucht der Körper mehr Schlaf und erholt sich langsamer — das verstärkt Müdigkeit.');
+    } else if (phase === 'Menstruation') {
+      reasons.push('Während der <strong>Menstruation</strong> sind Östrogen und Progesteron auf dem Tiefpunkt — Müdigkeit ist eine normale körperliche Reaktion.');
+    }
+  }
+
+  if (moodKey === 'gestresst') {
+    if (mb && mb.stressScore && mb.stressScore > 60) {
+      reasons.push('Dein Stresslevel liegt bei <strong>' + mb.stressScore + '</strong> — dein Körper bestätigt was du spürst.');
+    }
+    if (mb && mb.hrv && parseInt(mb.hrv) < 45) {
+      reasons.push('HRV <strong>' + mb.hrv + ' ms</strong> zeigt: dein Nervensystem läuft auf hohem Niveau.');
+    }
+    if (mb && mb.sleepMins && mb.sleepMins < 360) {
+      reasons.push('Schlafmangel (<strong>' + mb.sleepStr + '</strong>) erhöht die Stressreaktion direkt — das Nervensystem hat weniger Puffer.');
+    }
+    if (phase === 'Lutealphase') {
+      reasons.push('In der <strong>Lutealphase</strong> ist die Stresstoleranz hormonal niedriger — dasselbe fühlt sich mehr an als in anderen Phasen.');
+    }
+  }
+
+  if (moodKey === 'gut drauf' || moodKey === 'motiviert') {
+    if (mb && mb.energyScore && mb.energyScore >= 70) {
+      reasons.push('Deine Energie liegt heute bei <strong>' + mb.energyScore + '</strong> — das spiegelt sich in deiner Stimmung.');
+    }
+    if (mb && mb.sleepMins && mb.sleepMins >= 420) {
+      reasons.push('Guter Schlaf (<strong>' + mb.sleepStr + '</strong>) ist die Grundlage — dein Körper hat sich erholt.');
+    }
+    if (mb && mb.hrv && parseInt(mb.hrv) >= 55) {
+      reasons.push('HRV <strong>' + mb.hrv + ' ms</strong> — dein Nervensystem ist in guter Verfassung.');
+    }
+    if (phase === 'Follikelphase' || phase === 'Ovulation') {
+      reasons.push('In der <strong>' + phase + '</strong> steigt Östrogen — Energie, Konzentration und Motivation sind hormonal auf deiner Seite.');
+    }
+  }
+
+  if (moodKey === 'nachdenklich') {
+    if (phase === 'Lutealphase') {
+      reasons.push('Die <strong>Lutealphase</strong> macht viele Frauen introvertierter und reflektierter — das ist keine Schwäche, das ist Biologie.');
+    }
+    if (mb && mb.sleepMins && mb.sleepMins < 360) {
+      reasons.push('Schlafmangel (<strong>' + mb.sleepStr + '</strong>) kann Gedanken intensiver und hartnäckiger machen.');
+    }
+  }
+
+  // Build the response
+  let text = '';
+  if (reasons.length === 0) {
+    // No data to explain with — just acknowledge
+    const generic = {
+      'müde': 'Müdigkeit ohne klare Datenlage — trag deine Werte ins Dashboard ein, dann kann avie dir zeigen warum.',
+      'gestresst': 'Stress ist real — auch wenn die Daten fehlen. Was macht dir heute am meisten zu schaffen?',
+      'gut drauf': 'Schön zu hören. Wofür willst du diese Energie heute nutzen?',
+      'motiviert': 'Gut — nutze das Fenster bewusst. Was liegt gerade an?',
+      'nachdenklich': 'Was beschäftigt dich?',
+      'nicht so toll': 'Was zieht dich gerade am meisten runter?'
+    };
+    return generic[moodKey] || 'Was ist gerade los?';
+  }
+
+  text = reasons.join(' ') + ' Das erklärt, warum du dich <strong>' + (moodBase[moodKey] || moodKey) + '</strong> fühlst — das ist keine Einbildung, das ist dein Körper der spricht.';
+  return text;
+}
+
 function wireMainMood() {
   const homeBody = document.getElementById('home-body');
   document.querySelectorAll('[data-main-mood]').forEach(function(btn) {
@@ -2113,34 +2245,31 @@ function wireMainMood() {
       this.style.borderColor = '#2D1B4E';
       this.style.fontWeight  = '500';
 
-      // Find mood key
       const label = this.dataset.mainMood;
       recordMood(label);
-      const moodKey = Object.keys(MOOD_TIPS).find(k => label.toLowerCase().includes(k));
+      const moodKey = Object.keys(MOOD_TIPS).find(function(k) { return label.toLowerCase().includes(k); });
       if (!moodKey) return;
 
-      // Show avie reply
+      // Build data-driven mood explanation
       const reply = document.getElementById('main-mood-reply');
       const replyText = document.getElementById('main-mood-reply-text');
       if (reply && replyText) {
         reply.style.display = 'block';
-        replyText.textContent = MOOD_TIPS[moodKey].avieMsg;
+        replyText.innerHTML = buildMoodExplanation(moodKey);
       }
 
-      // Build tips into #main-tips
+      // Build tips
       const container = document.getElementById('main-tips');
       if (container) buildTips(moodKey, container);
 
-      // Scroll so avie reply is visible at top
+      // Scroll to reply
       if (homeBody) {
         setTimeout(function() {
-          const reply = document.getElementById('main-mood-reply');
-          if (reply) {
+          const replyEl = document.getElementById('main-mood-reply');
+          if (replyEl) {
             const homeRect = homeBody.getBoundingClientRect();
-            const replyRect = reply.getBoundingClientRect();
-            // Scroll so the mood chips row is just above, reply visible at top
-            const scrollTo = homeBody.scrollTop + (replyRect.top - homeRect.top) - 60;
-            homeBody.scrollTo({ top: Math.max(0, scrollTo), behavior: 'smooth' });
+            const replyRect = replyEl.getBoundingClientRect();
+            homeBody.scrollTo({ top: Math.max(0, homeBody.scrollTop + (replyRect.top - homeRect.top) - 60), behavior: 'smooth' });
           }
         }, 150);
       }
@@ -2330,81 +2459,134 @@ function closeGuide() {
 
 // ── Dashboard Analyse — avie erklärt die Werte im Guide-Stil ──
 function buildAnalysisSteps() {
-  // Read current dashboard state
   const cd = window.cycleData;
   const mb = window.manualBodyData;
-  const hasOura = !cd && !!document.querySelector('#score-cards [data-score="energie"]');
 
-  // Collect values
-  const phase      = cd ? cd.phase      : 'Lutealphase';
-  const cycleDay   = cd ? cd.cycleDay   : 19;
-  const cycleLen   = cd ? cd.selectedLen: 28;
-  const daysLeft   = cd ? cd.daysLeft   : 9;
+  const phase    = cd ? cd.phase    : 'Lutealphase';
+  const cycleDay = cd ? cd.cycleDay : 19;
+  const cycleLen = cd ? cd.selectedLen : 28;
+  const daysLeft = cd ? cd.daysLeft : 9;
 
-  const energyScore = mb ? mb.energyScore : (hasOura ? 62 : null);
-  const sleepStr    = mb ? mb.sleepStr    : (hasOura ? '6h 48m' : null);
-  const sleepMins   = mb ? mb.sleepMins   : (hasOura ? 408 : null);
-  const stressScore = mb ? mb.stressScore : (hasOura ? 38 : null);
+  const energyScore = mb ? mb.energyScore : null;
+  const sleepStr    = mb ? mb.sleepStr    : null;
+  const sleepMins   = mb ? mb.sleepMins   : null;
+  const stressScore = mb ? mb.stressScore : null;
+  const hrv         = mb ? mb.hrv         : null;
+  const recovery    = mb ? mb.recovery    : null;
 
-  // Phase context
-  const phaseCtx = {
-    'Menstruation':  { hormone: 'Östrogen & Progesteron sind niedrig', energy: 'niedrig', mood: 'ruhig oder zurückgezogen', tip: 'Ruhe, Wärme, keine großen Entscheidungen' },
-    'Follikelphase': { hormone: 'Östrogen steigt', energy: 'steigend', mood: 'klarer und motivierter', tip: 'Guter Tag für neue Projekte, Sport, kreative Arbeit' },
-    'Ovulation':     { hormone: 'Östrogen & LH auf dem Höhepunkt', energy: 'hoch', mood: 'kommunikativ und energetisch', tip: 'Nutze die Energie für wichtige Gespräche und Entscheidungen' },
-    'Lutealphase':   { hormone: 'Progesteron steigt, Östrogen sinkt', energy: 'sinkend', mood: 'sensibler, introvertierter', tip: 'Erholung priorisieren, Erwartungen reduzieren' },
+  // Phase descriptions in avie's voice
+  const phaseVoice = {
+    'Menstruation':  {
+      hormone: 'Östrogen und Progesteron sind gerade am niedrigsten.',
+      energy:  'Die meisten Frauen merken in dieser Phase: der Körper will Ruhe, keine Leistung.',
+      tip:     'Wärme, leichte Bewegung, keine großen Entscheidungen — der Körper weiß was er braucht.'
+    },
+    'Follikelphase': {
+      hormone: 'Östrogen steigt — du bist hormonell im Aufschwung.',
+      energy:  'Konzentration, Motivation, Belastbarkeit steigen. Die Phase zum Anpacken.',
+      tip:     'Guter Moment für neue Projekte, schwierige Gespräche, Sport mit mehr Intensität.'
+    },
+    'Ovulation': {
+      hormone: 'Östrogen und LH sind auf dem Höhepunkt.',
+      energy:  'Viele Frauen fühlen sich in dieser Phase am leistungsfähigsten — körperlich und kommunikativ.',
+      tip:     'Nutze das Fenster für wichtige Gespräche, Präsentationen, körperlich anspruchsvolle Einheiten.'
+    },
+    'Lutealphase': {
+      hormone: 'Progesteron steigt, Östrogen sinkt.',
+      energy:  'Die Stresstoleranz ist hormonal niedriger — dasselbe fühlt sich mehr an als in anderen Phasen.',
+      tip:     'Erholung priorisieren. Nicht weniger leisten — anders leisten.'
+    }
   };
-  const ctx = phaseCtx[phase] || phaseCtx['Lutealphase'];
+  const pv = phaseVoice[phase] || phaseVoice['Lutealphase'];
 
-  // Build dynamic step 1 — Gesamtbild
-  let gesamtSignale = [];
+  // ── STEP 1: Das Gesamtbild ──
+  let signals = [];
   if (sleepMins !== null) {
-    if (sleepMins >= 420) gesamtSignale.push('Schlaf gut (' + sleepStr + ')');
-    else if (sleepMins >= 360) gesamtSignale.push('Schlaf etwas knapp (' + sleepStr + ')');
-    else gesamtSignale.push('Schlaf zu wenig (' + sleepStr + ')');
+    if (sleepMins >= 420)      signals.push('Schlaf war gut (' + sleepStr + ')');
+    else if (sleepMins >= 360) signals.push('Schlaf war etwas knapp (' + sleepStr + ')');
+    else                       signals.push('Schlaf zu kurz (' + sleepStr + ')');
   }
   if (energyScore !== null) {
-    if (energyScore >= 70) gesamtSignale.push('Energie gut (' + energyScore + ')');
-    else if (energyScore >= 50) gesamtSignale.push('Energie mittel (' + energyScore + ')');
-    else gesamtSignale.push('Energie niedrig (' + energyScore + ')');
+    if (energyScore >= 70)      signals.push('Energie hoch');
+    else if (energyScore >= 50) signals.push('Energie mittel');
+    else                        signals.push('Energie niedrig');
   }
-  gesamtSignale.push(phase + ' Tag ' + cycleDay);
+  if (stressScore !== null && stressScore > 60) signals.push('Stresslevel erhöht');
+  if (hrv !== null) {
+    signals.push('HRV ' + hrv + ' ms');
+  }
+  if (recovery !== null) {
+    signals.push('Recovery ' + recovery + '/100');
+  }
 
-  const gesamtText = gesamtSignale.join(', ') + ` — dein Körper zeigt heute ein klares Bild. In der <strong>${phase}</strong> ist ${ctx.hormone}. Das erklärt warum deine Energie ${ctx.energy} ist und du dich ${ctx.mood} fühlst. Das ist keine Schwäche — das ist Biologie.`;
+  let gesamtText = '';
+  if (signals.length > 0) {
+    gesamtText = signals.join(' · ') + '.<br><br>';
+  }
+  gesamtText += 'Du bist heute in der <strong>' + phase + '</strong>';
+  if (cd) gesamtText += ', Tag ' + cycleDay + ' von ' + cycleLen;
+  gesamtText += '. ' + pv.hormone + ' ' + pv.energy;
 
-  // Build dynamic step 2 — Was das bedeutet
+  if (sleepMins !== null && sleepMins < 360 && stressScore !== null && stressScore > 60) {
+    gesamtText += '<br><br>Kurzer Schlaf und erhöhter Stress gleichzeitig — das ist eine Kombination, die den Körper doppelt belastet. Kein Wunder wenn heute alles etwas schwerer wirkt.';
+  } else if (sleepMins !== null && sleepMins < 360) {
+    gesamtText += '<br><br>Dazu kommt der Schlaf: ' + sleepStr + ' ist wenig. Schlafmangel verstärkt alles — Stressempfinden, Heißhunger, Reizbarkeit. Das ist Biologie, kein Charakter.';
+  } else if (stressScore !== null && stressScore > 60) {
+    gesamtText += '<br><br>Dein Stresslevel ist erhöht. In der ' + phase + ' ist die Stresstoleranz hormonal ohnehin niedriger — dasselbe fühlt sich gerade mehr an als sonst.';
+  }
+
+  // ── STEP 2: Was das bedeutet ──
   let bedeutungText = '';
-  if (sleepMins !== null && sleepMins < 390) {
-    bedeutungText += `Dein Schlaf war mit <strong>${sleepStr}</strong> kürzer als ideal. `;
-  }
-  if (energyScore !== null && energyScore < 60) {
-    bedeutungText += `Das niedrige Energielevel (${energyScore}) bedeutet: tiefe Konzentration und große Entscheidungen kosten heute mehr als sonst. `;
-  }
-  if (stressScore !== null && stressScore > 60) {
-    bedeutungText += `Dein Stresslevel ist erhöht — dein Nervensystem arbeitet gerade auf hohem Niveau. `;
-  }
-  if (!bedeutungText) {
-    bedeutungText = `Deine Werte sind heute solide. Die ${phase} macht trotzdem bestimmte Dinge anstrengender als andere. `;
-  }
-  bedeutungText += `Für Gespräche, Reflexion und Fürsorge hast du oft mehr Kapazität als du denkst — für schnelle Entscheidungen und Multitasking weniger.`;
+  const problems = [];
+  if (sleepMins !== null && sleepMins < 360) problems.push('schlaf');
+  if (energyScore !== null && energyScore < 50) problems.push('energie');
+  if (stressScore !== null && stressScore > 70) problems.push('stress');
 
-  // Build dynamic step 3 — Avies Tipp
-  let tipp = ctx.tip;
-  if (sleepMins !== null && sleepMins < 360) {
-    tipp = '<strong>Heute Abend früh ins Bett</strong> — dein Schlaf war zu kurz. Alles andere kann warten. Schlaf ist die einzige Maßnahme die HRV, Energie und Stimmung gleichzeitig verbessert.';
-  } else if (energyScore !== null && energyScore < 50) {
-    tipp = `<strong>Eine Sache: Pensum halbieren.</strong> Deine Energie ist heute bei ${energyScore} — das ist der Körper der sagt: nicht heute. ${ctx.tip}.`;
-  } else if (stressScore !== null && stressScore > 70) {
-    tipp = '<strong>Heute eine kurze Pause einplanen</strong> — 15 Minuten ohne Input, ohne Aufgaben. Dein Nervensystem braucht Puffer. Das ist keine Faulheit, das ist Prävention.';
+  if (problems.length === 0) {
+    bedeutungText = 'Deine Werte sehen heute ordentlich aus. Trotzdem gilt: die ' + phase + ' kostet mehr als andere Phasen — auch wenn die Zahlen das nicht direkt zeigen.<br><br>Was heute sinnvoll ist: bewusst wählen wo du Energie investierst. Nicht alles gleichzeitig. Die ' + phase + ' verträgt fokussierte Arbeit besser als Multitasking.';
   } else {
-    tipp = `<strong>${ctx.tip}.</strong> Du bist in der ${phase} Tag ${cycleDay} von ${cycleLen} — in ${daysLeft} Tagen beginnt ein neuer Zyklus. Vertrau dem Rhythmus.`;
+    if (problems.includes('schlaf') && problems.includes('stress')) {
+      bedeutungText = 'Kurzer Schlaf und hoher Stress zusammen bedeuten: dein Nervensystem hat heute wenig Puffer. Entscheidungen fallen schwerer, Kleinigkeiten kosten mehr. Das ist keine schlechte Phase — das ist ein Körper der gerade viel trägt.<br><br>Für heute: eine Sache nach der anderen. Kein Multitasking. Keine großen Entscheidungen wenn möglich.';
+    } else if (problems.includes('schlaf')) {
+      bedeutungText = sleepStr + ' Schlaf bedeutet konkret: Konzentration, Gedächtnis und emotionale Regulation sind heute eingeschränkt. Nicht weil du nicht willst — sondern weil das Gehirn Schlaf zum Konsolidieren braucht.<br><br>Was das für den Tag heißt: wichtige Gespräche oder Entscheidungen wenn möglich verschieben. Pausen aktiv einplanen statt durchziehen.';
+    } else if (problems.includes('energie')) {
+      bedeutungText = 'Niedrige Energie in der ' + phase + ' ist meistens kein Motivationsproblem — es ist Biologie. Progesteron erhöht den Schlafbedarf, senkt den Antrieb. Dazu kommt was immer gerade sonst noch läuft.<br><br>Für heute: realistisch planen was wirklich heute sein muss — und was warten kann. Weniger ist gerade mehr.';
+    } else if (problems.includes('stress')) {
+      bedeutungText = 'Ein erhöhter Stresslevel signalisiert: dein Nervensystem ist gerade im Alarm-Modus. In der ' + phase + ' ist die Stresstoleranz hormonal ohnehin niedriger — das verstärkt sich gegenseitig.<br><br>Was das bedeutet: auch kleine Reize kosten heute mehr. Das liegt nicht an dir. Eine kurze Pause — auch 10 Minuten ohne Input — kann das Nervensystem spürbar runterregeln.';
+    }
+  }
+
+  // ── STEP 3: Avies Tipp ──
+  let tipp = '';
+  const name = userName || '';
+  const namePrefix = name ? name + ', ' : '';
+
+  if (problems.includes('schlaf') && sleepMins < 300) {
+    tipp = '<strong>Heute Abend: so früh wie möglich ins Bett.</strong><br><br>Mit ' + sleepStr + ' fehlt dir die Basis für alles andere. Kein Supplement, kein Training, kein Plan ersetzt Schlaf. Wenn heute Abend eine Sache zählt — dann das.';
+  } else if (problems.includes('stress') && problems.includes('energie')) {
+    tipp = '<strong>Eine Sache weglassen.</strong><br><br>' + namePrefix + 'schau auf deine Liste heute: was muss wirklich heute sein, und was kann morgen? Dein Körper schickt gerade ein klares Signal. Das zu ignorieren kostet morgen mehr als es heute bringt.';
+  } else if (problems.includes('stress')) {
+    tipp = '<strong>15 Minuten ohne Input.</strong><br><br>Kein Handy, kein Podcast, keine Aufgabe. Einfach draußen stehen, kurz gehen, atmen. Das klingt nach wenig — aber ein Nervensystem im Alarm braucht genau das: Stille statt mehr Input.';
+  } else if (problems.includes('schlaf')) {
+    tipp = '<strong>Heute abend eine Stunde früher als geplant.</strong><br><br>Nicht als Strafe, sondern als Investition. Schlaf ist die einzige Maßnahme, die Energie, HRV und Stimmung gleichzeitig verbessert. Alles andere kommt danach.';
+  } else if (phase === 'Lutealphase') {
+    tipp = '<strong>' + pv.tip + '</strong><br><br>Du bist in Tag ' + cycleDay + ' von ' + cycleLen + '. In ' + daysLeft + ' Tagen beginnt ein neuer Zyklus — der Körper arbeitet gerade im Hintergrund. Was heute hilft: Wärme, Bewegung ohne Druck, und nicht zu viel von dir verlangen.';
+  } else if (phase === 'Follikelphase' || phase === 'Ovulation') {
+    tipp = '<strong>' + pv.tip + '</strong><br><br>Deine Energie ist gerade auf deiner Seite — nutze das Fenster bewusst. Nicht alles auf einmal, aber die Dinge die dir wichtig sind und die du in der zweiten Zyklushälfte schwerer angehst.';
+  } else {
+    tipp = '<strong>Ruhig sein darf heute reichen.</strong><br><br>Menstruation bedeutet: der Körper regeneriert sich. Nicht der Moment für Hochleistung — sondern für Wärme, leichte Bewegung, und die Erlaubnis nicht funktionieren zu müssen.';
   }
 
   return [
-    { label: 'Das Gesamtbild', emoji: '🔍', title: 'Dein Körper heute',  text: gesamtText },
-    { label: 'Was das bedeutet', emoji: '💡', title: 'Für deinen Tag',   text: bedeutungText },
-    { label: 'Avies Tipp', emoji: '💜', title: 'Eine Sache heute',        text: tipp }
+    { label: 'Das Gesamtbild',   emoji: '🔍', title: 'Dein Körper heute', text: gesamtText },
+    { label: 'Was das bedeutet', emoji: '💡', title: 'Für deinen Tag',    text: bedeutungText },
+    { label: 'Avies Tipp',       emoji: '💜', title: 'Eine Sache heute',  text: tipp }
   ];
 }
+
+
+
+  // Phase context
 
 let analysisStep = 0;
 
@@ -3859,7 +4041,7 @@ function buildSystemPrompt() {
     koerperContext += '- Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + ' (nächste Periode in ~' + cd.daysLeft + ' Tagen)\n';
     koerperContext += '- Hormone: ' + cd.hormoneVal + '\n';
   } else {
-    koerperContext += '- Zyklusphase: Lutealphase, Tag 19 von ~28 (Demo-Daten)\n';
+    koerperContext += '- Keine Zyklus-Daten eingetragen\n';
   }
   if (mb) {
     koerperContext += '- Schlaf: ' + mb.sleepStr + '\n';
@@ -3870,12 +4052,45 @@ function buildSystemPrompt() {
     if (mb.rhr)      koerperContext += '- Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep)     koerperContext += '- Tiefschlaf: ' + mb.deep + ' min\n';
     if (mb.rem)      koerperContext += '- REM-Schlaf: ' + mb.rem + ' min\n';
-    if (mb.temp)     koerperContext += '- Körpertemperatur: ' + (mb.temp > 0 ? '+' : '') + mb.temp + '\xb0C\n';
-  } else {
-    koerperContext += '- HRV: 42 ms (Demo-Daten)\n- Schlaf: 6h 48m (Demo-Daten)\n- Energie-Score: 62/100 (Demo-Daten)\n';
+    if (mb.temp)     koerperContext += '- Körpertemperatur: ' + (mb.temp > 0 ? '+' : '') + mb.temp + '\u00b0C\n';
   }
-  return 'Du bist avie — eine warme, direkte KI-Begleiterin für weibliches Wohlbefinden.\n\nDie Nutzerin heißt ' + name + '. Alter: ' + alter + '. ' + (kinderTxt[kinder] || '') + '. Alltag: ' + (lifeTxt[lifestyle] || '') + '.\n\nAktueller Körperkontext:\n' + koerperContext + '\nDeine Persönlichkeit:\n- Locker und direkt — wie eine Freundin die wirklich zuhört\n- Du nimmst die Nutzerin ernst, ohne aufzudrängen\n- Du fragst eine Frage auf einmal — nie mehrere\n- Kein "ich passe auf dich auf" — einfach da sein\n- Antworte auf Deutsch, in 2-4 Sätzen\n- Keine Bullet Points, keine Listen';
+
+  return 'Du bist avie — eine Begleiterin für Frauen zwischen 28 und 55. Kein Coaching-Tool, keine Therapeutin, keine Motivations-App. Dein USP: du verbindest was die Nutzerin erzählt mit dem was ihr Körper zeigt — und erklärst den Zusammenhang.\n\n' +
+
+'Aktuelle Nutzerin:\n' +
+'Name: ' + name + ' | Alter: ' + alter + ' | ' + (kinderTxt[kinder] || '') + ' | Alltag: ' + (lifeTxt[lifestyle] || '') + '\n\n' +
+
+'Körperdaten heute — das ist deine wichtigste Grundlage:\n' + koerperContext + '\n' +
+
+'WIE DU DIESE DATEN NUTZT — das ist der Kern:\n' +
+'- Beziehe dich aktiv auf die Daten wenn die Nutzerin etwas erzählt. Nicht als Fußnote, sondern als Erklärung.\n' +
+'- Beispiel: Nutzerin sagt "ich bin so gereizt". Avie antwortet nicht "das klingt anstrengend" — sondern: "Dein HRV ist heute bei 38 ms, das ist niedrig. Ein überzogenes Nervensystem macht gereizt — das ist keine Stimmung, das ist Biologie."\n' +
+'- Beispiel: Nutzerin sagt "ich bin so müde". Avie: "Du hast heute 5h 20min geschlafen, das ist zu wenig für die Lutealphase wo dein Schlafbedarf ohnehin höher ist. Was zieht dich heute noch wach?"\n' +
+'- Verknüpfe immer: was sie sagt → was die Daten zeigen → warum das Sinn ergibt\n' +
+'- Die Daten sind der Unterschied zwischen avie und einem Freund zum Reden\n\n' +
+
+'Dein Ton:\n' +
+'- Direkt und klar — nicht therapeutisch, nicht aufgesetzt empathisch\n' +
+'- Kein "das klingt anstrengend", kein "das höre ich" — stattdessen: erklären, einordnen, verbinden\n' +
+'- Eine Frage auf einmal, 2–4 Sätze\n' +
+'- Empathie kommt durch Verständnis, nicht durch Floskeln\n' +
+'- avie immer klein schreiben\n\n' +
+
+'Was du weißt:\n' +
+'- Weibliche Biologie, Zyklus, Hormone — Lutealphase, Follikelphase, Ovulation, Menstruation\n' +
+'- Perimenopause und Wechseljahre: Östrogen/Progesteron-Abfall, Schlaf, Gewicht, Stimmung\n' +
+'- Postpartum, Hashimoto, Lipödem, Eisenmangel — typische Muster und Zusammenhänge\n' +
+'- HRV, Ruhepuls, Schlafphasen, Recovery Score — was sie bedeuten und wie sie interagieren\n' +
+'- Mental Load, emotionale Erschöpfung, Beziehungsdynamiken bei Müttern\n' +
+'- Sport zyklusbasiert: Follikelphase für Intensität, Lutealphase für Regeneration\n' +
+'- Dass Stress, Schlafmangel und Zyklusphase sich gegenseitig verstärken\n\n' +
+
+'Grenzen:\n' +
+'- Keine Diagnosen, keine konkreten Dosierungen\n' +
+'- Bei psychischen Krisen auf professionelle Hilfe hinweisen\n' +
+'- "Was helfen kann" statt "was hilft"';
 }
+
 
 function callAvie(userMessage) {
   chatHistory.push({ role: 'user', content: userMessage });

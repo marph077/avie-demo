@@ -320,6 +320,23 @@ html, body {
 .slide-6 .ob-dots .ob-dot { background: rgba(45,27,78,0.18); }
 .slide-6 .ob-dots .ob-dot.active { background: #D4863A; }
 .kl-question { transition: opacity 0.4s; }
+.mood-chip {
+  padding: 9px 16px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(155,127,192,0.3);
+  background: white;
+  color: #4A3A6A;
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mood-chip.selected {
+  background: #2D1B4E;
+  color: white;
+  border-color: #2D1B4E;
+}
+
 .kl-chip {
   padding: 9px 16px;
   border-radius: 20px;
@@ -1650,28 +1667,73 @@ html, body {
 
     <div class="home-body" id="home-body" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:16px 16px 120px;background:#EDE6F5;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
 
-      <div style="font-size:11px;color:#A090BC;text-align:center;font-weight:300;letter-spacing:0.04em;">Sonntag, 31. Mai</div>
+      <!-- Chat summary card (appears after closing a chat) -->
+      <div id="home-summary-area"></div>
 
-      <div style="display:flex;gap:10px;align-items:flex-end;">
-        <div style="width:34px;height:34px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
-        <div style="background:white;border-radius:18px;border-bottom-left-radius:4px;padding:14px 16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 10px rgba(45,27,78,0.07);max-width:88%;">
-          <div style="font-size:14px;color:#2D1B4E;line-height:1.58;" id="main-avie-greeting">Guuuuten Morgen ☀️ Du bist in der <strong>Lutealphase</strong> — Östrogen sinkt, Progesteron steigt. Das erklärt, warum du dich heute vielleicht etwas schwerer fühlst. Ganz normal. 💜<br><br>Wie geht's dir heute?</div>
+      <!-- STEP 1: avie begrüßt + Dashboard-Aufforderung -->
+      <div id="home-step-greet" style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+          <div id="home-greeting-bubble" style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
+            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-greeting-text">Guten Morgen 👋</span></div>
+          </div>
+        </div>
+        <div style="padding-left:42px;">
+          <button id="home-dash-btn" onclick="homeOpenDashboard()"
+            style="width:100%;padding:13px 18px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            📊 Dashboard aktualisieren
+          </button>
         </div>
       </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:8px;padding-left:44px;" id="main-mood-row">
-        <button data-main-mood="✨ Gut drauf" style="padding:8px 15px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:white;color:#6B5A88;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;box-shadow:0 1px 4px rgba(45,27,78,0.07);">✨ Gut drauf</button>
-        <button data-main-mood="😴 Müde" style="padding:8px 15px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:white;color:#6B5A88;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;box-shadow:0 1px 4px rgba(45,27,78,0.07);">😴 Müde</button>
-        <button data-main-mood="🌀 Gestresst" style="padding:8px 15px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:white;color:#6B5A88;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;box-shadow:0 1px 4px rgba(45,27,78,0.07);">🌀 Gestresst</button>
-        <button data-main-mood="💭 Nachdenklich" style="padding:8px 15px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:white;color:#6B5A88;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;box-shadow:0 1px 4px rgba(45,27,78,0.07);">💭 Nachdenklich</button>
-        <button data-main-mood="💪 Motiviert" style="padding:8px 15px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:white;color:#6B5A88;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;box-shadow:0 1px 4px rgba(45,27,78,0.07);">💪 Motiviert</button>
-        <button data-main-mood="🌧 Nicht so toll" style="padding:8px 15px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.25);background:white;color:#6B5A88;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit;box-shadow:0 1px 4px rgba(45,27,78,0.07);">🌧 Nicht so toll</button>
+      <!-- STEP 2: Analyse (erscheint nach Dashboard) -->
+      <div id="home-step-analyse" style="display:none;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+          <div id="home-analyse-bubble" style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
+            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-analyse-text"></span></div>
+          </div>
+        </div>
       </div>
 
-      <div id="main-mood-reply" style="display:none;padding-left:44px;">
-        <div style="background:white;border-radius:18px;border-bottom-left-radius:4px;padding:13px 16px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);font-size:14px;color:#2D1B4E;line-height:1.55;" id="main-mood-reply-text"></div>
+      <!-- STEP 3: Mood Chips (erscheint nach Analyse) -->
+      <div id="home-step-mood" style="display:none;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+          <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
+            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Wie fühlst du dich gerade <strong>wirklich</strong>?</div>
+          </div>
+        </div>
+        <div id="home-mood-chips" style="padding-left:42px;display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
+          <button class="mood-chip" data-mood="gut drauf" onclick="homeMoodSelect(this)">✨ Gut drauf</button>
+          <button class="mood-chip" data-mood="müde" onclick="homeMoodSelect(this)">😴 Müde</button>
+          <button class="mood-chip" data-mood="gestresst" onclick="homeMoodSelect(this)">🌀 Gestresst</button>
+          <button class="mood-chip" data-mood="nachdenklich" onclick="homeMoodSelect(this)">💭 Nachdenklich</button>
+          <button class="mood-chip" data-mood="motiviert" onclick="homeMoodSelect(this)">💪 Motiviert</button>
+          <button class="mood-chip" data-mood="nicht so toll" onclick="homeMoodSelect(this)">🌧 Nicht so toll</button>
+        </div>
+        <div id="home-mood-reply" style="display:none;flex-direction:column;gap:14px;">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+          <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
+            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-mood-reply-text"></span></div>
+          </div>
+        </div>
+        </div>
       </div>
 
+      <!-- STEP 4: Themenauswahl (erscheint nach Mood) -->
+      <div id="home-step-topics" style="display:none;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+          <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
+            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Worüber möchtest du heute sprechen?</div>
+          </div>
+        </div>
+        <div id="home-topics-list" style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;"></div>
+      </div>
+
+    </div>
     </div>
 
     <!-- FAB -->
@@ -1736,9 +1798,20 @@ html, body {
     <!-- Chat window (hidden until opened) -->
     <div class="chat-window" id="chat-window">
       <div class="chat-win-header">
-        <button class="chat-win-back" onclick="closeChat()">← Zurück</button>
         <div class="chat-win-title">avie</div>
-        <div style="width:60px"></div>
+        <button onclick="promptCloseChat()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.7);font-size:22px;line-height:1;padding:0 2px;">×</button>
+      </div>
+      <!-- Close confirmation dialog -->
+      <div id="chat-close-dialog" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(45,27,78,0.6);z-index:10;align-items:flex-end;justify-content:center;">
+        <div style="background:white;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;box-sizing:border-box;">
+          <div style="font-family:'DM Serif Display',Georgia,serif;font-size:18px;color:#2D1B4E;margin-bottom:8px;">Gespräch beenden?</div>
+          <div style="font-size:13px;color:#6B5A88;line-height:1.55;margin-bottom:20px;">Möchtest du die Erkenntnisse aus diesem Gespräch speichern? avie erstellt eine kurze Zusammenfassung für dich.</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button onclick="saveChatAndClose()" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">💜 Speichern & schließen</button>
+            <button onclick="discardChatAndClose()" style="width:100%;padding:13px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:14px;cursor:pointer;">Verwerfen</button>
+            <button onclick="document.getElementById('chat-close-dialog').style.display='none';" style="width:100%;padding:13px;border-radius:20px;border:none;background:transparent;color:#A090BC;font-family:inherit;font-size:13px;cursor:pointer;">Weitersprechen</button>
+          </div>
+        </div>
       </div>
       <div class="messages" id="messages">
         <div class="date-label">Heute · Sonntag</div>
@@ -2050,7 +2123,7 @@ function startApp() {
   document.getElementById('app').classList.add('visible');
   updateClock();
   personalizeApp();
-  wireMainMood();
+  homeInit();
   showGuide();
 }
 
@@ -2059,8 +2132,7 @@ function skipOnboarding() {
   document.getElementById('app').classList.add('visible');
   updateClock();
   personalizeApp();
-  wireMainMood();
-  showDashboard();
+  homeInit();
 }
 
 function personalizeApp() {
@@ -2280,52 +2352,163 @@ function buildMoodExplanation(moodKey) {
   return text;
 }
 
-function wireMainMood() {
-  const homeBody = document.getElementById('home-body');
-  document.querySelectorAll('[data-main-mood]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      // Style selected chip
-      document.querySelectorAll('[data-main-mood]').forEach(function(b) {
-        b.style.background  = 'white';
-        b.style.color       = '#6B5A88';
-        b.style.borderColor = 'rgba(155,127,192,0.25)';
-        b.style.fontWeight  = '400';
-      });
-      this.style.background  = '#2D1B4E';
-      this.style.color       = 'white';
-      this.style.borderColor = '#2D1B4E';
-      this.style.fontWeight  = '500';
+// ── Homescreen Flow ──
 
-      const label = this.dataset.mainMood;
-      recordMood(label);
-      const moodKey = Object.keys(MOOD_TIPS).find(function(k) { return label.toLowerCase().includes(k); });
-      if (!moodKey) return;
+function homeInit() {
+  // Build greeting
+  var hour = new Date().getHours();
+  var greet = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
+  var name = userName ? ', ' + userName : '';
+  var gt = document.getElementById('home-greeting-text');
+  if (gt) gt.innerHTML = greet + name + ' 👋<br><br>Wie war deine Nacht? Aktualisiere dein Dashboard damit ich dir heute wirklich helfen kann.';
+}
 
-      // Build data-driven mood explanation
-      const reply = document.getElementById('main-mood-reply');
-      const replyText = document.getElementById('main-mood-reply-text');
-      if (reply && replyText) {
-        reply.style.display = 'block';
-        replyText.innerHTML = buildMoodExplanation(moodKey);
-      }
+function homeOpenDashboard() {
+  showDashboard();
+  // When dashboard closes, trigger analyse
+  var checkInterval = setInterval(function() {
+    if (!document.getElementById('dashboard')) {
+      clearInterval(checkInterval);
+      homeShowAnalyse();
+    }
+  }, 500);
+}
 
-      // Build tips
+function homeShowAnalyse() {
+  var step = document.getElementById('home-step-analyse');
+  var text = document.getElementById('home-analyse-text');
+  var homeBody = document.getElementById('home-body');
+  if (!step || !text) return;
 
+  var cd = window.cycleData;
+  var mb = window.manualBodyData;
 
-      // Scroll to reply
-      if (homeBody) {
-        setTimeout(function() {
-          const replyEl = document.getElementById('main-mood-reply');
-          if (replyEl) {
-            const homeRect = homeBody.getBoundingClientRect();
-            const replyRect = replyEl.getBoundingClientRect();
-            homeBody.scrollTo({ top: Math.max(0, homeBody.scrollTop + (replyRect.top - homeRect.top) - 60), behavior: 'smooth' });
-          }
-        }, 150);
-      }
-    });
+  if (!cd && !mb) {
+    // No data - skip to mood
+    homeShowMood();
+    return;
+  }
+
+  // Build data-driven analysis
+  var lines = [];
+  if (mb) {
+    var sleepLine = 'Du hast ' + mb.sleepStr + ' geschlafen';
+    if (mb.wachphasen != null) sleepLine += ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + '× aufgewacht');
+    lines.push(sleepLine + '.');
+    if (mb.hrv) lines.push('HRV ' + mb.hrv + ' ms — ' + (mb.hrv < 40 ? 'dein Nervensystem ist belastet.' : mb.hrv < 55 ? 'solide, aber kein Überschuss.' : 'dein Nervensystem ist erholt.'));
+  }
+  if (cd) {
+    var phaseDesc = { 'Lutealphase': 'Stresstoleranz und Energie sind hormonal niedriger — dasselbe fühlt sich heute mehr an.', 'Follikelphase': 'Östrogen steigt — du bist im Aufschwung.', 'Ovulation': 'Höchste Energie-Phase.', 'Menstruation': 'Körper regeneriert sich.' };
+    lines.push('Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + ' — ' + cd.phase + '. ' + (phaseDesc[cd.phase] || ''));
+  }
+
+  text.innerHTML = lines.join('<br><br>');
+  step.style.display = 'flex';
+  step.style.flexDirection = 'column';
+
+  // Scroll to new content
+  setTimeout(function() {
+    step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+
+  // Show mood after delay
+  setTimeout(homeShowMood, 1200);
+}
+
+function homeShowMood() {
+  var step = document.getElementById('home-step-mood');
+  if (!step) return;
+  step.style.display = 'flex';
+  step.style.flexDirection = 'column';
+  setTimeout(function() {
+    step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+}
+
+function homeMoodSelect(btn) {
+  // Style chip
+  document.querySelectorAll('.mood-chip').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  var mood = btn.dataset.mood;
+
+  // Record mood
+  recordMood(btn.textContent.trim());
+
+  // Show mood reply
+  var replyDiv = document.getElementById('home-mood-reply');
+  var replyText = document.getElementById('home-mood-reply-text');
+  if (replyDiv && replyText) {
+    var mb = window.manualBodyData;
+    var cd = window.cycleData;
+    var replies = {
+      'gut drauf': 'Schön! ' + (mb && mb.energyScore >= 60 ? 'Das spiegeln auch deine Daten wider. ' : 'Das freut mich — auch wenn deine Daten heute gemischt aussehen. Dein Gefühl zählt. ') + 'Lass uns schauen wie wir das nutzen.',
+      'müde': 'Das ergibt Sinn — ' + (mb && mb.sleepMins < 360 ? mb.sleepStr + ' Schlaf ist zu wenig' : cd && cd.phase === 'Lutealphase' ? 'in der Lutealphase ist der Energiebedarf höher' : 'dein Körper signalisiert Pause') + '. Was möchtest du heute angehen?',
+      'gestresst': 'Ich sehe das' + (mb && mb.stressScore > 60 ? ' auch in deinen Daten — Stress ' + mb.stressScore + '/100.' : '.') + ' Lass uns herausfinden wo es drückt.',
+      'nachdenklich': 'Nachdenklichkeit in der ' + (cd ? cd.phase : 'aktuellen Phase') + ' hat oft einen Grund. Worüber kreisen die Gedanken?',
+      'motiviert': 'Gut! ' + (cd && (cd.phase === 'Follikelphase' || cd.phase === 'Ovulation') ? 'Passt zur ' + cd.phase + ' — hormonell auf deiner Seite.' : 'Nutze das Fenster bewusst.') + ' Was nimmst du dir heute vor?',
+      'nicht so toll': 'Danke dass du das sagst. ' + (mb && mb.sleepMins < 360 ? 'Mit ' + mb.sleepStr + ' Schlaf ist das nachvollziehbar. ' : '') + 'Was belastet dich gerade am meisten?'
+    };
+    replyText.innerHTML = replies[mood] || 'Danke für dein Feedback.';
+    replyDiv.style.display = 'flex';
+    replyDiv.style.flexDirection = 'column';
+  }
+
+  // Show topics after delay
+  setTimeout(homeShowTopics, 800);
+}
+
+function homeShowTopics() {
+  var step = document.getElementById('home-step-topics');
+  var list = document.getElementById('home-topics-list');
+  if (!step || !list) return;
+
+  var cd = window.cycleData;
+  var mb = window.manualBodyData;
+  var phase = cd ? cd.phase : 'Lutealphase';
+
+  var topics = [
+    { icon:'🏃‍♀️', bg:'rgba(212,134,58,0.1)', name:'Bewegung & Energie', hint: mb && mb.hrv && parseInt(mb.hrv) < 42 ? 'HRV niedrig — was passt heute?' : 'Training & Zyklusphase', msg:'Ich möchte über Bewegung und Energie sprechen' },
+    { icon:'🧘‍♀️', bg:'rgba(123,168,224,0.12)', name:'Stress & Mental Load', hint:'Nervensystem & Erholung', msg:'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
+    { icon:'🌸', bg:'rgba(155,127,192,0.12)', name:'Zyklus & Hormone', hint: cd ? phase + ' · Tag ' + cd.cycleDay : 'Zyklus verstehen', msg:'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
+    { icon:'😴', bg:'rgba(107,143,212,0.1)', name:'Schlaf & Erholung', hint: mb ? mb.sleepStr + ' letzte Nacht' : 'Schlafqualität verbessern', msg:'Ich möchte über meinen Schlaf sprechen' },
+    { icon:'🥗', bg:'rgba(123,196,127,0.12)', name:'Ernährung & Körper', hint:'Zyklusbasiert essen', msg:'Ich möchte über Ernährung und meinen Körper sprechen' },
+    { icon:'💜', bg:'rgba(155,127,192,0.08)', name:'Einfach reden', hint:'Kein Thema — nur da sein', msg:'Ich möchte einfach reden' },
+  ];
+
+  list.innerHTML = topics.map(function(t) {
+    return '<button onclick="homeStartChat(\'' + t.msg.replace(/'/g,"\\'") + '\')" style="width:100%;background:white;border-radius:14px;border:1px solid rgba(155,127,192,0.15);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(45,27,78,0.05);">' +
+      '<div style="width:38px;height:38px;border-radius:10px;background:' + t.bg + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">' + t.icon + '</div>' +
+      '<div style="flex:1;text-align:left;">' +
+        '<div style="font-size:14px;font-weight:600;color:#2D1B4E;">' + t.name + '</div>' +
+        '<div style="font-size:11px;color:#A090BC;margin-top:2px;">' + t.hint + '</div>' +
+      '</div>' +
+      '<div style="color:#C0B0D0;font-size:16px;">→</div>' +
+    '</button>';
+  }).join('');
+
+  step.style.display = 'flex';
+  step.style.flexDirection = 'column';
+  setTimeout(function() {
+    step.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+}
+
+function homeStartChat(msg) {
+  var win = document.getElementById('chat-window');
+  if (win) win.classList.add('open');
+  chatHistory.length = 0;
+  var msgs = document.getElementById('messages');
+  if (msgs) msgs.innerHTML = '';
+  showTyping();
+  callAvie(msg).then(function(reply) {
+    removeTyping();
+    addMsg(reply, 'avie');
+  }).catch(function() {
+    removeTyping();
+    addMsg('Ich bin gleich für dich da. 💜', 'avie');
   });
 }
+
 
 function wireMainScreens() {
   const app = document.getElementById('app');
@@ -2500,10 +2683,15 @@ function closeGuide() {
   const g = document.getElementById('guide');
   if (!g) return;
   g.style.animation = 'dashOut 0.3s ease both';
-  g.addEventListener('animationend', () => {
-    g.remove();
-    showDashboard();
-  });
+  g.addEventListener('animationend', () => g.remove());
+}
+
+function startApp() {
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  updateClock();
+  personalizeApp();
+  homeInit();
 }
 
 // ── Dashboard Analyse — avie erklärt die Werte im Guide-Stil ──
@@ -4635,12 +4823,32 @@ function openChat(starterMsg) {
   });
 }
 
-function closeChat() {
-  // Generate summary if conversation happened
+function promptCloseChat() {
+  // Only show dialog if there's a real conversation
   if (chatHistory.length >= 4) {
-    generateChatSummary();
+    var dialog = document.getElementById('chat-close-dialog');
+    if (dialog) dialog.style.display = 'flex';
+  } else {
+    discardChatAndClose();
   }
+}
+
+function saveChatAndClose() {
+  var dialog = document.getElementById('chat-close-dialog');
+  if (dialog) dialog.style.display = 'none';
   document.getElementById('chat-window').classList.remove('open');
+  generateChatSummary();
+}
+
+function discardChatAndClose() {
+  var dialog = document.getElementById('chat-close-dialog');
+  if (dialog) dialog.style.display = 'none';
+  document.getElementById('chat-window').classList.remove('open');
+  chatHistory.length = 0;
+}
+
+function closeChat() {
+  promptCloseChat();
 }
 
 function generateChatSummary() {
@@ -4675,8 +4883,8 @@ function generateChatSummary() {
 
 function showChatSummaryCard(summary) {
   // Find or create the summary container on homescreen
-  var homeBody = document.getElementById('home-body');
-  if (!homeBody) return;
+  var summaryArea = document.getElementById('home-summary-area');
+  if (!summaryArea) return;
 
   // Remove old summary if exists
   var old = document.getElementById('chat-summary-card');
@@ -4703,14 +4911,7 @@ function showChatSummaryCard(summary) {
       '</div>' +
     '</div>';
 
-  // Insert after the avie reply bubble, before mood chips
-  var moodSection = homeBody.querySelector('#main-mood-section') || homeBody.querySelector('[data-main-mood]');
-  if (moodSection) {
-    var parent = moodSection.closest('div[style*="flex-direction:column"]') || moodSection.parentNode;
-    homeBody.insertBefore(card, parent);
-  } else {
-    homeBody.appendChild(card);
-  }
+  summaryArea.appendChild(card);
 
   // Scroll to show the card
   setTimeout(function() {

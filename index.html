@@ -1681,7 +1681,7 @@ html, body {
         <div style="padding-left:42px;">
           <button id="home-dash-btn" onclick="homeOpenDashboard()"
             style="width:100%;padding:13px 18px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-            📊 Dashboard aktualisieren
+            📊 Dashboard öffnen
           </button>
         </div>
       </div>
@@ -2123,8 +2123,7 @@ function startApp() {
   document.getElementById('app').classList.add('visible');
   updateClock();
   personalizeApp();
-  homeInit();
-  showGuide();
+  homeInit(true);
 }
 
 function skipOnboarding() {
@@ -2132,7 +2131,7 @@ function skipOnboarding() {
   document.getElementById('app').classList.add('visible');
   updateClock();
   personalizeApp();
-  homeInit();
+  homeInit(false);
 }
 
 function personalizeApp() {
@@ -2354,13 +2353,63 @@ function buildMoodExplanation(moodKey) {
 
 // ── Homescreen Flow ──
 
-function homeInit() {
-  // Build greeting
+function homeInit(fromOnboarding) {
   var hour = new Date().getHours();
   var greet = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
-  var name = userName ? ', ' + userName : '';
   var gt = document.getElementById('home-greeting-text');
-  if (gt) gt.innerHTML = greet + name + ' 👋<br><br>Wie war deine Nacht? Aktualisiere dein Dashboard damit ich dir heute wirklich helfen kann.';
+  if (!gt) return;
+
+  if (fromOnboarding && userName) {
+    // Show placeholder while generating
+    gt.innerHTML = greet + ', ' + userName + ' 👋<br><br><span style="color:#A090BC;">…</span>';
+
+    // Build personalized greeting via API based on onboarding answers
+    var kinderTxt = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6', 'ja-gross': 'ältere Kinder' };
+    var lifeTxt = { 'job-intensiv': 'sehr intensiven Job', 'ausgewogen': 'ausgewogenen Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'unberechenbaren Alltag' };
+    var wunschTxt = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Gesundheit besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden' };
+    var wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w) { return w !== 'alles'; }).map(function(w) { return wunschTxt[w] || w; }).join(', ') : '';
+
+    var prompt = 'Du bist avie. Schreib eine kurze, persönliche Begrüßung für ' + userName + ' (ca. 2–3 Sätze). Das weißt du über sie:\n' +
+      '- Alter: ' + (klAnswers.alter || 'unbekannt') + '\n' +
+      '- ' + (kinderTxt[klAnswers.kinder] || '') + '\n' +
+      '- Alltag: ' + (lifeTxt[klAnswers.lifestyle] || '') + '\n' +
+      (wunschList ? '- Sie wünscht sich von avie: ' + wunschList + '\n' : '') +
+      '\nDie Erwartungen der Nutzerin sind der Kern dieser Begrüßung — greif konkret auf, was sie sich von avie erhofft, und zeig ihr dass du das gehört hast und genau das liefern willst. Nicht als Liste, sondern als echter, persönlicher Satz. Warm und direkt, keine Floskeln. Endet mit einem natürlichen Satz der einlädt, gemeinsam einen Blick auf ihre Körperwerte zu werfen — bevor das eigentliche Gespräch beginnt. Avie immer klein schreiben. Kein "Hallo" am Anfang.';
+
+    fetch('https://avie-proxy.hoyer2707.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 150,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var text = (data.content && data.content[0] && data.content[0].text) || '';
+      if (text && gt) {
+        gt.innerHTML = greet + ', ' + userName + ' 👋<br><br>' + text;
+      }
+    })
+    .catch(function() {
+      // Fallback to static but personalized text
+      if (gt) gt.innerHTML = greet + ', ' + userName + ' 👋<br><br>' +
+        'Schön dass du da bist. ' +
+        (klAnswers.kinder === 'ja-klein' ? 'Mit kleinen Kindern und ' : '') +
+        (lifeTxt[klAnswers.lifestyle] ? lifeTxt[klAnswers.lifestyle] + ' — ' : '') +
+        'avie ist hier um dir zu helfen, deinen Körper und deinen Alltag besser zu verstehen.<br><br>' +
+        'Lass uns gemeinsam einen Blick auf deine Körperwerte werfen, bevor wir uns unterhalten.';
+    });
+
+  } else {
+    // Returning user — simple greeting
+    var name = userName ? ', ' + userName : '';
+    gt.innerHTML = greet + name + ' 👋<br><br>' +
+      (window.manualBodyData || window.cycleData
+        ? 'Wie geht es dir heute? Lass uns einen Blick auf deine Körperwerte werfen, bevor wir uns unterhalten.'
+        : 'Lass uns gemeinsam einen Blick auf deine Körperwerte werfen, bevor wir uns unterhalten.');
+  }
 }
 
 function homeOpenDashboard() {
@@ -2434,27 +2483,105 @@ function homeMoodSelect(btn) {
   // Record mood
   recordMood(btn.textContent.trim());
 
-  // Show mood reply
+  // Show loading state in reply
   var replyDiv = document.getElementById('home-mood-reply');
   var replyText = document.getElementById('home-mood-reply-text');
   if (replyDiv && replyText) {
-    var mb = window.manualBodyData;
-    var cd = window.cycleData;
-    var replies = {
-      'gut drauf': 'Schön! ' + (mb && mb.energyScore >= 60 ? 'Das spiegeln auch deine Daten wider. ' : 'Das freut mich — auch wenn deine Daten heute gemischt aussehen. Dein Gefühl zählt. ') + 'Lass uns schauen wie wir das nutzen.',
-      'müde': 'Das ergibt Sinn — ' + (mb && mb.sleepMins < 360 ? mb.sleepStr + ' Schlaf ist zu wenig' : cd && cd.phase === 'Lutealphase' ? 'in der Lutealphase ist der Energiebedarf höher' : 'dein Körper signalisiert Pause') + '. Was möchtest du heute angehen?',
-      'gestresst': 'Ich sehe das' + (mb && mb.stressScore > 60 ? ' auch in deinen Daten — Stress ' + mb.stressScore + '/100.' : '.') + ' Lass uns herausfinden wo es drückt.',
-      'nachdenklich': 'Nachdenklichkeit in der ' + (cd ? cd.phase : 'aktuellen Phase') + ' hat oft einen Grund. Worüber kreisen die Gedanken?',
-      'motiviert': 'Gut! ' + (cd && (cd.phase === 'Follikelphase' || cd.phase === 'Ovulation') ? 'Passt zur ' + cd.phase + ' — hormonell auf deiner Seite.' : 'Nutze das Fenster bewusst.') + ' Was nimmst du dir heute vor?',
-      'nicht so toll': 'Danke dass du das sagst. ' + (mb && mb.sleepMins < 360 ? 'Mit ' + mb.sleepStr + ' Schlaf ist das nachvollziehbar. ' : '') + 'Was belastet dich gerade am meisten?'
-    };
-    replyText.innerHTML = replies[mood] || 'Danke für dein Feedback.';
     replyDiv.style.display = 'flex';
     replyDiv.style.flexDirection = 'column';
+    replyText.innerHTML = '<span style="color:#A090BC;font-size:13px;">avie analysiert…</span>';
   }
 
-  // Show topics after delay
-  setTimeout(homeShowTopics, 800);
+  // Build analysis prompt
+  var cd = window.cycleData;
+  var mb = window.manualBodyData;
+
+  var dataContext = '';
+  if (mb) {
+    dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
+    dataContext += 'Energie: ' + mb.energyScore + '/100\n';
+    dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
+    if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
+    if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
+    if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
+  }
+  if (cd) {
+    dataContext += 'Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
+    if (cd.hormoneVal) dataContext += 'Hormone: ' + cd.hormoneVal + '\n';
+  }
+
+  var kinderCtx = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
+  var lifeCtx = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
+  var wunschCtx = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Gesundheit besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden' };
+  var wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w){ return w !== 'alles'; }).map(function(w){ return wunschCtx[w] || w; }).join(', ') : '';
+
+  var lebenssituation = '';
+  if (klAnswers.kinder) lebenssituation += kinderCtx[klAnswers.kinder] || '';
+  if (klAnswers.lifestyle) lebenssituation += (lebenssituation ? ', ' : '') + (lifeCtx[klAnswers.lifestyle] || '');
+
+  var prompt = 'Die Nutzerin heißt ' + (userName || 'sie') + ', ist ' + (klAnswers.alter || 'unbekannt') + ' Jahre alt.\n' +
+    'Lebenssituation: ' + (lebenssituation || 'unbekannt') + '\n' +
+    (wunschList ? 'Was sie sich von avie wünscht: ' + wunschList + '\n' : '') +
+    '\nIhre Körperdaten heute:\n' + dataContext +
+    '\nSie sagt, sie fühlt sich heute "' + mood + '".\n\n' +
+    'Schreib jetzt avies tägliche Tiefenanalyse. Strukturiere sie mit kurzen Fettdruck-Überschriften (**Überschrift**). Jeder Abschnitt 2–4 Sätze.\n\n' +
+    'Folgende Abschnitte je nach verfügbaren Daten:\n' +
+    '- **Dein Schlaf heute** — was die Zahlen bedeuten, was fehlender Tiefschlaf oder Wachphasen biologisch bewirken\n' +
+    '- **Dein Nervensystem** — HRV, Recovery, Ruhepuls einordnen und erklären was das für Stresstoleranz, Reaktivität und Energie bedeutet\n' +
+    '- **Deine Zyklusphase** — welche Hormone jetzt aktiv sind, was das konkret mit Stimmung, Energie, Schlafbedarf, Stressreaktion macht\n' +
+    '- **Deine Lebenssituation** — wie ' + (lebenssituation || 'ihr Alltag') + ' die körperlichen Signale verstärken oder abfedern kann\n' +
+    '- **Das Zusammenspiel** — wo sich Faktoren gegenseitig verstärken (z.B. Lutealphase + Schlafmangel + intensiver Job = dreifach erhöhte Stressreaktion)\n' +
+    '- **Warum du dich "' + mood + '" fühlst** — die Herleitung: "Es könnte sein, dass du dich deshalb so fühlst, weil..." — alles zusammenführen\n' +
+    '- **Was das für heute bedeutet** — 2–3 Sätze Fazit\n\n' +
+    'Wichtig: Baue aktiv Herleitungen ein. Nicht nur Fakten — sondern "weil X, deshalb Y". ' +
+    'Das Wissen aus der Lebenssituation und den Wünschen der Nutzerin einfließen lassen wo es passt. ' +
+    'Zeig echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala, präfrontaler Kortex — konkret, nicht akademisch. ' +
+    'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
+    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.';
+
+  fetch('https://avie-proxy.hoyer2707.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 800,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var text = (data.content && data.content[0] && data.content[0].text) || '';
+    if (text && replyText) {
+      // Render **heading** as styled section headers, then paragraphs
+      var rendered = text
+        .replace(/\*\*([^*]+)\*\*/g, '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9B7FC0;margin-top:14px;margin-bottom:4px;">$1</div>')
+        .replace(/\n\n/g, '</p><p style="margin:0;font-size:14px;color:#2D1B4E;line-height:1.6;">')
+        .replace(/\n/g, '<br>');
+      replyText.innerHTML = '<p style="margin:0;font-size:14px;color:#2D1B4E;line-height:1.6;">' + rendered + '</p>';
+    }
+    setTimeout(homeShowTopics, 600);
+  })
+  .catch(function() {
+    // Fallback: data-driven but static
+    var mb = window.manualBodyData;
+    var cd = window.cycleData;
+    var lines = [];
+    var moodMap = {
+      'müde': 'Deine Müdigkeit hat einen konkreten Grund',
+      'gestresst': 'Dein Stressgefühl ist biologisch erklärbar',
+      'gut drauf': 'Deine gute Stimmung hat eine körperliche Basis',
+      'nachdenklich': 'Nachdenklichkeit hat in dieser Phase einen Grund',
+      'motiviert': 'Deine Motivation ist hormonell unterstützt',
+      'nicht so toll': 'Dieses Gefühl hat mehrere Ursachen'
+    };
+    lines.push(moodMap[mood] || 'Dein Körper erklärt dieses Gefühl');
+    if (mb && mb.sleepMins < 360) lines.push('Mit ' + mb.sleepStr + ' Schlaf ist dein präfrontaler Kortex unterversorgt — das verstärkt jede Emotion.');
+    if (mb && mb.hrv && parseInt(mb.hrv) < 42) lines.push('HRV ' + mb.hrv + ' ms bedeutet: dein autonomes Nervensystem ist bereits belastet.');
+    if (cd) lines.push('In der ' + cd.phase + ' (Tag ' + cd.cycleDay + ') ist ' + (cd.phase === 'Lutealphase' ? 'Progesteron erhöht — das dämpft Dopamin und erhöht die Stressreaktivität.' : cd.phase === 'Follikelphase' ? 'Östrogen im Aufbau — Energie und Belastbarkeit steigen.' : 'dein Hormonspiegel auf einem charakteristischen Niveau.'));
+    if (replyText) replyText.innerHTML = lines.join('<br><br>');
+    setTimeout(homeShowTopics, 400);
+  });
 }
 
 function homeShowTopics() {
@@ -2499,6 +2626,8 @@ function homeStartChat(msg) {
   chatHistory.length = 0;
   var msgs = document.getElementById('messages');
   if (msgs) msgs.innerHTML = '';
+  // Add user message to history first
+  addMsg(msg, 'user');
   showTyping();
   callAvie(msg).then(function(reply) {
     removeTyping();
@@ -2691,7 +2820,7 @@ function startApp() {
   document.getElementById('app').classList.add('visible');
   updateClock();
   personalizeApp();
-  homeInit();
+  homeInit(true);
 }
 
 // ── Dashboard Analyse — avie erklärt die Werte im Guide-Stil ──
@@ -4824,7 +4953,6 @@ function openChat(starterMsg) {
 }
 
 function promptCloseChat() {
-  // Only show dialog if there's a real conversation
   if (chatHistory.length >= 4) {
     var dialog = document.getElementById('chat-close-dialog');
     if (dialog) dialog.style.display = 'flex';
@@ -4836,8 +4964,11 @@ function promptCloseChat() {
 function saveChatAndClose() {
   var dialog = document.getElementById('chat-close-dialog');
   if (dialog) dialog.style.display = 'none';
+  // Save history snapshot BEFORE closing (clearing happens elsewhere)
+  var historySnapshot = chatHistory.slice();
   document.getElementById('chat-window').classList.remove('open');
-  generateChatSummary();
+  // Generate summary with snapshot
+  generateChatSummary(historySnapshot);
 }
 
 function discardChatAndClose() {
@@ -4851,19 +4982,21 @@ function closeChat() {
   promptCloseChat();
 }
 
-function generateChatSummary() {
-  // Build a concise conversation for summarization
-  const recentHistory = chatHistory.slice(-10); // last 10 turns max
-  const summaryPrompt = 'Fasse dieses Gespräch in exakt diesem JSON-Format zusammen (kein Markdown, nur reines JSON):\n{\n  "thema": "max 4 Wörter, was war das Thema",\n  "erkenntnis": "1 Satz — was hat die Nutzerin heute über sich oder ihren Körper verstanden",\n  "avie_lernt": "1 Satz — was avie jetzt besser über diese Nutzerin weiß"\n}\n\nNur JSON zurückgeben, nichts sonst.';
+function generateChatSummary(historySnapshot) {
+  var history = historySnapshot || chatHistory;
+  if (!history || history.length < 2) return;
 
-  const messages = recentHistory.concat([{ role: 'user', content: summaryPrompt }]);
+  var recentHistory = history.slice(-10);
+  var summaryPrompt = 'Fasse dieses Gespräch in exakt diesem JSON-Format zusammen (kein Markdown, nur reines JSON):\n{\n  "thema": "max 4 Wörter, was war das Thema",\n  "erkenntnis": "1 Satz — was hat die Nutzerin heute über sich oder ihren Körper verstanden",\n  "avie_lernt": "1 Satz — was avie jetzt besser über diese Nutzerin weiß"\n}\n\nNur JSON zurückgeben, nichts sonst.';
+
+  var messages = recentHistory.concat([{ role: 'user', content: summaryPrompt }]);
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-5',
-      max_tokens: 200,
+      max_tokens: 300,
       messages: messages
     })
   })
@@ -4871,14 +5004,29 @@ function generateChatSummary() {
   .then(function(data) {
     var text = (data.content && data.content[0] && data.content[0].text) || '';
     text = text.trim().replace(/^```json?\s*/,'').replace(/\s*```$/,'');
+    var summary;
     try {
-      var summary = JSON.parse(text);
-      showChatSummaryCard(summary);
+      summary = JSON.parse(text);
     } catch(e) {
-      // Silent fail — don't show broken card
+      // Fallback: extract thema from first user message
+      var firstMsg = recentHistory.find(function(m) { return m.role === 'user'; });
+      summary = {
+        thema: 'Unser Gespräch',
+        erkenntnis: firstMsg ? firstMsg.content.slice(0, 80) + '…' : 'Ein gutes Gespräch.',
+        avie_lernt: 'Deine Gedanken und Gefühle dazu.'
+      };
     }
+    showChatSummaryCard(summary);
   })
-  .catch(function() {});
+  .catch(function() {
+    // Still show a basic card even if API fails
+    var firstMsg = history.find(function(m) { return m.role === 'user'; });
+    showChatSummaryCard({
+      thema: 'Unser Gespräch',
+      erkenntnis: firstMsg ? firstMsg.content.slice(0, 80) : 'Ein Gespräch mit avie.',
+      avie_lernt: 'avie merkt sich deine Themen.'
+    });
+  });
 }
 
 function showChatSummaryCard(summary) {

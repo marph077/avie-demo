@@ -28,7 +28,10 @@
   --font-body:    'DM Sans', sans-serif;
 }
 
-html, body {
+html, html {
+  height: 100%;
+}
+body {
   height: 100%;
   font-family: var(--font-body);
   background: var(--lav-bg);
@@ -36,6 +39,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .phone {
@@ -1080,6 +1084,7 @@ html, body {
   z-index: 40;
   display: none;
   flex-direction: column;
+  overflow: hidden;
 }
 .chat-window.open { display: flex; }
 .chat-win-header {
@@ -1672,18 +1677,43 @@ html, body {
 
       <!-- STEP 1: avie begrüßt + Dashboard-Aufforderung -->
       <div id="home-step-greet" style="display:flex;flex-direction:column;gap:14px;">
-        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
-          <div id="home-greeting-bubble" style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
-            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-greeting-text">Guten Morgen 👋</span></div>
+
+        <!-- avie Begrüßung + offene Frage -->
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;"><div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div><div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;"><div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-greeting-text">Guten Morgen 👋</span></div></div></div>
+
+        <!-- Second bubble: avie's personalized question -->
+        <div id="home-question-bubble-wrap" style="display:none;flex-direction:column;gap:0;">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+            <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
+              <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-open-question">…</span></div>
+            </div>
           </div>
         </div>
-        <div style="padding-left:42px;">
-          <button id="home-dash-btn" onclick="homeOpenDashboard()"
-            style="width:100%;padding:13px 18px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-            📊 Dashboard öffnen
-          </button>
+
+        <!-- Nutzer Eingabefeld -->
+        <div id="home-input-wrap" style="padding-left:42px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;">
+          <textarea id="home-user-input"
+            placeholder="Schreib kurz…"
+            rows="2"
+            style="flex:1;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:#2D1B4E;outline:none;resize:none;line-height:1.5;box-shadow:0 2px 8px rgba(45,27,78,0.06);"
+            onfocus="this.style.borderColor='#9B7FC0'"
+            onblur="this.style.borderColor='rgba(155,127,192,0.25)'"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();homeUserReply();}"></textarea>
+          <button onclick="homeUserReply()" style="width:42px;height:42px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">→</button>
         </div>
+
+        <!-- Dezenter Dashboard-Link immer sichtbar -->
+        <div style="padding-left:42px;">
+          <button onclick="homeOpenDashboard()" style="font-size:12px;color:#A090BC;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;">📊 Direkt zu deinen Körperdaten →</button>
+        </div>
+
+        <!-- avie Antwort + Optionen (erscheint nach Nutzereingabe) -->
+        <div id="home-reply-wrap" style="display:none;flex-direction:column;gap:12px;">
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;"><div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div><div id="home-reply-bubble" style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;"><div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-reply-text"></span></div></div></div>
+          <div id="home-reply-options" style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;"></div>
+        </div>
+
       </div>
 
       <!-- STEP 2: Analyse (erscheint nach Dashboard) -->
@@ -1696,33 +1726,7 @@ html, body {
         </div>
       </div>
 
-      <!-- STEP 3: Mood Chips (erscheint nach Analyse) -->
-      <div id="home-step-mood" style="display:none;flex-direction:column;gap:14px;">
-        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
-          <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
-            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Wie fühlst du dich gerade <strong>wirklich</strong>?</div>
-          </div>
-        </div>
-        <div id="home-mood-chips" style="padding-left:42px;display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
-          <button class="mood-chip" data-mood="gut drauf" onclick="homeMoodSelect(this)">✨ Gut drauf</button>
-          <button class="mood-chip" data-mood="müde" onclick="homeMoodSelect(this)">😴 Müde</button>
-          <button class="mood-chip" data-mood="gestresst" onclick="homeMoodSelect(this)">🌀 Gestresst</button>
-          <button class="mood-chip" data-mood="nachdenklich" onclick="homeMoodSelect(this)">💭 Nachdenklich</button>
-          <button class="mood-chip" data-mood="motiviert" onclick="homeMoodSelect(this)">💪 Motiviert</button>
-          <button class="mood-chip" data-mood="nicht so toll" onclick="homeMoodSelect(this)">🌧 Nicht so toll</button>
-        </div>
-        <div id="home-mood-reply" style="display:none;flex-direction:column;gap:14px;">
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-          <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
-          <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
-            <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-mood-reply-text"></span></div>
-          </div>
-        </div>
-        </div>
-      </div>
-
-      <!-- STEP 4: Themenauswahl (erscheint nach Mood) -->
+      <!-- STEP 3: Themenauswahl (erscheint nach Analyse) -->
       <div id="home-step-topics" style="display:none;flex-direction:column;gap:14px;">
         <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
           <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
@@ -1730,7 +1734,7 @@ html, body {
             <div style="font-size:14px;color:#2D1B4E;line-height:1.55;">Worüber möchtest du heute sprechen?</div>
           </div>
         </div>
-        <div id="home-topics-list" style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;"></div>
+        <div id="home-topics-list" style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;box-sizing:border-box;width:100%;"></div>
       </div>
 
     </div>
@@ -1760,41 +1764,6 @@ html, body {
 
 
     <!-- Topic sheet overlay (bottom sheet) -->
-    <div class="topic-sheet" id="topic-sheet">
-      <div class="topic-sheet-handle"></div>
-      <div class="topic-sheet-header">
-        <div class="topic-sheet-title">Wonach suchst du gerade?</div>
-        <div class="topic-sheet-sub">Basierend auf deinem heutigen Tag</div>
-      </div>
-      <div class="topic-list">
-        <button class="topic-btn" onclick="openChat('Ich möchte über meine Bewegung heute sprechen')">
-          <div class="topic-icon" style="background:rgba(212,134,58,0.1);">🏃‍♀️</div>
-          <div class="topic-text"><div class="topic-name">Bewegung & Energie</div><div class="topic-hint">HRV niedrig — was passt heute?</div></div>
-          <div class="topic-arrow">→</div>
-        </button>
-        <button class="topic-btn" onclick="openChat('Ich möchte über meinen Stresslevel sprechen')">
-          <div class="topic-icon" style="background:rgba(123,168,224,0.12);">🧘‍♀️</div>
-          <div class="topic-text"><div class="topic-name">Stress & Mental Load</div><div class="topic-hint">Heute bewusst Pausen einplanen</div></div>
-          <div class="topic-arrow">→</div>
-        </button>
-        <button class="topic-btn" onclick="openChat('Ich möchte über meinen Zyklus und meine Hormone sprechen')">
-          <div class="topic-icon" style="background:rgba(155,127,192,0.12);">🌸</div>
-          <div class="topic-text"><div class="topic-name">Zyklus & Hormone</div><div class="topic-hint">Lutealphase · Tag 19</div></div>
-          <div class="topic-arrow">→</div>
-        </button>
-        <button class="topic-btn" onclick="openChat('Ich möchte über meinen Schlaf sprechen')">
-          <div class="topic-icon" style="background:rgba(155,127,192,0.1);">🌙</div>
-          <div class="topic-text"><div class="topic-name">Schlaf & Erholung</div><div class="topic-hint">6h 48m — etwas wenig heute</div></div>
-          <div class="topic-arrow">→</div>
-        </button>
-        <button class="topic-btn" onclick="openChat('Ich möchte einfach reden, kein bestimmtes Thema')">
-          <div class="topic-icon" style="background:rgba(212,134,58,0.08);">💬</div>
-          <div class="topic-text"><div class="topic-name">Einfach reden</div><div class="topic-hint">Kein bestimmtes Thema</div></div>
-          <div class="topic-arrow">→</div>
-        </button>
-      </div>
-    </div>
-
     <!-- Chat window (hidden until opened) -->
     <div class="chat-window" id="chat-window">
       <div class="chat-win-header">
@@ -2356,62 +2325,126 @@ function buildMoodExplanation(moodKey) {
 function homeInit(fromOnboarding) {
   var hour = new Date().getHours();
   var greet = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
+
+  // 1. Show greeting bubble immediately
   var gt = document.getElementById('home-greeting-text');
   if (!gt) return;
+  gt.innerHTML = greet + (userName ? ', ' + userName : '') + ' 👋';
+
+  // 2. Show second bubble with typing indicator
+  var qWrap = document.getElementById('home-question-bubble-wrap');
+  var oq = document.getElementById('home-open-question');
+  if (qWrap) { qWrap.style.display = 'flex'; qWrap.style.flexDirection = 'column'; }
+  if (oq) oq.innerHTML = '<span style="color:#C0B0D0;">…</span>';
+
+  // Varying questions pool
+  var questions = hour >= 18
+    ? ['Wie war dein Tag?', 'Was hat dich heute am meisten beschäftigt?', 'Womit gehst du heute ins Bett?']
+    : ['Was bringt dich heute zu mir?', 'Welches Thema beschäftigt dich gerade besonders?', 'Gibt es noch etwas, das ich über dich wissen sollte?', 'Was bewegt dich heute?', 'Wie ist dein Gefühl gerade — was liegt an?'];
+  var question = questions[Math.floor(Math.random() * questions.length)];
 
   if (fromOnboarding && userName) {
-    // Show placeholder while generating
-    gt.innerHTML = greet + ', ' + userName + ' 👋<br><br><span style="color:#A090BC;">…</span>';
+    // 3. Fetch personalized question from API
+    var kinderCtx = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
+    var lifeCtx = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
+    var wunschCtx = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Gesundheit besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden' };
+    var wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w){ return w !== 'alles'; }).map(function(w){ return wunschCtx[w] || w; }).join(', ') : '';
+    var lebenssituation = [kinderCtx[klAnswers.kinder], lifeCtx[klAnswers.lifestyle]].filter(Boolean).join(', ');
 
-    // Build personalized greeting via API based on onboarding answers
-    var kinderTxt = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6', 'ja-gross': 'ältere Kinder' };
-    var lifeTxt = { 'job-intensiv': 'sehr intensiven Job', 'ausgewogen': 'ausgewogenen Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'unberechenbaren Alltag' };
-    var wunschTxt = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Gesundheit besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden' };
-    var wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w) { return w !== 'alles'; }).map(function(w) { return wunschTxt[w] || w; }).join(', ') : '';
-
-    var prompt = 'Du bist avie. Schreib eine kurze, persönliche Begrüßung für ' + userName + ' (ca. 2–3 Sätze). Das weißt du über sie:\n' +
+    var prompt = 'Du bist avie. Schreib eine kurze, persönliche Nachricht für ' + userName + ' (2-3 Sätze max). Das weißt du:\n' +
       '- Alter: ' + (klAnswers.alter || 'unbekannt') + '\n' +
-      '- ' + (kinderTxt[klAnswers.kinder] || '') + '\n' +
-      '- Alltag: ' + (lifeTxt[klAnswers.lifestyle] || '') + '\n' +
-      (wunschList ? '- Sie wünscht sich von avie: ' + wunschList + '\n' : '') +
-      '\nDie Erwartungen der Nutzerin sind der Kern dieser Begrüßung — greif konkret auf, was sie sich von avie erhofft, und zeig ihr dass du das gehört hast und genau das liefern willst. Nicht als Liste, sondern als echter, persönlicher Satz. Warm und direkt, keine Floskeln. Endet mit einem natürlichen Satz der einlädt, gemeinsam einen Blick auf ihre Körperwerte zu werfen — bevor das eigentliche Gespräch beginnt. Avie immer klein schreiben. Kein "Hallo" am Anfang.';
+      '- Lebenssituation: ' + (lebenssituation || 'unbekannt') + '\n' +
+      (wunschList ? '- Sie wünscht sich: ' + wunschList + '\n' : '') +
+      'Zeig dass avie wirklich zugehört hat. Warm, direkt, keine Floskeln. ' +
+      'WICHTIG: Kein Gruß am Anfang (kein Guten Morgen, Hallo, Schön dass etc.) - der Gruß kommt bereits separat davor. ' +
+      'Endet mit der Frage: "' + question + '"';
 
     fetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 150,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 150, messages: [{ role: 'user', content: prompt }] })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var text = (data.content && data.content[0] && data.content[0].text) || '';
-      if (text && gt) {
-        gt.innerHTML = greet + ', ' + userName + ' 👋<br><br>' + text;
-      }
+      if (oq) oq.innerHTML = text || question;
     })
     .catch(function() {
-      // Fallback to static but personalized text
-      if (gt) gt.innerHTML = greet + ', ' + userName + ' 👋<br><br>' +
-        'Schön dass du da bist. ' +
-        (klAnswers.kinder === 'ja-klein' ? 'Mit kleinen Kindern und ' : '') +
-        (lifeTxt[klAnswers.lifestyle] ? lifeTxt[klAnswers.lifestyle] + ' — ' : '') +
-        'avie ist hier um dir zu helfen, deinen Körper und deinen Alltag besser zu verstehen.<br><br>' +
-        'Lass uns gemeinsam einen Blick auf deine Körperwerte werfen, bevor wir uns unterhalten.';
+      if (oq) oq.textContent = question;
     });
 
   } else {
-    // Returning user — simple greeting
-    var name = userName ? ', ' + userName : '';
-    gt.innerHTML = greet + name + ' 👋<br><br>' +
-      (window.manualBodyData || window.cycleData
-        ? 'Wie geht es dir heute? Lass uns einen Blick auf deine Körperwerte werfen, bevor wir uns unterhalten.'
-        : 'Lass uns gemeinsam einen Blick auf deine Körperwerte werfen, bevor wir uns unterhalten.');
+    // Returning user — show question directly
+    if (oq) oq.textContent = question;
   }
 }
 
+
+
+var homeQuestionText = '';
+
+function homeUserReply() {
+  var input = document.getElementById('home-user-input');
+  if (!input || !input.value.trim()) return;
+  var userMsg = input.value.trim();
+  homeQuestionText = userMsg;
+  input.value = '';
+  input.disabled = true;
+
+  // Hide input wrap, show reply
+  var inputWrap = document.getElementById('home-input-wrap');
+  if (inputWrap) inputWrap.style.opacity = '0.5';
+
+  var replyWrap = document.getElementById('home-reply-wrap');
+  var replyText = document.getElementById('home-reply-text');
+  if (replyWrap && replyText) {
+    replyWrap.style.display = 'flex';
+    replyWrap.style.flexDirection = 'column';
+    replyText.innerHTML = '<span style="color:#A090BC;font-size:13px;">avie antwortet…</span>';
+  }
+
+  // Get question avie asked
+  var oq = document.getElementById('home-open-question');
+  var question = oq ? oq.textContent : 'Was beschäftigt dich?';
+
+  var hasDashData = window.cycleData || window.manualBodyData;
+
+  var prompt = 'Du bist avie. Die Nutzerin (' + (userName || 'Nutzerin') + ') hat auf deine Frage "' + question + '" geantwortet:\n\n"' + userMsg + '"\n\n' +
+    'Schreib eine kurze, empathische Antwort (2–3 Sätze) die zeigt dass du wirklich zugehört hast — keine Ratschläge, kein Coaching, nur echte Resonanz. ' +
+    'Dann führe natural in eine der Optionen ein: ob es Sinn macht, gemeinsam einen Blick auf ihre Körperdaten zu werfen — oder ob sie einfach direkt reden möchte. ' +
+    'Avie immer klein schreiben. Kein "Das klingt" oder "Ich höre".';
+
+  fetch('https://avie-proxy.hoyer2707.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 180, messages: [{ role: 'user', content: prompt }] })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var text = (data.content && data.content[0] && data.content[0].text) || 'Danke, dass du das teilst.';
+    if (replyText) replyText.innerHTML = text.replace(/\n/g, '<br>');
+    showHomeOptions(hasDashData);
+  })
+  .catch(function() {
+    if (replyText) replyText.innerHTML = 'Danke, dass du das teilst. Wo möchtest du anfangen?';
+    showHomeOptions(hasDashData);
+  });
+}
+
+function showHomeOptions(hasDashData) {
+  var opts = document.getElementById('home-reply-options');
+  if (!opts) return;
+
+  opts.innerHTML =
+    // Primary: Körperdaten ansehen
+    '<button onclick="homeOpenDashboard()" style="width:100%;padding:13px 18px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">📊 ' + (hasDashData ? 'Körperdaten aktualisieren' : 'Körperdaten ansehen') + '</button>' +
+    // Secondary: Einfach reden
+    '<button onclick="homeStartChat(\'' + homeQuestionText.replace(/'/g,"\\'").replace(/\n/g,' ') + '\')" style="width:100%;padding:12px 18px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">💬 Einfach weiterreden</button>';
+
+  setTimeout(function() {
+    opts.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 200);
+}
 function homeOpenDashboard() {
   showDashboard();
   // When dashboard closes, trigger analyse
@@ -2426,43 +2459,82 @@ function homeOpenDashboard() {
 function homeShowAnalyse() {
   var step = document.getElementById('home-step-analyse');
   var text = document.getElementById('home-analyse-text');
-  var homeBody = document.getElementById('home-body');
   if (!step || !text) return;
 
   var cd = window.cycleData;
   var mb = window.manualBodyData;
 
-  if (!cd && !mb) {
-    // No data - skip to mood
-    homeShowMood();
-    return;
-  }
+  if (!cd && !mb) { homeShowTopics(); return; }
 
-  // Build data-driven analysis
-  var lines = [];
-  if (mb) {
-    var sleepLine = 'Du hast ' + mb.sleepStr + ' geschlafen';
-    if (mb.wachphasen != null) sleepLine += ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + '× aufgewacht');
-    lines.push(sleepLine + '.');
-    if (mb.hrv) lines.push('HRV ' + mb.hrv + ' ms — ' + (mb.hrv < 40 ? 'dein Nervensystem ist belastet.' : mb.hrv < 55 ? 'solide, aber kein Überschuss.' : 'dein Nervensystem ist erholt.'));
-  }
-  if (cd) {
-    var phaseDesc = { 'Lutealphase': 'Stresstoleranz und Energie sind hormonal niedriger — dasselbe fühlt sich heute mehr an.', 'Follikelphase': 'Östrogen steigt — du bist im Aufschwung.', 'Ovulation': 'Höchste Energie-Phase.', 'Menstruation': 'Körper regeneriert sich.' };
-    lines.push('Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + ' — ' + cd.phase + '. ' + (phaseDesc[cd.phase] || ''));
-  }
-
-  text.innerHTML = lines.join('<br><br>');
   step.style.display = 'flex';
   step.style.flexDirection = 'column';
+  text.innerHTML = '<span style="color:#A090BC;font-size:13px;">avie analysiert deine Werte…</span>';
+  setTimeout(function() { step.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
 
-  // Scroll to new content
-  setTimeout(function() {
-    step.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 200);
+  var dataContext = '';
+  if (mb) {
+    dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
+    dataContext += 'Energie: ' + mb.energyScore + '/100\n';
+    dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
+    if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
+    if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
+    if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
+  }
+  if (cd) {
+    dataContext += 'Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
+    if (cd.hormoneVal) dataContext += 'Hormone: ' + cd.hormoneVal + '\n';
+  }
 
-  // Show mood after delay
-  setTimeout(homeShowMood, 1200);
+  var kinderCtx = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
+  var lifeCtx = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
+  var wunschCtx = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Gesundheit besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden' };
+  var wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w){ return w !== 'alles'; }).map(function(w){ return wunschCtx[w] || w; }).join(', ') : '';
+  var lebenssituation = [kinderCtx[klAnswers.kinder], lifeCtx[klAnswers.lifestyle]].filter(Boolean).join(', ');
+
+  var prompt = 'Die Nutzerin heißt ' + (userName || 'sie') + ', ist ' + (klAnswers.alter || 'unbekannt') + ' Jahre alt.\n' +
+    'Lebenssituation: ' + (lebenssituation || 'unbekannt') + '\n' +
+    (wunschList ? 'Was sie sich von avie wünscht: ' + wunschList + '\n' : '') +
+    '\nIhre Körperdaten heute:\n' + dataContext +
+    '\nSchreib avies tägliche Tiefenanalyse. Strukturiere mit Fettdruck-Überschriften (**Überschrift**). Jeder Abschnitt 2–4 Sätze.\n\n' +
+    'Abschnitte:\n' +
+    '- **Dein Schlaf heute** — Zahlen einordnen, biologische Auswirkungen erklären\n' +
+    '- **Dein Nervensystem** — HRV, Recovery, Ruhepuls und was das für Stresstoleranz bedeutet\n' +
+    '- **Deine Zyklusphase** — aktive Hormone, konkrete Auswirkungen auf Stimmung, Energie, Schlaf, Stress\n' +
+    '- **Deine Lebenssituation** — wie ' + (lebenssituation || 'ihr Alltag') + ' die Körpersignale verstärkt\n' +
+    '- **Das Zusammenspiel** — wo Faktoren sich gegenseitig verstärken\n' +
+    '- **Was das für heute bedeutet** — Fazit mit Herleitungen\n\n' +
+    'Herleitungen einbauen: "weil X, deshalb Y." Echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala. ' +
+    'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
+    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.';
+
+  fetch('https://avie-proxy.hoyer2707.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 900, messages: [{ role: 'user', content: prompt }] })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var resp = (data.content && data.content[0] && data.content[0].text) || '';
+    if (resp) {
+      var rendered = resp
+        .replace(/\*\*([^*]+)\*\*/g, '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9B7FC0;margin-top:14px;margin-bottom:4px;">$1</div>')
+        .replace(/\n\n/g, '</p><p style="margin:6px 0 0;font-size:14px;color:#2D1B4E;line-height:1.6;">')
+        .replace(/\n/g, '<br>');
+      text.innerHTML = '<p style="margin:0;font-size:14px;color:#2D1B4E;line-height:1.6;">' + rendered + '</p>';
+    }
+    setTimeout(homeShowTopics, 800);
+  })
+  .catch(function() {
+    var fallback = [];
+    if (mb && mb.sleepMins < 360) fallback.push('<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;margin-bottom:4px;">Dein Schlaf</div>Mit ' + mb.sleepStr + ' war heute zu wenig — Konzentration und Stresstoleranz leiden.');
+    if (cd) fallback.push('<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;margin-bottom:4px;">Deine Zyklusphase</div>' + cd.phase + ', Tag ' + cd.cycleDay + (cd.phase === 'Lutealphase' ? ' — Progesteron hoch, Stresstoleranz niedriger.' : ' — ' + cd.phase + '.'));
+    if (mb && mb.hrv) fallback.push('<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;margin-bottom:4px;">Dein Nervensystem</div>HRV ' + mb.hrv + ' ms — ' + (parseInt(mb.hrv) < 42 ? 'Nervensystem belastet.' : 'gute Ausgangslage.'));
+    text.innerHTML = '<div style="font-size:14px;color:#2D1B4E;line-height:1.6;">' + fallback.join('<br><br>') + '</div>';
+    setTimeout(homeShowTopics, 400);
+  });
 }
+
 
 function homeShowMood() {
   var step = document.getElementById('home-step-mood');
@@ -2594,16 +2666,16 @@ function homeShowTopics() {
   var phase = cd ? cd.phase : 'Lutealphase';
 
   var topics = [
+    { icon:'💬', bg:'rgba(45,27,78,0.06)', name:'Mein Thema', hint:'Ich möchte etwas besprechen', msg:'Ich möchte etwas mit dir besprechen. Was liegt mir auf dem Herzen?' },
     { icon:'🏃‍♀️', bg:'rgba(212,134,58,0.1)', name:'Bewegung & Energie', hint: mb && mb.hrv && parseInt(mb.hrv) < 42 ? 'HRV niedrig — was passt heute?' : 'Training & Zyklusphase', msg:'Ich möchte über Bewegung und Energie sprechen' },
     { icon:'🧘‍♀️', bg:'rgba(123,168,224,0.12)', name:'Stress & Mental Load', hint:'Nervensystem & Erholung', msg:'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
     { icon:'🌸', bg:'rgba(155,127,192,0.12)', name:'Zyklus & Hormone', hint: cd ? phase + ' · Tag ' + cd.cycleDay : 'Zyklus verstehen', msg:'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
     { icon:'😴', bg:'rgba(107,143,212,0.1)', name:'Schlaf & Erholung', hint: mb ? mb.sleepStr + ' letzte Nacht' : 'Schlafqualität verbessern', msg:'Ich möchte über meinen Schlaf sprechen' },
     { icon:'🥗', bg:'rgba(123,196,127,0.12)', name:'Ernährung & Körper', hint:'Zyklusbasiert essen', msg:'Ich möchte über Ernährung und meinen Körper sprechen' },
-    { icon:'💜', bg:'rgba(155,127,192,0.08)', name:'Einfach reden', hint:'Kein Thema — nur da sein', msg:'Ich möchte einfach reden' },
   ];
 
   list.innerHTML = topics.map(function(t) {
-    return '<button onclick="homeStartChat(\'' + t.msg.replace(/'/g,"\\'") + '\')" style="width:100%;background:white;border-radius:14px;border:1px solid rgba(155,127,192,0.15);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(45,27,78,0.05);">' +
+    return '<button onclick="homeStartChat(\'' + t.msg.replace(/'/g,"\\'") + '\')" style="width:100%;box-sizing:border-box;background:white;border-radius:14px;border:1px solid rgba(155,127,192,0.15);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:0 2px 8px rgba(45,27,78,0.05);">' +
       '<div style="width:38px;height:38px;border-radius:10px;background:' + t.bg + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">' + t.icon + '</div>' +
       '<div style="flex:1;text-align:left;">' +
         '<div style="font-size:14px;font-weight:600;color:#2D1B4E;">' + t.name + '</div>' +
@@ -2626,8 +2698,8 @@ function homeStartChat(msg) {
   chatHistory.length = 0;
   var msgs = document.getElementById('messages');
   if (msgs) msgs.innerHTML = '';
-  // Add user message to history first
-  addMsg(msg, 'user');
+  // Seed history silently (don't show user message as bubble)
+  chatHistory.push({ role: 'user', content: msg });
   showTyping();
   callAvie(msg).then(function(reply) {
     removeTyping();
@@ -3521,8 +3593,9 @@ function showDashboard() {
         </div>
       </div>
       <div id="koerper-card-real" style="background:transparent;border-radius:14px;border:none;flex-shrink:0;display:none;">
-        <div id="koerper-card-real-content" style="padding:0 16px 8px;overflow:hidden;transition:max-height 0.3s ease,opacity 0.3s;max-height:600px;opacity:1;">
-          <div style="display:flex;justify-content:flex-end;padding:4px 0 4px;">
+        <div id="koerper-card-real-content" style="padding:0 16px 8px;overflow:hidden;transition:max-height 0.3s ease,opacity 0.3s;max-height:0px;opacity:0;">
+          <div style="display:flex;justify-content:flex-end;gap:8px;padding:4px 0 4px;">
+            <button onclick="startDashAnalysis()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(45,27,78,0.25);background:transparent;color:#2D1B4E;cursor:pointer;font-family:inherit;">🔍 Analysieren</button>
             <button onclick="showManualBodyInput()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(155,127,192,0.3);background:transparent;color:#9B7FC0;cursor:pointer;font-family:inherit;">✏️ bearbeiten</button>
           </div>
         </div>
@@ -3564,33 +3637,17 @@ function showDashboard() {
       </div>
 
 
-      <div id="dash-avie-tipp" style="display:none;flex-shrink:0;">
-        <div id="dash-avie-tipp-text" style="display:flex;flex-direction:column;gap:12px;"></div>
-      </div>
-
     </div>
 
     <!-- CTA -->
-    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;display:flex;gap:10px;">
-      <button id="dash-analyse-btn" style="flex:1;padding:14px;border-radius:20px;border:1.5px solid #2D1B4E;background:transparent;color:#2D1B4E;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">🔍 Analysieren</button>
-      <button id="dash-chat-btn" style="flex:1;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#D4863A;display:inline-block;"></span>Mit avie sprechen</button>
+    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;">
+      <button id="dash-chat-btn" style="width:100%;padding:14px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#D4863A;display:inline-block;"></span>Mit avie sprechen</button>
     </div>
   `;
 
   document.querySelector('.phone').appendChild(div);
   rewireDashCTA();
-  setTimeout(function() {
-    var tippEl = document.getElementById('dash-avie-tipp');
-    var tippText = document.getElementById('dash-avie-tipp-text');
-    if (!tippEl || !tippText) return;
-    if (window.cycleData || window.manualBodyData) {
-      buildDashEmpfehlungen(tippText);
-      tippEl.style.removeProperty('display');
-      tippEl.style.flexShrink = '0';
-    } else {
-      tippEl.style.display = 'none';
-    }
-  }, 400);
+
 
   // Restore data if already entered
   if (window.manualBodyData) {
@@ -4129,17 +4186,7 @@ function showManualBodyInput() {
         personalizeApp();
         refreshGreeting();
         // Refresh avie tipp only when both data sources filled
-        var tippEl = document.getElementById('dash-avie-tipp');
-        var tippText = document.getElementById('dash-avie-tipp-text');
-        if (tippEl && tippText) {
-          if (window.cycleData || window.manualBodyData) {
-            buildDashEmpfehlungen(tippText);
-            tippEl.style.removeProperty('display');
-            tippEl.style.flexShrink = '0';
-          } else {
-            tippEl.style.display = 'none';
-          }
-        }
+
         updateManualScoreCards(energyScore, sleep, stressScore);
         removeDashWearableBanner();
         rewireDashCTA();
@@ -4203,13 +4250,7 @@ function connectSimWearable() {
 
   setTimeout(function() {
     // Refresh tipp
-    var tippEl = document.getElementById('dash-avie-tipp');
-    var tippText = document.getElementById('dash-avie-tipp-text');
-    if (tippEl && tippText) {
-      buildDashEmpfehlungen(tippText);
-      tippEl.style.removeProperty('display');
-      tippEl.style.flexShrink = '0';
-    }
+
     refreshGreeting();
     rewireDashCTA();
   }, 400);
@@ -4306,7 +4347,12 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
         koerperLocked.remove();
         if (koerperReal) {
           const content = koerperReal.querySelector('#koerper-card-real-content') || koerperReal;
-          content.innerHTML = '<div style="display:flex;justify-content:flex-end;padding:4px 0 4px;"><button onclick="showManualBodyInput()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(155,127,192,0.3);background:transparent;color:#9B7FC0;cursor:pointer;font-family:inherit;">✏️ bearbeiten</button></div>' + newHTML;
+          content.innerHTML = '<div style="display:flex;justify-content:flex-end;gap:8px;padding:4px 0 4px;"><button onclick="startDashAnalysis()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(45,27,78,0.25);background:transparent;color:#2D1B4E;cursor:pointer;font-family:inherit;">🔍 Analysieren</button><button onclick="showManualBodyInput()" style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(155,127,192,0.3);background:transparent;color:#9B7FC0;cursor:pointer;font-family:inherit;">✏️ bearbeiten</button></div>' + newHTML;
+          // Keep collapsed — user can expand manually
+          content.style.maxHeight = '0px';
+          content.style.opacity = '0';
+          const chevron = document.getElementById('koerper-chevron');
+          if (chevron) chevron.style.transform = 'rotate(-90deg)';
           koerperReal.style.display = 'block';
           koerperReal.style.animation = 'dashIn 0.35s ease both';
           koerperReal.querySelectorAll('[data-info]').forEach(el => {
@@ -4531,18 +4577,11 @@ function showVerlauf() {
 
 
 function openTopicSheet() {
-  const sheet = document.getElementById('topic-sheet');
-  if (sheet) sheet.classList.add('open');
-  let bd = document.getElementById('topic-backdrop');
-  if (!bd) {
-    bd = document.createElement('div');
-    bd.className = 'topic-backdrop';
-    bd.id = 'topic-backdrop';
-    bd.onclick = closeTopicSheet;
-    // append to phone so it overlays everything
-    document.querySelector('.phone').appendChild(bd);
+  // Scroll to topics on homescreen instead of old bottom sheet
+  var topicsEl = document.getElementById('home-step-topics');
+  if (topicsEl && topicsEl.style.display !== 'none') {
+    topicsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
-  setTimeout(() => bd.classList.add('open'), 10);
 }
 
 function closeTopicSheet() {

@@ -2441,9 +2441,11 @@ function showHomeOptions(hasDashData) {
     // Secondary: Einfach reden
     '<button onclick="homeStartChat(\'' + homeQuestionText.replace(/'/g,"\\'").replace(/\n/g,' ') + '\')" style="width:100%;padding:12px 18px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">💬 Einfach weiterreden</button>';
 
+  // Also trigger topic list after a brief pause
   setTimeout(function() {
     opts.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 200);
+  setTimeout(homeShowTopics, 1000);
 }
 function homeOpenDashboard() {
   showDashboard();

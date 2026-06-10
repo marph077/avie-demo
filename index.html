@@ -1095,7 +1095,7 @@ body {
 }
 .chat-window.open { display: flex; }
 .chat-win-header {
-  padding: 6px 20px 16px;
+  padding: 44px 20px 16px;
   background: var(--plum);
   display: flex; align-items: center; justify-content: space-between;
   flex-shrink: 0;
@@ -1610,6 +1610,23 @@ body {
             <div style="padding-left:42px;font-size:11px;color:#A090BC;flex-shrink:0;">Mehrfachauswahl möglich</div>
           </div>
 
+          <!-- avie Frage: noch etwas wissen? -->
+          <div id="kl-notiz-wrap" style="display:none;flex-direction:column;gap:14px;">
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
+              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
+                <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="kl-notiz-intro"></span>Gibt es denn noch etwas, das ich vorab über dich wissen sollte?<br><br><span style="color:#8A7AA5;font-size:13px;">Zum Beispiel Schwangerschaft, Kinderwunsch oder wie es dir gerade geht. Das hilft mir, dich besser zu begleiten.</span></div>
+              </div>
+            </div>
+            <div style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
+              <div style="display:flex;gap:8px;align-items:flex-end;">
+                <textarea id="kl-notiz-input" rows="2" placeholder="Erzähl mir gern, was dir wichtig ist…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();klNotizContinue();}" onfocus="this.style.borderColor='#9B7FC0'" onblur="this.style.borderColor='rgba(155,127,192,0.25)'" style="flex:1;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:#2D1B4E;outline:none;resize:none;line-height:1.5;box-shadow:0 2px 8px rgba(45,27,78,0.06);"></textarea>
+                <button onclick="klNotizContinue()" style="width:42px;height:42px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">→</button>
+              </div>
+              <button onclick="klNotizSkip()" style="align-self:flex-start;padding:9px 18px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:13px;cursor:pointer;">Erstmal nicht</button>
+            </div>
+          </div>
+
           <!-- Abschluss nach Wunsch -->
           <div id="kl-final-wrap" style="display:none;flex-direction:column;gap:14px;">
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
@@ -2107,23 +2124,73 @@ document.addEventListener('click', function(e) {
       }
     }
     if (klAnswers.wunsch.length > 0) {
-      const finalWrap = document.getElementById('kl-final-wrap');
-      const finalText = document.getElementById('kl-final-text');
-      const nameEl = document.getElementById('name-input');
-      const name_val = (nameEl && nameEl.value.trim()) || 'du';
-      if (finalWrap && finalWrap.style.display === 'none') {
-        finalWrap.style.display = 'flex'; finalWrap.style.flexDirection = 'column';
-        if (finalText) finalText.innerHTML = 'Gut, ' + name_val + '. Das gibt mir ein erstes Bild.<br><br>avie lernt durch jedes Gespr\u00e4ch mit dir \u2014 je mehr du teilst, desto besser kann ich Zusammenh\u00e4nge zwischen deinem K\u00f6rper, deinem Zyklus und deinem Alltag erkennen und erkl\u00e4ren.<br><br>Ich freue mich darauf. 🌸';
+      const notizWrap = document.getElementById('kl-notiz-wrap');
+      if (notizWrap && notizWrap.style.display === 'none') {
+        notizWrap.style.display = 'flex'; notizWrap.style.flexDirection = 'column';
       }
-      const startBtn = document.getElementById('klStartBtn');
-      if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = '1'; startBtn.style.cursor = 'pointer'; }
+      klUpdateNotizIntro();
       setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
     }
     return;
   }
 });
 
+function klUpdateNotizIntro() {
+  const introEl = document.getElementById('kl-notiz-intro');
+  if (!introEl) return;
+  const nameEl = document.getElementById('name-input');
+  const name = (nameEl && nameEl.value.trim()) || 'du';
+  const reactions = {
+    verstanden:   'mich darauf konzentrieren, dir gut zuzuhören',
+    orientierung: 'dir helfen, wieder Orientierung zu finden',
+    gesundheit:   'dir helfen, deine Gesundheit besser zu verstehen',
+    stress:       'mit dir schauen, wie du Stress rausnehmen kannst',
+    energie:      'mit dir mehr Energie und Balance finden'
+  };
+  const all = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch : [];
+  const sel = all.filter(function(w){ return w !== 'alles'; });
+  let phrase = '';
+  if (all.indexOf('alles') >= 0) {
+    phrase = 'für all das da sein — zuhören, Orientierung geben und mit dir an Gesundheit, Stress und Energie arbeiten';
+  } else if (sel.length === 1) {
+    phrase = reactions[sel[0]] || '';
+  } else if (sel.length > 1) {
+    const parts = sel.map(function(w){ return reactions[w]; }).filter(Boolean);
+    phrase = parts.slice(0, parts.length - 1).join(', ') + ' und ' + parts[parts.length - 1];
+  }
+  introEl.innerHTML = phrase ? ('Ok ' + name + ', ich werde ' + phrase + '.<br><br>') : '';
+}
+
+function klRevealFinal() {
+  const finalWrap = document.getElementById('kl-final-wrap');
+  const finalText = document.getElementById('kl-final-text');
+  const nameEl = document.getElementById('name-input');
+  const name_val = (nameEl && nameEl.value.trim()) || 'du';
+  if (finalWrap && finalWrap.style.display === 'none') {
+    finalWrap.style.display = 'flex'; finalWrap.style.flexDirection = 'column';
+    if (finalText) finalText.innerHTML = 'Gut, ' + name_val + '. Das gibt mir ein erstes Bild.<br><br>avie lernt durch jedes Gespräch mit dir — je mehr du teilst, desto besser kann ich Zusammenhänge zwischen deinem Körper, deinem Zyklus und deinem Alltag erkennen und erklären.<br><br>Ich freue mich darauf. 🌸';
+  }
+  const startBtn = document.getElementById('klStartBtn');
+  if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = '1'; startBtn.style.cursor = 'pointer'; }
+  const chat = document.getElementById('kl-chat');
+  setTimeout(function() { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+}
+
+function klNotizContinue() { klRevealFinal(); }
+
+function klNotizSkip() {
+  const ta = document.getElementById('kl-notiz-input');
+  if (ta) ta.value = '';
+  klRevealFinal();
+}
+
+function saveOnboardingNote() {
+  const ta = document.getElementById('kl-notiz-input');
+  if (ta && ta.value.trim()) klAnswers.notiz = ta.value.trim();
+}
+
 function startApp() {
+  saveOnboardingNote();
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   updateClock();
@@ -2393,7 +2460,7 @@ function homeInit(fromOnboarding) {
       (wunschList ? '- Sie wünscht sich: ' + wunschList + '\n' : '') +
       'Zeig dass avie wirklich zugehört hat. Warm, direkt, keine Floskeln. ' +
       'WICHTIG: Kein Gruß am Anfang (kein Guten Morgen, Hallo, Schön dass etc.) - der Gruß kommt bereits separat davor. ' +
-      'Endet mit der Frage: "' + question + '"';
+      'Endet mit der Frage: "' + question + '"' + profileNote();
 
     fetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST',
@@ -2475,7 +2542,7 @@ function homeUserReply() {
       ? 'Nutze die verfuegbaren Daten: Nenne z.B. die konkrete Zyklusphase, den Schlafwert oder die HRV und erklaere kurz den biologischen Zusammenhang mit ihrem Thema. '
       : 'Nenne konkrete Koerperdaten die relevant sein koennten (Zyklusphase, Schlafqualitaet, HRV, Stresslevel) und erklaere kurz warum. ') +
     'Formuliere es als Einladung: "Das koennte einen Zusammenhang mit deiner [Zyklusphase/Schlafqualitaet/...] haben. Moechtest du, dass wir uns deine Koerperdaten einmal anschauen?" \n' +
-    'Avie immer klein schreiben. Keine Ratschlaege.';
+    'Avie immer klein schreiben. Keine Ratschlaege.' + profileNote();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -2558,7 +2625,7 @@ function homeShowAnalyseAfterChat() {
     '1. Direkt an ihr vorheriges Thema anknüpft und zeigt du hast es nicht vergessen\n' +
     '2. Ganz subtil einen körperlichen Zusammenhang andeutet — nicht als Analyse, sondern als kurze Bemerkung am Rande ("...was vielleicht auch damit zusammenhängt, dass..." oder "...dein Körper zeigt heute auch...")\n' +
     '3. Lädt sie am Ende offen ein, mehr zu erzählen — z.B. "magst du mir noch ein bisschen mehr darüber erzählen?" oder etwas in die Richtung. Frag NICHT "wie fühlst du dich gerade" oder "wie geht es dir jetzt".\n' +
-    'Kein neuer Gruß, keine Themenvorschläge, kein Coaching. Sehr menschlich, sehr offen. Avie immer klein schreiben.';
+    'Kein neuer Gruß, keine Themenvorschläge, kein Coaching. Sehr menschlich, sehr offen. Avie immer klein schreiben.' + profileNote();
 
   // Build chat history context — preserve what was already said
   var contextMessages = [];
@@ -2726,7 +2793,7 @@ function homeShowAnalyse() {
     '- **Was das für heute bedeutet** — Fazit mit Herleitungen\n\n' +
     'Herleitungen einbauen: "weil X, deshalb Y." Echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala. ' +
     'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
-    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.';
+    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.' + profileNote();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -2830,7 +2897,7 @@ function homeMoodSelect(btn) {
     'Das Wissen aus der Lebenssituation und den Wünschen der Nutzerin einfließen lassen wo es passt. ' +
     'Zeig echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala, präfrontaler Kortex — konkret, nicht akademisch. ' +
     'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
-    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.';
+    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.' + profileNote();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -3115,6 +3182,7 @@ function closeGuide() {
 }
 
 function startApp() {
+  saveOnboardingNote();
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   updateClock();
@@ -4866,7 +4934,7 @@ function showVerlauf() {
   div.id = 'verlauf-overlay';
   div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:50;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
   div.innerHTML = `
-    <div style="background:var(--plum);padding:6px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">
       <div style="display:flex;align-items:center;gap:12px;">
         <svg viewBox="0 0 42 42" fill="none" style="width:42px;height:42px;"><g transform="translate(21,21)"><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="21" cy="21" r="5.2" fill="#D4863A"/></svg>
         <div>
@@ -4939,6 +5007,132 @@ function reopenSavedChat(ts) {
       addMsg(esc(t).replace(/\n/g,'<br>'), 'avie');
     });
   }
+}
+
+var PROFILE_OPTS = {
+  kinder: [['keine','Keine (noch nicht)'],['ja-klein','Ja, unter 6'],['ja-gross','Ja, älter']],
+  lifestyle: [['job-intensiv','Job sehr intensiv'],['ausgewogen','Eher ausgewogen'],['zuhause','Viel zuhause'],['unberechenbar','Sehr unberechenbar']],
+  wunsch: [['verstanden','verstanden werden'],['orientierung','Orientierung finden'],['gesundheit','Gesundheit verstehen'],['stress','Stress reduzieren'],['energie','Energie & Balance']]
+};
+
+function profileNote() {
+  return (klAnswers.notiz && klAnswers.notiz.trim())
+    ? '\n\nWas die Nutzerin dir ausdrücklich über sich mitgeteilt hat (beziehe das aktiv ein, um persönlicher und passender zu antworten — aber dränge es nicht in jede Antwort): "' + klAnswers.notiz.trim() + '"\n'
+    : '';
+}
+
+function archiveContext() {
+  var chats;
+  try { chats = getSavedChats(); } catch(e) { chats = []; }
+  if (!chats || !chats.length) return '';
+  var recent = chats.slice(-6).reverse(); // neueste zuerst
+  var lines = recent.map(function(c) {
+    var d = '';
+    try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
+    return '- ' + (d ? '(' + d + ') ' : '') + 'Thema: ' + (c.thema || '—') +
+           ' | Ihre Erkenntnis damals: ' + (c.erkenntnis || '—') +
+           ' | Was du dir gemerkt hast: ' + (c.avie_lernt || '—');
+  });
+  return '\n\nWoran du dich aus euren früheren Gesprächen erinnerst (neueste zuerst):\n' + lines.join('\n') +
+    '\n\nDu bist ihre Begleiterin über die Zeit — kein Tool, das bei null startet. Greif diese Erinnerungen proaktiv und natürlich auf, wenn es zum Gespräch passt, z.B. "als wir letztes Mal über deine Kinder gesprochen haben, war ... — wie ist das gerade?". Mach das warm und beiläufig, höchstens ein-, zweimal pro Gespräch, niemals wie eine Aufzählung oder ein Protokoll. Wenn gerade nichts davon passt, lass es einfach weg.\n';
+}
+
+function profileChipStyle(sel) {
+  return 'padding:9px 14px;border-radius:999px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:500;transition:all 0.15s;border:1.5px solid ' +
+    (sel ? '#2D1B4E' : 'rgba(155,127,192,0.35)') + ';background:' + (sel ? '#2D1B4E' : 'white') + ';color:' + (sel ? 'white' : '#4A3A6A') + ';';
+}
+
+function profileChips(group) {
+  var multi = (group === 'wunsch');
+  return PROFILE_OPTS[group].map(function(o) {
+    var sel = multi ? (window._profileEdit[group] || []).indexOf(o[0]) >= 0 : window._profileEdit[group] === o[0];
+    return '<button type="button" data-group="' + group + '" data-val="' + o[0] + '" onclick="profileToggle(this)" style="' + profileChipStyle(sel) + '">' + o[1] + '</button>';
+  }).join('');
+}
+
+function profileToggle(el) {
+  var group = el.dataset.group, val = el.dataset.val;
+  var multi = (group === 'wunsch');
+  if (multi) {
+    var arr = window._profileEdit[group] || [];
+    var i = arr.indexOf(val);
+    if (i >= 0) arr.splice(i, 1); else arr.push(val);
+    window._profileEdit[group] = arr;
+  } else {
+    window._profileEdit[group] = val;
+  }
+  document.querySelectorAll('#profile-overlay [data-group="' + group + '"]').forEach(function(b) {
+    var s = multi ? (window._profileEdit[group] || []).indexOf(b.dataset.val) >= 0 : window._profileEdit[group] === b.dataset.val;
+    b.style.cssText = profileChipStyle(s);
+  });
+}
+
+function saveProfile() {
+  var e = window._profileEdit || {};
+  if (e.name && e.name.trim()) userName = e.name.trim();
+  if (typeof e.alter === 'number' && !isNaN(e.alter)) {
+    klAnswers.alterExact = e.alter;
+    klAnswers.alter = e.alter < 25 ? '18-24' : e.alter < 35 ? '25-34' : e.alter < 45 ? '35-44' : '45+';
+  }
+  if (e.kinder) klAnswers.kinder = e.kinder;
+  if (e.lifestyle) klAnswers.lifestyle = e.lifestyle;
+  if (Array.isArray(e.wunsch)) klAnswers.wunsch = e.wunsch.slice();
+  klAnswers.notiz = (e.notiz || '').trim();
+  var ov = document.getElementById('profile-overlay');
+  if (ov) ov.remove();
+}
+
+function showProfile() {
+  var old = document.getElementById('profile-overlay');
+  if (old) old.remove();
+
+  window._profileEdit = {
+    name: userName || '',
+    alter: (typeof klAnswers.alterExact === 'number') ? klAnswers.alterExact : (parseInt(klAnswers.alterExact, 10) || 30),
+    kinder: klAnswers.kinder || '',
+    lifestyle: klAnswers.lifestyle || '',
+    wunsch: Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w){ return w !== 'alles'; }).slice() : [],
+    notiz: klAnswers.notiz || ''
+  };
+  var age = window._profileEdit.alter;
+  var bloom = '<svg viewBox="0 0 42 42" fill="none" style="width:42px;height:42px;"><g transform="translate(21,21)"><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(0)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(45)" opacity="0.88"/><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(90)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(135)" opacity="0.88"/><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(180)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(225)" opacity="0.88"/><ellipse rx="4.5" ry="9.5" fill="#D4C8E8" transform="rotate(270)"/><ellipse rx="4.5" ry="9.5" fill="#9B7FC0" transform="rotate(315)" opacity="0.88"/></g><circle cx="21" cy="21" r="5.2" fill="#D4863A"/></svg>';
+  var labelStyle = 'font-size:11px;font-weight:600;color:#D4863A;text-transform:uppercase;letter-spacing:0.08em;';
+  var cardStyle = 'background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);display:flex;flex-direction:column;gap:12px;';
+
+  var div = document.createElement('div');
+  div.id = 'profile-overlay';
+  div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:50;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
+  div.innerHTML =
+    '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div style="display:flex;align-items:center;gap:12px;">' + bloom +
+        '<div><div style="font-size:16px;font-weight:600;color:white;">Mein Profil</div>' +
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5);">Deine Angaben</div></div>' +
+      '</div>' +
+      '<button onclick="document.getElementById(\'profile-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Name</div>' +
+        '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;"></div>' +
+      '<div style="' + cardStyle + '"><div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="' + labelStyle + '">Alter</div>' +
+        '<div id="profile-age-val" style="font-size:14px;font-weight:600;color:#2D1B4E;">' + age + ' Jahre</div></div>' +
+        '<input id="profile-age-slider" type="range" min="16" max="80" value="' + age + '" oninput="document.getElementById(\'profile-age-val\').textContent=this.value+\' Jahre\';window._profileEdit.alter=parseInt(this.value,10);" style="width:100%;accent-color:#9B7FC0;"></div>' +
+      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Kinder</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('kinder') + '</div></div>' +
+      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Dein Alltag</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('lifestyle') + '</div></div>' +
+      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was du dir von avie wünschst</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('wunsch') + '</div></div>' +
+      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich wissen sollte</div>' +
+        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">z.B. Schwangerschaft, Kinderwunsch, wie es dir gerade geht — avie bezieht das in ihre Antworten ein.</div>' +
+        '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Erzähl avie, was sie über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
+      '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Änderungen speichern</button>' +
+    '</div>';
+
+  document.querySelector('.phone').appendChild(div);
+  var ni = document.getElementById('profile-name-input');
+  if (ni) ni.value = window._profileEdit.name;
+  var nt = document.getElementById('profile-notiz-input');
+  if (nt) nt.value = window._profileEdit.notiz;
 }
 
 function homeFabTapped() {
@@ -5123,6 +5317,8 @@ function buildSystemPrompt() {
   const lifestyle = klAnswers.lifestyle || 'unbekannt';
   const kinderTxt = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
   const lifeTxt   = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
+  const wunschTxt = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Gesundheit besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden' };
+  const wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w){ return w !== 'alles'; }).map(function(w){ return wunschTxt[w] || w; }).join(', ') : '';
   const cd = window.cycleData;
   const mb = window.manualBodyData;
   let koerperContext = '';
@@ -5147,7 +5343,10 @@ function buildSystemPrompt() {
   return 'Du bist avie — eine Begleiterin für Frauen zwischen 28 und 55. Kein Coaching-Tool, keine Therapeutin, keine Motivations-App. Dein USP: du verbindest was die Nutzerin erzählt mit dem was ihr Körper zeigt — und erklärst den Zusammenhang.\n\n' +
 
 'Aktuelle Nutzerin:\n' +
-'Name: ' + name + ' | Alter: ' + alter + ' | ' + (kinderTxt[kinder] || '') + ' | Alltag: ' + (lifeTxt[lifestyle] || '') + '\n\n' +
+'Name: ' + name + ' | Alter: ' + alter + ' | ' + (kinderTxt[kinder] || '') + ' | Alltag: ' + (lifeTxt[lifestyle] || '') + '\n' +
+(wunschList ? 'Was sie sich von avie wünscht: ' + wunschList + '\n' +
+  'Richte Ton und Fokus daran aus — natürlich, nicht mechanisch: bei "verstanden werden" mehr zuhören und spiegeln statt sofort Lösungen; bei "Orientierung finden" stärker einordnen und Struktur geben; bei "Gesundheit besser verstehen" Zusammenhänge ausführlicher erklären; bei "Stress reduzieren" konkret entlasten und priorisieren helfen; bei "Energie und Balance finden" auf Erholung, Rhythmus und Pausen achten.\n' : '') +
+'\n' +
 
 'Körperdaten heute — das ist deine wichtigste Grundlage:\n' + koerperContext + '\n' +
 
@@ -5177,7 +5376,7 @@ function buildSystemPrompt() {
 'Grenzen:\n' +
 '- Keine Diagnosen, keine konkreten Dosierungen\n' +
 '- Bei psychischen Krisen auf professionelle Hilfe hinweisen\n' +
-'- "Was helfen kann" statt "was hilft"';
+'- "Was helfen kann" statt "was hilft"' + profileNote() + archiveContext();
 }
 
 

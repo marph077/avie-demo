@@ -2187,6 +2187,7 @@ function klNotizSkip() {
 function saveOnboardingNote() {
   const ta = document.getElementById('kl-notiz-input');
   if (ta && ta.value.trim()) klAnswers.notiz = ta.value.trim();
+  saveUserProfile();
 }
 
 function startApp() {
@@ -2460,7 +2461,9 @@ function homeInit(fromOnboarding) {
       (wunschList ? '- Sie wünscht sich: ' + wunschList + '\n' : '') +
       'Zeig dass avie wirklich zugehört hat. Warm, direkt, keine Floskeln. ' +
       'WICHTIG: Kein Gruß am Anfang (kein Guten Morgen, Hallo, Schön dass etc.) - der Gruß kommt bereits separat davor. ' +
-      'Endet mit der Frage: "' + question + '"' + profileNote();
+      'Wenn es frühere Gespräche gibt (siehe Erinnerungen unten), knüpf warm und konkret an das jüngste an — worum es ging — und frag dann, ob ihr daran anknüpfen wollt oder ob sie lieber über etwas anderes sprechen möchte. So fühlt sich jede Begrüßung individuell an. ' +
+      'Gibt es keine früheren Gespräche, ende mit der Frage: "' + question + '"' +
+      profileNote() + archiveContext();
 
     fetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST',
@@ -2536,13 +2539,13 @@ function homeUserReply() {
   var prompt = 'Du bist avie. Die Nutzerin (' + (userName || 'Nutzerin') + ') hat auf deine Frage "' + question + '" geantwortet:\n\n"' + userMsg + '"\n\n' +
     (dataHint ? 'Verfuegbare Koerperdaten: ' + dataHint + '\n\n' : '') +
     'Schreib eine Antwort in zwei Teilen:\n' +
-    '1. Erst 1-2 Saetze echte Resonanz — zeig dass du wirklich zugehoert hast. Kein "Das klingt" oder "Ich hoere".\n' +
+    '1. Erst 1-2 Saetze echte Resonanz — zeig dass du wirklich zugehoert hast. Kein "Das klingt" oder "Ich hoere". Wenn es zu einem frueheren Gespraech passt (siehe Erinnerungen weiter unten), knuepf natuerlich daran an oder benenne ein Muster, das du ueber die Zeit erkennst — das macht deine Antwort persoenlich statt generisch.\n' +
     '2. Dann: Erklaere konkret welche Koerperdaten einen Zusammenhang mit ihrem Thema haben koennten. ' +
     (dataHint
       ? 'Nutze die verfuegbaren Daten: Nenne z.B. die konkrete Zyklusphase, den Schlafwert oder die HRV und erklaere kurz den biologischen Zusammenhang mit ihrem Thema. '
       : 'Nenne konkrete Koerperdaten die relevant sein koennten (Zyklusphase, Schlafqualitaet, HRV, Stresslevel) und erklaere kurz warum. ') +
     'Formuliere es als Einladung: "Das koennte einen Zusammenhang mit deiner [Zyklusphase/Schlafqualitaet/...] haben. Moechtest du, dass wir uns deine Koerperdaten einmal anschauen?" \n' +
-    'Avie immer klein schreiben. Keine Ratschlaege.' + profileNote();
+    'Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. Keine Ratschlaege.' + profileNote() + archiveContext();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -2625,7 +2628,7 @@ function homeShowAnalyseAfterChat() {
     '1. Direkt an ihr vorheriges Thema anknüpft und zeigt du hast es nicht vergessen\n' +
     '2. Ganz subtil einen körperlichen Zusammenhang andeutet — nicht als Analyse, sondern als kurze Bemerkung am Rande ("...was vielleicht auch damit zusammenhängt, dass..." oder "...dein Körper zeigt heute auch...")\n' +
     '3. Lädt sie am Ende offen ein, mehr zu erzählen — z.B. "magst du mir noch ein bisschen mehr darüber erzählen?" oder etwas in die Richtung. Frag NICHT "wie fühlst du dich gerade" oder "wie geht es dir jetzt".\n' +
-    'Kein neuer Gruß, keine Themenvorschläge, kein Coaching. Sehr menschlich, sehr offen. Avie immer klein schreiben.' + profileNote();
+    'Kein neuer Gruß, keine Themenvorschläge, kein Coaching. Sehr menschlich, sehr offen. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben.' + profileNote() + archiveContext();
 
   // Build chat history context — preserve what was already said
   var contextMessages = [];
@@ -2793,7 +2796,7 @@ function homeShowAnalyse() {
     '- **Was das für heute bedeutet** — Fazit mit Herleitungen\n\n' +
     'Herleitungen einbauen: "weil X, deshalb Y." Echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala. ' +
     'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
-    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.' + profileNote();
+    'Direkt, keine Floskeln. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. **Fettdruck** nur für Überschriften.' + profileNote() + archiveContext();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -2897,7 +2900,7 @@ function homeMoodSelect(btn) {
     'Das Wissen aus der Lebenssituation und den Wünschen der Nutzerin einfließen lassen wo es passt. ' +
     'Zeig echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala, präfrontaler Kortex — konkret, nicht akademisch. ' +
     'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
-    'Direkt, keine Floskeln. Avie immer klein schreiben. **Fettdruck** nur für Überschriften.' + profileNote();
+    'Direkt, keine Floskeln. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. **Fettdruck** nur für Überschriften.' + profileNote() + archiveContext();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -3837,7 +3840,8 @@ function showDashboard() {
       <div class="dash-status-icons"><span>●●●</span><span>🔋</span></div>
     </div>
 
-    <div class="dash-header-band" style="padding:14px 24px 16px;">
+    <div class="dash-header-band" style="padding:14px 24px 16px;position:relative;">
+      <button onclick="closeDashboard()" title="Schließen" style="position:absolute;top:10px;right:16px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>
       <div class="dash-greeting">${userName ? "Guten Morgen, " + userName + " ✦" : "Guten Morgen ✦"}</div>
       <div style="font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:white;line-height:1.2;">Dein Körper heute auf einen Blick.</div>
     </div>
@@ -4987,7 +4991,7 @@ function reopenSavedChat(ts) {
     showTyping();
     var reentryPrompt = 'Du bist avie. Ihr habt früher schon über "' + (chat.thema||'dieses Thema') + '" gesprochen. ' +
       'Damals ist der Nutzerin klar geworden: "' + (chat.erkenntnis||'') + '". ' +
-      'Knüpf in 2-3 warmen Sätzen daran an und lade sie ein, dort weiterzumachen. Kein neuer Gruß. Avie immer klein schreiben.';
+      'Knüpf in 2-3 warmen Sätzen daran an und lade sie ein, dort weiterzumachen. Kein neuer Gruß. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben.';
     fetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 180, messages: [{ role: 'user', content: reentryPrompt }] })
@@ -5021,6 +5025,22 @@ function profileNote() {
     : '';
 }
 
+function bodySnapshotText() {
+  var cd = window.cycleData, mb = window.manualBodyData;
+  var parts = [];
+  if (mb) {
+    if (mb.sleepStr) parts.push('Schlaf ' + mb.sleepStr + (mb.wachphasen != null ? ' (' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + (mb.wachphasen >= 5 ? '+' : '') + 'x aufgewacht') + ')' : ''));
+    if (mb.energyScore != null) parts.push('Energie ' + mb.energyScore + '/100');
+    if (mb.stressScore != null) parts.push('Stress ' + mb.stressScore + '/100');
+    if (mb.hrv) parts.push('HRV ' + mb.hrv + 'ms');
+    if (mb.recovery) parts.push('Recovery ' + mb.recovery + '/100');
+    if (mb.rhr) parts.push('Ruhepuls ' + mb.rhr + 'bpm');
+    if (mb.deep) parts.push('Tiefschlaf ' + mb.deep + 'min');
+  }
+  if (cd) parts.push('Zyklus ' + cd.phase + (cd.cycleDay ? ' Tag ' + cd.cycleDay : ''));
+  return parts.join(', ');
+}
+
 function archiveContext() {
   var chats;
   try { chats = getSavedChats(); } catch(e) { chats = []; }
@@ -5031,10 +5051,13 @@ function archiveContext() {
     try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
     return '- ' + (d ? '(' + d + ') ' : '') + 'Thema: ' + (c.thema || '—') +
            ' | Ihre Erkenntnis damals: ' + (c.erkenntnis || '—') +
-           ' | Was du dir gemerkt hast: ' + (c.avie_lernt || '—');
+           ' | Was du dir gemerkt hast: ' + (c.avie_lernt || '—') +
+           (c.koerper ? ' | Körperdaten damals: ' + c.koerper : '');
   });
   return '\n\nWoran du dich aus euren früheren Gesprächen erinnerst (neueste zuerst):\n' + lines.join('\n') +
-    '\n\nDu bist ihre Begleiterin über die Zeit — kein Tool, das bei null startet. Greif diese Erinnerungen proaktiv und natürlich auf, wenn es zum Gespräch passt, z.B. "als wir letztes Mal über deine Kinder gesprochen haben, war ... — wie ist das gerade?". Mach das warm und beiläufig, höchstens ein-, zweimal pro Gespräch, niemals wie eine Aufzählung oder ein Protokoll. Wenn gerade nichts davon passt, lass es einfach weg.\n';
+    '\n\nDu bist ihre Begleiterin über die Zeit — kein Tool, das bei null startet. Greif diese Erinnerungen proaktiv und natürlich auf, wenn es zum Gespräch passt, z.B. "als wir letztes Mal über deine Kinder gesprochen haben, war ... — wollen wir daran anknüpfen?". ' +
+    'Wenn heute Körperdaten vorliegen, vergleiche sie wo sinnvoll mit den Körperdaten aus dem jüngsten früheren Gespräch und stell proaktiv einen Bezug her — z.B. "du hast heute länger geschlafen als bei unserem letzten Gespräch, fühlst du dich mit [Thema] erholter?" oder "du bist heute 2x aufgewacht, letztes Mal hast du durchgeschlafen — beschäftigt dich gerade etwas?". ' +
+    'Mach das warm und beiläufig, höchstens ein-, zweimal pro Gespräch, niemals wie eine Aufzählung oder ein Protokoll. Wenn gerade nichts davon ehrlich passt, lass es einfach weg.\n';
 }
 
 function profileChipStyle(sel) {
@@ -5078,8 +5101,53 @@ function saveProfile() {
   if (e.lifestyle) klAnswers.lifestyle = e.lifestyle;
   if (Array.isArray(e.wunsch)) klAnswers.wunsch = e.wunsch.slice();
   klAnswers.notiz = (e.notiz || '').trim();
+  saveUserProfile();
   var ov = document.getElementById('profile-overlay');
   if (ov) ov.remove();
+}
+
+function saveUserProfile() {
+  try {
+    localStorage.setItem('avie_profile', JSON.stringify({ userName: userName, klAnswers: klAnswers }));
+  } catch(e) {}
+}
+
+function loadUserProfile() {
+  try {
+    var raw = localStorage.getItem('avie_profile');
+    if (!raw) return false;
+    var data = JSON.parse(raw);
+    var has = false;
+    if (data.userName) { userName = data.userName; has = true; }
+    if (data.klAnswers && typeof data.klAnswers === 'object') {
+      Object.keys(data.klAnswers).forEach(function(k){ klAnswers[k] = data.klAnswers[k]; });
+      if (Object.keys(data.klAnswers).length) has = true;
+    }
+    return has;
+  } catch(e) { return false; }
+}
+
+function enterAppFromStorage() {
+  var ob = document.getElementById('onboarding'); if (ob) ob.style.display = 'none';
+  var app = document.getElementById('app'); if (app) app.classList.add('visible');
+  updateClock();
+  personalizeApp();
+  homeInit(true);
+}
+
+function initApp() {
+  if (loadUserProfile()) enterAppFromStorage();
+}
+
+function resetUserData() {
+  if (!confirm('Alle deine Daten löschen — Profil und gespeicherte Gespräche — und neu starten?')) return;
+  try {
+    localStorage.removeItem('avie_profile');
+    localStorage.removeItem('avie_saved_chats');
+  } catch(e) {}
+  try { location.reload(); } catch(e) {
+    var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
+  }
 }
 
 function showProfile() {
@@ -5126,6 +5194,7 @@ function showProfile() {
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">z.B. Schwangerschaft, Kinderwunsch, wie es dir gerade geht — avie bezieht das in ihre Antworten ein.</div>' +
         '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Erzähl avie, was sie über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Änderungen speichern</button>' +
+      '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
     '</div>';
 
   document.querySelector('.phone').appendChild(div);
@@ -5362,7 +5431,7 @@ function buildSystemPrompt() {
 '- Kein "das klingt anstrengend", kein "das höre ich" — stattdessen: erklären, einordnen, verbinden\n' +
 '- Eine Frage auf einmal, 2–4 Sätze\n' +
 '- Empathie kommt durch Verständnis, nicht durch Floskeln\n' +
-'- avie immer klein schreiben\n\n' +
+'- Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben\n\n' +
 
 'Was du weißt:\n' +
 '- Weibliche Biologie, Zyklus, Hormone — Lutealphase, Follikelphase, Ovulation, Menstruation\n' +
@@ -5698,6 +5767,7 @@ function saveChat(summary, messages) {
       thema: summary.thema,
       erkenntnis: summary.erkenntnis,
       avie_lernt: summary.avie_lernt,
+      koerper: bodySnapshotText(),
       messages: Array.isArray(messages) ? messages.map(function(m){ return { role: m.role, content: m.content }; }) : [],
       timestamp: ts
     });
@@ -5760,6 +5830,9 @@ function closeDashboard() {
 }
 
 
+
+// Beim Laden: vorhandenes Profil aus localStorage laden und ggf. Onboarding überspringen
+initApp();
 
 </script>
 </body>

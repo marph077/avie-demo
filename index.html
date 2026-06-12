@@ -1550,12 +1550,12 @@ body {
                 <span id="age-display" style="font-family:'DM Serif Display',Georgia,serif;font-size:48px;color:#2D1B4E;font-weight:400;line-height:1;">28</span>
                 <span style="font-size:16px;color:#A090BC;margin-left:5px;">Jahre</span>
               </div>
-              <input id="age-input" type="range" min="16" max="80" value="28"
-                oninput="var pct=((this.value-16)/(80-16)*100).toFixed(1);this.style.background='linear-gradient(to right,#2D1B4E '+pct+'%,#DDD5F0 '+pct+'%)';document.getElementById('age-display').textContent=this.value;"
+              <input id="age-input" type="range" min="18" max="80" value="28"
+                oninput="var pct=((this.value-18)/(80-18)*100).toFixed(1);this.style.background='linear-gradient(to right,#2D1B4E '+pct+'%,#DDD5F0 '+pct+'%)';document.getElementById('age-display').textContent=this.value;"
                 onchange="onAgeBlur(this)"
-                style="width:100%;display:block;background:linear-gradient(to right,#2D1B4E 18.75%,#DDD5F0 18.75%);"/>
+                style="width:100%;display:block;background:linear-gradient(to right,#2D1B4E 16.1%,#DDD5F0 16.1%);"/>
               <div style="display:flex;justify-content:space-between;margin:8px 0 0;font-size:11px;color:#C0B0D0;">
-                <span>16</span><span>80</span>
+                <span>18</span><span>80</span>
               </div>
             </div>
           </div>
@@ -1608,23 +1608,6 @@ body {
               <button class="kl-chip" data-group="wunsch" data-val="alles" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Alles davon ✨</button>
             </div>
             <div style="padding-left:42px;font-size:11px;color:#A090BC;flex-shrink:0;">Mehrfachauswahl möglich</div>
-          </div>
-
-          <!-- avie Frage: noch etwas wissen? -->
-          <div id="kl-notiz-wrap" style="display:none;flex-direction:column;gap:14px;">
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(155,127,192,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="kl-notiz-intro"></span>Gibt es denn noch etwas, das ich vorab über dich wissen sollte?<br><br><span style="color:#8A7AA5;font-size:13px;">Zum Beispiel Schwangerschaft, Kinderwunsch oder wie es dir gerade geht. Das hilft mir, dich besser zu begleiten.</span></div>
-              </div>
-            </div>
-            <div style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
-              <div style="display:flex;gap:8px;align-items:flex-end;">
-                <textarea id="kl-notiz-input" rows="2" placeholder="Erzähl mir gern, was dir wichtig ist…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();klNotizContinue();}" onfocus="this.style.borderColor='#9B7FC0'" onblur="this.style.borderColor='rgba(155,127,192,0.25)'" style="flex:1;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:#2D1B4E;outline:none;resize:none;line-height:1.5;box-shadow:0 2px 8px rgba(45,27,78,0.06);"></textarea>
-                <button onclick="klNotizContinue()" style="width:42px;height:42px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;">→</button>
-              </div>
-              <button onclick="klNotizSkip()" style="align-self:flex-start;padding:9px 18px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:13px;cursor:pointer;">Erstmal nicht</button>
-            </div>
           </div>
 
           <!-- Abschluss nach Wunsch -->
@@ -2124,20 +2107,14 @@ document.addEventListener('click', function(e) {
       }
     }
     if (klAnswers.wunsch.length > 0) {
-      const notizWrap = document.getElementById('kl-notiz-wrap');
-      if (notizWrap && notizWrap.style.display === 'none') {
-        notizWrap.style.display = 'flex'; notizWrap.style.flexDirection = 'column';
-      }
-      klUpdateNotizIntro();
+      klRevealFinal();
       setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
     }
     return;
   }
 });
 
-function klUpdateNotizIntro() {
-  const introEl = document.getElementById('kl-notiz-intro');
-  if (!introEl) return;
+function klWishReaction() {
   const nameEl = document.getElementById('name-input');
   const name = (nameEl && nameEl.value.trim()) || 'du';
   const reactions = {
@@ -2158,7 +2135,7 @@ function klUpdateNotizIntro() {
     const parts = sel.map(function(w){ return reactions[w]; }).filter(Boolean);
     phrase = parts.slice(0, parts.length - 1).join(', ') + ' und ' + parts[parts.length - 1];
   }
-  introEl.innerHTML = phrase ? ('Ok ' + name + ', ich werde ' + phrase + '.<br><br>') : '';
+  return phrase ? ('Ok ' + name + ', ich werde ' + phrase + '.') : '';
 }
 
 function klRevealFinal() {
@@ -2168,7 +2145,9 @@ function klRevealFinal() {
   const name_val = (nameEl && nameEl.value.trim()) || 'du';
   if (finalWrap && finalWrap.style.display === 'none') {
     finalWrap.style.display = 'flex'; finalWrap.style.flexDirection = 'column';
-    if (finalText) finalText.innerHTML = 'Gut, ' + name_val + '. Das gibt mir ein erstes Bild.<br><br>avie lernt durch jedes Gespräch mit dir — je mehr du teilst, desto besser kann ich Zusammenhänge zwischen deinem Körper, deinem Zyklus und deinem Alltag erkennen und erklären.<br><br>Ich freue mich darauf. 🌸';
+    var reaction = klWishReaction();
+    var opener = reaction ? reaction : ('Gut, ' + name_val + '. Das gibt mir ein erstes Bild.');
+    if (finalText) finalText.innerHTML = opener + '<br><br>avie lernt durch jedes Gespräch mit dir — je mehr du teilst, desto besser kann ich Zusammenhänge zwischen deinem Körper, deinem Zyklus und deinem Alltag erkennen und erklären.<br><br>Lass uns starten. 🌸';
   }
   const startBtn = document.getElementById('klStartBtn');
   if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = '1'; startBtn.style.cursor = 'pointer'; }
@@ -2176,17 +2155,11 @@ function klRevealFinal() {
   setTimeout(function() { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
 }
 
-function klNotizContinue() { klRevealFinal(); }
-
-function klNotizSkip() {
-  const ta = document.getElementById('kl-notiz-input');
-  if (ta) ta.value = '';
-  klRevealFinal();
-}
-
 function saveOnboardingNote() {
-  const ta = document.getElementById('kl-notiz-input');
-  if (ta && ta.value.trim()) klAnswers.notiz = ta.value.trim();
+  // Onboarding fragt die "über mich"-Notiz nicht mehr selbst ab — sie kommt als
+  // erste Willkommensfrage auf dem Hauptscreen. Hier nur markieren, dass diese
+  // Frage gestellt werden soll (sofern noch keine Notiz vorhanden ist).
+  window._onboardingNoteAsk = !(klAnswers.notiz && klAnswers.notiz.trim());
   saveUserProfile();
 }
 
@@ -2441,6 +2414,14 @@ function homeInit(fromOnboarding) {
   if (qWrap) { qWrap.style.display = 'flex'; qWrap.style.flexDirection = 'column'; }
   if (oq) oq.innerHTML = '<span style="color:#C0B0D0;">…</span>';
 
+  // Direkt nach dem Onboarding: avie stellt die "über mich"-Frage als Willkommen
+  if (window._onboardingNoteAsk) {
+    window._onboardingNoteAsk = false;
+    window._awaitingOnboardingNote = true;
+    if (oq) oq.innerHTML = 'Gibt es noch etwas, das ich über dich wissen sollte?<br><br>Vielleicht etwas, das deinen Alltag aktuell prägt – Familie, Arbeit, Gesundheit, eine Veränderung oder einfach ein Gedanke, der dich beschäftigt.<br><br>Lass uns darüber reden!';
+    return;
+  }
+
   // Varying questions pool
   var questions = hour >= 18
     ? ['Wie war dein Tag?', 'Was hat dich heute am meisten beschäftigt?', 'Womit gehst du heute ins Bett?']
@@ -2463,7 +2444,7 @@ function homeInit(fromOnboarding) {
       'WICHTIG: Kein Gruß am Anfang (kein Guten Morgen, Hallo, Schön dass etc.) - der Gruß kommt bereits separat davor. ' +
       'Wenn es frühere Gespräche gibt (siehe Erinnerungen unten), knüpf warm und konkret an das jüngste an — worum es ging — und frag dann, ob ihr daran anknüpfen wollt oder ob sie lieber über etwas anderes sprechen möchte. So fühlt sich jede Begrüßung individuell an. ' +
       'Gibt es keine früheren Gespräche, ende mit der Frage: "' + question + '"' +
-      profileNote() + archiveContext();
+      profileNote() + archiveContext() + hedgeNote();
 
     fetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST',
@@ -2489,11 +2470,34 @@ function homeInit(fromOnboarding) {
 
 var homeQuestionText = '';
 
+function summarizeIntoNote(text) {
+  if (!text || !text.trim()) return;
+  var prompt = 'Fasse die folgende Selbstauskunft einer Nutzerin in 1-2 knappen, sachlichen Sätzen zusammen — nur die wichtigsten, dauerhaft relevanten Punkte über ihre Person oder Situation (z.B. Familie, Arbeit, Gesundheit, aktuelle Veränderungen). Neutral formuliert, keine Anrede, kein Vorwort, keine Anführungszeichen. Wenn nichts dauerhaft Relevantes dabei ist, gib den Text nur leicht gekürzt zurück.\n\nText: "' + text.trim() + '"';
+  fetch('https://avie-proxy.hoyer2707.workers.dev', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 200, messages: [{ role: 'user', content: prompt }] })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    var s = ((d.content && d.content[0] && d.content[0].text) || '').trim();
+    klAnswers.notiz = s || text.trim();
+    saveUserProfile();
+  })
+  .catch(function() {
+    klAnswers.notiz = text.trim();
+    saveUserProfile();
+  });
+}
+
 function homeUserReply() {
   var input = document.getElementById('home-user-input');
   if (!input || !input.value.trim()) return;
   var userMsg = input.value.trim();
   homeQuestionText = userMsg;
+  if (window._awaitingOnboardingNote) {
+    window._awaitingOnboardingNote = false;
+    summarizeIntoNote(userMsg);
+  }
   input.value = '';
   input.disabled = true;
 
@@ -2545,7 +2549,7 @@ function homeUserReply() {
       ? 'Nutze die verfuegbaren Daten: Nenne z.B. die konkrete Zyklusphase, den Schlafwert oder die HRV und erklaere kurz den biologischen Zusammenhang mit ihrem Thema. '
       : 'Nenne konkrete Koerperdaten die relevant sein koennten (Zyklusphase, Schlafqualitaet, HRV, Stresslevel) und erklaere kurz warum. ') +
     'Formuliere es als Einladung: "Das koennte einen Zusammenhang mit deiner [Zyklusphase/Schlafqualitaet/...] haben. Moechtest du, dass wir uns deine Koerperdaten einmal anschauen?" \n' +
-    'Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. Keine Ratschlaege.' + profileNote() + archiveContext();
+    'Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. Keine Ratschlaege.' + profileNote() + archiveContext() + hedgeNote();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -2628,7 +2632,7 @@ function homeShowAnalyseAfterChat() {
     '1. Direkt an ihr vorheriges Thema anknüpft und zeigt du hast es nicht vergessen\n' +
     '2. Ganz subtil einen körperlichen Zusammenhang andeutet — nicht als Analyse, sondern als kurze Bemerkung am Rande ("...was vielleicht auch damit zusammenhängt, dass..." oder "...dein Körper zeigt heute auch...")\n' +
     '3. Lädt sie am Ende offen ein, mehr zu erzählen — z.B. "magst du mir noch ein bisschen mehr darüber erzählen?" oder etwas in die Richtung. Frag NICHT "wie fühlst du dich gerade" oder "wie geht es dir jetzt".\n' +
-    'Kein neuer Gruß, keine Themenvorschläge, kein Coaching. Sehr menschlich, sehr offen. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben.' + profileNote() + archiveContext();
+    'Kein neuer Gruß, keine Themenvorschläge, kein Coaching. Sehr menschlich, sehr offen. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben.' + profileNote() + archiveContext() + hedgeNote();
 
   // Build chat history context — preserve what was already said
   var contextMessages = [];
@@ -2796,7 +2800,7 @@ function homeShowAnalyse() {
     '- **Was das für heute bedeutet** — Fazit mit Herleitungen\n\n' +
     'Herleitungen einbauen: "weil X, deshalb Y." Echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala. ' +
     'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
-    'Direkt, keine Floskeln. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. **Fettdruck** nur für Überschriften.' + profileNote() + archiveContext();
+    'Direkt, keine Floskeln. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. **Fettdruck** nur für Überschriften.' + profileNote() + archiveContext() + hedgeNote();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -2900,7 +2904,7 @@ function homeMoodSelect(btn) {
     'Das Wissen aus der Lebenssituation und den Wünschen der Nutzerin einfließen lassen wo es passt. ' +
     'Zeig echtes Fachwissen: Cortisol, Progesteron, Dopamin, Amygdala, präfrontaler Kortex — konkret, nicht akademisch. ' +
     'Die Nutzerin soll denken: "Jetzt verstehe ich warum ich mich so fühle." ' +
-    'Direkt, keine Floskeln. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. **Fettdruck** nur für Überschriften.' + profileNote() + archiveContext();
+    'Direkt, keine Floskeln. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben. **Fettdruck** nur für Überschriften.' + profileNote() + archiveContext() + hedgeNote();
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -5025,6 +5029,10 @@ function profileNote() {
     : '';
 }
 
+function hedgeNote() {
+  return '\n\nVorsicht bei starken Aussagen über ihren Zustand: Behaupte nichts Extremes über ihren Körper oder ihr Befinden als feststehende Tatsache (z.B. NICHT "ich sehe, wie sehr dein Körper am Limit ist"). Die Daten sind Hinweise, keine Gewissheit. Formuliere starke Deutungen als Tendenz und hol dir Bestätigung — z.B. "Es deutet vieles darauf hin, dass dein Körper gerade am Limit ist. Empfindest du das auch so?". Diese eine Rückfrage zur Bestätigung ist erwünscht und zählt nicht als oberflächliche Füll-Frage.\n';
+}
+
 function bodySnapshotText() {
   var cd = window.cycleData, mb = window.manualBodyData;
   var parts = [];
@@ -5183,7 +5191,7 @@ function showProfile() {
         '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;"></div>' +
       '<div style="' + cardStyle + '"><div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="' + labelStyle + '">Alter</div>' +
         '<div id="profile-age-val" style="font-size:14px;font-weight:600;color:#2D1B4E;">' + age + ' Jahre</div></div>' +
-        '<input id="profile-age-slider" type="range" min="16" max="80" value="' + age + '" oninput="document.getElementById(\'profile-age-val\').textContent=this.value+\' Jahre\';window._profileEdit.alter=parseInt(this.value,10);" style="width:100%;accent-color:#9B7FC0;"></div>' +
+        '<input id="profile-age-slider" type="range" min="18" max="80" value="' + age + '" oninput="document.getElementById(\'profile-age-val\').textContent=this.value+\' Jahre\';window._profileEdit.alter=parseInt(this.value,10);" style="width:100%;accent-color:#9B7FC0;"></div>' +
       '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Kinder</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('kinder') + '</div></div>' +
       '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Dein Alltag</div>' +
@@ -5414,7 +5422,7 @@ function buildSystemPrompt() {
 'Aktuelle Nutzerin:\n' +
 'Name: ' + name + ' | Alter: ' + alter + ' | ' + (kinderTxt[kinder] || '') + ' | Alltag: ' + (lifeTxt[lifestyle] || '') + '\n' +
 (wunschList ? 'Was sie sich von avie wünscht: ' + wunschList + '\n' +
-  'Richte Ton und Fokus daran aus — natürlich, nicht mechanisch: bei "verstanden werden" mehr zuhören und spiegeln statt sofort Lösungen; bei "Orientierung finden" stärker einordnen und Struktur geben; bei "Gesundheit besser verstehen" Zusammenhänge ausführlicher erklären; bei "Stress reduzieren" konkret entlasten und priorisieren helfen; bei "Energie und Balance finden" auf Erholung, Rhythmus und Pausen achten.\n' : '') +
+  'Richte Ton und Fokus daran aus — natürlich, nicht mechanisch: bei "verstanden werden" kurz spiegeln, dann aber zügig einordnen und erklären (nicht nur zuhören); bei "Orientierung finden" stärker einordnen und Struktur geben; bei "Gesundheit besser verstehen" Zusammenhänge ausführlicher erklären; bei "Stress reduzieren" konkret entlasten und priorisieren helfen; bei "Energie und Balance finden" auf Erholung, Rhythmus und Pausen achten.\n' : '') +
 '\n' +
 
 'Körperdaten heute — das ist deine wichtigste Grundlage:\n' + koerperContext + '\n' +
@@ -5426,10 +5434,17 @@ function buildSystemPrompt() {
 '- Verknüpfe immer: was sie sagt → was die Daten zeigen → warum das Sinn ergibt\n' +
 '- Die Daten sind der Unterschied zwischen avie und einem Freund zum Reden\n\n' +
 
+'KOMM ZUM PUNKT — Kompetenz statt Rückfragen:\n' +
+'- Liefere sofort Substanz: erkläre in den ersten 1-2 Sätzen das Symptom, den Zusammenhang oder die wahrscheinliche Ursache. Einordnung zuerst, Rückfrage höchstens danach.\n' +
+'- Vermeide oberflächliche Rückfragen wie "wie geht es dir damit?", "magst du mehr erzählen?", "was meinst du?", die nur das Gespräch füllen. Frag nur, wenn die Antwort deine Erklärung oder Lösung wirklich verbessert.\n' +
+'- Wenn ein Thema klar genug ist, biete konkret an, was helfen kann — 1-2 umsetzbare Schritte oder einen konkreten Ansatz — statt weiter zu fragen.\n' +
+'- Nicht jede Nachricht muss mit einer Frage enden. Eine klare, hilfreiche Erklärung darf für sich stehen.\n' +
+'- Zeig Expertise: benenne Ursache, Mechanismus und einen nächsten Schritt — selbstbewusst und konkret, ohne zu diagnostizieren oder Dosierungen zu nennen.\n\n' +
+
 'Dein Ton:\n' +
 '- Direkt und klar — nicht therapeutisch, nicht aufgesetzt empathisch\n' +
 '- Kein "das klingt anstrengend", kein "das höre ich" — stattdessen: erklären, einordnen, verbinden\n' +
-'- Eine Frage auf einmal, 2–4 Sätze\n' +
+'- Höchstens eine Frage — und nur wenn sie wirklich nötig ist; oft braucht es keine. 2–4 Sätze\n' +
 '- Empathie kommt durch Verständnis, nicht durch Floskeln\n' +
 '- Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name avie bleibt kleingeschrieben\n\n' +
 
@@ -5445,7 +5460,7 @@ function buildSystemPrompt() {
 'Grenzen:\n' +
 '- Keine Diagnosen, keine konkreten Dosierungen\n' +
 '- Bei psychischen Krisen auf professionelle Hilfe hinweisen\n' +
-'- "Was helfen kann" statt "was hilft"' + profileNote() + archiveContext();
+'- "Was helfen kann" statt "was hilft"' + profileNote() + archiveContext() + hedgeNote();
 }
 
 

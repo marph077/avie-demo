@@ -1703,7 +1703,7 @@ body {
           <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
             <div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div>
             <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;">
-              <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-open-question">…</span></div>
+              <div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-open-question">…</span><span id="home-body-hint" style="display:none;"></span></div>
             </div>
           </div>
         </div>
@@ -1757,6 +1757,9 @@ body {
         </div>
         <div id="home-topics-list" style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;box-sizing:border-box;width:100%;"></div>
       </div>
+
+      <!-- Unsichtbarer Spacer, damit der FAB die Themen nicht verdeckt -->
+      <div aria-hidden="true" style="height:120px;flex-shrink:0;"></div>
     </div>
     
 
@@ -2540,6 +2543,18 @@ function homeInit(fromOnboarding) {
   if (iw) iw.style.display = 'flex';
   var ui = document.getElementById('home-user-input');
   if (ui) ui.disabled = false;
+
+  // Hinweis auf veraltete Körperdaten in der Begrüßung (nur wenn älter als 2h)
+  var bHint = document.getElementById('home-body-hint');
+  if (bHint) {
+    if (bodyDataStale()) {
+      bHint.innerHTML = '<br><br>Übrigens – deine Körperdaten sind schon eine Weile nicht aktualisiert. Magst du sie kurz auffrischen, damit ich besser einordnen kann?<br><span onclick="showDashboard()" style="display:inline-block;margin-top:6px;font-size:13px;color:#9B7FC0;cursor:pointer;text-decoration:underline;">Zu den Körperdaten →</span>';
+      bHint.style.display = 'inline';
+    } else {
+      bHint.style.display = 'none';
+      bHint.innerHTML = '';
+    }
+  }
 
   // 2. Show second bubble with typing indicator
   var qWrap = document.getElementById('home-question-bubble-wrap');
@@ -5580,6 +5595,12 @@ function mdToHtml(text) {
   return s;
 }
 
+function bodyDataStale() {
+  var t = window._bodyUpdatedAt;
+  if (!t) return true;
+  return (Date.now() - t) > 2 * 60 * 60 * 1000;
+}
+
 function addMsg(text, who) {
   var msgs = document.getElementById('messages');
   if (!msgs) return;
@@ -6109,6 +6130,8 @@ function closeDashboard() {
   window._bodyUpdatedAt = Date.now();
   fillHomeData();
   fillHomeThemen();
+  var bHint = document.getElementById('home-body-hint');
+  if (bHint) { bHint.style.display = 'none'; bHint.innerHTML = ''; }
 }
 
 

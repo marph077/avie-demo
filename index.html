@@ -501,6 +501,10 @@ body {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes aviePulse {
+  0%, 100% { transform: scale(1);    opacity: 0.85; }
+  50%      { transform: scale(1.12); opacity: 1; }
+}
 
 /* ═══════════════════════════════
    MAIN CHAT APP
@@ -536,11 +540,10 @@ body {
 .status-icons { font-size: 12px; color: rgba(255,255,255,0.5); display: flex; gap: 5px; align-items: center; }
 
 .header {
-  padding: 6px 20px 16px;
+  padding: 6px 20px 10px;
   display: flex; align-items: center; gap: 12px;
   flex-shrink: 0; position: relative; z-index: 2;
   background: var(--plum);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 /* subtle glow at bottom of header */
 .header::after {
@@ -1478,11 +1481,14 @@ body {
           </div>
           <div class="consent-item" id="c2" onclick="toggleConsent('c2')">
             <div class="consent-check" id="c2-check"></div>
-            <div class="consent-text">Ich stimme der <strong>Verarbeitung meiner Daten</strong> gemäß der Datenschutzerklärung zu — nur was nötig ist, nichts mehr.</div>
+            <div class="consent-text">Ich stimme der <strong>Verarbeitung meiner Daten</strong> gemäß der <span onclick="event.stopPropagation();showDatenschutz();" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span> zu — nur was nötig ist, nichts mehr.</div>
           </div>
           <div class="consent-item" id="c3" onclick="toggleConsent('c3')">
             <div class="consent-check" id="c3-check"></div>
             <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den Nutzungsbedingungen von avie Lab zu.</div>
+          </div>
+          <div style="text-align:center;font-size:11px;color:#9B7FC0;padding-top:2px;">
+            <span onclick="showDatenschutz()" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span>&nbsp;·&nbsp;<span onclick="showImpressum()" style="text-decoration:underline;cursor:pointer;">Impressum</span>
           </div>
         </div>
         <div class="ob-nav">
@@ -1644,6 +1650,7 @@ body {
       <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
     </div>
 
+    <!-- avie Identität oben im Header -->
     <div class="header">
       <svg class="bloom-svg" viewBox="0 0 42 42" fill="none">
         <g transform="translate(21,21)">
@@ -1662,32 +1669,20 @@ body {
         <div class="header-name">avie</div>
         <div class="header-sub"><span class="online-dot"></span><span>deine Begleiterin</span></div>
       </div>
-      <button class="header-btn" onclick="showDashboard()" title="Tages-Dashboard">📊</button>
-      <button class="header-btn" onclick="showVerlauf()" title="Mein Verlauf">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <rect x="2" y="4" width="14" height="2" rx="1" fill="white"/>
-          <rect x="2" y="8" width="10" height="2" rx="1" fill="white"/>
-          <rect x="2" y="12" width="12" height="2" rx="1" fill="white"/>
-        </svg>
-      </button>
-      <button class="header-btn" onclick="showProfile()" title="Mein Profil">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <circle cx="9" cy="6.5" r="3" stroke="white" stroke-width="1.5"/>
-          <path d="M2.5 15.5c0-3.314 2.91-6 6.5-6s6.5 2.686 6.5 6" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </button>
     </div>
 
-    <div class="home-body" id="home-body" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:16px 16px 160px;background:#EDE6F5;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
-
-      <!-- Körperdaten kompakt (dezent, direkt unter dem Header) -->
-      <div style="flex-shrink:0;">
-        <div onclick="showDashboard()" style="background:#FFFFFF;border:1px solid rgba(155,127,192,0.2);border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 3px 14px rgba(45,27,78,0.10);">
+    <!-- Körperdaten-Score darunter (öffnet das Dashboard) -->
+    <div style="background:var(--plum);padding:0 16px 14px;flex-shrink:0;position:relative;z-index:2;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <div onclick="showDashboard()" style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:11px 12px;cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:10px;">
           <div id="home-scorecards" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:6px;"></div>
-          <span style="font-size:18px;color:#C0B0D0;flex-shrink:0;">›</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0;"><rect x="2" y="2" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/><rect x="10" y="2" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/><rect x="2" y="10" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/><rect x="10" y="10" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/></svg>
         </div>
-        <div id="home-cycle-line" style="font-size:11px;color:#9B8AB5;padding:6px 6px 0;display:none;"></div>
+        <div id="home-cycle-line" style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.12);display:none;"></div>
       </div>
+    </div>
+
+    <div class="home-body" id="home-body" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:16px 16px 96px;background:#EDE6F5;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">
 
       <!-- Chat summary card (appears after closing a chat) -->
       <div id="home-summary-area"></div>
@@ -1728,11 +1723,12 @@ body {
 
       </div>
 
-      <!-- Deine Themen -->
+      <!-- Trennstreifen zum Chatbereich + Deine Themen -->
       <div style="flex-shrink:0;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 8px;">
-          <span style="font-size:15px;font-weight:500;color:#2D1B4E;">Deine letzten Themen</span>
-          <span onclick="showVerlauf()" style="font-size:12px;color:#9B7FC0;cursor:pointer;">Alle ansehen</span>
+        <div style="height:1px;background:rgba(45,27,78,0.12);margin:2px 2px 16px;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px;">
+          <span style="font-size:15px;font-weight:600;color:#2D1B4E;">Deine letzten Themen</span>
+          <span onclick="showVerlauf()" style="font-size:12px;color:#9B7FC0;cursor:pointer;font-weight:500;">Alle ansehen</span>
         </div>
         <div id="home-themen" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
@@ -1757,9 +1753,6 @@ body {
         </div>
         <div id="home-topics-list" style="padding-left:42px;display:flex;flex-direction:column;gap:10px;flex-shrink:0;box-sizing:border-box;width:100%;"></div>
       </div>
-
-      <!-- Unsichtbarer Spacer, damit der FAB die Themen nicht verdeckt -->
-      <div aria-hidden="true" style="height:120px;flex-shrink:0;"></div>
     </div>
     
 
@@ -1866,23 +1859,23 @@ body {
   </div>
 
     <!-- FAB -->
-    <div class="home-chat-cta-wrap">
-      <button class="home-chat-btn" onclick="homeFabTapped()">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-          <g transform="translate(22,22)">
-            <ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(0)"/>
-            <ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(45)" opacity="0.88"/>
-            <ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(90)"/>
-            <ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(135)" opacity="0.88"/>
-            <ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(180)"/>
-            <ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(225)" opacity="0.88"/>
-            <ellipse rx="4.5" ry="9.8" fill="rgba(255,255,255,0.28)" transform="rotate(270)"/>
-            <ellipse rx="4.5" ry="9.8" fill="white" transform="rotate(315)" opacity="0.88"/>
-          </g>
-          <circle cx="22" cy="22" r="5.2" fill="#D4863A"/>
-        </svg>
+    <div class="home-bottom-nav" style="position:absolute;left:0;right:0;bottom:0;z-index:10;background:#FFFFFF;border-top:1px solid rgba(155,127,192,0.18);box-shadow:0 -6px 24px rgba(45,27,78,0.08);padding:9px 16px 16px;display:flex;align-items:flex-end;justify-content:center;gap:48px;">
+      <button onclick="showVerlauf()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:#9B7FC0;font-family:inherit;padding:2px 6px;">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="4" rx="1.5" stroke="#9B7FC0" stroke-width="1.7"/><path d="M5 8v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" stroke="#9B7FC0" stroke-width="1.7"/><path d="M10 12h4" stroke="#9B7FC0" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span style="font-size:11px;">Archiv</span>
       </button>
-      <div class="home-chat-label">Neuen Chat beginnen</div>
+
+      <button onclick="homeFabTapped()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:-24px;font-family:inherit;">
+        <span style="width:66px;height:66px;border-radius:50%;background:var(--plum);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(45,27,78,0.34);">
+          <svg width="36" height="36" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg>
+        </span>
+        <span style="font-size:11px;font-weight:600;color:#2D1B4E;">Neuer Chat</span>
+      </button>
+
+      <button onclick="showProfile()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:#9B7FC0;font-family:inherit;padding:2px 6px;">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="#9B7FC0" stroke-width="1.7"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#9B7FC0" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span style="font-size:11px;">Profil</span>
+      </button>
     </div>
 
   </div>
@@ -1967,6 +1960,7 @@ function toggleConsent(id) {
   item.classList.toggle('checked', consents[id]);
   check.textContent = consents[id] ? '✓' : '';
   const allChecked = consents.c1 && consents.c2 && consents.c3;
+  if (allChecked && !window._consentTs) window._consentTs = Date.now();
   document.getElementById('startBtn').disabled = !allChecked;
 }
 // ── App Guide ──
@@ -2455,8 +2449,8 @@ function fillHomeData() {
     function item(emoji, label, value) {
       return '<div style="display:flex;align-items:center;gap:6px;min-width:0;">' +
         '<span style="font-size:16px;flex-shrink:0;">' + emoji + '</span>' +
-        '<div style="min-width:0;"><div style="font-size:9px;color:#9B8AB5;line-height:1.1;text-transform:uppercase;letter-spacing:0.04em;">' + label + '</div>' +
-        '<div style="font-size:13px;font-weight:500;color:#2D1B4E;line-height:1.2;white-space:nowrap;">' + value + '</div></div></div>';
+        '<div style="min-width:0;"><div style="font-size:9px;color:rgba(255,255,255,0.55);line-height:1.1;text-transform:uppercase;letter-spacing:0.04em;">' + label + '</div>' +
+        '<div style="font-size:13px;font-weight:600;color:#FFFFFF;line-height:1.2;white-space:nowrap;">' + value + '</div></div></div>';
     }
     var sleepVal = mb.sleepStr || '—';
     var sleepFace = '😴';
@@ -2468,7 +2462,7 @@ function fillHomeData() {
     var enFace = (mb.energyScore == null) ? '🙂' : (mb.energyScore >= 60 ? '😊' : mb.energyScore >= 40 ? '🙂' : '😕');
     var stVal = (mb.stressScore != null) ? mb.stressScore : '—';
     var stFace = (mb.stressScore == null) ? '😐' : (mb.stressScore <= 30 ? '😊' : mb.stressScore <= 60 ? '😐' : '😟');
-    var divider = '<div style="width:1px;height:24px;background:rgba(155,127,192,0.2);flex-shrink:0;"></div>';
+    var divider = '<div style="width:1px;height:24px;background:rgba(255,255,255,0.18);flex-shrink:0;"></div>';
     grid.innerHTML = item(sleepFace, 'Schlaf', sleepVal) + divider + item(enFace, 'Energie', enVal) + divider + item(stFace, 'Stress', stVal);
   }
 
@@ -2484,7 +2478,7 @@ function fillHomeData() {
           ? ('aktualisiert ' + w.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr')
           : ('aktualisiert ' + w.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }));
       }
-      cl.innerHTML = '<span>' + left + '</span><span style="color:#C0B0D0;font-size:10px;">' + upd + '</span>';
+      cl.innerHTML = '<span>' + left + '</span><span style="color:rgba(255,255,255,0.45);font-size:10px;">' + upd + '</span>';
       cl.style.display = 'flex';
       cl.style.justifyContent = 'space-between';
       cl.style.alignItems = 'center';
@@ -2501,7 +2495,7 @@ function fillHomeThemen() {
   var chats;
   try { chats = getSavedChats(); } catch(e) { chats = []; }
   if (!chats || !chats.length) {
-    el.innerHTML = '<div style="background:white;border-radius:14px;border:1px dashed rgba(155,127,192,0.3);padding:16px;text-align:center;font-size:12px;color:#9B7FC0;">Noch keine Themen — euer erstes Gespräch erscheint hier.</div>';
+    el.innerHTML = '<div style="background:#CFC0E6;border-radius:14px;padding:16px;text-align:center;font-size:12px;color:#6B5A88;">Noch keine Themen — euer erstes Gespräch erscheint hier.</div>';
     return;
   }
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2511,11 +2505,11 @@ function fillHomeThemen() {
     var d = '';
     try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
     var sub = (d || '') + (c.erkenntnis ? ' · „' + esc(c.erkenntnis) + '"' : '');
-    return '<div onclick="openThemeSheet(' + id + ')" style="background:white;border-radius:14px;border:1px solid rgba(155,127,192,0.18);padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">' +
-      '<div style="width:34px;height:34px;border-radius:50%;background:#F6E7D6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">' + themeIcon(c.thema) + '</div>' +
+    return '<div onclick="openThemeSheet(' + id + ')" style="background:#CFC0E6;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">' +
+      '<div style="width:34px;height:34px;border-radius:50%;background:#2D1B4E;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">' + themeIcon(c.thema) + '</div>' +
       '<div style="flex:1;min-width:0;"><div style="font-size:14px;color:#2D1B4E;">' + esc(c.thema || 'Gespräch') + '</div>' +
       '<div style="font-size:12px;color:#8A7AA5;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + sub + '</div></div>' +
-      '<span style="font-size:18px;color:#C0B0D0;flex-shrink:0;">›</span></div>';
+      '<span style="font-size:18px;color:#2D1B4E;flex-shrink:0;">›</span></div>';
   }).join('');
 }
 
@@ -2524,6 +2518,91 @@ function refreshHome() {
   homeInit(true);
   fillHomeData();
   fillHomeThemen();
+}
+
+function getCheckins() {
+  try { return JSON.parse(localStorage.getItem('avie_checkins') || '[]'); } catch(e) { return []; }
+}
+
+function saveCheckinEntry(mood, energy) {
+  try {
+    var list = getCheckins();
+    list.push({ ts: Date.now(), mood: mood, energy: energy });
+    if (list.length > 365) list = list.slice(-365);
+    localStorage.setItem('avie_checkins', JSON.stringify(list));
+  } catch(e) {}
+}
+
+function lastCheckinToday() {
+  var list = getCheckins();
+  if (!list.length) return null;
+  var last = list[list.length - 1];
+  return (new Date(last.ts).toDateString() === new Date().toDateString()) ? last : null;
+}
+
+function openCheckinModal() {
+  closeCheckin();
+  window._checkinMood = 0;
+  var ov = document.createElement('div');
+  ov.id = 'checkin-modal';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:60;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:26px;animation:fadeUp 0.22s ease both;';
+  ov.addEventListener('click', function(e){ if (e.target === ov) closeCheckin(); });
+  document.querySelector('.phone').appendChild(ov);
+  checkinRender();
+}
+
+function checkinRender() {
+  var ov = document.getElementById('checkin-modal');
+  if (!ov) return;
+  var head = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
+    '<div style="font-size:16px;font-weight:600;color:#2D1B4E;">Kurzer Check-in</div>' +
+    '<button onclick="closeCheckin()" style="background:none;border:none;font-size:20px;color:#C0B0D0;cursor:pointer;line-height:1;padding:2px;">×</button></div>';
+  var inner;
+  if (!window._checkinMood) {
+    var emoji = { 1:'😞', 2:'😕', 3:'😐', 4:'🙂', 5:'😊' };
+    var btns = [1,2,3,4,5].map(function(v) {
+      return '<button onclick="checkinSetMood(' + v + ')" style="flex:1;background:#F7F4FC;border:none;border-radius:12px;padding:12px 0;font-size:24px;cursor:pointer;">' + emoji[v] + '</button>';
+    }).join('');
+    inner = '<div style="font-size:14px;color:#6B5A88;margin:6px 0 14px;">Wie fühlst du dich gerade?</div>' +
+      '<div style="display:flex;gap:6px;">' + btns + '</div>';
+  } else {
+    var levels = [{v:1,l:'Niedrig',i:'🪫'},{v:2,l:'Mittel',i:'🔋'},{v:3,l:'Hoch',i:'⚡'}];
+    var ebtns = levels.map(function(o) {
+      return '<button onclick="checkinSetEnergy(' + o.v + ')" style="flex:1;background:#F7F4FC;border:none;border-radius:12px;padding:13px 0;font-family:inherit;font-size:13px;color:#4A3A6A;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:20px;">' + o.i + '</span>' + o.l + '</button>';
+    }).join('');
+    inner = '<div style="font-size:14px;color:#6B5A88;margin:6px 0 14px;">Und deine Energie?</div>' +
+      '<div style="display:flex;gap:6px;">' + ebtns + '</div>';
+  }
+  ov.innerHTML = '<div style="background:white;border-radius:22px;padding:20px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' + head + inner + '</div>';
+}
+
+function checkinSetMood(v) {
+  window._checkinMood = v;
+  checkinRender();
+}
+
+function checkinSetEnergy(v) {
+  saveCheckinEntry(window._checkinMood || 3, v);
+  window._checkinMood = 0;
+  var ov = document.getElementById('checkin-modal');
+  if (ov) ov.innerHTML = '<div style="background:white;border-radius:22px;padding:24px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);text-align:center;font-size:14px;color:#2D1B4E;">Danke, ich hab\'s notiert 💜</div>';
+  setTimeout(closeCheckin, 1400);
+}
+
+function closeCheckin() {
+  var ov = document.getElementById('checkin-modal');
+  if (ov) ov.remove();
+}
+
+function maybeOpenCheckin() {
+  if (window._checkinShownSession) return;
+  if (lastCheckinToday()) return;
+  if (window._onboardingNoteAsk) return;
+  var cw = document.getElementById('chat-window');
+  if (cw && cw.classList.contains('open')) return;
+  if (document.getElementById('dashboard')) return;
+  window._checkinShownSession = true;
+  setTimeout(openCheckinModal, 600);
 }
 
 function homeInit(fromOnboarding) {
@@ -2538,6 +2617,7 @@ function homeInit(fromOnboarding) {
   // Körperdaten & Themen bei jedem Betreten des Homescreens aktualisieren
   fillHomeData();
   fillHomeThemen();
+  maybeOpenCheckin();
   // Eingabefeld sicher sichtbar und aktiv
   var iw = document.getElementById('home-input-wrap');
   if (iw) iw.style.display = 'flex';
@@ -3187,7 +3267,7 @@ function getLiveSpot(target) {
       'header-dash-btn':  '.header',
       'avie-bubble-area': '#home-body > div:nth-child(2)',
       'mood-chips-area':  '#main-mood-row',
-      'fab-btn-area':     '.home-chat-cta-wrap',
+      'fab-btn-area':     '.home-bottom-nav',
     };
     const sel = selectors[target];
     if (!sel) return null;
@@ -4092,8 +4172,9 @@ function showDashboard() {
 
     </div>
 
-    <!-- CTA: über Körperdaten sprechen -->
-    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;">
+    <!-- CTA: Schließen + über Körperdaten sprechen -->
+    <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
+      <button onclick="closeDashboard()" style="width:100%;padding:14px;border-radius:16px;border:1.5px solid rgba(45,27,78,0.2);background:white;color:#2D1B4E;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button>
       <button onclick="dashStartChat('Ich möchte über meine Körperdaten sprechen.')" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">💬 Über Körperdaten sprechen</button>
     </div>
   `;
@@ -5203,21 +5284,47 @@ function bodySnapshotText() {
   return parts.join(', ');
 }
 
+function relativeTime(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  var now = new Date();
+  var diffMin = (now - d) / 60000;
+  function tageszeit(h) {
+    if (h < 5) return 'Nacht';
+    if (h < 11) return 'Morgen';
+    if (h < 14) return 'Mittag';
+    if (h < 18) return 'Nachmittag';
+    if (h < 22) return 'Abend';
+    return 'Nacht';
+  }
+  if (diffMin < 3) return 'gerade eben';
+  if (diffMin < 90) return 'vor Kurzem';
+  var tz = tageszeit(d.getHours());
+  var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  var dayDiff = Math.round((startToday - startThat) / 86400000);
+  if (dayDiff === 0) return 'heute ' + tz;
+  if (dayDiff === 1) return 'gestern ' + tz;
+  if (dayDiff <= 6) return 'vor ' + dayDiff + ' Tagen';
+  if (dayDiff <= 13) return 'vor einer Woche';
+  return 'am ' + d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+}
+
 function archiveContext() {
   var chats;
   try { chats = getSavedChats(); } catch(e) { chats = []; }
   if (!chats || !chats.length) return '';
   var recent = chats.slice(-6).reverse(); // neueste zuerst
   var lines = recent.map(function(c) {
-    var d = '';
-    try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
-    return '- ' + (d ? '(' + d + ') ' : '') + 'Thema: ' + (c.thema || '—') +
+    var when = relativeTime(c.timestamp);
+    return '- ' + (when ? '(' + when + ') ' : '') + 'Thema: ' + (c.thema || '—') +
            ' | Ihre Erkenntnis damals: ' + (c.erkenntnis || '—') +
            ' | Was du dir gemerkt hast: ' + (c.avie_lernt || '—') +
            (c.koerper ? ' | Körperdaten damals: ' + c.koerper : '');
   });
   return '\n\nWoran du dich aus euren früheren Gesprächen erinnerst (neueste zuerst):\n' + lines.join('\n') +
     '\n\nDu bist ihre Begleiterin über die Zeit — kein Tool, das bei null startet. Greif diese Erinnerungen proaktiv und natürlich auf, wenn es zum Gespräch passt, z.B. "als wir letztes Mal über deine Kinder gesprochen haben, war ... — wollen wir daran anknüpfen?". ' +
+    'Nutze für Zeitbezüge immer die in Klammern angegebene, natürliche Formulierung (z.B. „gerade eben", „heute Morgen", „gestern Abend", „vor 3 Tagen") — niemals vage Monatsangaben wie „Mitte Juni". Ihr seid regelmäßig in Kontakt, das soll sich auch zeitlich persönlich anfühlen. ' +
     'Wenn heute Körperdaten vorliegen, vergleiche sie wo sinnvoll mit den Körperdaten aus dem jüngsten früheren Gespräch und stell proaktiv einen Bezug her — z.B. "du hast heute länger geschlafen als bei unserem letzten Gespräch, fühlst du dich mit [Thema] erholter?" oder "du bist heute 2x aufgewacht, letztes Mal hast du durchgeschlafen — beschäftigt dich gerade etwas?". ' +
     'Mach das warm und beiläufig, höchstens ein-, zweimal pro Gespräch, niemals wie eine Aufzählung oder ein Protokoll. Wenn gerade nichts davon ehrlich passt, lass es einfach weg.\n';
 }
@@ -5270,7 +5377,11 @@ function saveProfile() {
 
 function saveUserProfile() {
   try {
-    localStorage.setItem('avie_profile', JSON.stringify({ userName: userName, klAnswers: klAnswers }));
+    localStorage.setItem('avie_profile', JSON.stringify({
+      userName: userName,
+      klAnswers: klAnswers,
+      consent: { medizinHinweis: !!consents.c1, datenschutz: !!consents.c2, alter18: !!consents.c3, ts: window._consentTs || Date.now() }
+    }));
   } catch(e) {}
 }
 
@@ -5289,12 +5400,49 @@ function loadUserProfile() {
   } catch(e) { return false; }
 }
 
+function showAvieLoader(ms) {
+  if (document.getElementById('avie-loader')) return;
+  window._loaderStart = Date.now();
+  var ov = document.createElement('div');
+  ov.id = 'avie-loader';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:100;background:#2D1B4E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;';
+  ov.innerHTML = '<div style="animation:aviePulse 1.6s ease-in-out infinite;">' +
+    '<svg width="74" height="74" viewBox="0 0 74 74" fill="none"><g transform="translate(37,37)">' +
+    '<ellipse rx="7" ry="16" fill="rgba(255,255,255,0.30)" transform="rotate(0)"/>' +
+    '<ellipse rx="7" ry="16" fill="white" transform="rotate(45)" opacity="0.9"/>' +
+    '<ellipse rx="7" ry="16" fill="rgba(255,255,255,0.30)" transform="rotate(90)"/>' +
+    '<ellipse rx="7" ry="16" fill="white" transform="rotate(135)" opacity="0.9"/>' +
+    '<ellipse rx="7" ry="16" fill="rgba(255,255,255,0.30)" transform="rotate(180)"/>' +
+    '<ellipse rx="7" ry="16" fill="white" transform="rotate(225)" opacity="0.9"/>' +
+    '<ellipse rx="7" ry="16" fill="rgba(255,255,255,0.30)" transform="rotate(270)"/>' +
+    '<ellipse rx="7" ry="16" fill="white" transform="rotate(315)" opacity="0.9"/>' +
+    '</g><circle cx="37" cy="37" r="8.5" fill="#D4863A"/></svg></div>' +
+    '<div style="color:rgba(255,255,255,0.7);font-size:13px;letter-spacing:0.04em;">Einen Moment …</div>';
+  document.querySelector('.phone').appendChild(ov);
+  if (ms) setTimeout(hideAvieLoader, ms);
+}
+
+function hideAvieLoader() {
+  var ov = document.getElementById('avie-loader');
+  if (!ov) return;
+  ov.style.transition = 'opacity 0.35s ease';
+  ov.style.opacity = '0';
+  setTimeout(function(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }, 360);
+}
+
+function hideAvieLoaderMinDelay(minMs) {
+  minMs = (minMs == null) ? 1500 : minMs;
+  var elapsed = Date.now() - (window._loaderStart || 0);
+  setTimeout(hideAvieLoader, Math.max(0, minMs - elapsed));
+}
+
 function enterAppFromStorage() {
   var ob = document.getElementById('onboarding'); if (ob) ob.style.display = 'none';
   var app = document.getElementById('app'); if (app) app.classList.add('visible');
   updateClock();
   personalizeApp();
   homeInit(true);
+  showAvieLoader(1800);
 }
 
 function saveBodyData() {
@@ -5328,10 +5476,100 @@ function resetUserData() {
     localStorage.removeItem('avie_profile');
     localStorage.removeItem('avie_saved_chats');
     localStorage.removeItem('avie_body_data');
+    localStorage.removeItem('avie_checkins');
   } catch(e) {}
   try { location.reload(); } catch(e) {
     var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
   }
+}
+
+function themeCategory(thema) {
+  var t = (thema || '').toLowerCase();
+  if (/schlaf|müde|insomn|nacht|wach/.test(t)) return { key:'schlaf', label:'Schlaf', icon:'🌙' };
+  if (/job|arbeit|beruf|chef|kolleg|büro|karriere/.test(t)) return { key:'job', label:'Job & Arbeit', icon:'💼' };
+  if (/stress|druck|überforder|hektik|last/.test(t)) return { key:'stress', label:'Stress', icon:'⚡' };
+  if (/kind|familie|schwanger|mutter|baby|eltern/.test(t)) return { key:'kind', label:'Kinder & Familie', icon:'👶' };
+  if (/beziehung|partner|liebe|ehe|freund|date/.test(t)) return { key:'beziehung', label:'Beziehung', icon:'💗' };
+  if (/zyklus|hormon|periode|menstr|pms|eisprung/.test(t)) return { key:'zyklus', label:'Zyklus', icon:'🌸' };
+  if (/energie|erschöpf|kraftlos|antrieb|müdigkeit/.test(t)) return { key:'energie', label:'Energie', icon:'🔋' };
+  if (/sport|bewegung|training|lauf|fitness/.test(t)) return { key:'sport', label:'Sport', icon:'🏃' };
+  if (/ernähr|essen|appetit|gewicht|hunger/.test(t)) return { key:'ernaehrung', label:'Ernährung', icon:'🥗' };
+  if (/angst|sorge|grüb|panik|unruhe/.test(t)) return { key:'angst', label:'Ängste', icon:'🌧️' };
+  return { key:'sonstiges', label:'Sonstiges', icon:'💬' };
+}
+
+function buildProfileInsightsData() {
+  var chats;
+  try { chats = getSavedChats(); } catch(e) { chats = []; }
+  var withLernt = (chats || []).filter(function(c){ return c.avie_lernt && String(c.avie_lernt).trim(); });
+  var groups = {}; var order = [];
+  withLernt.forEach(function(c) {
+    var cat = themeCategory(c.thema || '');
+    if (!groups[cat.key]) { groups[cat.key] = { label: cat.label, icon: cat.icon, entries: [] }; order.push(cat.key); }
+    groups[cat.key].entries.push(c);
+  });
+  order.sort(function(a, b){ return groups[b].entries.length - groups[a].entries.length; });
+  window._profileInsights = { groups: groups, order: order, total: withLernt.length };
+  if (window._profileInsightsSel !== 'all' && !groups[window._profileInsightsSel]) window._profileInsightsSel = 'all';
+}
+
+function profileInsightChip(key, label, icon, count, active) {
+  return '<button onclick="profileFilterInsights(\'' + key + '\')" style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1.5px solid ' +
+    (active ? '#2D1B4E' : 'rgba(155,127,192,0.3)') + ';background:' + (active ? '#2D1B4E' : 'white') + ';color:' + (active ? 'white' : '#4A3A6A') +
+    ';font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">' +
+    (icon ? '<span style="font-size:13px;">' + icon + '</span>' : '') + label +
+    '<span style="opacity:0.55;">' + count + '</span></button>';
+}
+
+function renderProfileInsightsChips() {
+  var data = window._profileInsights; if (!data) return '';
+  var sel = window._profileInsightsSel;
+  var chips = profileInsightChip('all', 'Alle', '', data.total, sel === 'all');
+  chips += data.order.map(function(k) {
+    var g = data.groups[k];
+    return profileInsightChip(k, g.label, g.icon, g.entries.length, sel === k);
+  }).join('');
+  return '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">' + chips + '</div>';
+}
+
+function renderProfileInsightsList() {
+  function esc(s){ return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var data = window._profileInsights;
+  var sel = window._profileInsightsSel;
+  var entries = [];
+  if (sel === 'all') {
+    data.order.forEach(function(k){ data.groups[k].entries.forEach(function(c){ entries.push({ c: c, icon: data.groups[k].icon }); }); });
+    entries.sort(function(a, b){ return (b.c.timestamp || 0) - (a.c.timestamp || 0); });
+  } else if (data.groups[sel]) {
+    entries = data.groups[sel].entries.slice().sort(function(a, b){ return (b.timestamp || 0) - (a.timestamp || 0); }).map(function(c){ return { c: c, icon: data.groups[sel].icon }; });
+  }
+  var html = entries.slice(0, 40).map(function(e) {
+    var c = e.c; var when = relativeTime(c.timestamp);
+    return '<div style="display:flex;gap:10px;align-items:flex-start;background:#F7F4FC;border-radius:12px;padding:11px 12px;">' +
+      '<div style="width:28px;height:28px;border-radius:50%;background:#2D1B4E;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">' + e.icon + '</div>' +
+      '<div style="min-width:0;flex:1;">' +
+        '<div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(c.avie_lernt) + '</div>' +
+        '<div style="font-size:11px;color:#9B8AB5;margin-top:3px;">' + esc(c.thema || 'Gespräch') + (when ? ' · ' + when : '') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  return '<div style="display:flex;flex-direction:column;gap:8px;">' + html + '</div>';
+}
+
+function profileFilterInsights(key) {
+  window._profileInsightsSel = key;
+  var wrap = document.getElementById('profile-insights-wrap');
+  if (wrap) wrap.innerHTML = renderProfileInsightsChips() + renderProfileInsightsList();
+}
+
+function profileInsightsHtml() {
+  window._profileInsightsSel = 'all';
+  buildProfileInsightsData();
+  if (!window._profileInsights.total) {
+    return '<div style="font-size:13px;color:#8A7AA5;line-height:1.5;">Noch nichts — je öfter ihr sprecht, desto mehr lernt avie über dich. Eure Gespräche erscheinen hier nach und nach als kleine Erkenntnisse.</div>';
+  }
+  return '<div id="profile-insights-wrap" style="display:flex;flex-direction:column;gap:10px;">' +
+    renderProfileInsightsChips() + renderProfileInsightsList() + '</div>';
 }
 
 function showProfile() {
@@ -5377,8 +5615,16 @@ function showProfile() {
       '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich wissen sollte</div>' +
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">z.B. Schwangerschaft, Kinderwunsch, wie es dir gerade geht — avie bezieht das in ihre Antworten ein.</div>' +
         '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Erzähl avie, was sie über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
+      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich gelernt hat</div>' +
+        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">Aus euren bisherigen Gesprächen — was avie sich gemerkt hat.</div>' +
+        profileInsightsHtml() + '</div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Änderungen speichern</button>' +
       '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
+      '<div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 0 4px;">' +
+        '<span onclick="showDatenschutz()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">Datenschutzerklärung</span>' +
+        '<span style="color:#C0B0D0;">·</span>' +
+        '<span onclick="showImpressum()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">Impressum</span>' +
+      '</div>' +
     '</div>';
 
   document.querySelector('.phone').appendChild(div);
@@ -5386,6 +5632,69 @@ function showProfile() {
   if (ni) ni.value = window._profileEdit.name;
   var nt = document.getElementById('profile-notiz-input');
   if (nt) nt.value = window._profileEdit.notiz;
+}
+
+function showDatenschutz() {
+  var old = document.getElementById('datenschutz-overlay');
+  if (old) old.remove();
+  var h = 'font-size:13px;font-weight:700;color:#2D1B4E;';
+  var p = 'font-size:13px;color:#4A3A6A;line-height:1.6;';
+  var card = 'background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);display:flex;flex-direction:column;gap:8px;';
+  function sec(title, body) { return '<div style="' + card + '"><div style="' + h + '">' + title + '</div><div style="' + p + '">' + body + '</div></div>'; }
+  var div = document.createElement('div');
+  div.id = 'datenschutz-overlay';
+  div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:120;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
+  div.innerHTML =
+    '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div><div style="font-size:16px;font-weight:600;color:white;">Datenschutz</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,0.5);">Wie avie mit deinen Daten umgeht</div></div>' +
+      '<button onclick="document.getElementById(\'datenschutz-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+      '<div style="background:rgba(212,134,58,0.1);border:1px solid rgba(212,134,58,0.3);border-radius:14px;padding:14px;font-size:12px;color:#8a5a22;line-height:1.5;">⚠️ <strong>Entwurfsvorlage.</strong> Dieser Text ist ein Gerüst und ersetzt keine Rechtsberatung. Vor Veröffentlichung bitte von einer Datenschutz-Jurist:in prüfen lassen und alle [Platzhalter] ausfüllen.</div>' +
+      sec('1. Verantwortlicher', 'Verantwortlich für die Datenverarbeitung ist:<br>[Name / Firma]<br>[Anschrift]<br>[E-Mail]<br>[ggf. Datenschutzbeauftragte:r]') +
+      sec('2. Welche Daten wir verarbeiten', 'avie verarbeitet die Angaben, die du selbst machst: Name, Alter, Angaben zu Kindern und Alltag, deine Wünsche, deine freie Notiz, deine Chat-Nachrichten, deine Stimmungs- und Energie-Check-ins sowie ggf. von dir eingegebene Körper- und Zyklusdaten. <strong>Ein Teil davon sind Gesundheitsdaten</strong> (besondere Kategorie personenbezogener Daten nach Art. 9 DSGVO).') +
+      sec('3. Wo deine Daten gespeichert werden', 'Deine Profil-, Verlaufs- und Check-in-Daten werden <strong>lokal auf deinem Gerät</strong> im Browser-Speicher (localStorage) abgelegt und verlassen es nicht automatisch. <strong>Ausnahme:</strong> Damit avie antworten kann, werden deine Chat-Eingaben und der dafür nötige Kontext an unseren KI-Dienstleister übermittelt und dort verarbeitet (siehe Punkt 5).') +
+      sec('4. Rechtsgrundlage', 'Die Verarbeitung erfolgt auf Grundlage deiner <strong>Einwilligung</strong> (Art. 6 Abs. 1 lit. a DSGVO), für Gesundheitsdaten zusätzlich nach Art. 9 Abs. 2 lit. a DSGVO. Du kannst deine Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen.') +
+      sec('5. Empfänger / Auftragsverarbeiter', 'Zur Erzeugung der Antworten setzen wir [Anthropic] (über [Cloudflare]) als Auftragsverarbeiter ein. Dabei kann eine Übermittlung in die [USA] erfolgen; Grundlage hierfür sind [Standardvertragsklauseln / Angemessenheitsbeschluss]. Mit diesen Anbietern bestehen Auftragsverarbeitungsverträge gemäß Art. 28 DSGVO.') +
+      sec('6. Speicherdauer', 'Lokal gespeicherte Daten bleiben erhalten, bis du sie löschst. Über „Nutzerdaten löschen" im Profil kannst du alle lokal gespeicherten Daten jederzeit selbst und vollständig entfernen.') +
+      sec('7. Deine Rechte', 'Dir stehen die Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch zu, ebenso das Recht, eine erteilte Einwilligung zu widerrufen. Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren. Anfragen richte bitte an [E-Mail].') +
+      sec('8. Keine medizinische Beratung', 'avie unterstützt dich bei der Selbstreflexion und ersetzt keine medizinische oder psychotherapeutische Beratung, Diagnose oder Behandlung. In akuten Notlagen wende dich bitte an ärztliche Hilfe oder einen Notdienst.') +
+      '<div style="font-size:11px;color:#9B8AB5;text-align:center;padding:4px 0 8px;">Stand: [Datum] · Version [x]</div>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(div);
+}
+
+function showImpressum() {
+  var old = document.getElementById('impressum-overlay');
+  if (old) old.remove();
+  var h = 'font-size:13px;font-weight:700;color:#2D1B4E;';
+  var p = 'font-size:13px;color:#4A3A6A;line-height:1.6;';
+  var card = 'background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);display:flex;flex-direction:column;gap:8px;';
+  function sec(title, body) { return '<div style="' + card + '"><div style="' + h + '">' + title + '</div><div style="' + p + '">' + body + '</div></div>'; }
+  var div = document.createElement('div');
+  div.id = 'impressum-overlay';
+  div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:120;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
+  div.innerHTML =
+    '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div><div style="font-size:16px;font-weight:600;color:white;">Impressum</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,0.5);">Anbieterkennzeichnung</div></div>' +
+      '<button onclick="document.getElementById(\'impressum-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+      '<div style="background:rgba(212,134,58,0.1);border:1px solid rgba(212,134,58,0.3);border-radius:14px;padding:14px;font-size:12px;color:#8a5a22;line-height:1.5;">⚠️ <strong>Entwurfsvorlage.</strong> Bitte vor Veröffentlichung prüfen lassen und alle [Platzhalter] mit deinen echten Angaben ausfüllen. Ein vollständiges, korrektes Impressum ist gesetzlich verpflichtend (§ 5 DDG).</div>' +
+      sec('Angaben gemäß § 5 DDG', '[Name / Firma]<br>[Rechtsform, z.B. Einzelunternehmen / GmbH]<br>[Straße und Hausnummer]<br>[PLZ und Ort]<br>[Land]') +
+      sec('Vertreten durch', '[Vor- und Nachname der vertretungsberechtigten Person, z.B. Geschäftsführer:in / Inhaber:in]') +
+      sec('Kontakt', 'Telefon: [Telefonnummer]<br>E-Mail: [E-Mail-Adresse]') +
+      sec('Umsatzsteuer-ID', 'Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:<br>[USt-IdNr., falls vorhanden — sonst diesen Abschnitt entfernen]') +
+      sec('Eintragung im Register', '[Registergericht und Registernummer, falls vorhanden — sonst entfernen]') +
+      sec('Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV', '[Vor- und Nachname]<br>[Anschrift]') +
+      sec('EU-Streitschlichtung', 'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: https://ec.europa.eu/consumers/odr/. Unsere E-Mail-Adresse findest du oben unter „Kontakt".') +
+      sec('Verbraucherstreitbeilegung', 'Wir sind [nicht] bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.') +
+      sec('Haftung für Inhalte', 'Die Inhalte dieser Anwendung wurden mit Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. avie ersetzt keine medizinische oder psychotherapeutische Beratung.') +
+      '<div style="font-size:11px;color:#9B8AB5;text-align:center;padding:4px 0 8px;">Stand: [Datum]</div>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(div);
 }
 
 function homeFabTapped() {
@@ -5988,6 +6297,8 @@ function saveChatAndClose() {
   // Save history snapshot BEFORE closing (clearing happens elsewhere)
   var historySnapshot = chatHistory.slice();
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
+  showAvieLoader();
+  setTimeout(hideAvieLoader, 8000); // Sicherheitsnetz, falls die Karte ausbleibt
   // Generate summary with snapshot
   generateChatSummary(historySnapshot);
 }
@@ -5998,6 +6309,7 @@ function discardChatAndClose() {
   window._hasNewUserMsg = false;
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
   chatHistory.length = 0;
+  showAvieLoader(1500);
   refreshHome();
 }
 
@@ -6080,45 +6392,39 @@ function saveChat(summary, messages) {
 function showChatSummaryCard(summary, messages) {
   // Save to persistent archive
   saveChat(summary, messages);
-
-  // Also show summary card on homescreen
-  var summaryArea = document.getElementById('home-summary-area');
-  if (!summaryArea) return;
-
-  // Remove old summary if exists
-  var old = document.getElementById('chat-summary-card');
-  if (old) old.remove();
-
-  var card = document.createElement('div');
-  card.id = 'chat-summary-card';
-  card.style.cssText = 'background:white;border-radius:16px;border:1.5px solid rgba(212,134,58,0.3);padding:16px;display:flex;flex-direction:column;gap:10px;animation:fadeUp 0.4s ease both;flex-shrink:0;box-shadow:0 4px 16px rgba(45,27,78,0.08);';
-
-  card.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;">' +
-      '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#D4863A;">Avies Notiz · gerade eben</div>' +
-      '<button onclick="document.getElementById(\'chat-summary-card\').remove()" style="font-size:16px;color:#C0B0D0;background:none;border:none;cursor:pointer;line-height:1;">×</button>' +
-    '</div>' +
-    '<div style="font-size:15px;font-weight:600;color:#2D1B4E;">📝 ' + (summary.thema || 'Unser Gespräch') + '</div>' +
-    '<div style="display:flex;flex-direction:column;gap:8px;">' +
-      '<div style="background:#F7F4FC;border-radius:10px;padding:10px 12px;">' +
-        '<div style="font-size:10px;font-weight:600;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Deine Erkenntnis</div>' +
-        '<div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + (summary.erkenntnis || '') + '</div>' +
-      '</div>' +
-      '<div style="background:rgba(212,134,58,0.06);border-radius:10px;padding:10px 12px;">' +
-        '<div style="font-size:10px;font-weight:600;color:#D4863A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">avie merkt sich</div>' +
-        '<div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + (summary.avie_lernt || '') + '</div>' +
-      '</div>' +
-    '</div>';
-
-  summaryArea.appendChild(card);
-
-  // Scroll to show the card
-  setTimeout(function() {
-    scrollHomeToEl(card, 'start');
-  }, 200);
-
-  // Homescreen aktualisieren: Willkommenstext neu generieren (bezieht das neue Gespräch ein), Werte und Themen auffrischen
+  // Homescreen aktualisieren (Begrüßung bezieht das neue Gespräch ein, Werte/Themen auffrischen)
   refreshHome();
+  // Ladescreen ausblenden, dann die Notiz als Pop-up auf dem Startscreen zeigen
+  var elapsed = Date.now() - (window._loaderStart || 0);
+  var wait = Math.max(0, 1500 - elapsed);
+  setTimeout(function() {
+    hideAvieLoader();
+    setTimeout(function() { showSummaryPopup(summary); }, 400);
+  }, wait);
+}
+
+function showSummaryPopup(summary) {
+  function esc(s){ return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var existing = document.getElementById('summary-popup');
+  if (existing) existing.remove();
+  var ov = document.createElement('div');
+  ov.id = 'summary-popup';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:60;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeUp 0.25s ease both;';
+  ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });
+  ov.innerHTML =
+    '<div style="background:white;border-radius:22px;border:1.5px solid rgba(212,134,58,0.3);padding:20px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+        '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#D4863A;">Avies Notiz · gerade eben</div>' +
+        '<button onclick="document.getElementById(\'summary-popup\').remove()" style="font-size:18px;color:#C0B0D0;background:none;border:none;cursor:pointer;line-height:1;">×</button>' +
+      '</div>' +
+      '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:12px;">📝 ' + esc(summary.thema || 'Unser Gespräch') + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        '<div style="background:#F7F4FC;border-radius:10px;padding:10px 12px;"><div style="font-size:10px;font-weight:600;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Deine Erkenntnis</div><div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(summary.erkenntnis) + '</div></div>' +
+        '<div style="background:rgba(212,134,58,0.06);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;font-weight:600;color:#D4863A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">avie merkt sich</div><div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(summary.avie_lernt) + '</div></div>' +
+      '</div>' +
+      '<button onclick="document.getElementById(\'summary-popup\').remove()" style="margin-top:16px;width:100%;padding:12px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(ov);
 }
 
 // Dashboard "Mit avie besprechen" → just close dashboard, return to main screen

@@ -1485,10 +1485,10 @@ body {
           </div>
           <div class="consent-item" id="c3" onclick="toggleConsent('c3')">
             <div class="consent-check" id="c3-check"></div>
-            <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den Nutzungsbedingungen von avie Lab zu.</div>
+            <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den <span onclick="event.stopPropagation();showAGB();" style="text-decoration:underline;cursor:pointer;">Nutzungsbedingungen</span> von avie Lab zu.</div>
           </div>
           <div style="text-align:center;font-size:11px;color:#9B7FC0;padding-top:2px;">
-            <span onclick="showDatenschutz()" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span>&nbsp;·&nbsp;<span onclick="showImpressum()" style="text-decoration:underline;cursor:pointer;">Impressum</span>
+            <span onclick="showDatenschutz()" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span>&nbsp;·&nbsp;<span onclick="showImpressum()" style="text-decoration:underline;cursor:pointer;">Impressum</span>&nbsp;·&nbsp;<span onclick="showAGB()" style="text-decoration:underline;cursor:pointer;">AGB</span>
           </div>
         </div>
         <div class="ob-nav">
@@ -1669,6 +1669,9 @@ body {
         <div class="header-name">avie</div>
         <div class="header-sub"><span class="online-dot"></span><span>deine Begleiterin</span></div>
       </div>
+      <button onclick="showPersonality()" title="avies Persönlichkeit" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="4" y1="8" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="8" r="2.6" fill="#2D1B4E" stroke="currentColor" stroke-width="1.8"/><line x1="4" y1="16" x2="20" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="16" r="2.6" fill="#2D1B4E" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
     </div>
 
     <!-- Körperdaten-Score darunter (öffnet das Dashboard) -->
@@ -2520,89 +2523,34 @@ function refreshHome() {
   fillHomeThemen();
 }
 
-function getCheckins() {
-  try { return JSON.parse(localStorage.getItem('avie_checkins') || '[]'); } catch(e) { return []; }
-}
-
-function saveCheckinEntry(mood, energy) {
-  try {
-    var list = getCheckins();
-    list.push({ ts: Date.now(), mood: mood, energy: energy });
-    if (list.length > 365) list = list.slice(-365);
-    localStorage.setItem('avie_checkins', JSON.stringify(list));
-  } catch(e) {}
-}
-
-function lastCheckinToday() {
-  var list = getCheckins();
-  if (!list.length) return null;
-  var last = list[list.length - 1];
-  return (new Date(last.ts).toDateString() === new Date().toDateString()) ? last : null;
-}
-
-function openCheckinModal() {
-  closeCheckin();
-  window._checkinMood = 0;
-  var ov = document.createElement('div');
-  ov.id = 'checkin-modal';
-  ov.style.cssText = 'position:absolute;inset:0;z-index:60;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:26px;animation:fadeUp 0.22s ease both;';
-  ov.addEventListener('click', function(e){ if (e.target === ov) closeCheckin(); });
-  document.querySelector('.phone').appendChild(ov);
-  checkinRender();
-}
-
-function checkinRender() {
-  var ov = document.getElementById('checkin-modal');
-  if (!ov) return;
-  var head = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">' +
-    '<div style="font-size:16px;font-weight:600;color:#2D1B4E;">Kurzer Check-in</div>' +
-    '<button onclick="closeCheckin()" style="background:none;border:none;font-size:20px;color:#C0B0D0;cursor:pointer;line-height:1;padding:2px;">×</button></div>';
-  var inner;
-  if (!window._checkinMood) {
-    var emoji = { 1:'😞', 2:'😕', 3:'😐', 4:'🙂', 5:'😊' };
-    var btns = [1,2,3,4,5].map(function(v) {
-      return '<button onclick="checkinSetMood(' + v + ')" style="flex:1;background:#F7F4FC;border:none;border-radius:12px;padding:12px 0;font-size:24px;cursor:pointer;">' + emoji[v] + '</button>';
-    }).join('');
-    inner = '<div style="font-size:14px;color:#6B5A88;margin:6px 0 14px;">Wie fühlst du dich gerade?</div>' +
-      '<div style="display:flex;gap:6px;">' + btns + '</div>';
-  } else {
-    var levels = [{v:1,l:'Niedrig',i:'🪫'},{v:2,l:'Mittel',i:'🔋'},{v:3,l:'Hoch',i:'⚡'}];
-    var ebtns = levels.map(function(o) {
-      return '<button onclick="checkinSetEnergy(' + o.v + ')" style="flex:1;background:#F7F4FC;border:none;border-radius:12px;padding:13px 0;font-family:inherit;font-size:13px;color:#4A3A6A;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:20px;">' + o.i + '</span>' + o.l + '</button>';
-    }).join('');
-    inner = '<div style="font-size:14px;color:#6B5A88;margin:6px 0 14px;">Und deine Energie?</div>' +
-      '<div style="display:flex;gap:6px;">' + ebtns + '</div>';
-  }
-  ov.innerHTML = '<div style="background:white;border-radius:22px;padding:20px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' + head + inner + '</div>';
-}
-
-function checkinSetMood(v) {
-  window._checkinMood = v;
-  checkinRender();
-}
-
-function checkinSetEnergy(v) {
-  saveCheckinEntry(window._checkinMood || 3, v);
-  window._checkinMood = 0;
-  var ov = document.getElementById('checkin-modal');
-  if (ov) ov.innerHTML = '<div style="background:white;border-radius:22px;padding:24px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);text-align:center;font-size:14px;color:#2D1B4E;">Danke, ich hab\'s notiert 💜</div>';
-  setTimeout(closeCheckin, 1400);
-}
-
-function closeCheckin() {
-  var ov = document.getElementById('checkin-modal');
-  if (ov) ov.remove();
-}
-
-function maybeOpenCheckin() {
-  if (window._checkinShownSession) return;
-  if (lastCheckinToday()) return;
+function maybeShowBodyDataReminder() {
+  if (window._bodyReminderShownSession) return;
   if (window._onboardingNoteAsk) return;
   var cw = document.getElementById('chat-window');
   if (cw && cw.classList.contains('open')) return;
   if (document.getElementById('dashboard')) return;
-  window._checkinShownSession = true;
-  setTimeout(openCheckinModal, 600);
+  if (document.getElementById('summary-popup')) return;
+  if (!bodyDataStale()) return;
+  window._bodyReminderShownSession = true;
+  setTimeout(showBodyDataReminderPopup, 600);
+}
+
+function showBodyDataReminderPopup() {
+  if (document.getElementById('bodydata-reminder')) return;
+  var ov = document.createElement('div');
+  ov.id = 'bodydata-reminder';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:60;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:26px;animation:fadeUp 0.22s ease both;';
+  ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });
+  ov.innerHTML =
+    '<div style="position:relative;background:white;border-radius:22px;padding:22px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' +
+      '<button onclick="document.getElementById(\'bodydata-reminder\').remove();" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;color:#C0B0D0;cursor:pointer;line-height:1;padding:2px;">×</button>' +
+      '<div style="width:52px;height:52px;border-radius:50%;background:#F0EAF9;display:flex;align-items:center;justify-content:center;margin-bottom:10px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M2.5 13h3.2l1.8-5.5 3.4 11 2.2-7 1.4 3.5H21.5" stroke="#2D1B4E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+      '<div style="font-size:17px;font-weight:600;color:#2D1B4E;margin-bottom:8px;">Magst du deine Körperdaten auffrischen?</div>' +
+      '<div style="font-size:13px;color:#6B5A88;line-height:1.55;margin-bottom:18px;">Deine letzten Angaben sind schon eine Weile her. Mit aktuellen Werten kann ich dich besser einordnen.</div>' +
+      '<button onclick="document.getElementById(\'bodydata-reminder\').remove();showDashboard();" style="width:100%;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">Zu den Körperdaten</button>' +
+      '<button onclick="document.getElementById(\'bodydata-reminder\').remove();" style="width:100%;padding:11px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:13px;cursor:pointer;margin-top:6px;">Später</button>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(ov);
 }
 
 function homeInit(fromOnboarding) {
@@ -2617,24 +2565,16 @@ function homeInit(fromOnboarding) {
   // Körperdaten & Themen bei jedem Betreten des Homescreens aktualisieren
   fillHomeData();
   fillHomeThemen();
-  maybeOpenCheckin();
+  maybeShowBodyDataReminder();
   // Eingabefeld sicher sichtbar und aktiv
   var iw = document.getElementById('home-input-wrap');
   if (iw) iw.style.display = 'flex';
   var ui = document.getElementById('home-user-input');
   if (ui) ui.disabled = false;
 
-  // Hinweis auf veraltete Körperdaten in der Begrüßung (nur wenn älter als 2h)
+  // Körperdaten-Hinweis erscheint jetzt als Popup, nicht mehr im Begrüßungstext
   var bHint = document.getElementById('home-body-hint');
-  if (bHint) {
-    if (bodyDataStale()) {
-      bHint.innerHTML = '<br><br>Übrigens – deine Körperdaten sind schon eine Weile nicht aktualisiert. Magst du sie kurz auffrischen, damit ich besser einordnen kann?<br><span onclick="showDashboard()" style="display:inline-block;margin-top:6px;font-size:13px;color:#9B7FC0;cursor:pointer;text-decoration:underline;">Zu den Körperdaten →</span>';
-      bHint.style.display = 'inline';
-    } else {
-      bHint.style.display = 'none';
-      bHint.innerHTML = '';
-    }
-  }
+  if (bHint) { bHint.style.display = 'none'; bHint.innerHTML = ''; }
 
   // 2. Show second bubble with typing indicator
   var qWrap = document.getElementById('home-question-bubble-wrap');
@@ -5357,6 +5297,7 @@ function profileToggle(el) {
     var s = multi ? (window._profileEdit[group] || []).indexOf(b.dataset.val) >= 0 : window._profileEdit[group] === b.dataset.val;
     b.style.cssText = profileChipStyle(s);
   });
+  refreshProfileSummary(group);
 }
 
 function saveProfile() {
@@ -5467,6 +5408,7 @@ function loadBodyData() {
 
 function initApp() {
   loadBodyData();
+  loadPersonality();
   if (loadUserProfile()) enterAppFromStorage();
 }
 
@@ -5477,6 +5419,7 @@ function resetUserData() {
     localStorage.removeItem('avie_saved_chats');
     localStorage.removeItem('avie_body_data');
     localStorage.removeItem('avie_checkins');
+    localStorage.removeItem('avie_personality');
   } catch(e) {}
   try { location.reload(); } catch(e) {
     var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
@@ -5572,6 +5515,55 @@ function profileInsightsHtml() {
     renderProfileInsightsChips() + renderProfileInsightsList() + '</div>';
 }
 
+var PROFILE_LABELS = {
+  kinder: { 'keine':'Keine (noch nicht)', 'ja-klein':'Ja, unter 6', 'ja-gross':'Ja, älter' },
+  lifestyle: { 'job-intensiv':'Job sehr intensiv', 'ausgewogen':'Eher ausgewogen', 'zuhause':'Viel zuhause', 'unberechenbar':'Sehr unberechenbar' },
+  wunsch: { 'verstanden':'verstanden werden', 'orientierung':'Orientierung finden', 'gesundheit':'Gesundheit verstehen', 'stress':'Stress reduzieren', 'energie':'Energie & Balance' }
+};
+
+function profileSummary(key) {
+  var e = window._profileEdit || {};
+  if (key === 'name') return e.name ? e.name : '—';
+  if (key === 'alter') return e.alter ? (e.alter + ' Jahre') : '—';
+  if (key === 'kinder') return PROFILE_LABELS.kinder[e.kinder] || '—';
+  if (key === 'lifestyle') return PROFILE_LABELS.lifestyle[e.lifestyle] || '—';
+  if (key === 'wunsch') {
+    var arr = (e.wunsch || []).map(function(v){ return PROFILE_LABELS.wunsch[v] || v; });
+    return arr.length ? arr.join(', ') : '—';
+  }
+  return '—';
+}
+
+function refreshProfileSummary(key) {
+  var el = document.getElementById('profile-sum-' + key);
+  if (el) el.textContent = profileSummary(key);
+}
+
+function toggleProfileEdit(key) {
+  var ed = document.getElementById('profile-edit-' + key);
+  var ic = document.getElementById('profile-editicon-' + key);
+  if (!ed) return;
+  var open = ed.style.display === 'none';
+  ed.style.display = open ? 'block' : 'none';
+  if (ic) ic.style.color = open ? '#2D1B4E' : '#9B7FC0';
+}
+
+function profileField(key, label, controlHtml) {
+  var labelStyle = 'font-size:11px;font-weight:600;color:#D4863A;text-transform:uppercase;letter-spacing:0.08em;';
+  var cardStyle = 'background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:13px 16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);';
+  var pencil = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10.5-10.5a1.8 1.8 0 0 0 0-2.5l-1.5-1.5a1.8 1.8 0 0 0-2.5 0L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+  return '<div style="' + cardStyle + '">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+      '<div style="min-width:0;flex:1;">' +
+        '<div style="' + labelStyle + '">' + label + '</div>' +
+        '<div id="profile-sum-' + key + '" style="font-size:14px;color:#2D1B4E;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + profileSummary(key) + '</div>' +
+      '</div>' +
+      '<button id="profile-editicon-' + key + '" onclick="toggleProfileEdit(\'' + key + '\')" title="Bearbeiten" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#9B7FC0;padding:5px;display:flex;align-items:center;">' + pencil + '</button>' +
+    '</div>' +
+    '<div id="profile-edit-' + key + '" style="display:none;margin-top:12px;">' + controlHtml + '</div>' +
+  '</div>';
+}
+
 function showProfile() {
   var old = document.getElementById('profile-overlay');
   if (old) old.remove();
@@ -5601,17 +5593,17 @@ function showProfile() {
       '<button onclick="document.getElementById(\'profile-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
     '</div>' +
     '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
-      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Name</div>' +
-        '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;"></div>' +
-      '<div style="' + cardStyle + '"><div style="display:flex;justify-content:space-between;align-items:baseline;"><div style="' + labelStyle + '">Alter</div>' +
-        '<div id="profile-age-val" style="font-size:14px;font-weight:600;color:#2D1B4E;">' + age + ' Jahre</div></div>' +
-        '<input id="profile-age-slider" type="range" min="18" max="80" value="' + age + '" oninput="document.getElementById(\'profile-age-val\').textContent=this.value+\' Jahre\';window._profileEdit.alter=parseInt(this.value,10);" style="width:100%;accent-color:#9B7FC0;"></div>' +
-      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Kinder</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('kinder') + '</div></div>' +
-      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Dein Alltag</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('lifestyle') + '</div></div>' +
-      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was du dir von avie wünschst</div>' +
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('wunsch') + '</div></div>' +
+      profileField('name', 'Name',
+        '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;refreshProfileSummary(\'name\');" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;">') +
+      profileField('alter', 'Alter',
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;"><span style="font-size:12px;color:#8A7AA5;">Alter anpassen</span><span id="profile-age-val" style="font-size:14px;font-weight:600;color:#2D1B4E;">' + age + ' Jahre</span></div>' +
+        '<input id="profile-age-slider" type="range" min="18" max="80" value="' + age + '" oninput="document.getElementById(\'profile-age-val\').textContent=this.value+\' Jahre\';window._profileEdit.alter=parseInt(this.value,10);refreshProfileSummary(\'alter\');" style="width:100%;accent-color:#9B7FC0;">') +
+      profileField('kinder', 'Kinder',
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('kinder') + '</div>') +
+      profileField('lifestyle', 'Dein Alltag',
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('lifestyle') + '</div>') +
+      profileField('wunsch', 'Was du dir von avie wünschst',
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('wunsch') + '</div>') +
       '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich wissen sollte</div>' +
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">z.B. Schwangerschaft, Kinderwunsch, wie es dir gerade geht — avie bezieht das in ihre Antworten ein.</div>' +
         '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Erzähl avie, was sie über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
@@ -5620,10 +5612,12 @@ function showProfile() {
         profileInsightsHtml() + '</div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Änderungen speichern</button>' +
       '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
-      '<div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 0 4px;">' +
+      '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;padding:10px 0 4px;">' +
         '<span onclick="showDatenschutz()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">Datenschutzerklärung</span>' +
         '<span style="color:#C0B0D0;">·</span>' +
         '<span onclick="showImpressum()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">Impressum</span>' +
+        '<span style="color:#C0B0D0;">·</span>' +
+        '<span onclick="showAGB()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">AGB</span>' +
       '</div>' +
     '</div>';
 
@@ -5693,6 +5687,41 @@ function showImpressum() {
       sec('Verbraucherstreitbeilegung', 'Wir sind [nicht] bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.') +
       sec('Haftung für Inhalte', 'Die Inhalte dieser Anwendung wurden mit Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. avie ersetzt keine medizinische oder psychotherapeutische Beratung.') +
       '<div style="font-size:11px;color:#9B8AB5;text-align:center;padding:4px 0 8px;">Stand: [Datum]</div>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(div);
+}
+
+function showAGB() {
+  var old = document.getElementById('agb-overlay');
+  if (old) old.remove();
+  var h = 'font-size:13px;font-weight:700;color:#2D1B4E;';
+  var p = 'font-size:13px;color:#4A3A6A;line-height:1.6;';
+  var card = 'background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);display:flex;flex-direction:column;gap:8px;';
+  function sec(title, body) { return '<div style="' + card + '"><div style="' + h + '">' + title + '</div><div style="' + p + '">' + body + '</div></div>'; }
+  var div = document.createElement('div');
+  div.id = 'agb-overlay';
+  div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:120;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
+  div.innerHTML =
+    '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div><div style="font-size:16px;font-weight:600;color:white;">Nutzungsbedingungen</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,0.5);">AGB von avie</div></div>' +
+      '<button onclick="document.getElementById(\'agb-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+      '<div style="background:rgba(212,134,58,0.1);border:1px solid rgba(212,134,58,0.3);border-radius:14px;padding:14px;font-size:12px;color:#8a5a22;line-height:1.5;">⚠️ <strong>Entwurfsvorlage.</strong> Dieser Text ist ein Gerüst und ersetzt keine Rechtsberatung. Bitte vor Veröffentlichung anwaltlich prüfen lassen und alle [Platzhalter] ausfüllen.</div>' +
+      sec('1. Geltungsbereich', 'Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für die Nutzung der Anwendung „avie" (nachfolgend „App"), bereitgestellt von [Name / Firma] (nachfolgend „Anbieter"). Mit der Nutzung der App stimmst du diesen Bedingungen zu.') +
+      sec('2. Leistungsbeschreibung', 'avie ist eine digitale Begleiterin zur Selbstreflexion rund um Wohlbefinden, Alltag und Körperwahrnehmung. Die App stellt Gesprächs- und Reflexionsangebote bereit und verknüpft selbst eingegebene Angaben zu einem persönlichen Bild. Ein Anspruch auf bestimmte Ergebnisse besteht nicht.') +
+      sec('3. Keine medizinische Leistung', 'avie ist <strong>kein Medizinprodukt</strong> und bietet <strong>keine medizinische, psychotherapeutische oder heilkundliche Beratung, Diagnose oder Behandlung</strong>. Die Inhalte ersetzen nicht den Besuch bei Ärzt:innen oder Therapeut:innen. In Notlagen wende dich bitte umgehend an ärztliche Hilfe oder einen Notdienst.') +
+      sec('4. Nutzungsvoraussetzungen', 'Die Nutzung setzt ein Mindestalter von <strong>18 Jahren</strong> voraus. Mit der Nutzung bestätigst du, dass du volljährig und uneingeschränkt geschäftsfähig bist.') +
+      sec('5. Pflichten der Nutzerin', 'Du verpflichtest dich, die App nicht missbräuchlich zu nutzen, keine rechtswidrigen Inhalte einzugeben und keine Rechte Dritter zu verletzen. Für die von dir eingegebenen Inhalte bist du selbst verantwortlich.') +
+      sec('6. Verfügbarkeit', 'Der Anbieter bemüht sich um eine möglichst unterbrechungsfreie Verfügbarkeit, schuldet diese aber nicht. Wartung, technische Störungen oder Weiterentwicklungen können zu vorübergehenden Einschränkungen führen.') +
+      sec('7. Preise und Vergütung', '[Die App wird derzeit kostenlos bereitgestellt. / Es gelten die im Bestellprozess angegebenen Preise.] Etwaige kostenpflichtige Funktionen werden vor Vertragsschluss klar gekennzeichnet.') +
+      sec('8. Widerrufsrecht', '[Bei kostenpflichtigen digitalen Inhalten: Hinweise zum gesetzlichen Widerrufsrecht und ggf. zum vorzeitigen Erlöschen bei Einwilligung in den sofortigen Beginn der Leistung ergänzen.]') +
+      sec('9. Haftung', 'Der Anbieter haftet unbeschränkt bei Vorsatz und grober Fahrlässigkeit sowie nach den Vorschriften des Produkthaftungsgesetzes. Bei einfacher Fahrlässigkeit haftet der Anbieter nur bei Verletzung einer wesentlichen Vertragspflicht und begrenzt auf den vorhersehbaren, typischen Schaden. Im Übrigen ist die Haftung ausgeschlossen.') +
+      sec('10. Vertragslaufzeit und Kündigung', 'Die Nutzung kann jederzeit beendet werden, indem du die App nicht weiter verwendest und über „Nutzerdaten löschen" deine lokal gespeicherten Daten entfernst. [Bei kostenpflichtigen Abos: Laufzeit- und Kündigungsregelungen ergänzen.]') +
+      sec('11. Änderungen der AGB', 'Der Anbieter behält sich vor, diese AGB anzupassen, soweit dies aus triftigem Grund erforderlich ist und dich nicht unangemessen benachteiligt. Über wesentliche Änderungen wirst du in geeigneter Form informiert.') +
+      sec('12. Schlussbestimmungen', 'Es gilt das Recht der [Bundesrepublik Deutschland] unter Ausschluss des UN-Kaufrechts. Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der übrigen unberührt.') +
+      '<div style="font-size:11px;color:#9B8AB5;text-align:center;padding:4px 0 8px;">Stand: [Datum] · Version [x]</div>' +
     '</div>';
   document.querySelector('.phone').appendChild(div);
 }
@@ -5907,7 +5936,7 @@ function mdToHtml(text) {
 function bodyDataStale() {
   var t = window._bodyUpdatedAt;
   if (!t) return true;
-  return (Date.now() - t) > 2 * 60 * 60 * 1000;
+  return (Date.now() - t) > 4 * 60 * 60 * 1000;
 }
 
 function addMsg(text, who) {
@@ -5974,6 +6003,133 @@ function showOnboarding() {
 
 // ── Avie Chat — Claude API ──
 const chatHistory = [];
+
+var PERSONALITY_DEFAULTS = { waerme: 4, direktheit: 3, ausfuehrlichkeit: 3, koerperbezug: 4, ton: 3, humor: false };
+
+function loadPersonality() {
+  try {
+    var p = JSON.parse(localStorage.getItem('avie_personality') || 'null');
+    window._personality = Object.assign({}, PERSONALITY_DEFAULTS, p || {});
+  } catch(e) { window._personality = Object.assign({}, PERSONALITY_DEFAULTS); }
+  return window._personality;
+}
+
+function savePersonality(p) {
+  window._personality = Object.assign({}, PERSONALITY_DEFAULTS, p || {});
+  try { localStorage.setItem('avie_personality', JSON.stringify(window._personality)); } catch(e) {}
+}
+
+function buildPersonalityPrompt() {
+  var p = window._personality || loadPersonality();
+  function pick(v, arr) { var i = Math.min(arr.length - 1, Math.max(0, (parseInt(v, 10) || 3) - 1)); return arr[i]; }
+  var waerme = pick(p.waerme, [
+    'Bleib sachlich und nüchtern, halte emotionale Wärme zurück.',
+    'Eher sachlich, mit etwas Wärme.',
+    'Ausgewogen freundlich — zugewandt, aber nicht überschwänglich.',
+    'Warm und zugewandt.',
+    'Sehr warm, herzlich und einfühlsam.'
+  ]);
+  var direkt = pick(p.direktheit, [
+    'Formuliere sehr behutsam und vorsichtig, lass viel Raum.',
+    'Eher behutsam, mit sanften Hinweisen.',
+    'Ausgewogen — klar, aber rücksichtsvoll.',
+    'Klar und direkt.',
+    'Sehr direkt und unverblümt — immer respektvoll.'
+  ]);
+  var ausf = pick(p.ausfuehrlichkeit, [
+    'Antworte sehr kurz und knapp, 1–2 Sätze.',
+    'Antworte knapp, 2–3 Sätze.',
+    'Antworte mittellang, 3–4 Sätze.',
+    'Antworte ausführlicher und erkläre Zusammenhänge.',
+    'Antworte ausführlich und erklärend, nimm dir Raum.'
+  ]);
+  var koerper = pick(p.koerperbezug, [
+    'Beziehe die Körperdaten dezent ein, nur wenn klar relevant.',
+    'Beziehe die Körperdaten regelmäßig, aber zurückhaltend ein.',
+    'Verknüpfe Aussagen spürbar mit den Körperdaten.',
+    'Verknüpfe Emotionen aktiv mit den Körperdaten und erkläre die biologischen Zusammenhänge.',
+    'Stelle die biologischen Zusammenhänge (Schlaf, Zyklus, Stress, HRV) ausführlich in den Mittelpunkt.'
+  ]);
+  var ton = pick(p.ton, [
+    'Halte den Ton ruhig und begleitend.',
+    'Ton eher ruhig, gelegentlich ermutigend.',
+    'Ausgewogen zwischen ruhig und ermutigend.',
+    'Ton eher ermutigend und motivierend.',
+    'Halte den Ton ermutigend und motivierend.'
+  ]);
+  var humor = p.humor ? ' Etwas leichter, feinfühliger Humor ist willkommen, wenn er passt.' : '';
+  return '\n\nPERSÖNLICHKEIT (von der Nutzerin eingestellt — richte Ton, Wärme, Länge und Körperbezug danach aus; diese Vorgaben haben Vorrang vor den allgemeinen Ton-Hinweisen oben):\n' +
+    '- Wärme: ' + waerme + '\n' +
+    '- Direktheit: ' + direkt + '\n' +
+    '- Ausführlichkeit: ' + ausf + '\n' +
+    '- Körperdaten-Bezug: ' + koerper + '\n' +
+    '- Ton: ' + ton + humor + '\n' +
+    'Unabhängig von diesen Einstellungen bleibst du immer respektvoll und nie kalt oder abweisend, behältst das Wohlbefinden der Nutzerin im Blick, stellst niemals medizinische Diagnosen und beziehst die Körperdaten nie gar nicht ein.';
+}
+
+function personalitySlider(key, label, leftLbl, rightLbl, val) {
+  return '<div style="background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:14px 16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);">' +
+    '<div style="font-size:13px;font-weight:600;color:#2D1B4E;margin-bottom:10px;">' + label + '</div>' +
+    '<input id="pers-' + key + '" type="range" min="1" max="5" step="1" value="' + val + '" style="width:100%;accent-color:#9B7FC0;">' +
+    '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9B8AB5;margin-top:4px;"><span>' + leftLbl + '</span><span>' + rightLbl + '</span></div>' +
+  '</div>';
+}
+
+function togglePersHumor() {
+  window._persHumor = !window._persHumor;
+  var el = document.getElementById('pers-humor-switch');
+  if (el) {
+    el.textContent = window._persHumor ? 'An' : 'Aus';
+    el.style.background = window._persHumor ? '#2D1B4E' : '#EDE6F5';
+    el.style.color = window._persHumor ? 'white' : '#9B7FC0';
+  }
+}
+
+function savePersonalityFromUI() {
+  function v(k){ var el = document.getElementById('pers-' + k); return el ? parseInt(el.value, 10) : 3; }
+  savePersonality({
+    waerme: v('waerme'), direktheit: v('direktheit'), ausfuehrlichkeit: v('ausfuehrlichkeit'),
+    koerperbezug: v('koerperbezug'), ton: v('ton'), humor: !!window._persHumor
+  });
+  var ov = document.getElementById('personality-overlay');
+  if (ov) ov.remove();
+}
+
+function resetPersonality() {
+  savePersonality(Object.assign({}, PERSONALITY_DEFAULTS));
+  showPersonality();
+}
+
+function showPersonality() {
+  loadPersonality();
+  var p = window._personality;
+  window._persHumor = !!p.humor;
+  var old = document.getElementById('personality-overlay'); if (old) old.remove();
+  var div = document.createElement('div');
+  div.id = 'personality-overlay';
+  div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:120;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
+  div.innerHTML =
+    '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div><div style="font-size:16px;font-weight:600;color:white;">avies Persönlichkeit</div>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,0.5);">So verhält sich avie dir gegenüber</div></div>' +
+      '<button onclick="document.getElementById(\'personality-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+    '</div>' +
+    '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+      '<div style="font-size:13px;color:#6B5A88;line-height:1.5;padding:0 2px;">Stell ein, wie sich avie anfühlen soll. Du kannst das jederzeit ändern — avie richtet sich ab dem nächsten Gespräch danach.</div>' +
+      personalitySlider('waerme', 'Wärme', 'sachlich', 'warm', p.waerme) +
+      personalitySlider('direktheit', 'Direktheit', 'behutsam', 'direkt', p.direktheit) +
+      personalitySlider('ausfuehrlichkeit', 'Ausführlichkeit', 'kurz', 'ausführlich', p.ausfuehrlichkeit) +
+      personalitySlider('koerperbezug', 'Körperdaten-Bezug', 'dezent', 'ausführlich', p.koerperbezug) +
+      personalitySlider('ton', 'Ton', 'ruhig', 'ermutigend', p.ton) +
+      '<div onclick="togglePersHumor()" style="background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:14px 16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);display:flex;align-items:center;justify-content:space-between;cursor:pointer;">' +
+        '<div><div style="font-size:13px;font-weight:600;color:#2D1B4E;">Humor</div><div style="font-size:11px;color:#9B8AB5;">leichter Humor, wenn es passt</div></div>' +
+        '<div id="pers-humor-switch" style="font-size:13px;font-weight:600;padding:6px 16px;border-radius:999px;background:' + (p.humor ? '#2D1B4E' : '#EDE6F5') + ';color:' + (p.humor ? 'white' : '#9B7FC0') + ';">' + (p.humor ? 'An' : 'Aus') + '</div>' +
+      '</div>' +
+      '<button onclick="savePersonalityFromUI()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Persönlichkeit speichern</button>' +
+      '<button onclick="resetPersonality()" style="width:100%;padding:10px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:12px;cursor:pointer;">Auf Standard zurücksetzen</button>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(div);
+}
 
 function buildSystemPrompt() {
   const name      = userName || 'du';
@@ -6048,7 +6204,7 @@ function buildSystemPrompt() {
 'Grenzen:\n' +
 '- Keine Diagnosen, keine konkreten Dosierungen\n' +
 '- Bei psychischen Krisen auf professionelle Hilfe hinweisen\n' +
-'- "Was helfen kann" statt "was hilft"' + profileNote() + archiveContext() + hedgeNote();
+'- "Was helfen kann" statt "was hilft"' + profileNote() + archiveContext() + hedgeNote() + buildPersonalityPrompt();
 }
 
 

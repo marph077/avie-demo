@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>avie — Deine Begleiterin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -536,6 +536,26 @@ body {
   flex-shrink: 0; position: relative; z-index: 2;
   background: var(--plum);
 }
+/* Native (Capacitor): App-Statusleisten-Attrappe ausblenden, oberen Plum-Bereich
+   bis unter die Geräte-Statusleiste ziehen, untere Navi über der Gestenleiste halten */
+html.native-app .status-bar {
+  padding: 0;
+  min-height: env(safe-area-inset-top, 0px);
+  height: env(safe-area-inset-top, 0px);
+}
+html.native-app .status-bar > * { display: none; }
+html.native-app .home-bottom-nav { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+/* Vollbild in der nativen App: kein Mockup-Rahmen, bis an alle Geräteränder */
+html.native-app { height: 100%; }
+html.native-app body { height: 100%; background: var(--plum); }
+html.native-app .phone {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: none;
+}
 .status-time { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.9); }
 .status-icons { font-size: 12px; color: rgba(255,255,255,0.5); display: flex; gap: 5px; align-items: center; }
 
@@ -552,7 +572,7 @@ body {
   bottom: -1px; left: 0; right: 0; height: 1px;
   background: linear-gradient(to right, transparent, rgba(212,134,58,0.4), transparent);
 }
-.bloom-svg { width: 42px; height: 42px; }
+.bloom-svg { width: 46px; height: 46px; }
 .header-text { flex: 1; }
 .header-name { font-family: var(--font-display); font-size: 20px; color: white; line-height: 1; letter-spacing: -0.02em; }
 .header-sub { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 300; margin-top: 3px; display: flex; align-items: center; gap: 5px; }
@@ -1098,12 +1118,14 @@ body {
 }
 .chat-window.open { display: flex; }
 .chat-win-header {
-  padding: 44px 20px 16px;
+  padding: 44px 20px 20px;
   background: var(--plum);
   display: flex; align-items: center; justify-content: space-between;
   flex-shrink: 0;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
+html.native-app .chat-win-header { padding-top: calc(env(safe-area-inset-top, 0px) + 18px); }
+html.native-app .header { padding-top: 14px; }
 .chat-win-back {
   font-size: 13px; color: rgba(255,255,255,0.7);
   background: none; border: none; cursor: pointer;
@@ -1297,9 +1319,6 @@ body {
   <!-- ══ ONBOARDING ══ -->
   <div id="onboarding">
 
-    <!-- DEV: Skip button -->
-    <button class="skip-btn" onclick="skipOnboarding()">⚡ Skip (dev)</button>
-
     <!-- Slides wrapper -->
     <div class="slides-wrap" id="slidesWrap">
 
@@ -1333,6 +1352,9 @@ body {
             <div class="ob-dot"></div>
           </div>
           <button class="ob-next" onclick="nextSlide()">Los geht's →</button>
+        </div>
+        <div style="text-align:center;margin-top:20px;">
+          <span onclick="importBackup()" style="font-size:13px;color:#9B7FC0;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">Schon dabei? Backup wiederherstellen</span>
         </div>
       </div>
 
@@ -1669,14 +1691,14 @@ body {
         <div class="header-name">avie</div>
         <div class="header-sub"><span class="online-dot"></span><span>deine Begleiterin</span></div>
       </div>
-      <button onclick="showPersonality()" title="avies Persönlichkeit" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
+      <button onclick="showPersonality()" id="home-personality-btn" title="avies Persönlichkeit" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="4" y1="8" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="8" r="2.6" fill="#2D1B4E" stroke="currentColor" stroke-width="1.8"/><line x1="4" y1="16" x2="20" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="16" r="2.6" fill="#2D1B4E" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
     </div>
 
     <!-- Körperdaten-Score darunter (öffnet das Dashboard) -->
     <div style="background:var(--plum);padding:0 16px 14px;flex-shrink:0;position:relative;z-index:2;border-bottom:1px solid rgba(255,255,255,0.08);">
-      <div onclick="showDashboard()" style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:11px 12px;cursor:pointer;">
+      <div onclick="showDashboard()" id="home-score-card" style="background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:11px 12px;cursor:pointer;">
         <div style="display:flex;align-items:center;gap:10px;">
           <div id="home-scorecards" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:6px;"></div>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="flex-shrink:0;"><rect x="2" y="2" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/><rect x="10" y="2" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/><rect x="2" y="10" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/><rect x="10" y="10" width="6" height="6" rx="1.5" fill="rgba(255,255,255,0.55)"/></svg>
@@ -1694,7 +1716,7 @@ body {
       <div id="home-step-greet" style="display:flex;flex-direction:column;gap:14px;">
 
         <!-- avie Begrüßung + offene Frage -->
-        <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;"><div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div><div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;"><div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-greeting-text">Guten Morgen 👋</span></div></div></div>
+        <div id="home-greeting-block" style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;"><div style="width:32px;height:32px;border-radius:50%;background:rgba(45,27,78,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(45,27,78,0.25)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#2D1B4E" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg></div><div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(155,127,192,0.15);box-shadow:0 2px 8px rgba(45,27,78,0.06);max-width:88%;"><div style="font-size:14px;color:#2D1B4E;line-height:1.55;"><span id="home-greeting-text">Guten Morgen 👋</span></div></div></div>
 
         <!-- Second bubble: avie's personalized question -->
         <div id="home-question-bubble-wrap" style="display:none;flex-direction:column;gap:0;">
@@ -1800,8 +1822,8 @@ body {
             <circle cx="21" cy="21" r="5.2" fill="#D4863A"/>
           </svg>
           <div>
-            <div style="font-size:16px;font-weight:600;color:white;letter-spacing:-0.2px;">avie</div>
-            <div id="chat-topic-label" style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:1px;">Deine Begleiterin</div>
+            <div style="font-family:var(--font-display);font-size:20px;color:white;line-height:1;letter-spacing:-0.02em;">avie</div>
+            <div id="chat-topic-label" style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:3px;">Deine Begleiterin</div>
           </div>
         </div>
         <button onclick="promptCloseChat()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>
@@ -1971,42 +1993,109 @@ const GUIDE_STEPS = [
   {
     text: `Schön, dass du da bist. 💜 Ich bin <strong>avie</strong> — deine persönliche Begleiterin. Lass mich dir kurz zeigen, wie ich aufgebaut bin.`,
     target: null,
-    calloutTop: '45%',
     label: 'Willkommen'
   },
   {
-    text: `Jeden Morgen öffnet sich dein <strong>Körper-Dashboard</strong> 📊 automatisch — Scores, Zyklus, HRV und alle deine Werte auf einen Blick. Du kannst es jederzeit über diesen Button öffnen.`,
-    target: 'header-dash-btn',
-    calloutTop: '18%',
-    label: 'Dashboard'
+    text: `Hier oben siehst du deine <strong>Körperwerte</strong> 📊 auf einen Blick — Schlaf, Energie, Stress und deine Zyklusphase. Tippe darauf für dein volles Dashboard mit HRV, Erholung und mehr.`,
+    target: 'score',
+    label: 'Körperwerte'
   },
   {
-    text: `Das hier ist dein <strong>Hauptbildschirm</strong> — ich stelle dir jeden Morgen eine Frage und gebe dir Kontext zu deiner aktuellen Körpersituation.`,
-    target: 'avie-bubble-area',
-    calloutTop: '52%',
+    text: `Jeden Tag begrüße ich dich und stelle dir eine <strong>Frage</strong> — immer mit Blick darauf, was dein Körper gerade zeigt. So verbinde ich dein Befinden mit deiner Biologie.`,
+    target: 'greeting',
     label: 'avie-Frage'
   },
   {
-    text: `Mit diesen <strong>Stimmungs-Chips</strong> antwortest du auf meine Frage 🌀 — ein Tippen reicht. Ich passe dann meine Empfehlungen für heute an.`,
-    target: 'mood-chips-area',
-    calloutTop: '58%',
-    label: 'Stimmung'
+    text: `Hier <strong>antwortest du mir</strong> 💬 — schreib einfach, was dir auf dem Herzen liegt. Daraus wird unser Gespräch, ganz ohne Urteilen.`,
+    target: 'input',
+    label: 'Antworten'
   },
   {
-    text: `Dieser Button öffnet unser <strong>Chat-Fenster</strong> 💬 — schreib mir alles, was dich beschäftigt. Ohne Urteilen, ohne aufgezwungene Ratschläge.`,
-    target: 'fab-btn-area',
-    calloutTop: '38%',
-    label: 'Mit avie sprechen'
+    text: `Und hier stellst du ein, <strong>wie ich mit dir spreche</strong> ✨ — wärmer, direkter, ausführlicher. Ganz so, wie es dir guttut.`,
+    target: 'personality',
+    label: 'Persönlichkeit'
   },
   {
     text: `Das war's schon. 🌸 Du bestimmst das Tempo — schreib mir einfach, wenn du magst. Ich freue mich auf dich.`,
     target: null,
-    calloutTop: '40%',
     label: "Los geht's"
   }
 ];
 
 let guideStep = 0;
+let activeGuideSteps = GUIDE_STEPS;
+
+const ARCHIV_GUIDE_STEPS = [
+  {
+    text: `Das ist dein <strong>Archiv</strong> 📚 — hier sammelt sich jedes Gespräch, das du mit mir speicherst.`,
+    target: null,
+    label: 'Archiv'
+  },
+  {
+    text: `Zu jedem Thema siehst du deine <strong>Erkenntnis</strong> und was ich mir gemerkt habe. Tippe auf „Chat öffnen", um wieder einzusteigen.`,
+    target: 'verlauf-card',
+    label: 'Gespräche'
+  }
+];
+
+const PROFIL_GUIDE_STEPS = [
+  {
+    text: `Das ist dein <strong>Profil</strong> 👤 — hier stehen deine Angaben: Name, Alter, Kinder, dein Alltag und was du dir von avie wünschst. Tippe auf ein <strong>Stift-Symbol</strong> ✏️, um etwas zu ändern.`,
+    target: 'profile-group',
+    scrollSel: '#profile-fields-group',
+    label: 'Deine Angaben'
+  },
+  {
+    text: `Hier kannst du mir <strong>alles Wichtige über dich</strong> erzählen — z.B. Schwangerschaft, Kinderwunsch oder wie es dir gerade geht. Ich beziehe das in meine Antworten ein.`,
+    target: 'profile-about',
+    scrollSel: '#profile-card-about',
+    label: 'Über dich'
+  },
+  {
+    text: `<strong>Was ich über dich gelernt habe</strong> 💡 — Erkenntnisse aus unseren Gesprächen, nach Themen filterbar. So baue ich mit der Zeit ein echtes Bild von dir auf.`,
+    target: 'profile-learned',
+    scrollSel: '#profile-card-learned',
+    label: 'Gelernt'
+  },
+  {
+    text: `Und dein <strong>Daten-Backup</strong> 💾 — sichere deine Daten als Datei oder hol sie auf ein neues Gerät. Deine Daten bleiben sonst nur auf diesem Gerät.`,
+    target: 'profile-backup',
+    scrollSel: '#profile-card-backup',
+    label: 'Backup'
+  }
+];
+
+const DASHBOARD_GUIDE_STEPS = [
+  {
+    text: `Das ist dein <strong>Körper-Dashboard</strong> 📊 — hier zeige ich dir, was in deinem Körper gerade los ist.`,
+    target: null,
+    label: 'Dashboard'
+  },
+  {
+    text: `Verbinde ein <strong>Wearable</strong> ⌚ oder trag deine Werte <strong>manuell</strong> ein — so nutze ich echte Körperdaten für dich, statt zu raten.`,
+    target: 'dash-wearable',
+    scrollSel: '#wearable-banner',
+    label: 'Daten'
+  },
+  {
+    text: `<strong>Energie, Schlaf und Stress</strong> auf einen Blick. Tippe auf eine Karte, um deine Werte einzutragen.`,
+    target: 'dash-scores',
+    scrollSel: '#score-cards',
+    label: 'Scores'
+  },
+  {
+    text: `Hier pflegst du deine <strong>Körperdaten</strong> im Detail — z.B. HRV und Erholung. Tippe später auf „Analysieren", und ich erkläre dir, was deine Werte gerade bedeuten.`,
+    target: 'dash-koerper',
+    scrollSel: '#koerper-card',
+    label: 'Körperdaten'
+  },
+  {
+    text: `Und dein <strong>Zyklus</strong> 🌸 — Phase, nächste Periode und Hormonlage. Ich verbinde ihn mit deinem Befinden, damit du dich besser verstehst.`,
+    target: 'dash-zyklus',
+    scrollSel: '#zyklus-locked',
+    label: 'Zyklus'
+  }
+];
 
 // ── Name input ──
 let userName = 'Laura'; // default
@@ -3189,11 +3278,12 @@ function wireMainScreens() {
   });
 }
 
-function showGuide() {
+function showGuide(steps) {
   const old = document.getElementById('guide');
   if (old) old.remove();
   const tpl = document.getElementById('guide-tpl');
   if (!tpl) return;
+  activeGuideSteps = (steps && steps.length) ? steps : GUIDE_STEPS;
   const g = tpl.content.cloneNode(true);
   document.querySelector('.phone').appendChild(g);
   guideStep = 0;
@@ -3204,28 +3294,51 @@ function getLiveSpot(target) {
     const phoneEl = document.querySelector('.phone');
     const phoneRect = phoneEl.getBoundingClientRect();
     const selectors = {
-      'header-dash-btn':  '.header',
-      'avie-bubble-area': '#home-body > div:nth-child(2)',
-      'mood-chips-area':  '#main-mood-row',
-      'fab-btn-area':     '.home-bottom-nav',
+      'score':          '#home-score-card',
+      'greeting':       ['#home-greeting-block', '#home-question-bubble-wrap'],
+      'input':          '#home-input-wrap',
+      'personality':    '#home-personality-btn',
+      'verlauf-list':   '#verlauf-list',
+      'verlauf-card':   '#verlauf-list > div:first-child',
+      'profile-group':   '#profile-fields-group',
+      'profile-about':   '#profile-card-about',
+      'profile-learned': '#profile-card-learned',
+      'profile-backup':  '#profile-card-backup',
+      'dash-wearable':   '#wearable-banner',
+      'dash-scores':     '#score-cards',
+      'dash-koerper':    ['#koerper-card', '#koerper-card-real'],
+      'dash-zyklus':     ['#zyklus-locked', '#zyklus-real'],
     };
     const sel = selectors[target];
     if (!sel) return null;
-    const el = document.querySelector(sel);
-    if (!el) return null;
-    const r = el.getBoundingClientRect();
+    const sels = Array.isArray(sel) ? sel : [sel];
+    let box = null;
+    sels.forEach(function(s) {
+      const el = document.querySelector(s);
+      if (!el) return;
+      const rr = el.getBoundingClientRect();
+      if (rr.width === 0 && rr.height === 0) return; // unsichtbar (z.B. display:none)
+      if (!box) box = { top: rr.top, left: rr.left, right: rr.right, bottom: rr.bottom };
+      else {
+        box.top    = Math.min(box.top, rr.top);
+        box.left   = Math.min(box.left, rr.left);
+        box.right  = Math.max(box.right, rr.right);
+        box.bottom = Math.max(box.bottom, rr.bottom);
+      }
+    });
+    if (!box) return null;
     const pad = 6;
     return {
-      t: Math.round(r.top  - phoneRect.top  - pad),
-      l: Math.round(r.left - phoneRect.left - pad),
-      w: Math.round(r.width  + pad * 2),
-      h: Math.round(r.height + pad * 2)
+      t: Math.round(box.top    - phoneRect.top  - pad),
+      l: Math.round(box.left   - phoneRect.left - pad),
+      w: Math.round(box.right  - box.left + pad * 2),
+      h: Math.round(box.bottom - box.top  + pad * 2)
     };
   }
 
 function renderGuideStep() {
-  const step = GUIDE_STEPS[guideStep];
-  const total = GUIDE_STEPS.length;
+  const step = activeGuideSteps[guideStep];
+  const total = activeGuideSteps.length;
 
   // Text
   document.getElementById('guide-text').innerHTML = step.text;
@@ -3243,69 +3356,96 @@ function renderGuideStep() {
     dotsEl.appendChild(d);
   }
 
+  // Bei scrollbaren Abschnitten erst zum Ziel scrollen, dann positionieren
+  if (step.scrollSel) {
+    const sEl = document.querySelector(step.scrollSel);
+    if (sEl && sEl.scrollIntoView) {
+      try { sEl.scrollIntoView({ block: 'start', inline: 'nearest' }); } catch(e) {}
+      setTimeout(positionGuideSpot, 300);
+      return;
+    }
+  }
+  positionGuideSpot();
+}
+
+function positionGuideSpot() {
+  const step = activeGuideSteps[guideStep];
+  if (!step) return;
+  const phoneEl = document.querySelector('.phone');
+  const PW = phoneEl ? phoneEl.clientWidth : 390;
+  const PH = phoneEl ? phoneEl.clientHeight : 812;
+
   const maskTop    = document.getElementById('guide-mask-top');
   const maskBottom = document.getElementById('guide-mask-bottom');
   const maskLeft   = document.getElementById('guide-mask-left');
   const maskRight  = document.getElementById('guide-mask-right');
   const spotlight  = document.getElementById('guide-spotlight');
   const callout    = document.getElementById('guide-callout');
+  if (!spotlight || !callout) return;
 
-  // Live measurement via getLiveSpot (defined globally above)
   const fallbackSpots = {
-    'header-dash-btn':  { t: 48,  l: 0,   w: 390, h: 82  },
-    'avie-bubble-area': { t: 128, l: 8,   w: 370, h: 168 },
-    'mood-chips-area':  { t: 304, l: 36,  w: 330, h: 148 },
-    'fab-btn-area':     { t: 636, l: 150, w: 90,  h: 90  },
+    'score':           { t: 150, l: 16,  w: 358, h: 64  },
+    'greeting':        { t: 230, l: 8,   w: 360, h: 160 },
+    'input':           { t: 400, l: 50,  w: 320, h: 60  },
+    'personality':     { t: 96,  l: 330, w: 48,  h: 40  },
+    'verlauf-card':    { t: 96,  l: 12,  w: 366, h: 200 },
+    'profile-group':   { t: 96,  l: 12,  w: 366, h: 560 },
+    'profile-about':   { t: 96,  l: 12,  w: 366, h: 220 },
+    'profile-learned': { t: 96,  l: 12,  w: 366, h: 240 },
+    'profile-backup':  { t: 96,  l: 12,  w: 366, h: 180 },
+    'dash-wearable':   { t: 110, l: 16,  w: 358, h: 130 },
+    'dash-scores':     { t: 110, l: 16,  w: 358, h: 96  },
+    'dash-koerper':    { t: 110, l: 16,  w: 358, h: 120 },
+    'dash-zyklus':     { t: 110, l: 16,  w: 358, h: 120 },
   };
   const liveSpot = step.target ? getLiveSpot(step.target) : null;
   const spotData = liveSpot || (step.target ? fallbackSpots[step.target] : null);
 
   if (spotData) {
-    const s = spotData;
-    const t = s.t, l = s.l || 0, w = s.w, h = s.h;
-    const r = s.r || (390 - l - w);
-    const b = 812 - t - h;
+    let t = spotData.t, l = spotData.l || 0, w = spotData.w, h = spotData.h;
+    // auf den sichtbaren Bereich begrenzen
+    if (t < 0) { h += t; t = 0; }
+    if (t + h > PH) h = PH - t;
+    if (h < 0) h = 0;
+    const r = spotData.r || (PW - l - w);
+    const b = PH - t - h;
     spotlight.style.cssText = `top:${t}px; left:${l}px; width:${w}px; height:${h}px; opacity:1; border-radius:${l===0?'0':'12px'};`;
     maskTop.style.cssText    = `top:0; left:0; right:0; height:${t}px;`;
-    maskBottom.style.cssText = `bottom:0; left:0; right:0; height:${b}px;`;
+    maskBottom.style.cssText = `bottom:0; left:0; right:0; height:${Math.max(0, b)}px;`;
     maskLeft.style.cssText   = `top:${t}px; left:0; width:${l}px; height:${h}px;`;
-    maskRight.style.cssText  = `top:${t}px; right:0; width:${r}px; height:${h}px;`;
+    maskRight.style.cssText  = `top:${t}px; right:0; width:${Math.max(0, r)}px; height:${h}px;`;
+
+    // Callout: bevorzugt unter dem Spot; sonst darüber; bei großem/oberem Spot fix unten
+    const spotBottom = t + h;
+    const spaceBelow = PH - spotBottom;
+    if (spaceBelow > 220) {
+      callout.style.top    = (spotBottom + 16) + 'px';
+      callout.style.bottom = 'auto';
+      callout.className    = 'guide-callout arrow-up';
+    } else if (t > 260) {
+      callout.style.bottom = (PH - t + 16) + 'px';
+      callout.style.top    = 'auto';
+      callout.className    = 'guide-callout arrow-down';
+    } else {
+      callout.style.bottom = '20px';
+      callout.style.top    = 'auto';
+      callout.className    = 'guide-callout arrow-up';
+    }
   } else {
-    // No spotlight — full dim cover for intro/outro steps
+    // Kein Spotlight — komplette Abdunklung für Intro/Outro
     spotlight.style.cssText  = 'opacity:0; top:0; left:0; width:0; height:0;';
     maskTop.style.cssText    = 'top:0; left:0; right:0; bottom:0; height:100%;';
     maskBottom.style.cssText = 'height:0;';
     maskLeft.style.cssText   = 'height:0;';
     maskRight.style.cssText  = 'height:0;';
-  }
-
-  // Callout position — below spotlight or centered
-  if (spotData) {
-    const s = spotData;
-    const spotBottom = s.t + s.h;
-    const spaceBelow = 812 - spotBottom;
-    if (spaceBelow > 200) {
-      // Place callout below spotlight
-      callout.style.top    = (spotBottom + 16) + 'px';
-      callout.style.bottom = 'auto';
-      callout.className    = 'guide-callout arrow-up';
-    } else {
-      // Place callout above spotlight
-      callout.style.bottom = (812 - s.t + 16) + 'px';
-      callout.style.top    = 'auto';
-      callout.className    = 'guide-callout arrow-down';
-    }
-  } else {
-    // Centered for intro/outro
     callout.style.top    = '44%';
     callout.style.bottom = 'auto';
     callout.className    = 'guide-callout arrow-up';
-    spotlight.style.opacity = '0';
   }
 }
 
 function guideNext() {
-  if (guideStep < GUIDE_STEPS.length - 1) {
+  if (guideStep < activeGuideSteps.length - 1) {
     guideStep++;
     renderGuideStep();
   } else {
@@ -3315,9 +3455,17 @@ function guideNext() {
 
 function closeGuide() {
   const g = document.getElementById('guide');
-  if (!g) return;
-  g.style.animation = 'dashOut 0.3s ease both';
-  g.addEventListener('animationend', () => g.remove());
+  if (g) {
+    g.style.animation = 'dashOut 0.3s ease both';
+    g.addEventListener('animationend', () => g.remove());
+  }
+  if (window._archivDummyActive) {
+    window._archivDummyActive = false;
+    var list = document.getElementById('verlauf-list');
+    if (list && document.getElementById('verlauf-dummy-card')) {
+      list.innerHTML = archivEmptyHtml();
+    }
+  }
 }
 
 function startApp() {
@@ -3327,6 +3475,10 @@ function startApp() {
   updateClock();
   personalizeApp();
   homeInit(true);
+  if (!window._guideShown) {
+    window._guideShown = true;
+    setTimeout(showGuide, 650);
+  }
 }
 
 // ── Dashboard Analyse — avie erklärt die Werte im Guide-Stil ──
@@ -4121,6 +4273,10 @@ function showDashboard() {
 
   document.querySelector('.phone').appendChild(div);
   rewireDashCTA();
+  if (!localStorage.getItem('avie_guide_dashboard')) {
+    try { localStorage.setItem('avie_guide_dashboard', '1'); } catch(e) {}
+    setTimeout(function() { showGuide(DASHBOARD_GUIDE_STEPS); }, 450);
+  }
 
 
   // Restore data if already entered
@@ -5072,6 +5228,35 @@ function removeDashWearableBanner() {
   }
 }
 
+function archivEmptyHtml() {
+  return `
+      <div style="text-align:center;padding:40px 20px;color:#A090BC;">
+        <div style="font-size:32px;margin-bottom:12px;">💬</div>
+        <div style="font-size:14px;font-weight:500;color:#6B5A88;margin-bottom:6px;">Noch keine gespeicherten Gespräche</div>
+        <div style="font-size:12px;line-height:1.5;">Wenn du einen Chat mit avie beendest und speicherst, erscheint er hier.</div>
+      </div>`;
+}
+
+function archivDummyCardHtml() {
+  return `<div id="verlauf-dummy-card" style="background:white;border-radius:16px;border:1px solid rgba(155,127,192,0.15);padding:16px;box-shadow:0 2px 10px rgba(45,27,78,0.07);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:14px;font-weight:600;color:#2D1B4E;">📝 Schlaf &amp; Energie</div>
+          <div style="font-size:9px;font-weight:700;color:#D4863A;background:rgba(212,134,58,0.12);border-radius:6px;padding:3px 7px;text-transform:uppercase;letter-spacing:0.06em;">Beispiel</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#F7F4FC;border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;font-weight:600;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Deine Erkenntnis</div>
+            <div style="font-size:13px;color:#4A3A6A;line-height:1.5;">Mit einer kurzen Abendroutine schlafe ich spürbar tiefer.</div>
+          </div>
+          <div style="background:rgba(212,134,58,0.06);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;font-weight:600;color:#D4863A;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">avie merkt sich</div>
+            <div style="font-size:13px;color:#4A3A6A;line-height:1.5;">Nach 7+ Stunden Schlaf fühlst du dich klarer — besonders in der Lutealphase.</div>
+          </div>
+        </div>
+        <button style="margin-top:12px;width:100%;padding:11px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:13px;font-weight:500;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0.92;">💬 Chat öffnen</button>
+      </div>`;
+}
+
 function showVerlauf() {
   const old = document.getElementById('verlauf-overlay');
   if (old) old.remove();
@@ -5079,14 +5264,11 @@ function showVerlauf() {
   // Load saved chats from localStorage
   const savedChats = getSavedChats();
 
+  const willGuide = !localStorage.getItem('avie_guide_archiv');
+  const showDummy = willGuide && savedChats.length === 0;
   let cardsHTML = '';
   if (savedChats.length === 0) {
-    cardsHTML = `
-      <div style="text-align:center;padding:40px 20px;color:#A090BC;">
-        <div style="font-size:32px;margin-bottom:12px;">💬</div>
-        <div style="font-size:14px;font-weight:500;color:#6B5A88;margin-bottom:6px;">Noch keine gespeicherten Gespräche</div>
-        <div style="font-size:12px;line-height:1.5;">Wenn du einen Chat mit avie beendest und speicherst, erscheint er hier.</div>
-      </div>`;
+    cardsHTML = showDummy ? archivDummyCardHtml() : archivEmptyHtml();
   } else {
     cardsHTML = savedChats.slice().reverse().map(function(chat) {
       const date = new Date(chat.timestamp);
@@ -5126,11 +5308,16 @@ function showVerlauf() {
       </div>
       <button onclick="document.getElementById('verlauf-overlay').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">
+    <div id="verlauf-list" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">
       ${cardsHTML}
     </div>`;
 
   document.querySelector('.phone').appendChild(div);
+  if (willGuide) {
+    try { localStorage.setItem('avie_guide_archiv', '1'); } catch(e) {}
+    window._archivDummyActive = showDummy;
+    setTimeout(function() { showGuide(ARCHIV_GUIDE_STEPS); }, 350);
+  }
 }
 
 function reopenSavedChat(ts) {
@@ -5412,14 +5599,189 @@ function initApp() {
   if (loadUserProfile()) enterAppFromStorage();
 }
 
+function avieAlert(message, title) {
+  var ex = document.getElementById('avie-alert'); if (ex) ex.remove();
+  var ov = document.createElement('div');
+  ov.id = 'avie-alert';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:130;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:28px;animation:fadeUp 0.2s ease both;';
+  ov.innerHTML =
+    '<div style="background:white;border-radius:20px;padding:22px 20px;max-width:300px;width:100%;box-shadow:0 12px 40px rgba(45,27,78,0.3);">' +
+      (title ? '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:6px;">' + title + '</div>' : '') +
+      '<div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">' + message + '</div>' +
+      '<button onclick="document.getElementById(\'avie-alert\').remove()" style="width:100%;padding:12px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">OK</button>' +
+    '</div>';
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
+  document.querySelector('.phone').appendChild(ov);
+}
+
+function avieConfirm(opts) {
+  opts = opts || {};
+  var ex = document.getElementById('avie-confirm2'); if (ex) ex.remove();
+  window._avieConfirmCb = opts.onConfirm || null;
+  var confirmText = opts.confirmText || 'Bestätigen';
+  var btnBg = opts.danger ? '#B85C77' : '#2D1B4E';
+  var ov = document.createElement('div');
+  ov.id = 'avie-confirm2';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:130;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:28px;animation:fadeUp 0.2s ease both;';
+  ov.innerHTML =
+    '<div style="background:white;border-radius:20px;padding:22px 20px;max-width:300px;width:100%;box-shadow:0 12px 40px rgba(45,27,78,0.3);">' +
+      (opts.title ? '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:6px;">' + opts.title + '</div>' : '') +
+      '<div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">' + (opts.message || '') + '</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button onclick="closeAvieConfirm()" style="flex:1;padding:12px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Abbrechen</button>' +
+        '<button onclick="avieConfirmYes()" style="flex:1;padding:12px;border-radius:14px;border:none;background:' + btnBg + ';color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">' + confirmText + '</button>' +
+      '</div>' +
+    '</div>';
+  ov.addEventListener('click', function(e) { if (e.target === ov) closeAvieConfirm(); });
+  document.querySelector('.phone').appendChild(ov);
+}
+
+function closeAvieConfirm() {
+  var ov = document.getElementById('avie-confirm2'); if (ov) ov.remove();
+  window._avieConfirmCb = null;
+}
+
+function avieConfirmYes() {
+  var cb = window._avieConfirmCb;
+  var ov = document.getElementById('avie-confirm2'); if (ov) ov.remove();
+  window._avieConfirmCb = null;
+  if (typeof cb === 'function') cb();
+}
+
+function avieBackupData() {
+  var keys = ['avie_profile', 'avie_saved_chats', 'avie_body_data', 'avie_personality', 'avie_checkins'];
+  var store = {};
+  keys.forEach(function(k) { var v = localStorage.getItem(k); if (v !== null) store[k] = v; });
+  return { app: 'avie', version: 1, exportedAt: new Date().toISOString(), store: store };
+}
+
+function avieIsNative() {
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+}
+
+function exportBackup() {
+  var json = JSON.stringify(avieBackupData(), null, 2);
+  if (avieIsNative()) { showExportTextModal(json); return; }
+  try {
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'avie-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { if (a.parentNode) a.parentNode.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  } catch (e) {
+    showExportTextModal(json);
+  }
+}
+
+function showExportTextModal(json) {
+  var old = document.getElementById('backup-modal'); if (old) old.remove();
+  var safe = json.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  var ov = document.createElement('div');
+  ov.id = 'backup-modal';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:120;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:22px;';
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
+  ov.innerHTML =
+    '<div style="background:white;border-radius:20px;padding:20px;max-width:340px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' +
+      '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:8px;">Backup-Text</div>' +
+      '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:10px;">Kopiere diesen Text und speichere ihn sicher (z.B. in einer Notiz oder Datei). Zum Wiederherstellen fügst du ihn beim Import wieder ein.</div>' +
+      '<textarea id="backup-text" readonly style="width:100%;box-sizing:border-box;height:140px;border:1px solid rgba(155,127,192,0.3);border-radius:12px;padding:10px;font-size:11px;color:#4A3A6A;font-family:monospace;resize:none;">' + safe + '</textarea>' +
+      '<button onclick="copyBackupText()" style="width:100%;margin-top:12px;padding:12px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">In Zwischenablage kopieren</button>' +
+      '<button onclick="document.getElementById(\'backup-modal\').remove()" style="width:100%;margin-top:6px;padding:10px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:13px;cursor:pointer;">Schließen</button>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(ov);
+}
+
+function copyBackupText() {
+  var ta = document.getElementById('backup-text');
+  if (!ta) return;
+  try {
+    ta.select();
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(ta.value); }
+    else { document.execCommand('copy'); }
+    avieAlert('Backup in die Zwischenablage kopiert.');
+  } catch (e) { avieAlert('Bitte den Text markieren und manuell kopieren.'); }
+}
+
+function importBackup() {
+  var old = document.getElementById('import-modal'); if (old) old.remove();
+  var ov = document.createElement('div');
+  ov.id = 'import-modal';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:120;background:rgba(45,27,78,0.55);display:flex;align-items:center;justify-content:center;padding:22px;';
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
+  ov.innerHTML =
+    '<div style="background:white;border-radius:20px;padding:20px;max-width:340px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' +
+      '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:8px;">Backup importieren</div>' +
+      '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:12px;">Wähle deine Backup-Datei oder füge den Backup-Text ein. <strong>Deine aktuellen Daten werden ersetzt.</strong></div>' +
+      '<input type="file" id="avie-import-file" accept="application/json,.json,application/octet-stream" style="display:none;" onchange="handleImportFile(this)">' +
+      '<button onclick="document.getElementById(\'avie-import-file\').click()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">📄 Datei wählen</button>' +
+      '<div style="text-align:center;font-size:11px;color:#9B8AB5;margin:10px 0;">oder Backup-Text einfügen</div>' +
+      '<textarea id="import-text" placeholder="Backup-Text hier einfügen…" style="width:100%;box-sizing:border-box;height:90px;border:1px solid rgba(155,127,192,0.3);border-radius:12px;padding:10px;font-size:11px;color:#4A3A6A;font-family:monospace;resize:none;"></textarea>' +
+      '<button onclick="importFromText()" style="width:100%;margin-top:10px;padding:12px;border-radius:14px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">Wiederherstellen</button>' +
+      '<button onclick="document.getElementById(\'import-modal\').remove()" style="width:100%;margin-top:6px;padding:10px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:13px;cursor:pointer;">Abbrechen</button>' +
+    '</div>';
+  document.querySelector('.phone').appendChild(ov);
+}
+
+function handleImportFile(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) { restoreBackup(e.target.result); };
+  reader.onerror = function() { avieAlert('Die Datei konnte nicht gelesen werden.'); };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function importFromText() {
+  var ta = document.getElementById('import-text');
+  if (!ta || !ta.value.trim()) { avieAlert('Bitte eine Datei wählen oder den Backup-Text einfügen.'); return; }
+  restoreBackup(ta.value);
+}
+
+function restoreBackup(text) {
+  var data;
+  try { data = JSON.parse(text); } catch (e) { avieAlert('Das ist kein gültiges avie-Backup.'); return; }
+  if (!data || data.app !== 'avie' || !data.store) { avieAlert('Das ist kein gültiges avie-Backup.'); return; }
+  avieConfirm({
+    title: 'Backup einspielen?',
+    message: 'Deine aktuellen Daten auf diesem Gerät werden dadurch ersetzt.',
+    confirmText: 'Einspielen',
+    danger: true,
+    onConfirm: function() {
+      try {
+        Object.keys(data.store).forEach(function(k) {
+          if (k.indexOf('avie_') === 0 && typeof data.store[k] === 'string') localStorage.setItem(k, data.store[k]);
+        });
+        avieAlert('Backup eingespielt. Die App wird jetzt neu geladen.');
+        setTimeout(function() { location.reload(); }, 1100);
+      } catch (e) { avieAlert('Beim Einspielen ist ein Fehler aufgetreten.'); }
+    }
+  });
+}
+
 function resetUserData() {
-  if (!confirm('Alle deine Daten löschen — Profil und gespeicherte Gespräche — und neu starten?')) return;
+  avieConfirm({
+    title: 'Alle Daten löschen?',
+    message: 'Dein Profil und alle gespeicherten Gespräche werden dauerhaft von diesem Gerät entfernt und die App startet neu.',
+    confirmText: 'Löschen',
+    danger: true,
+    onConfirm: doResetUserData
+  });
+}
+
+function doResetUserData() {
   try {
     localStorage.removeItem('avie_profile');
     localStorage.removeItem('avie_saved_chats');
     localStorage.removeItem('avie_body_data');
     localStorage.removeItem('avie_checkins');
     localStorage.removeItem('avie_personality');
+    localStorage.removeItem('avie_guide_archiv');
+    localStorage.removeItem('avie_guide_profil');
+    localStorage.removeItem('avie_guide_dashboard');
   } catch(e) {}
   try { location.reload(); } catch(e) {
     var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
@@ -5592,7 +5954,8 @@ function showProfile() {
       '</div>' +
       '<button onclick="document.getElementById(\'profile-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
     '</div>' +
-    '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+    '<div id="profile-scroll" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
+      '<div id="profile-fields-group" style="display:flex;flex-direction:column;gap:12px;">' +
       profileField('name', 'Name',
         '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;refreshProfileSummary(\'name\');" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;">') +
       profileField('alter', 'Alter',
@@ -5604,13 +5967,22 @@ function showProfile() {
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('lifestyle') + '</div>') +
       profileField('wunsch', 'Was du dir von avie wünschst',
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('wunsch') + '</div>') +
-      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich wissen sollte</div>' +
+      '</div>' +
+      '<div id="profile-card-about" style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich wissen sollte</div>' +
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">z.B. Schwangerschaft, Kinderwunsch, wie es dir gerade geht — avie bezieht das in ihre Antworten ein.</div>' +
         '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Erzähl avie, was sie über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
-      '<div style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich gelernt hat</div>' +
+      '<div id="profile-card-learned" style="' + cardStyle + '"><div style="' + labelStyle + '">Was avie über dich gelernt hat</div>' +
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">Aus euren bisherigen Gesprächen — was avie sich gemerkt hat.</div>' +
         profileInsightsHtml() + '</div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Änderungen speichern</button>' +
+      '<div id="profile-card-backup" style="' + cardStyle + '">' +
+        '<div style="' + labelStyle + '">Daten-Backup</div>' +
+        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;">Deine Daten liegen nur auf diesem Gerät. Sichere sie, um sie auf ein neues Gerät zu übertragen oder nach einer Neuinstallation wiederherzustellen.</div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button onclick="exportBackup()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Exportieren</button>' +
+          '<button onclick="importBackup()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Importieren</button>' +
+        '</div>' +
+      '</div>' +
       '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
       '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;padding:10px 0 4px;">' +
         '<span onclick="showDatenschutz()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">Datenschutzerklärung</span>' +
@@ -5622,6 +5994,10 @@ function showProfile() {
     '</div>';
 
   document.querySelector('.phone').appendChild(div);
+  if (!localStorage.getItem('avie_guide_profil')) {
+    try { localStorage.setItem('avie_guide_profil', '1'); } catch(e) {}
+    setTimeout(function() { showGuide(PROFIL_GUIDE_STEPS); }, 350);
+  }
   var ni = document.getElementById('profile-name-input');
   if (ni) ni.value = window._profileEdit.name;
   var nt = document.getElementById('profile-notiz-input');
@@ -6612,6 +6988,21 @@ function closeDashboard() {
 
 
 // Beim Laden: vorhandenes Profil aus localStorage laden und ggf. Onboarding überspringen
+// Native Statusleiste (nur in der Capacitor-App): Plum-Hintergrund + helle Symbole
+(function setupNativeStatusBar() {
+  try {
+    var Cap = window.Capacitor;
+    if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
+    document.documentElement.classList.add('native-app');
+    if (Cap.Plugins && Cap.Plugins.StatusBar) {
+      Cap.Plugins.StatusBar.setStyle({ style: 'DARK' }); // DARK = helle Symbole (auf dunklem Grund)
+      if (Cap.getPlatform && Cap.getPlatform() === 'android') {
+        Cap.Plugins.StatusBar.setBackgroundColor({ color: '#2D1B4E' }); // wirkt auf älteren Android-Versionen
+      }
+    }
+  } catch (e) {}
+})();
+
 initApp();
 
 </script>

@@ -4238,6 +4238,8 @@ function showDashboard() {
         </div>
       </div>
 
+      <div id="oura-trends" style="display:none;flex-shrink:0;"></div>
+
       <div class="dash-section-label" onclick="toggleKoerperCard()" style="cursor:pointer;display:flex;align-items:center;gap:6px;">Körperdaten · Wearable <span id="koerper-chevron" style="font-size:12px;color:#A090BC;transition:transform 0.25s;display:inline-block;">▾</span></div>
       <div id="koerper-card" onclick="showManualBodyInput()" style="background:white;border-radius:14px;border:1.5px dashed rgba(155,127,192,0.3);flex-shrink:0;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
         <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
@@ -5018,6 +5020,63 @@ function ouraFmtSleep(mins) {
   return h + 'h ' + (m < 10 ? '0' + m : m) + 'm';
 }
 
+// Kleine SVG-Sparkline aus einer Zahlenreihe (nullwerte werden ignoriert)
+function ouraSparkline(values, color) {
+  var vals = values.filter(function(v) { return v != null && !isNaN(v); });
+  if (vals.length < 2) return '';
+  var W = 120, H = 30, pad = 4;
+  var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  var range = (max - min) || 1;
+  var n = vals.length;
+  var pts = vals.map(function(v, i) {
+    var x = pad + i * (W - 2 * pad) / (n - 1);
+    var y = H - pad - ((v - min) / range) * (H - 2 * pad);
+    return [x, y];
+  });
+  var d = pts.map(function(p, i) { return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+  var area = 'M' + pad + ' ' + H + ' ' + d.substring(1) + ' L' + (W - pad) + ' ' + H + ' Z';
+  var last = pts[n - 1];
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" preserveAspectRatio="none" style="display:block;">'
+    + '<path d="' + area + '" fill="' + color + '" opacity="0.08"/>'
+    + '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+    + '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="2.4" fill="' + color + '"/>'
+    + '</svg>';
+}
+
+// Zeigt die 7-Tage-Sparklines (Schlaf, HRV, Readiness) im Dashboard
+function renderOuraTrends() {
+  var box = document.getElementById('oura-trends');
+  if (!box) return;
+  var mb = window.manualBodyData;
+  var hist = mb && mb.ouraHistory;
+  if (!mb || mb.source !== 'oura' || !hist || hist.length < 2) {
+    box.style.display = 'none'; box.innerHTML = ''; return;
+  }
+  var sleepVals = hist.map(function(h) { return h.sleepMins; });
+  var hrvVals   = hist.map(function(h) { return h.hrv; });
+  var readyVals = hist.map(function(h) { return h.readiness; });
+
+  function lastVal(arr) { for (var i = arr.length - 1; i >= 0; i--) { if (arr[i] != null) return arr[i]; } return null; }
+  var lastSleep = lastVal(sleepVals), lastHrv = lastVal(hrvVals), lastReady = lastVal(readyVals);
+
+  function trendRow(label, valStr, spark) {
+    if (!spark) return '';
+    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
+      + '<div style="width:66px;flex-shrink:0;"><div style="font-size:10px;color:#A090BC;">' + label + '</div>'
+      + '<div style="font-size:14px;color:#2D1B4E;font-weight:600;line-height:1.1;">' + valStr + '</div></div>'
+      + '<div style="flex:1;min-width:0;">' + spark + '</div></div>';
+  }
+
+  box.innerHTML =
+    '<div style="background:white;border-radius:14px;padding:14px 14px 2px;border:1px solid rgba(155,127,192,0.12);box-shadow:0 2px 10px rgba(45,27,78,0.07);">'
+    + '<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">7-Tage-Verlauf</div>'
+    + trendRow('Schlaf', lastSleep != null ? ouraFmtSleep(lastSleep) : '–', ouraSparkline(sleepVals, '#2D1B4E'))
+    + trendRow('HRV', lastHrv != null ? (lastHrv + ' ms') : '–', ouraSparkline(hrvVals, '#9B7FC0'))
+    + trendRow('Readiness', lastReady != null ? String(lastReady) : '–', ouraSparkline(readyVals, '#D4863A'))
+    + '</div>';
+  box.style.display = 'block';
+}
+
 // Holt echte Oura-Werte über den Worker (/oura) und mappt sie in manualBodyData.
 // Zyklusphase bleibt manuell — Oura liefert sie nicht.
 function fetchOuraData() {
@@ -5140,6 +5199,7 @@ function fetchOuraData() {
     try { personalizeApp(); } catch (e) {}
     try { refreshGreeting(); } catch (e) {}
     try { rewireDashCTA(); } catch (e) {}
+    try { renderOuraTrends(); } catch (e) {}
 
     if (btn) {
       btn.disabled = false;
@@ -5345,6 +5405,7 @@ function removeDashWearableBanner() {
 
   // Show score cards + körperdaten if Oura connected OR manual body data entered
   if (window.ouraConnected || window.manualBodyData) {
+    setTimeout(function() { try { renderOuraTrends(); } catch (e) {} }, 700);
     const scoreCards = dash.querySelector('#score-cards');
     if (scoreCards) {
       setTimeout(() => {

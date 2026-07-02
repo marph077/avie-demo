@@ -5158,7 +5158,7 @@ function fetchOuraData() {
   fetch('https://avie-proxy.hoyer2707.workers.dev/oura', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ days: 7 })
+    body: JSON.stringify({ days: 30 })
   })
   .then(function(r) { return r.json(); })
   .then(function(res) {
@@ -5203,7 +5203,7 @@ function fetchOuraData() {
       temp = (t >= 0 ? '+' : '') + t.toFixed(1);
     }
 
-    // 7-Tage-Verlauf für Trends (Schritt 2)
+    // Verlauf: bis zu 30 Nächte (für Zyklus-Analyse), 7-Tage-Ausschnitt für die UI
     var history = longs.map(function(x) {
       var xr = latestByDay(readyArr, x.day);
       var xds = latestByDay(dailySleep, x.day);
@@ -5218,12 +5218,15 @@ function fetchOuraData() {
         sleepScore: xds ? xds.score : null
       };
     });
-    function ouraAvg(key) {
-      var vals = history.map(function(h) { return h[key]; }).filter(function(v) { return v != null; });
+    var history7 = history.slice(-7);
+    function avgOf(arr, key) {
+      var vals = arr.map(function(h) { return h[key]; }).filter(function(v) { return v != null; });
       if (!vals.length) return null;
       return Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
     }
-    var avgSleep = ouraAvg('sleepMins'), avgHrv = ouraAvg('hrv'), avgReady = ouraAvg('readiness'), avgDeep = ouraAvg('deep');
+    // 7-Tage-Trend (Kontext + Vergleichskarte)
+    var avgSleep = avgOf(history7, 'sleepMins'), avgHrv = avgOf(history7, 'hrv'),
+        avgReady = avgOf(history7, 'readiness'), avgDeep = avgOf(history7, 'deep');
     var tp = [];
     if (avgSleep != null) tp.push('Schlaf ' + ouraFmtSleep(avgSleep));
     if (avgHrv != null) tp.push('HRV ' + avgHrv + ' ms');
@@ -5234,6 +5237,18 @@ function fetchOuraData() {
     if (avgHrv != null && hrv != null && hrv < avgHrv - 3) notes.push('HRV zuletzt unter dem Schnitt');
     if (avgHrv != null && hrv != null && hrv > avgHrv + 3) notes.push('HRV zuletzt über dem Schnitt');
     if (notes.length) trend += ' — ' + notes.join(', ');
+    // 30-Tage-Überblick (Zyklus-Analyse, sobald genug Nächte vorliegen)
+    var cycle30 = '';
+    if (history.length >= 10) {
+      var c30s = avgOf(history, 'sleepMins'), c30h = avgOf(history, 'hrv'),
+          c30r = avgOf(history, 'readiness'), c30d = avgOf(history, 'deep');
+      var cp = [];
+      if (c30s != null) cp.push('Schlaf ' + ouraFmtSleep(c30s));
+      if (c30h != null) cp.push('HRV ' + c30h + ' ms');
+      if (c30r != null) cp.push('Readiness ' + c30r);
+      if (c30d != null) cp.push('Tiefschlaf ' + c30d + ' min');
+      cycle30 = 'Langzeit-Durchschnitt (' + history.length + ' Nächte, bis 30 Tage): ' + cp.join(', ');
+    }
 
     window.manualBodyData = {
       energyScore: energyScore,
@@ -5251,8 +5266,9 @@ function fetchOuraData() {
       hrvBalance: (rd && rd.contributors) ? rd.contributors.hrv_balance : null,
       source: 'oura',
       ouraDay: day,
-      ouraHistory: history,
-      trend7: trend + '\n'
+      ouraHistory: history7,
+      ouraHistory30: history,
+      trend7: trend + '\n' + (cycle30 ? cycle30 + '\n' : '')
     };
     window.ouraConnected = true;
     window._bodyUpdatedAt = Date.now();

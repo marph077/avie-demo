@@ -2859,7 +2859,7 @@ function homeShowAnalyseAfterChat() {
     if (mb.sleepScore) dataContext += 'Schlaf-Score: ' + mb.sleepScore + '/100\n';
     if (mb.trend7) dataContext += mb.trend7;
   }
-  if (cd) dataContext += 'Zyklusphase: ' + cd.phase + (cd.cycleDay ? ', Tag ' + cd.cycleDay : '') + '\n';
+  if (cd) dataContext += 'Zyklusphase: ' + cd.phase + (cd.estimated ? ' (aus Körperwerten geschätzt)' : '') + (cd.cycleDay ? ', Tag ' + cd.cycleDay : '') + '\n';
 
   var userInput = homeQuestionText || '';
 
@@ -3019,7 +3019,7 @@ function homeShowAnalyse() {
     if (mb.trend7) dataContext += mb.trend7;
   }
   if (cd) {
-    dataContext += 'Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
+    dataContext += 'Zyklusphase: ' + cd.phase + (cd.estimated ? ' (aus Körperwerten geschätzt)' : '') + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
     if (cd.hormoneVal) dataContext += 'Hormone: ' + cd.hormoneVal + '\n';
   }
 
@@ -3121,7 +3121,7 @@ function homeMoodSelect(btn) {
     if (mb.trend7) dataContext += mb.trend7;
   }
   if (cd) {
-    dataContext += 'Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
+    dataContext += 'Zyklusphase: ' + cd.phase + (cd.estimated ? ' (aus Körperwerten geschätzt)' : '') + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
     if (cd.hormoneVal) dataContext += 'Hormone: ' + cd.hormoneVal + '\n';
   }
 
@@ -4494,6 +4494,87 @@ function selectCycleUnknown(btn) {
 }
 
 // ── Zyklus manuell eingeben ──
+// Schätzt die aktuelle Zyklusphase aus Körpersignalen (Temperatur, Ruhepuls, HRV).
+// Bewusst näherungsweise — gibt null zurück, wenn zu wenig Daten vorhanden sind.
+function estimateCyclePhase() {
+  var mb = window.manualBodyData;
+  var hist = (mb && (mb.ouraHistory30 || mb.ouraHistory)) || [];
+  var days = hist.filter(function(h) { return h && (h.temp != null || h.rhr != null || h.hrv != null); });
+  if (days.length < 5) return null;
+
+  function avg(key) { var v = days.map(function(d) { return d[key]; }).filter(function(x) { return x != null; }); return v.length ? v.reduce(function(a, b) { return a + b; }, 0) / v.length : null; }
+  function recentAvg(key, k) { var v = days.slice(-k).map(function(d) { return d[key]; }).filter(function(x) { return x != null; }); return v.length ? v.reduce(function(a, b) { return a + b; }, 0) / v.length : null; }
+
+  var baseTemp = avg('temp'), baseRhr = avg('rhr'), baseHrv = avg('hrv');
+  var rTemp = recentAvg('temp', 3), rRhr = recentAvg('rhr', 3), rHrv = recentAvg('hrv', 3);
+
+  var reasons = [], lutealScore = 0, follScore = 0;
+  if (baseTemp != null && rTemp != null) {
+    var dT = rTemp - baseTemp;
+    if (dT >= 0.12) { lutealScore++; reasons.push('Körpertemperatur erhöht (+' + dT.toFixed(2) + ' °C ggü. Schnitt)'); }
+    else if (dT <= -0.05) { follScore++; reasons.push('Körpertemperatur niedrig/normal'); }
+  }
+  if (baseRhr != null && rRhr != null) {
+    var dR = rRhr - baseRhr;
+    if (dR >= 1.2) { lutealScore++; reasons.push('Ruhepuls erhöht (+' + dR.toFixed(1) + ' bpm)'); }
+    else if (dR <= -1) { follScore++; reasons.push('Ruhepuls niedrig'); }
+  }
+  if (baseHrv != null && rHrv != null) {
+    var dH = rHrv - baseHrv;
+    if (dH <= -3) { lutealScore++; reasons.push('HRV gedämpft (' + Math.round(dH) + ' ms ggü. Schnitt)'); }
+    else if (dH >= 3) { follScore++; reasons.push('HRV erhöht (+' + Math.round(dH) + ' ms)'); }
+  }
+
+  var ovu = false;
+  if (baseTemp != null) {
+    var last3 = days.slice(-3).map(function(d) { return d.temp; }).filter(function(x) { return x != null; });
+    var prev = days.slice(-7, -3).map(function(d) { return d.temp; }).filter(function(x) { return x != null; });
+    if (last3.length && prev.length) {
+      var l = last3.reduce(function(a, b) { return a + b; }, 0) / last3.length;
+      var p = prev.reduce(function(a, b) { return a + b; }, 0) / prev.length;
+      if (p < baseTemp - 0.03 && l > baseTemp + 0.05) ovu = true;
+    }
+  }
+
+  var phase, confidence, approxDay;
+  if (ovu) { phase = 'Ovulation'; confidence = 'niedrig'; approxDay = 14; reasons.unshift('Temperaturanstieg der letzten Tage deutet auf den Eisprung-Übergang'); }
+  else if (lutealScore >= 2) { phase = 'Lutealphase'; confidence = lutealScore >= 3 ? 'mittel' : 'niedrig'; approxDay = 22; }
+  else if (follScore >= 2) { phase = 'Follikelphase'; confidence = follScore >= 3 ? 'mittel' : 'niedrig'; approxDay = 9; }
+  else if (lutealScore > follScore) { phase = 'Lutealphase'; confidence = 'niedrig'; approxDay = 22; }
+  else { phase = 'Follikelphase'; confidence = 'niedrig'; approxDay = 9; }
+
+  if (!reasons.length) reasons.push('Wenig eindeutige Signale — grobe Einordnung');
+  return { phase: phase, confidence: confidence, approxDay: approxDay, reasons: reasons, nDays: days.length };
+}
+
+// Übernimmt die geschätzte Phase als (klar als Schätzung markierte) Zyklusdaten
+function applyCycleEstimate() {
+  var est = window._cycleEstimate;
+  if (!est) return;
+  var selectedLen = 28;
+  var cycleDay = est.approxDay || 14;
+  var phase = est.phase, hormoneVal = '', hormoneSub = '';
+  if (phase === 'Menstruation') { hormoneVal = '↓ Östrogen + Progesteron'; hormoneSub = 'Beide Hormone niedrig'; }
+  else if (phase === 'Follikelphase') { hormoneVal = '↑ Östrogen steigt'; hormoneSub = 'Energie & Antrieb nehmen zu'; }
+  else if (phase === 'Ovulation') { hormoneVal = '↑ LH-Peak'; hormoneSub = 'Höchste Energie-Phase'; }
+  else { hormoneVal = '↑ Progesteron'; hormoneSub = '↓ Östrogen sinkt'; }
+  var daysLeft = selectedLen - cycleDay;
+  var fillPct = Math.round((cycleDay / selectedLen) * 100);
+  window.cycleData = {
+    cycleDay: cycleDay, selectedLen: selectedLen, phase: phase, fillPct: fillPct,
+    daysLeft: daysLeft, nextStr: '', daysLeftStr: 'in ~' + daysLeft + ' Tagen',
+    hormoneVal: hormoneVal, hormoneSub: hormoneSub,
+    estimated: true, confidence: est.confidence
+  };
+  var bd = document.querySelector('.score-popup-backdrop');
+  try { populateZyklusCard(window.cycleData); } catch (e) {}
+  try { removeDashWearableBanner(); } catch (e) {}
+  try { personalizeApp(); } catch (e) {}
+  try { refreshGreeting(); } catch (e) {}
+  if (bd) bd.remove();
+  try { avieAlert('Geschätzte Phase übernommen: ' + phase + ' (Sicherheit: ' + est.confidence + '). Das ist eine Näherung aus deinen Körperwerten — du kannst sie jederzeit über „bearbeiten" anpassen.', 'Zyklus geschätzt'); } catch (e) {}
+}
+
 function showCycleInput() {
   const phone = document.querySelector('.phone');
   const bd = document.createElement('div');
@@ -4506,6 +4587,20 @@ function showCycleInput() {
   const defaultDate = new Date(today);
   defaultDate.setDate(today.getDate() - 13);
   const defaultDateStr = defaultDate.toISOString().split('T')[0];
+
+  var est = estimateCyclePhase();
+  var estBlock = est ? `
+      <div style="margin-bottom:16px;">
+        <button id="cycle-estimate-btn"
+          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:#F3EFFA;color:#2D1B4E;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">✨</span>
+          <div>
+            <div style="font-weight:600;color:#2D1B4E;">Aus Oura-Werten schätzen</div>
+            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Näherung aus Temperatur, Ruhepuls & HRV der letzten Tage</div>
+          </div>
+        </button>
+        <div id="cycle-estimate-result" style="display:none;margin-top:10px;"></div>
+      </div>` : '';
 
   bd.innerHTML = `
     <div class="score-popup">
@@ -4524,6 +4619,8 @@ function showCycleInput() {
           </div>
         </button>
       </div>
+
+      ${estBlock}
 
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <div style="flex:1;height:1px;background:rgba(155,127,192,0.15);"></div>
@@ -4555,6 +4652,24 @@ function showCycleInput() {
     </div>`;
 
   phone.appendChild(bd);
+
+  var estBtn = bd.querySelector('#cycle-estimate-btn');
+  if (estBtn) {
+    estBtn.addEventListener('click', function() {
+      window._cycleEstimate = est;
+      var box = bd.querySelector('#cycle-estimate-result');
+      box.innerHTML =
+        '<div style="background:#F7F4FC;border:1px solid rgba(155,127,192,0.25);border-radius:12px;padding:12px 14px;">'
+        + '<div style="font-size:13px;color:#2D1B4E;font-weight:600;margin-bottom:6px;">Geschätzt: ' + est.phase
+        + ' <span style="font-size:11px;font-weight:500;color:#9B7FC0;">(Sicherheit: ' + est.confidence + ')</span></div>'
+        + '<div style="font-size:11px;color:#6B5A88;line-height:1.55;margin-bottom:10px;">'
+        + est.reasons.map(function(r) { return '• ' + r; }).join('<br>')
+        + '<br><span style="color:#A090BC;">Grobe Näherung aus Körpersignalen — keine medizinische Bestimmung.</span></div>'
+        + '<button onclick="applyCycleEstimate()" style="width:100%;padding:10px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Schätzung übernehmen</button>'
+        + '</div>';
+      box.style.display = 'block';
+    });
+  }
 
   let selectedLen = 28;
 
@@ -5063,10 +5178,11 @@ function ouraSparkline(values, color) {
     + '</svg>';
 }
 
-// Umschalter 7 / 30 Tage für die Verlaufskarte
+// Umschalter 7 / 30 Tage für die Verlaufs- und Vergleichskarte
 function setOuraRange(r) {
   window._ouraRange = r;
   try { renderOuraTrends(); } catch (e) {}
+  try { renderOuraComparison(); } catch (e) {}
 }
 
 // Zeigt die Verlaufs-Sparklines (Schlaf, HRV, Readiness) — 7 oder 30 Tage
@@ -5118,15 +5234,20 @@ function renderOuraTrends() {
   box.style.display = 'block';
 }
 
-// Vergleich: heutige Werte gegen den Durchschnitt der Vortage
+// Vergleich: heutige Werte gegen den 7- oder 30-Tage-Schnitt der Vortage
 function renderOuraComparison() {
   var box = document.getElementById('oura-compare');
   if (!box) return;
   var mb = window.manualBodyData;
-  var hist = mb && mb.ouraHistory;
-  if (!mb || mb.source !== 'oura' || !hist || hist.length < 2) {
+  var h7 = mb && mb.ouraHistory;
+  var h30 = mb && mb.ouraHistory30;
+  if (!mb || mb.source !== 'oura' || !h7 || h7.length < 2) {
     box.style.display = 'none'; box.innerHTML = ''; return;
   }
+  var has30 = h30 && h30.length > h7.length;
+  var range = (window._ouraRange === 30 && has30) ? 30 : 7;
+  var hist = (range === 30) ? h30 : h7;
+
   var n = hist.length;
   var today = hist[n - 1];
   var prior = hist.slice(0, n - 1); // Basis = Tage vor heute
@@ -5152,6 +5273,13 @@ function renderOuraComparison() {
       + ' <span style="font-size:11px;font-weight:500;color:' + color + ';margin-left:4px;">' + deltaStr + '</span></span>'
       + '</div>';
   }
+  function pill(label, active, r) {
+    return '<button onclick="setOuraRange(' + r + ')" style="border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:600;padding:3px 9px;border-radius:9px;'
+      + (active ? 'background:#2D1B4E;color:white;' : 'background:rgba(155,127,192,0.14);color:#9B7FC0;') + '">' + label + '</button>';
+  }
+  var toggle = has30
+    ? '<div style="display:flex;gap:5px;">' + pill('7 T', range === 7, 7) + pill('30 T', range === 30, 30) + '</div>'
+    : '';
 
   var rows =
       cmpRow('Schlaf', today.sleepMins, baseAvg('sleepMins'), ' min', function(v) { return ouraFmtSleep(Math.round(v)); }, 8)
@@ -5161,9 +5289,13 @@ function renderOuraComparison() {
 
   if (!rows) { box.style.display = 'none'; box.innerHTML = ''; return; }
 
+  var title = 'Heute vs. ' + (range === 30 ? '30-Tage-Schnitt' : '7-Tage-Schnitt');
+
   box.innerHTML =
     '<div style="background:white;border-radius:14px;padding:14px 14px 5px;border:1px solid rgba(155,127,192,0.12);box-shadow:0 2px 10px rgba(45,27,78,0.07);">'
-    + '<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">Heute vs. 7-Tage-Schnitt</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+    + '<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.04em;">' + title + '</div>'
+    + toggle + '</div>'
     + rows
     + '</div>';
   box.style.display = 'block';
@@ -5236,7 +5368,8 @@ function fetchOuraData() {
         hrv: (x.average_hrv != null) ? Math.round(x.average_hrv) : null,
         rhr: (x.lowest_heart_rate != null) ? x.lowest_heart_rate : null,
         readiness: xr ? xr.score : null,
-        sleepScore: xds ? xds.score : null
+        sleepScore: xds ? xds.score : null,
+        temp: (xr && xr.temperature_deviation != null) ? xr.temperature_deviation : null
       };
     });
     var history7 = history.slice(-7);
@@ -5466,6 +5599,16 @@ function populateZyklusCard(data) {
     if (ns) ns.textContent = 'Kein Zyklus-Tracking';
     if (hv) hv.textContent = data.hormoneVal || '—';
     if (hs) hs.textContent = data.hormoneSub || '';
+  } else if (data.estimated) {
+    if (t)  t.textContent  = '≈ ' + data.phase;
+    if (ph) { ph.textContent = 'geschätzt · Sicherheit: ' + (data.confidence || 'niedrig'); ph.style.display = ''; }
+    if (fi) { fi.style.width = (data.fillPct || 0) + '%'; }
+    const barWrapE = fi ? fi.parentElement : null;
+    if (barWrapE) barWrapE.style.opacity = '0.55';
+    if (nv) nv.textContent = '—';
+    if (ns) ns.textContent = 'geschätzt aus Körperwerten';
+    if (hv) hv.textContent = data.hormoneVal;
+    if (hs) hs.textContent = data.hormoneSub;
   } else {
     if (t)  t.textContent  = `Tag ${data.cycleDay} von ~${data.selectedLen}`;
     if (ph) { ph.textContent = data.phase; ph.style.display = ''; }

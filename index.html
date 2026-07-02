@@ -1705,7 +1705,7 @@ html.native-app .header { padding-top: 14px; }
         <div class="header-name">felia</div>
         <div class="header-sub"><span class="online-dot"></span><span>deine Begleiterin</span></div>
       </div>
-      <button onclick="showPersonality()" id="home-personality-btn" title="avies Persönlichkeit" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
+      <button onclick="showPersonality()" id="home-personality-btn" title="felias Persönlichkeit" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="4" y1="8" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="8" r="2.6" fill="#2D1B4E" stroke="currentColor" stroke-width="1.8"/><line x1="4" y1="16" x2="20" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="16" r="2.6" fill="#2D1B4E" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
     </div>
@@ -1840,7 +1840,7 @@ html.native-app .header { padding-top: 14px; }
             <div id="chat-topic-label" style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:3px;">Deine Begleiterin</div>
           </div>
         </div>
-        <button onclick="promptCloseChat()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>
+        <button onclick="promptCloseChat()" aria-label="Chat schließen" style="background:rgba(255,255,255,0.14);border:none;cursor:pointer;color:white;font-size:20px;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
       </div>
       <!-- Close confirmation dialog -->
       <div id="chat-close-dialog" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(45,27,78,0.6);z-index:10;align-items:flex-end;justify-content:center;">
@@ -1888,10 +1888,8 @@ html.native-app .header { padding-top: 14px; }
             </svg>
           </button>
         </div>
-        <div class="input-hints">
-          <button class="hint">🎙 Sprache</button>
-          <button class="hint">📎 Teilen</button>
-          <button class="hint">🌙 Tagebuch</button>
+        <div class="input-hints" style="justify-content:center;">
+          <button onclick="promptCloseChat()" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px;border-radius:14px;border:1px solid rgba(155,127,192,0.3);background:#F3EFFA;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">💬 Chat schließen</button>
         </div>
       </div>
     </div
@@ -2017,7 +2015,7 @@ const GUIDE_STEPS = [
   {
     text: `Jeden Tag begrüße ich dich und stelle dir eine <strong>Frage</strong> — immer mit Blick darauf, was dein Körper gerade zeigt. So verbinde ich dein Befinden mit deiner Biologie.`,
     target: 'greeting',
-    label: 'avie-Frage'
+    label: 'felia-Frage'
   },
   {
     text: `Hier <strong>antwortest du mir</strong> 💬 — schreib einfach, was dir auf dem Herzen liegt. Daraus wird unser Gespräch, ganz ohne Urteilen.`,
@@ -3041,7 +3039,7 @@ function homeShowAnalyse() {
     'Lebenssituation: ' + (lebenssituation || 'unbekannt') + '\n' +
     (wunschList ? 'Was sie sich von felia wünscht: ' + wunschList + '\n' : '') +
     '\nIhre Körperdaten heute:\n' + dataContext +
-    '\nSchreib avies tägliche Tiefenanalyse. Strukturiere mit Fettdruck-Überschriften (**Überschrift**). Jeder Abschnitt 2–4 Sätze.\n\n' +
+    '\nSchreib felias tägliche Tiefenanalyse. Strukturiere mit Fettdruck-Überschriften (**Überschrift**). Jeder Abschnitt 2–4 Sätze.\n\n' +
     'Abschnitte:\n' +
     '- **Dein Schlaf heute** — Zahlen einordnen, biologische Auswirkungen erklären\n' +
     '- **Dein Nervensystem** — HRV, Recovery, Ruhepuls und was das für Stresstoleranz bedeutet\n' +
@@ -3147,7 +3145,7 @@ function homeMoodSelect(btn) {
     (wunschList ? 'Was sie sich von felia wünscht: ' + wunschList + '\n' : '') +
     '\nIhre Körperdaten heute:\n' + dataContext +
     '\nSie sagt, sie fühlt sich heute "' + mood + '".\n\n' +
-    'Schreib jetzt avies tägliche Tiefenanalyse. Strukturiere sie mit kurzen Fettdruck-Überschriften (**Überschrift**). Jeder Abschnitt 2–4 Sätze.\n\n' +
+    'Schreib jetzt felias tägliche Tiefenanalyse. Strukturiere sie mit kurzen Fettdruck-Überschriften (**Überschrift**). Jeder Abschnitt 2–4 Sätze.\n\n' +
     'Folgende Abschnitte je nach verfügbaren Daten:\n' +
     '- **Dein Schlaf heute** — was die Zahlen bedeuten, was fehlender Tiefschlaf oder Wachphasen biologisch bewirken\n' +
     '- **Dein Nervensystem** — HRV, Recovery, Ruhepuls einordnen und erklären was das für Stresstoleranz, Reaktivität und Energie bedeutet\n' +
@@ -3616,7 +3614,7 @@ function buildAnalysisSteps() {
     }
   }
 
-  // ── STEP 3: Avies Tipp ──
+  // ── STEP 3: felias Tipp ──
   let tipp = '';
   const name = userName || '';
   const namePrefix = name ? name + ', ' : '';
@@ -3640,7 +3638,7 @@ function buildAnalysisSteps() {
   return [
     { label: 'Das Gesamtbild',   emoji: '🔍', title: 'Dein Körper heute', text: gesamtText },
     { label: 'Was das bedeutet', emoji: '💡', title: 'Für deinen Tag',    text: bedeutungText },
-    { label: 'Avies Tipp',       emoji: '💜', title: 'Eine Sache heute',  text: tipp }
+    { label: 'felias Tipp',       emoji: '💜', title: 'Eine Sache heute',  text: tipp }
   ];
 }
 
@@ -3695,7 +3693,7 @@ function buildDashEmpfehlungen(container) {
   }
 
   const tips = allTips.slice(0, 3);
-  let html = '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;padding:2px 0 8px;">avies Empfehlungen für heute</div>';
+  let html = '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;padding:2px 0 8px;">felias Empfehlungen für heute</div>';
   tips.forEach(function(tip) {
     const col = TIP_COLORS[tip.type] || TIP_COLORS['tip-gentle'];
     html += '<div style="background:white;border-radius:16px;border:1.5px solid ' + col.border + ';box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;">' +
@@ -4124,7 +4122,7 @@ function buildTips(moodKey, container) {
   const data = MOOD_TIPS[moodKey];
   if (!data || !container) return;
   const tips = data.tips;
-  let html = '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;padding:2px 0 4px;">avies Empfehlungen für heute</div>';
+  let html = '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#A090BC;padding:2px 0 4px;">felias Empfehlungen für heute</div>';
   tips.forEach((tip, idx) => {
     const col = TIP_COLORS[tip.type] || TIP_COLORS['tip-gentle'];
     html += `<div style="background:white;border-radius:16px;border:1.5px solid ${col.border};box-shadow:0 4px 16px rgba(45,27,78,0.08);padding:18px 16px;display:flex;gap:13px;align-items:flex-start;">
@@ -5867,8 +5865,10 @@ function reopenSavedChat(ts) {
     // Exakten Verlauf 1:1 wiederherstellen
     chatHistory.length = 0;
     chat.messages.forEach(function(m) {
-      chatHistory.push({ role: m.role, content: m.content });
-      addMsg(m.content, m.role === 'user' ? 'user' : 'avie');
+      var e = { role: m.role, content: m.content };
+      if (m.hidden) e.hidden = true;
+      chatHistory.push(e);
+      if (!m.hidden) addMsg(m.content, m.role === 'user' ? 'user' : 'avie');
     });
   } else {
     // Kein gespeicherter Verlauf (ältere Karte) → felia steigt anhand der Erkenntnisse neu ein
@@ -6264,8 +6264,8 @@ function importFromText() {
 
 function restoreBackup(text) {
   var data;
-  try { data = JSON.parse(text); } catch (e) { avieAlert('Das ist kein gültiges avie-Backup.'); return; }
-  if (!data || data.app !== 'avie' || !data.store) { avieAlert('Das ist kein gültiges avie-Backup.'); return; }
+  try { data = JSON.parse(text); } catch (e) { avieAlert('Das ist kein gültiges felia-Backup.'); return; }
+  if (!data || data.app !== 'avie' || !data.store) { avieAlert('Das ist kein gültiges felia-Backup.'); return; }
   avieConfirm({
     title: 'Backup einspielen?',
     message: 'Deine aktuellen Daten auf diesem Gerät werden dadurch ersetzt.',
@@ -7017,7 +7017,7 @@ function showPersonality() {
   div.style.cssText = 'position:absolute;inset:0;background:#EDE6F5;z-index:120;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
   div.innerHTML =
     '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
-      '<div><div style="font-size:16px;font-weight:600;color:white;">avies Persönlichkeit</div>' +
+      '<div><div style="font-size:16px;font-weight:600;color:white;">felias Persönlichkeit</div>' +
       '<div style="font-size:12px;color:rgba(255,255,255,0.5);">So verhält sich felia dir gegenüber</div></div>' +
       '<button onclick="document.getElementById(\'personality-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
     '</div>' +
@@ -7140,8 +7140,13 @@ profileNote() + archiveContext() + hedgeNote() + buildPersonalityPrompt();
 }
 
 
-function callAvie(userMessage) {
-  chatHistory.push({ role: 'user', content: userMessage });
+function apiMsgs() {
+  return chatHistory.map(function(m) { return { role: m.role, content: m.content }; });
+}
+function callAvie(userMessage, opts) {
+  var entry = { role: 'user', content: userMessage };
+  if (opts && opts.hidden) entry.hidden = true;
+  chatHistory.push(entry);
   return fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
     headers: {
@@ -7151,7 +7156,7 @@ function callAvie(userMessage) {
       model: 'claude-sonnet-4-5',
       max_tokens: 1000,
       system: buildSystemPrompt(),
-      messages: chatHistory
+      messages: apiMsgs()
     })
   }).then(function(response) {
     return response.json();
@@ -7412,7 +7417,7 @@ function generateChatSummary(historySnapshot) {
   var recentHistory = history.slice(-10);
   var summaryPrompt = 'Fasse dieses Gespräch in exakt diesem JSON-Format zusammen (kein Markdown, nur reines JSON):\n{\n  "thema": "max 4 Wörter, was war das Thema",\n  "erkenntnis": "1 Satz — direkt an die Nutzerin gerichtet, mit \'du\': was du heute über dich oder deinen Körper verstanden hast",\n  "avie_lernt": "1 Satz — was felia jetzt besser über diese Nutzerin weiß"\n}\n\nWichtig: erkenntnis immer in der Du-Form formulieren (\'du hast\', \'du weißt jetzt\', \'dir ist klar geworden\'). Nur JSON zurückgeben, nichts sonst.';
 
-  var messages = recentHistory.concat([{ role: 'user', content: summaryPrompt }]);
+  var messages = recentHistory.map(function(m){ return { role: m.role, content: m.content }; }).concat([{ role: 'user', content: summaryPrompt }]);
 
   fetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
@@ -7468,7 +7473,7 @@ function saveChat(summary, messages) {
       erkenntnis: summary.erkenntnis,
       avie_lernt: summary.avie_lernt,
       koerper: bodySnapshotText(),
-      messages: Array.isArray(messages) ? messages.map(function(m){ return { role: m.role, content: m.content }; }) : [],
+      messages: Array.isArray(messages) ? messages.map(function(m){ var o = { role: m.role, content: m.content }; if (m.hidden) o.hidden = true; return o; }) : [],
       timestamp: ts
     });
     // Speicher schlank halten
@@ -7502,7 +7507,7 @@ function showSummaryPopup(summary) {
   ov.innerHTML =
     '<div style="background:white;border-radius:22px;border:1.5px solid rgba(212,134,58,0.3);padding:20px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(45,27,78,0.32);">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
-        '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#D4863A;">Avies Notiz · gerade eben</div>' +
+        '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#D4863A;">felias Notiz · gerade eben</div>' +
         '<button onclick="document.getElementById(\'summary-popup\').remove()" style="font-size:18px;color:#C0B0D0;background:none;border:none;cursor:pointer;line-height:1;">×</button>' +
       '</div>' +
       '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:12px;">📝 ' + esc(summary.thema || 'Unser Gespräch') + '</div>' +
@@ -7550,7 +7555,7 @@ function feliaReactToNewData(kind) {
   var nudge = (kind === 'cycle')
     ? 'Hinweis: Die Nutzerin hat gerade ihre Zyklusdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an unser Gespräch an und geh konkret auf die neue Info ein, kurz und ohne die Eingabe selbst zu wiederholen.'
     : 'Hinweis: Die Nutzerin hat gerade ihre Körperdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an unser Gespräch an und geh konkret auf die neuen Werte ein, kurz und ohne die Eingabe selbst zu wiederholen.';
-  callAvie(nudge).then(function(reply) {
+  callAvie(nudge, { hidden: true }).then(function(reply) {
     if (typeof removeTyping === 'function') removeTyping();
     addMsg(reply, 'avie');
   }).catch(function() {

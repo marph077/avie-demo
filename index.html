@@ -1156,6 +1156,10 @@ html.native-app .header { padding-top: 14px; }
   width: 100%; background: white;
   border-radius: 24px 24px 0 0;
   padding: 20px 20px 36px;
+  max-height: 92%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
   animation: slideUpPop 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 @keyframes slideUpPop { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -4590,13 +4594,13 @@ function showCycleInput() {
 
   var est = estimateCyclePhase();
   var estBlock = est ? `
-      <div style="margin-bottom:16px;">
+      <div style="margin-bottom:10px;">
         <button id="cycle-estimate-btn"
-          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:#F3EFFA;color:#2D1B4E;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:18px;">✨</span>
+          style="width:100%;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.25);background:#F7F4FC;color:#2D1B4E;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:17px;">✨</span>
           <div>
             <div style="font-weight:600;color:#2D1B4E;">Aus Oura-Werten schätzen</div>
-            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Näherung aus Temperatur, Ruhepuls & HRV der letzten Tage</div>
+            <div style="font-size:11px;color:#A090BC;margin-top:1px;">Näherung aus Temperatur, Ruhepuls & HRV</div>
           </div>
         </button>
         <div id="cycle-estimate-result" style="display:none;margin-top:10px;"></div>
@@ -4606,23 +4610,23 @@ function showCycleInput() {
     <div class="score-popup">
       <div class="score-popup-handle"></div>
       <div style="font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#2D1B4E;margin-bottom:6px;">Zyklus eingeben</div>
-      <div style="font-size:13px;color:#6B5A88;margin-bottom:20px;line-height:1.5;">avie berechnet daraus deine aktuelle Phase, die nächste Periode und deine Hormonkurve.</div>
+      <div style="font-size:13px;color:#6B5A88;margin-bottom:14px;line-height:1.5;">avie berechnet daraus deine aktuelle Phase, die nächste Periode und deine Hormonkurve.</div>
 
       <!-- Nicht bekannt option -->
-      <div style="margin-bottom:16px;">
+      <div style="margin-bottom:10px;">
         <button id="cycle-unknown-btn" onclick="selectCycleUnknown(this)"
-          style="width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.2);background:#F7F4FC;color:#6B5A88;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
-          <span style="font-size:18px;">🤷‍♀️</span>
+          style="width:100%;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.25);background:#F7F4FC;color:#6B5A88;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:17px;">🤷‍♀️</span>
           <div>
-            <div style="font-weight:500;color:#4A3A6A;">Zyklus nicht bekannt</div>
-            <div style="font-size:11px;color:#A090BC;margin-top:2px;">Schwangerschaft, Wechseljahre, unregelmäßig oder unklar</div>
+            <div style="font-weight:600;color:#2D1B4E;">Zyklus nicht bekannt</div>
+            <div style="font-size:11px;color:#A090BC;margin-top:1px;">Schwangerschaft, Wechseljahre, unregelmäßig</div>
           </div>
         </button>
       </div>
 
       ${estBlock}
 
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="flex:1;height:1px;background:rgba(155,127,192,0.15);"></div>
         <div style="font-size:11px;color:#C0B0D0;">oder manuell eingeben</div>
         <div style="flex:1;height:1px;background:rgba(155,127,192,0.15);"></div>
@@ -5264,9 +5268,9 @@ function renderOuraComparison() {
     var absd = Math.abs(Math.round(d));
     var todayStr = fmtFn ? fmtFn(todayVal) : (Math.round(todayVal) + unit);
     var deltaStr, color;
-    if (absd <= threshold) { deltaStr = '≈ auf Schnitt'; color = '#A090BC'; }
-    else if (d > 0) { deltaStr = '▲ ' + absd + unit + ' über Schnitt'; color = '#4A9E50'; }
-    else { deltaStr = '▼ ' + absd + unit + ' unter Schnitt'; color = '#D4863A'; }
+    if (absd <= threshold) { deltaStr = '≈'; color = '#A090BC'; }
+    else if (d > 0) { deltaStr = '▲ ' + absd + unit; color = '#4A9E50'; }
+    else { deltaStr = '▼ ' + absd + unit; color = '#D4863A'; }
     return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;">'
       + '<span style="font-size:12px;color:#6B5A88;">' + label + '</span>'
       + '<span style="font-size:13px;color:#2D1B4E;font-weight:600;">' + todayStr
@@ -5404,6 +5408,18 @@ function fetchOuraData() {
       cycle30 = 'Langzeit-Durchschnitt (' + history.length + ' Nächte, bis 30 Tage): ' + cp.join(', ');
     }
 
+    // Heute vs. 7-Tage-Schnitt (für Felias Analyse)
+    var prior7 = history7.slice(0, -1);
+    function pAvg(key) { var v = prior7.map(function(h) { return h[key]; }).filter(function(x) { return x != null; }); return v.length ? v.reduce(function(a, b) { return a + b; }, 0) / v.length : null; }
+    var t7 = history7[history7.length - 1];
+    function sd(v, base) { if (v == null || base == null) return null; var d = Math.round(v - base); return (d >= 0 ? '+' : '') + d; }
+    var cmp = [], sdx;
+    if ((sdx = sd(t7.sleepMins, pAvg('sleepMins'))) != null) cmp.push('Schlaf ' + sdx + ' min');
+    if ((sdx = sd(t7.hrv, pAvg('hrv'))) != null) cmp.push('HRV ' + sdx + ' ms');
+    if ((sdx = sd(t7.readiness, pAvg('readiness'))) != null) cmp.push('Readiness ' + sdx);
+    if ((sdx = sd(t7.deep, pAvg('deep'))) != null) cmp.push('Tiefschlaf ' + sdx + ' min');
+    var compareLine = cmp.length ? ('Heute vs. 7-Tage-Schnitt (+ = darüber, − = darunter): ' + cmp.join(', ')) : '';
+
     window.manualBodyData = {
       energyScore: energyScore,
       sleepStr: ouraFmtSleep(sleepMins),
@@ -5422,7 +5438,7 @@ function fetchOuraData() {
       ouraDay: day,
       ouraHistory: history7,
       ouraHistory30: history,
-      trend7: trend + '\n' + (cycle30 ? cycle30 + '\n' : '')
+      trend7: trend + '\n' + (cycle30 ? cycle30 + '\n' : '') + (compareLine ? compareLine + '\n' : '')
     };
     window.ouraConnected = true;
     window._bodyUpdatedAt = Date.now();

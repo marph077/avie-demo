@@ -4191,6 +4191,14 @@ function showDashboard() {
   const old = document.getElementById('dashboard');
   if (old) old.remove();
 
+  const _chatOpen = (function() { var w = document.getElementById('chat-window'); return !!(w && w.classList.contains('open')); })();
+  var _mbNow = window.manualBodyData;
+  window._dashSnapshot = {
+    fromChat: _chatOpen,
+    body: !!(_mbNow && (_mbNow.energyScore != null || _mbNow.hrv != null || _mbNow.sleepMins != null || _mbNow.stressScore != null)),
+    cycle: !!window.cycleData
+  };
+
   const now = new Date();
   const timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
 
@@ -4306,8 +4314,8 @@ function showDashboard() {
 
     <!-- CTA: Schließen + über Körperdaten sprechen -->
     <div style="padding:12px 16px 28px;background:#EDE6F5;border-top:1px solid rgba(155,127,192,0.15);flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
-      <button onclick="closeDashboard()" style="width:100%;padding:14px;border-radius:16px;border:1.5px solid rgba(45,27,78,0.2);background:white;color:#2D1B4E;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button>
-      <button onclick="dashStartChat('Ich möchte über meine Körperdaten sprechen.')" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">💬 Über Körperdaten sprechen</button>
+      <button onclick="closeDashboard()" style="width:100%;padding:14px;border-radius:16px;border:1.5px solid rgba(45,27,78,0.2);background:white;color:#2D1B4E;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">${_chatOpen ? 'Zurück zum Chat' : 'Schließen'}</button>
+      ${_chatOpen ? '' : '<button onclick="dashStartChat(\'Ich möchte über meine Körperdaten sprechen.\')" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">💬 Über Körperdaten sprechen</button>'}
     </div>
   `;
 
@@ -7518,6 +7526,36 @@ function closeDashboard() {
   fillHomeThemen();
   var bHint = document.getElementById('home-body-hint');
   if (bHint) { bHint.style.display = 'none'; bHint.innerHTML = ''; }
+
+  // Aus dem Chat geöffnet + Daten neu eingetragen -> felia knüpft an
+  var snap = window._dashSnapshot || {};
+  window._dashSnapshot = null;
+  if (snap.fromChat) {
+    var win = document.getElementById('chat-window');
+    if (win && win.classList.contains('open')) {
+      var mb = window.manualBodyData;
+      var bodyNow = !!(mb && (mb.energyScore != null || mb.hrv != null || mb.sleepMins != null || mb.stressScore != null));
+      var cycleNow = !!window.cycleData;
+      var kind = (!snap.body && bodyNow) ? 'body' : ((!snap.cycle && cycleNow) ? 'cycle' : null);
+      if (kind) setTimeout(function() { feliaReactToNewData(kind); }, 350);
+    }
+  }
+}
+
+// felia reagiert im Chat auf frisch eingetragene Daten (ohne sichtbare User-Nachricht)
+function feliaReactToNewData(kind) {
+  var win = document.getElementById('chat-window');
+  if (!win || !win.classList.contains('open')) return;
+  if (typeof showTyping === 'function') showTyping();
+  var nudge = (kind === 'cycle')
+    ? 'Hinweis: Die Nutzerin hat gerade ihre Zyklusdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an unser Gespräch an und geh konkret auf die neue Info ein, kurz und ohne die Eingabe selbst zu wiederholen.'
+    : 'Hinweis: Die Nutzerin hat gerade ihre Körperdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an unser Gespräch an und geh konkret auf die neuen Werte ein, kurz und ohne die Eingabe selbst zu wiederholen.';
+  callAvie(nudge).then(function(reply) {
+    if (typeof removeTyping === 'function') removeTyping();
+    addMsg(reply, 'avie');
+  }).catch(function() {
+    if (typeof removeTyping === 'function') removeTyping();
+  });
 }
 
 

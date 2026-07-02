@@ -4238,6 +4238,8 @@ function showDashboard() {
         </div>
       </div>
 
+      <div id="oura-compare" style="display:none;flex-shrink:0;"></div>
+
       <div id="oura-trends" style="display:none;flex-shrink:0;"></div>
 
       <div class="dash-section-label" onclick="toggleKoerperCard()" style="cursor:pointer;display:flex;align-items:center;gap:6px;">Körperdaten · Wearable <span id="koerper-chevron" style="font-size:12px;color:#A090BC;transition:transform 0.25s;display:inline-block;">▾</span></div>
@@ -5020,6 +5022,24 @@ function ouraFmtSleep(mins) {
   return h + 'h ' + (m < 10 ? '0' + m : m) + 'm';
 }
 
+// Geglätteter Stress-Wert (0–100): verankert an Ouras Tageszusammenfassung,
+// nur gedämpft mit dem Stress-/Erholungs-Verhältnis moduliert, auf 5–95 begrenzt.
+function ouraStressScore(str, readiness) {
+  if (str) {
+    var sh = str.stress_high || 0, rh = str.recovery_high || 0;
+    var ratio = (sh + rh) > 0 ? sh / (sh + rh) : 0.5;           // 0..1
+    var summary = (str.day_summary || '').toLowerCase();
+    var base = 50;
+    if (summary === 'restored') base = 28;
+    else if (summary === 'normal') base = 48;
+    else if (summary === 'stressful') base = 70;
+    var mod = (ratio - 0.5) * 36;                               // -18..+18, gedämpft
+    return Math.max(5, Math.min(95, Math.round(base + mod)));
+  }
+  if (readiness != null) return Math.max(5, Math.min(95, Math.round(100 - readiness)));
+  return 45;
+}
+
 // Kleine SVG-Sparkline aus einer Zahlenreihe (nullwerte werden ignoriert)
 function ouraSparkline(values, color) {
   var vals = values.filter(function(v) { return v != null && !isNaN(v); });
@@ -5077,6 +5097,57 @@ function renderOuraTrends() {
   box.style.display = 'block';
 }
 
+// Vergleich: heutige Werte gegen den Durchschnitt der Vortage
+function renderOuraComparison() {
+  var box = document.getElementById('oura-compare');
+  if (!box) return;
+  var mb = window.manualBodyData;
+  var hist = mb && mb.ouraHistory;
+  if (!mb || mb.source !== 'oura' || !hist || hist.length < 2) {
+    box.style.display = 'none'; box.innerHTML = ''; return;
+  }
+  var n = hist.length;
+  var today = hist[n - 1];
+  var prior = hist.slice(0, n - 1); // Basis = Tage vor heute
+
+  function baseAvg(key) {
+    var vals = prior.map(function(h) { return h[key]; }).filter(function(v) { return v != null; });
+    if (!vals.length) return null;
+    return vals.reduce(function(a, b) { return a + b; }, 0) / vals.length;
+  }
+
+  function cmpRow(label, todayVal, baseVal, unit, fmtFn, threshold) {
+    if (todayVal == null || baseVal == null) return '';
+    var d = todayVal - baseVal;
+    var absd = Math.abs(Math.round(d));
+    var todayStr = fmtFn ? fmtFn(todayVal) : (Math.round(todayVal) + unit);
+    var deltaStr, color;
+    if (absd <= threshold) { deltaStr = '≈ auf Schnitt'; color = '#A090BC'; }
+    else if (d > 0) { deltaStr = '▲ ' + absd + unit + ' über Schnitt'; color = '#4A9E50'; }
+    else { deltaStr = '▼ ' + absd + unit + ' unter Schnitt'; color = '#D4863A'; }
+    return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;">'
+      + '<span style="font-size:12px;color:#6B5A88;">' + label + '</span>'
+      + '<span style="font-size:13px;color:#2D1B4E;font-weight:600;">' + todayStr
+      + ' <span style="font-size:11px;font-weight:500;color:' + color + ';margin-left:4px;">' + deltaStr + '</span></span>'
+      + '</div>';
+  }
+
+  var rows =
+      cmpRow('Schlaf', today.sleepMins, baseAvg('sleepMins'), ' min', function(v) { return ouraFmtSleep(Math.round(v)); }, 8)
+    + cmpRow('HRV', today.hrv, baseAvg('hrv'), ' ms', null, 2)
+    + cmpRow('Readiness', today.readiness, baseAvg('readiness'), '', null, 2)
+    + cmpRow('Tiefschlaf', today.deep, baseAvg('deep'), ' min', null, 6);
+
+  if (!rows) { box.style.display = 'none'; box.innerHTML = ''; return; }
+
+  box.innerHTML =
+    '<div style="background:white;border-radius:14px;padding:14px 14px 5px;border:1px solid rgba(155,127,192,0.12);box-shadow:0 2px 10px rgba(45,27,78,0.07);">'
+    + '<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">Heute vs. 7-Tage-Schnitt</div>'
+    + rows
+    + '</div>';
+  box.style.display = 'block';
+}
+
 // Holt echte Oura-Werte über den Worker (/oura) und mappt sie in manualBodyData.
 // Zyklusphase bleibt manuell — Oura liefert sie nicht.
 function fetchOuraData() {
@@ -5123,14 +5194,8 @@ function fetchOuraData() {
     var readiness = rd ? rd.score : null;
     var energyScore = (readiness != null) ? readiness : (ds ? ds.score : 62);
 
-    // Stress aus daily_stress (Verhältnis Hoch-Stress zu Hoch-Erholung), sonst aus Readiness
-    var stressScore = 45;
-    if (str && (str.stress_high != null || str.recovery_high != null)) {
-      var sh = str.stress_high || 0, rh = str.recovery_high || 0;
-      stressScore = (sh + rh) > 0 ? Math.round(sh / (sh + rh) * 100) : 45;
-    } else if (readiness != null) {
-      stressScore = Math.max(0, Math.min(100, 100 - readiness));
-    }
+    // Stress: geglättet (an Oura-Tageszusammenfassung verankert, gedämpft moduliert)
+    var stressScore = ouraStressScore(str, readiness);
 
     var temp = null;
     if (rd && rd.temperature_deviation != null) {
@@ -5200,6 +5265,7 @@ function fetchOuraData() {
     try { refreshGreeting(); } catch (e) {}
     try { rewireDashCTA(); } catch (e) {}
     try { renderOuraTrends(); } catch (e) {}
+    try { renderOuraComparison(); } catch (e) {}
 
     if (btn) {
       btn.disabled = false;
@@ -5405,7 +5471,7 @@ function removeDashWearableBanner() {
 
   // Show score cards + körperdaten if Oura connected OR manual body data entered
   if (window.ouraConnected || window.manualBodyData) {
-    setTimeout(function() { try { renderOuraTrends(); } catch (e) {} }, 700);
+    setTimeout(function() { try { renderOuraTrends(); renderOuraComparison(); } catch (e) {} }, 700);
     const scoreCards = dash.querySelector('#score-cards');
     if (scoreCards) {
       setTimeout(() => {

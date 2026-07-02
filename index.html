@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>avie — Deine Begleiterin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -544,7 +544,13 @@ html.native-app .status-bar {
   height: env(safe-area-inset-top, 0px);
 }
 html.native-app .status-bar > * { display: none; }
-html.native-app .home-bottom-nav { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+html.native-app .home-bottom-nav { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important; }
+html.native-app.kb-open .home-bottom-nav { display: none !important; }
+/* resize:none — App/Chat auf "Höhe minus Tastatur" verkleinern: Header bleibt oben,
+   Eingabefeld sitzt über der Tastatur, WebView bleibt vollflächig (kein schwarzer Bereich) */
+html.native-app.kb-open #app { height: calc(100% - var(--kb-height, 0px)) !important; flex: 0 0 auto !important; }
+html.native-app.kb-open .chat-window { bottom: var(--kb-height, 0px) !important; }
+html.native-app.kb-open .phone { background: #EDE6F5; }
 /* Vollbild in der nativen App: kein Mockup-Rahmen, bis an alle Geräteränder */
 html.native-app { height: 100%; }
 html.native-app body { height: 100%; background: var(--plum); }
@@ -572,7 +578,7 @@ html.native-app .phone {
   bottom: -1px; left: 0; right: 0; height: 1px;
   background: linear-gradient(to right, transparent, rgba(212,134,58,0.4), transparent);
 }
-.bloom-svg { width: 46px; height: 46px; }
+.bloom-svg { width: 60px; height: 60px; }
 .header-text { flex: 1; }
 .header-name { font-family: var(--font-display); font-size: 20px; color: white; line-height: 1; letter-spacing: -0.02em; }
 .header-sub { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 300; margin-top: 3px; display: flex; align-items: center; gap: 5px; }
@@ -1124,7 +1130,7 @@ html.native-app .phone {
   flex-shrink: 0;
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
-html.native-app .chat-win-header { padding-top: calc(env(safe-area-inset-top, 0px) + 18px); }
+html.native-app .chat-win-header { padding-top: max(calc(env(safe-area-inset-top, 0px) + 20px), 62px); }
 html.native-app .header { padding-top: 14px; }
 .chat-win-back {
   font-size: 13px; color: rgba(255,255,255,0.7);
@@ -1892,7 +1898,7 @@ html.native-app .header { padding-top: 14px; }
 
       <button onclick="homeFabTapped()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:-24px;font-family:inherit;">
         <span style="width:66px;height:66px;border-radius:50%;background:var(--plum);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(45,27,78,0.34);">
-          <svg width="36" height="36" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg>
+          <svg width="46" height="46" viewBox="0 0 30 30" fill="none"><g transform="translate(15,15)"><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(0)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(45)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(90)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(135)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(180)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(225)" opacity="0.9"/><ellipse rx="2.7" ry="6.6" fill="rgba(255,255,255,0.30)" transform="rotate(270)"/><ellipse rx="2.7" ry="6.6" fill="#fff" transform="rotate(315)" opacity="0.9"/></g><circle cx="15" cy="15" r="3.3" fill="#D4863A"/></svg>
         </span>
         <span style="font-size:11px;font-weight:600;color:#2D1B4E;">Neuer Chat</span>
       </button>
@@ -4982,7 +4988,127 @@ function rewireDashCTA() {
   const wearableBtn = dash.querySelector('[data-wearable-connect]');
   if (analyseBtn) { analyseBtn.onclick = null; analyseBtn.addEventListener('click', startDashAnalysis); }
   if (chatBtn)    { chatBtn.onclick = null;    chatBtn.addEventListener('click', closeDashboard); }
-  if (wearableBtn) { wearableBtn.onclick = null; wearableBtn.addEventListener('click', connectSimWearable); }
+  if (wearableBtn) { wearableBtn.onclick = null; wearableBtn.addEventListener('click', fetchOuraData); }
+}
+
+function ouraFmtSleep(mins) {
+  var h = Math.floor(mins / 60), m = mins % 60;
+  return h + 'h ' + (m < 10 ? '0' + m : m) + 'm';
+}
+
+// Holt echte Oura-Werte über den Worker (/oura) und mappt sie in manualBodyData.
+// Zyklusphase bleibt manuell — Oura liefert sie nicht.
+function fetchOuraData() {
+  var btn = document.querySelector('[data-wearable-connect]');
+  var prevTxt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Lade Oura-Daten…'; }
+
+  fetch('https://avie-proxy.hoyer2707.workers.dev/oura', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ days: 7 })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (!res || !res.ok || !res.oura) {
+      throw new Error(res && res.error ? res.error : 'Keine Daten erhalten');
+    }
+    var o = res.oura;
+    var sleepArr = (o.sleep && o.sleep.data) || [];
+    var dailySleep = (o.daily_sleep && o.daily_sleep.data) || [];
+    var readyArr = (o.daily_readiness && o.daily_readiness.data) || [];
+    var stressArr = (o.daily_stress && o.daily_stress.data) || [];
+
+    // Hauptschlaf = letzter Eintrag mit type === 'long_sleep'
+    var longs = sleepArr.filter(function(s) { return s.type === 'long_sleep' && s.total_sleep_duration > 0; });
+    if (!longs.length) throw new Error('Kein Hauptschlaf (long_sleep) gefunden');
+    var ls = longs[longs.length - 1];
+    var day = ls.day;
+
+    function latestByDay(arr, d) {
+      var m = arr.filter(function(x) { return x.day === d; });
+      if (m.length) return m[m.length - 1];
+      return arr.length ? arr[arr.length - 1] : null;
+    }
+    var ds = latestByDay(dailySleep, day);
+    var rd = latestByDay(readyArr, day);
+    var str = latestByDay(stressArr, day);
+
+    var sleepMins = Math.round(ls.total_sleep_duration / 60);
+    var deepMin = Math.round((ls.deep_sleep_duration || 0) / 60);
+    var remMin  = Math.round((ls.rem_sleep_duration || 0) / 60);
+    var hrv = (ls.average_hrv != null) ? Math.round(ls.average_hrv) : null;
+    var rhr = (ls.lowest_heart_rate != null) ? ls.lowest_heart_rate : null;
+    var readiness = rd ? rd.score : null;
+    var energyScore = (readiness != null) ? readiness : (ds ? ds.score : 62);
+
+    // Stress aus daily_stress (Verhältnis Hoch-Stress zu Hoch-Erholung), sonst aus Readiness
+    var stressScore = 45;
+    if (str && (str.stress_high != null || str.recovery_high != null)) {
+      var sh = str.stress_high || 0, rh = str.recovery_high || 0;
+      stressScore = (sh + rh) > 0 ? Math.round(sh / (sh + rh) * 100) : 45;
+    } else if (readiness != null) {
+      stressScore = Math.max(0, Math.min(100, 100 - readiness));
+    }
+
+    var temp = null;
+    if (rd && rd.temperature_deviation != null) {
+      var t = rd.temperature_deviation;
+      temp = (t >= 0 ? '+' : '') + t.toFixed(1);
+    }
+
+    window.manualBodyData = {
+      energyScore: energyScore,
+      sleepStr: ouraFmtSleep(sleepMins),
+      sleepMins: sleepMins,
+      stressScore: stressScore,
+      recovery: readiness,
+      hrv: hrv,
+      rhr: rhr,
+      deep: deepMin,
+      rem: remMin,
+      temp: temp,
+      sleepScore: ds ? ds.score : null,
+      readinessScore: readiness,
+      hrvBalance: (rd && rd.contributors) ? rd.contributors.hrv_balance : null,
+      source: 'oura',
+      ouraDay: day
+    };
+    window.ouraConnected = true;
+    window._bodyUpdatedAt = Date.now();
+    saveBodyData();
+
+    var sleep = { str: window.manualBodyData.sleepStr, mins: sleepMins };
+    try { updateManualScoreCards(energyScore, sleep, stressScore); } catch (e) {}
+    try { removeDashWearableBanner(); } catch (e) {}
+    try { personalizeApp(); } catch (e) {}
+    try { refreshGreeting(); } catch (e) {}
+    try { rewireDashCTA(); } catch (e) {}
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '✓ Oura verbunden';
+      btn.style.background = '#4A9E50';
+      setTimeout(function() {
+        btn.textContent = '⌚ Wearable verbinden';
+        btn.style.background = '#2D1B4E';
+      }, 2000);
+    }
+    avieAlert(
+      'Nacht auf ' + day + ': ' + window.manualBodyData.sleepStr + ' Schlaf, HRV ' +
+      (hrv != null ? hrv + ' ms' : '–') + ', Ruhepuls ' + (rhr != null ? rhr + ' bpm' : '–') +
+      ', Readiness ' + (readiness != null ? readiness : '–') + '.',
+      'Oura-Daten übernommen'
+    );
+  })
+  .catch(function(err) {
+    if (btn) { btn.disabled = false; btn.textContent = prevTxt || '⌚ Wearable verbinden'; }
+    avieAlert(
+      'Oura-Daten konnten nicht geladen werden: ' +
+      (err && err.message ? err.message : 'Unbekannter Fehler') + '.',
+      'Fehler'
+    );
+  });
 }
 
 function updateManualScoreCards(energyScore, sleep, stressScore) {
@@ -7000,6 +7126,23 @@ function closeDashboard() {
         Cap.Plugins.StatusBar.setBackgroundColor({ color: '#2D1B4E' }); // wirkt auf älteren Android-Versionen
       }
     }
+  } catch (e) {}
+})();
+
+// Native (resize:none): Tastatur legt sich über die vollflächige WebView.
+// Wir merken die Tastaturhöhe (--kb-height) und verkleinern per CSS die App-Höhe,
+// damit der Header oben stehen bleibt und das Eingabefeld über der Tastatur sitzt.
+(function setupKeyboardClass() {
+  try {
+    window.addEventListener('keyboardWillShow', function (e) {
+      var h = (e && e.keyboardHeight) ? e.keyboardHeight : 300;
+      document.documentElement.style.setProperty('--kb-height', h + 'px');
+      document.documentElement.classList.add('kb-open');
+    });
+    window.addEventListener('keyboardWillHide', function () {
+      document.documentElement.classList.remove('kb-open');
+      document.documentElement.style.setProperty('--kb-height', '0px');
+    });
   } catch (e) {}
 })();
 

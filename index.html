@@ -2569,7 +2569,11 @@ function fillHomeData() {
     if (cd || window._bodyUpdatedAt) {
       var left = cd ? ('🌸 ' + cd.phase + (cd.cycleDay ? ' · Tag ' + cd.cycleDay : '')) : '';
       var upd = '';
-      if (window._bodyUpdatedAt) {
+      var mbf = window.manualBodyData;
+      if (mbf && mbf.source === 'oura' && mbf.ouraDay) {
+        var od = new Date(mbf.ouraDay + 'T00:00:00');
+        upd = 'Oura · Nacht auf ' + od.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+      } else if (window._bodyUpdatedAt) {
         var w = new Date(window._bodyUpdatedAt);
         var sameDay = w.toDateString() === new Date().toDateString();
         upd = sameDay
@@ -2846,6 +2850,14 @@ function homeShowAnalyseAfterChat() {
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
     dataContext += 'Energie: ' + mb.energyScore + '/100, Stress: ' + mb.stressScore + '/100\n';
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
+    if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
+    if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
+    if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
+    if (mb.rem) dataContext += 'REM-Schlaf: ' + mb.rem + ' min\n';
+    if (mb.hrvBalance) dataContext += 'HRV-Balance: ' + mb.hrvBalance + '/100\n';
+    if (mb.temp) dataContext += 'Temperatur-Abweichung: ' + mb.temp + ' °C\n';
+    if (mb.sleepScore) dataContext += 'Schlaf-Score: ' + mb.sleepScore + '/100\n';
+    if (mb.trend7) dataContext += mb.trend7;
   }
   if (cd) dataContext += 'Zyklusphase: ' + cd.phase + (cd.cycleDay ? ', Tag ' + cd.cycleDay : '') + '\n';
 
@@ -3000,6 +3012,11 @@ function homeShowAnalyse() {
     if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
+    if (mb.rem) dataContext += 'REM-Schlaf: ' + mb.rem + ' min\n';
+    if (mb.hrvBalance) dataContext += 'HRV-Balance: ' + mb.hrvBalance + '/100\n';
+    if (mb.temp) dataContext += 'Temperatur-Abweichung: ' + mb.temp + ' °C\n';
+    if (mb.sleepScore) dataContext += 'Schlaf-Score: ' + mb.sleepScore + '/100\n';
+    if (mb.trend7) dataContext += mb.trend7;
   }
   if (cd) {
     dataContext += 'Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
@@ -3097,6 +3114,11 @@ function homeMoodSelect(btn) {
     if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
+    if (mb.rem) dataContext += 'REM-Schlaf: ' + mb.rem + ' min\n';
+    if (mb.hrvBalance) dataContext += 'HRV-Balance: ' + mb.hrvBalance + '/100\n';
+    if (mb.temp) dataContext += 'Temperatur-Abweichung: ' + mb.temp + ' °C\n';
+    if (mb.sleepScore) dataContext += 'Schlaf-Score: ' + mb.sleepScore + '/100\n';
+    if (mb.trend7) dataContext += mb.trend7;
   }
   if (cd) {
     dataContext += 'Zyklusphase: ' + cd.phase + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + '\n';
@@ -5057,6 +5079,38 @@ function fetchOuraData() {
       temp = (t >= 0 ? '+' : '') + t.toFixed(1);
     }
 
+    // 7-Tage-Verlauf für Trends (Schritt 2)
+    var history = longs.map(function(x) {
+      var xr = latestByDay(readyArr, x.day);
+      var xds = latestByDay(dailySleep, x.day);
+      return {
+        day: x.day,
+        sleepMins: Math.round(x.total_sleep_duration / 60),
+        deep: Math.round((x.deep_sleep_duration || 0) / 60),
+        rem: Math.round((x.rem_sleep_duration || 0) / 60),
+        hrv: (x.average_hrv != null) ? Math.round(x.average_hrv) : null,
+        rhr: (x.lowest_heart_rate != null) ? x.lowest_heart_rate : null,
+        readiness: xr ? xr.score : null,
+        sleepScore: xds ? xds.score : null
+      };
+    });
+    function ouraAvg(key) {
+      var vals = history.map(function(h) { return h[key]; }).filter(function(v) { return v != null; });
+      if (!vals.length) return null;
+      return Math.round(vals.reduce(function(a, b) { return a + b; }, 0) / vals.length);
+    }
+    var avgSleep = ouraAvg('sleepMins'), avgHrv = ouraAvg('hrv'), avgReady = ouraAvg('readiness'), avgDeep = ouraAvg('deep');
+    var tp = [];
+    if (avgSleep != null) tp.push('Schlaf ' + ouraFmtSleep(avgSleep));
+    if (avgHrv != null) tp.push('HRV ' + avgHrv + ' ms');
+    if (avgReady != null) tp.push('Readiness ' + avgReady);
+    var trend = '7-Tage-Durchschnitt: ' + tp.join(', ');
+    var notes = [];
+    if (avgDeep != null && deepMin < avgDeep - 5) notes.push('Tiefschlaf zuletzt unter dem Schnitt');
+    if (avgHrv != null && hrv != null && hrv < avgHrv - 3) notes.push('HRV zuletzt unter dem Schnitt');
+    if (avgHrv != null && hrv != null && hrv > avgHrv + 3) notes.push('HRV zuletzt über dem Schnitt');
+    if (notes.length) trend += ' — ' + notes.join(', ');
+
     window.manualBodyData = {
       energyScore: energyScore,
       sleepStr: ouraFmtSleep(sleepMins),
@@ -5072,7 +5126,9 @@ function fetchOuraData() {
       readinessScore: readiness,
       hrvBalance: (rd && rd.contributors) ? rd.contributors.hrv_balance : null,
       source: 'oura',
-      ouraDay: day
+      ouraDay: day,
+      ouraHistory: history,
+      trend7: trend + '\n'
     };
     window.ouraConnected = true;
     window._bodyUpdatedAt = Date.now();

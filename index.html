@@ -5063,15 +5063,26 @@ function ouraSparkline(values, color) {
     + '</svg>';
 }
 
-// Zeigt die 7-Tage-Sparklines (Schlaf, HRV, Readiness) im Dashboard
+// Umschalter 7 / 30 Tage für die Verlaufskarte
+function setOuraRange(r) {
+  window._ouraRange = r;
+  try { renderOuraTrends(); } catch (e) {}
+}
+
+// Zeigt die Verlaufs-Sparklines (Schlaf, HRV, Readiness) — 7 oder 30 Tage
 function renderOuraTrends() {
   var box = document.getElementById('oura-trends');
   if (!box) return;
   var mb = window.manualBodyData;
-  var hist = mb && mb.ouraHistory;
-  if (!mb || mb.source !== 'oura' || !hist || hist.length < 2) {
+  var h7 = mb && mb.ouraHistory;
+  var h30 = mb && mb.ouraHistory30;
+  if (!mb || mb.source !== 'oura' || !h7 || h7.length < 2) {
     box.style.display = 'none'; box.innerHTML = ''; return;
   }
+  var has30 = h30 && h30.length > h7.length;
+  var range = (window._ouraRange === 30 && has30) ? 30 : 7;
+  var hist = (range === 30) ? h30 : h7;
+
   var sleepVals = hist.map(function(h) { return h.sleepMins; });
   var hrvVals   = hist.map(function(h) { return h.hrv; });
   var readyVals = hist.map(function(h) { return h.readiness; });
@@ -5086,10 +5097,20 @@ function renderOuraTrends() {
       + '<div style="font-size:14px;color:#2D1B4E;font-weight:600;line-height:1.1;">' + valStr + '</div></div>'
       + '<div style="flex:1;min-width:0;">' + spark + '</div></div>';
   }
+  function pill(label, active, r) {
+    return '<button onclick="setOuraRange(' + r + ')" style="border:none;cursor:pointer;font-family:inherit;font-size:10px;font-weight:600;padding:3px 9px;border-radius:9px;'
+      + (active ? 'background:#2D1B4E;color:white;' : 'background:rgba(155,127,192,0.14);color:#9B7FC0;') + '">' + label + '</button>';
+  }
+  var toggle = has30
+    ? '<div style="display:flex;gap:5px;">' + pill('7 T', range === 7, 7) + pill('30 T', range === 30, 30) + '</div>'
+    : '';
+  var title = (range === 30 ? '30-Tage-Verlauf' : '7-Tage-Verlauf');
 
   box.innerHTML =
     '<div style="background:white;border-radius:14px;padding:14px 14px 2px;border:1px solid rgba(155,127,192,0.12);box-shadow:0 2px 10px rgba(45,27,78,0.07);">'
-    + '<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px;">7-Tage-Verlauf</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+    + '<div style="font-size:11px;font-weight:700;color:#9B7FC0;text-transform:uppercase;letter-spacing:0.04em;">' + title + '</div>'
+    + toggle + '</div>'
     + trendRow('Schlaf', lastSleep != null ? ouraFmtSleep(lastSleep) : '–', ouraSparkline(sleepVals, '#2D1B4E'))
     + trendRow('HRV', lastHrv != null ? (lastHrv + ' ms') : '–', ouraSparkline(hrvVals, '#9B7FC0'))
     + trendRow('Readiness', lastReady != null ? String(lastReady) : '–', ouraSparkline(readyVals, '#D4863A'))

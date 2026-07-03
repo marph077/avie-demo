@@ -2636,6 +2636,13 @@ function maybeShowBodyDataReminder() {
   if (document.getElementById('dashboard')) return;
   if (document.getElementById('summary-popup')) return;
   if (!bodyDataStale()) return;
+  // Höchstens einmal pro Kalendertag (persistiert über Sessions)
+  var d = new Date();
+  var todayStr = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  var lastShown = null;
+  try { lastShown = localStorage.getItem('avie_body_reminder_date'); } catch(e) {}
+  if (lastShown === todayStr) return;
+  try { localStorage.setItem('avie_body_reminder_date', todayStr); } catch(e) {}
   window._bodyReminderShownSession = true;
   setTimeout(showBodyDataReminderPopup, 600);
 }
@@ -2853,6 +2860,7 @@ function homeShowAnalyseAfterChat() {
 
   var dataContext = '';
   if (mb) {
+    var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
     dataContext += 'Energie: ' + mb.energyScore + '/100, Stress: ' + mb.stressScore + '/100\n';
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
@@ -3011,6 +3019,7 @@ function homeShowAnalyse() {
 
   var dataContext = '';
   if (mb) {
+    var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
     dataContext += 'Energie: ' + mb.energyScore + '/100\n';
     dataContext += 'Stress: ' + mb.stressScore + '/100\n';
@@ -3113,6 +3122,7 @@ function homeMoodSelect(btn) {
 
   var dataContext = '';
   if (mb) {
+    var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
     dataContext += 'Energie: ' + mb.energyScore + '/100\n';
     dataContext += 'Stress: ' + mb.stressScore + '/100\n';
@@ -5063,8 +5073,11 @@ function showManualBodyInput() {
           rhr:      bd.querySelector('#mb-rhr').value      || null,
           deep:     bd.querySelector('#mb-deep').value     || null,
           rem:      bd.querySelector('#mb-rem').value      || null,
-          temp:     bd.querySelector('#mb-temp').value     || null
+          temp:     bd.querySelector('#mb-temp').value     || null,
+          updatedAt: Date.now()
         };
+        window._bodyUpdatedAt = Date.now();
+        saveBodyData();
         bd.remove();
         personalizeApp();
         refreshGreeting();
@@ -6170,7 +6183,7 @@ function avieConfirmYes() {
 }
 
 function avieBackupData() {
-  var keys = ['avie_profile', 'avie_saved_chats', 'avie_body_data', 'avie_personality', 'avie_checkins'];
+  var keys = ['avie_profile', 'avie_saved_chats', 'avie_body_data', 'avie_personality', 'avie_checkins', 'avie_body_reminder_date'];
   var store = {};
   keys.forEach(function(k) { var v = localStorage.getItem(k); if (v !== null) store[k] = v; });
   return { app: 'avie', version: 1, exportedAt: new Date().toISOString(), store: store };
@@ -7038,6 +7051,29 @@ function showPersonality() {
   document.querySelector('.phone').appendChild(div);
 }
 
+function bodyRecencyNote(mb) {
+  if (!mb) return '';
+  var refStr = mb.ouraDay || null;
+  if (refStr && /^\d{4}-\d{2}-\d{2}$/.test(refStr)) {
+    var parts = refStr.split('-');
+    var d = new Date(+parts[0], +parts[1] - 1, +parts[2]); d.setHours(0, 0, 0, 0);
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var diffDays = Math.round((today - d) / 86400000);
+    var ddmm = ('0' + d.getDate()).slice(-2) + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.';
+    if (diffDays <= 0) return 'Aktualität: Diese Werte sind von der letzten Nacht (Nacht auf heute) — "heute Nacht" ist hier korrekt.';
+    if (diffDays === 1) return 'ACHTUNG Aktualität: Diese Werte sind von der Nacht auf den ' + ddmm + ' (gestern), NICHT von heute Nacht — die Nutzerin hat heute noch nicht aktualisiert. Sag deshalb NICHT "heute" oder "heute Nacht"; bezieh dich auf "in der Nacht auf den ' + ddmm + '" bzw. "zuletzt" und weise sie kurz und freundlich darauf hin, dass die Werte von gestern sind.';
+    return 'ACHTUNG Aktualität: Diese Werte sind ' + diffDays + ' Tage alt (Nacht auf den ' + ddmm + '), NICHT aktuell. Sag NICHT "heute"/"heute Nacht"; bezieh dich aufs tatsächliche Datum und weise sie freundlich darauf hin, dass sie länger nicht aktualisiert hat.';
+  } else if (mb.updatedAt) {
+    var u = new Date(mb.updatedAt); u.setHours(0, 0, 0, 0);
+    var today2 = new Date(); today2.setHours(0, 0, 0, 0);
+    var diff2 = Math.round((today2 - u) / 86400000);
+    var ddmm2 = ('0' + u.getDate()).slice(-2) + '.' + ('0' + (u.getMonth() + 1)).slice(-2) + '.';
+    if (diff2 === 1) return 'ACHTUNG Aktualität: Diese Körperwerte wurden GESTERN (' + ddmm2 + ') eingetragen, NICHT heute — die Nutzerin hat heute noch nicht aktualisiert. Sag NICHT "heute"/"heute Nacht"; bezieh dich auf "zuletzt am ' + ddmm2 + '" und weise sie kurz und freundlich darauf hin.';
+    if (diff2 >= 2) return 'ACHTUNG Aktualität: Diese Körperwerte wurden vor ' + diff2 + ' Tagen (' + ddmm2 + ') eingetragen, NICHT aktuell. Sag NICHT "heute"/"heute Nacht"; nenne das tatsächliche Datum und weise sie freundlich darauf hin.';
+  }
+  return '';
+}
+
 function buildSystemPrompt() {
   const name      = userName || 'du';
   const alter     = klAnswers.alter     || 'unbekannt';
@@ -7057,6 +7093,8 @@ function buildSystemPrompt() {
     koerperContext += '- Keine Zyklus-Daten eingetragen\n';
   }
   if (mb) {
+    var rec = bodyRecencyNote(mb);
+    if (rec) koerperContext += '- ' + rec + '\n';
     koerperContext += '- Schlaf: ' + mb.sleepStr + (mb.wachphasen !== null && mb.wachphasen !== undefined ? ' (' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + (mb.wachphasen >= 5 ? '+' : '') + 'x aufgewacht') + ')' : '') + '\n';
     koerperContext += '- Energie (selbst): ' + mb.energyScore + '/100\n';
     koerperContext += '- Stress (selbst): ' + mb.stressScore + '/100\n';

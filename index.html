@@ -2777,7 +2777,6 @@ function homeUserReply() {
   homeQuestionText = userMsg;
   if (window._awaitingOnboardingNote) {
     window._awaitingOnboardingNote = false;
-    summarizeIntoNote(userMsg);
   }
   input.value = '';
 
@@ -6574,9 +6573,9 @@ function showProfile() {
       profileField('wunsch', 'Was du dir von felia wünschst',
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('wunsch') + '</div>') +
       '</div>' +
-      '<div id="profile-card-about" style="' + cardStyle + '"><div style="' + labelStyle + '">Was felia über dich wissen sollte</div>' +
-        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">z.B. Schwangerschaft, Kinderwunsch, wie es dir gerade geht — felia bezieht das in ihre Antworten ein.</div>' +
-        '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Erzähl felia, was sie über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
+      '<div id="profile-card-about" style="' + cardStyle + '"><div style="' + labelStyle + '">Was felia zusätzlich über dich wissen sollte</div>' +
+        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">Optional — etwas, das in euren Gesprächen bisher nicht vorkam und das felia über dich wissen sollte (z.B. eine Diagnose, Schwangerschaft, eine besondere Situation). felia bezieht es in ihre Antworten ein.</div>' +
+        '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Optional — was felia sonst noch über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);font-family:inherit;font-size:14px;color:#2D1B4E;background:#FBF9FE;outline:none;resize:none;line-height:1.5;"></textarea></div>' +
       '<div id="profile-card-learned" style="' + cardStyle + '"><div style="' + labelStyle + '">Was felia über dich gelernt hat</div>' +
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">Aus euren bisherigen Gesprächen — was felia sich gemerkt hat.</div>' +
         profileInsightsHtml() + '</div>' +
@@ -7542,7 +7541,7 @@ function generateChatSummary(historySnapshot) {
   if (!history || history.length < 2) return;
 
   var recentHistory = history.slice(-10);
-  var summaryPrompt = 'Fasse dieses Gespräch in exakt diesem JSON-Format zusammen (kein Markdown, nur reines JSON):\n{\n  "thema": "max 4 Wörter, was war das Thema",\n  "erkenntnis": "1 Satz — direkt an die Nutzerin gerichtet, mit \'du\': was du heute über dich oder deinen Körper verstanden hast",\n  "avie_lernt": "1 Satz — was felia jetzt besser über diese Nutzerin weiß"\n}\n\nWichtig: erkenntnis immer in der Du-Form formulieren (\'du hast\', \'du weißt jetzt\', \'dir ist klar geworden\'). Nur JSON zurückgeben, nichts sonst.';
+  var summaryPrompt = 'Fasse dieses Gespräch in exakt diesem JSON-Format zusammen (kein Markdown, nur reines JSON):\n{\n  "thema": "max 4 Wörter, was war das Thema",\n  "erkenntnis": "1 Satz — direkt an die Nutzerin gerichtet, mit \'du\': was du heute über dich oder deinen Körper verstanden hast",\n  "avie_lernt": "1 Satz — was felia jetzt besser über dich (die Nutzerin) weiß, formuliert ÜBER DICH in der Du-Form (z.B. \'Du trägst…\', \'Bei dir…\')"\n}\n\nWichtig: erkenntnis UND avie_lernt immer in der Du-Form formulieren und die NUTZERIN beschreiben (\'du hast\', \'du trägst\', \'bei dir\'). Verwende in avie_lernt NIEMALS \'felia\' als handelndes Subjekt — der Satz beschreibt die Nutzerin, nicht felia. Nur JSON zurückgeben, nichts sonst.';
 
   var messages = recentHistory.map(function(m){ return { role: m.role, content: m.content }; }).concat([{ role: 'user', content: summaryPrompt }]);
 

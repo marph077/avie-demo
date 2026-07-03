@@ -1646,7 +1646,6 @@ html.native-app .header { padding-top: 14px; }
             <div id="kl-chips-wunsch" style="padding-left:42px;display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
               <button class="kl-chip" data-group="wunsch" data-val="verstanden" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Verstanden werden</button>
               <button class="kl-chip" data-group="wunsch" data-val="orientierung" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Orientierung wiederfinden</button>
-              <button class="kl-chip" data-group="wunsch" data-val="gesundheit" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Gesundheit besser verstehen</button>
               <button class="kl-chip" data-group="wunsch" data-val="stress" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Stress reduzieren</button>
               <button class="kl-chip" data-group="wunsch" data-val="energie" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Energie und Balance finden</button>
               <button class="kl-chip" data-group="wunsch" data-val="alles" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Alles davon ✨</button>
@@ -2010,12 +2009,12 @@ const GUIDE_STEPS = [
     label: 'Willkommen'
   },
   {
-    text: `Hier oben siehst du deine <strong>Körperwerte</strong> 📊 auf einen Blick — Schlaf, Energie, Stress und deine Zyklusphase. Tippe darauf für dein volles Dashboard mit HRV, Erholung und mehr.`,
+    text: `Deine <strong>Körperdaten</strong> kannst du hier eintragen. Diese Werte helfen mir zu verstehen, was gerade wirklich in dir vorgeht. Je mehr ich davon sehe, desto besser kann ich dir erklären, warum du dich fühlst, wie du dich fühlst.<br><br>Schau dir diesen Bereich später in Ruhe an. Schlaf, Energie, Stress und deine Zyklusphase hängen als Frau eng zusammen.`,
     target: 'score',
     label: 'Körperwerte'
   },
   {
-    text: `Jeden Tag begrüße ich dich und stelle dir eine <strong>Frage</strong> — immer mit Blick darauf, was dein Körper gerade zeigt. So verbinde ich dein Befinden mit deiner Biologie.`,
+    text: `Jeden Tag begrüße ich dich und stelle dir eine <strong>Frage</strong> — immer mit Blick darauf, worüber wir zuletzt gesprochen haben. So knüpfen wir da an, wo wir aufgehört haben — und ich lerne dich mit der Zeit immer besser kennen.`,
     target: 'greeting',
     label: 'felia-Frage'
   },
@@ -2086,21 +2085,9 @@ const DASHBOARD_GUIDE_STEPS = [
     label: 'Dashboard'
   },
   {
-    text: `Verbinde ein <strong>Wearable</strong> ⌚ oder trag deine Werte <strong>manuell</strong> ein — so nutze ich echte Körperdaten für dich, statt zu raten.`,
-    target: 'dash-wearable',
-    scrollSel: '#wearable-banner',
-    label: 'Daten'
-  },
-  {
-    text: `<strong>Energie, Schlaf und Stress</strong> auf einen Blick. Tippe auf eine Karte, um deine Werte einzutragen.`,
+    text: `Verbinde ein <strong>Wearable</strong> ⌚ oder trag deine Werte <strong>manuell</strong> ein — denn dein Körper, deine Hormone und dein Alltag hängen zusammen. Erst mit echten Werten kann ich diese Zusammenhänge für dich erkennen.`,
     target: 'dash-scores',
     scrollSel: '#score-cards',
-    label: 'Scores'
-  },
-  {
-    text: `Hier pflegst du deine <strong>Körperdaten</strong> im Detail — z.B. HRV und Erholung. Tippe später auf „Analysieren", und ich erkläre dir, was deine Werte gerade bedeuten.`,
-    target: 'dash-koerper',
-    scrollSel: '#koerper-card',
     label: 'Körperdaten'
   },
   {
@@ -2221,7 +2208,7 @@ document.addEventListener('click', function(e) {
   if (group === 'wunsch') {
     if (!Array.isArray(klAnswers.wunsch)) klAnswers.wunsch = [];
     if (val === 'alles') {
-      klAnswers.wunsch = ['verstanden','orientierung','gesundheit','stress','energie','alles'];
+      klAnswers.wunsch = ['verstanden','orientierung','stress','energie','alles'];
       chip.parentNode.querySelectorAll('.kl-chip').forEach(function(b) {
         b.style.background='#2D1B4E'; b.style.color='white'; b.style.borderColor='#2D1B4E';
       });
@@ -7207,7 +7194,7 @@ function buildSystemPrompt() {
 'Aktuelle Nutzerin:\n' +
 'Name: ' + name + ' | Alter: ' + alter + ' | ' + (kinderTxt[kinder] || '') + ' | Alltag: ' + (lifeTxt[lifestyle] || '') + '\n' +
 (wunschList ? 'Was sie sich von felia wünscht: ' + wunschList + '\n' +
-  'Richte Ton und Fokus daran aus — natürlich, nicht mechanisch: bei "verstanden werden" kurz spiegeln, dann aber zügig einordnen und erklären (nicht nur zuhören); bei "Orientierung finden" stärker einordnen und Struktur geben; bei "Gesundheit besser verstehen" Zusammenhänge ausführlicher erklären; bei "Stress reduzieren" konkret entlasten und priorisieren helfen; bei "Energie und Balance finden" auf Erholung, Rhythmus und Pausen achten.\n' : '') +
+  'Richte Ton und Fokus daran aus — natürlich, nicht mechanisch: bei "verstanden werden" kurz spiegeln, dann aber zügig einordnen und erklären (nicht nur zuhören); bei "Orientierung finden" stärker einordnen und Struktur geben; bei "Stress reduzieren" konkret entlasten und priorisieren helfen; bei "Energie und Balance finden" auf Erholung, Rhythmus und Pausen achten.\n' : '') +
 '\n' +
 
 phaseNote +

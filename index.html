@@ -630,6 +630,7 @@ html.native-app .phone {
 .data-cta { font-family: inherit; font-size: 12px; font-weight: 500; color: #2D1B4E; background: #F3EFFA; border: 1px solid rgba(155,127,192,0.3); border-radius: 12px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: background 0.15s; }
 .data-cta:hover { background: #EDE6F5; }
 .data-cta:active { transform: scale(0.98); }
+@keyframes wsSpin { to { transform: rotate(360deg); } }
 .msg-row.user .msg-time { text-align: right; }
 
 .quick-replies { display: flex; flex-wrap: wrap; gap: 7px; padding-left: 36px; margin-top: -2px; }
@@ -4226,20 +4227,6 @@ function showDashboard() {
     </div>
 
     <div style="flex:1;min-height:0;overflow-y:auto;padding:14px 16px 12px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;background:#EDE6F5;">
-      <!-- Wearable-Hinweis Banner -->
-      <div id="wearable-banner" style="background:linear-gradient(135deg,rgba(45,27,78,0.06),rgba(155,127,192,0.08));border-radius:16px;border:1.5px dashed rgba(155,127,192,0.35);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;flex-shrink:0;">
-        <div style="font-size:22px;flex-shrink:0;margin-top:1px;">⌚</div>
-        <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;color:#2D1B4E;margin-bottom:2px;">Kein Wearable verbunden</div>
-          <div style="font-size:11px;color:#6B5A88;line-height:1.5;margin-bottom:10px;">Verbinde dein Wearable oder trag deine Werte manuell ein — damit felia echte Körperdaten für dich nutzen kann.</div>
-          <div style="display:flex;gap:8px;">
-            <button data-wearable-connect style="flex:1;padding:8px 12px;border-radius:12px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;">⌚ Wearable verbinden</button>
-            <button onclick="showManualBodyInput()" style="flex:1;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:12px;font-weight:400;cursor:pointer;">✏️ Manuell eingeben</button>
-          </div>
-        </div>
-      </div>
-
-
 
       <div id="score-cards" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex-shrink:0;">
         <div data-open-manual onclick="showManualBodyInput()" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px dashed rgba(155,127,192,0.35);cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
@@ -4264,9 +4251,7 @@ function showDashboard() {
 
       <div id="oura-compare" style="display:none;flex-shrink:0;"></div>
 
-      <div id="oura-trends" style="display:none;flex-shrink:0;"></div>
-
-      <div class="dash-section-label" onclick="toggleKoerperCard()" style="cursor:pointer;display:flex;align-items:center;gap:6px;">Körperdaten · Wearable <span id="koerper-chevron" style="font-size:12px;color:#A090BC;transition:transform 0.25s;display:inline-block;">▾</span></div>
+      <div class="dash-section-label" onclick="toggleKoerperCard()" style="cursor:pointer;display:flex;align-items:center;gap:6px;">Körperdaten <span id="koerper-chevron" style="font-size:12px;color:#A090BC;transition:transform 0.25s;display:inline-block;">▾</span></div>
       <div id="koerper-card" onclick="showManualBodyInput()" style="background:white;border-radius:14px;border:1.5px dashed rgba(155,127,192,0.3);flex-shrink:0;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#F7F4FC'" onmouseout="this.style.background='white'">
         <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
           <div style="font-size:28px;filter:grayscale(1);opacity:0.35;">⌚</div>
@@ -4825,6 +4810,9 @@ function showManualBodyInput() {
             <div style="flex:1;height:3px;border-radius:2px;background:#E0D8F0;"></div>
           </div>
 
+          <button onclick="var o=document.getElementById('mb-overlay'); if(o) o.remove(); showWearableSync();"
+            style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.35);background:#F3EFFA;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">⌚ Daten mit Wearable synchronisieren</button>
+
           <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:16px;">
             <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#9B7FC0;margin-bottom:14px;">😴 Schlaf letzte Nacht</div>
             <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;justify-content:center;">
@@ -5218,6 +5206,12 @@ function setOuraRange(r) {
 
 // Zeigt die Verlaufs-Sparklines (Schlaf, HRV, Readiness) — 7 oder 30 Tage
 function renderOuraTrends() {
+  // Sparkline-/Verlauf-Karte wurde entfernt (Zyklus soll präsenter sein)
+  var box = document.getElementById('oura-trends');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  return;
+}
+function renderOuraTrends_DISABLED() {
   var box = document.getElementById('oura-trends');
   if (!box) return;
   var mb = window.manualBodyData;
@@ -5332,9 +5326,85 @@ function renderOuraComparison() {
   box.style.display = 'block';
 }
 
+// Wearable-Sync-Flow: Erklärung -> verbinden -> suchen -> Oura auslesen
+function showWearableSync() {
+  var phone = document.querySelector('.phone');
+  var old = document.getElementById('wearable-sync-overlay');
+  if (old) old.remove();
+  var bd = document.createElement('div');
+  bd.id = 'wearable-sync-overlay';
+  bd.className = 'score-popup-backdrop';
+  bd.onclick = function(e) { if (e.target === bd) bd.remove(); };
+
+  function screenIntro() {
+    bd.innerHTML =
+      '<div class="score-popup">' +
+        '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 18px;"></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+          '<div style="width:40px;height:40px;border-radius:11px;background:#EDE6F5;display:flex;align-items:center;justify-content:center;font-size:20px;">⌚</div>' +
+          '<div><div style="font-size:16px;font-weight:600;color:#2D1B4E;">Mit Wearable synchronisieren</div>' +
+          '<div style="font-size:12px;color:#A090BC;">Automatisch statt manuell</div></div>' +
+        '</div>' +
+        '<div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:18px;font-size:13px;color:#4A3A6A;line-height:1.6;">' +
+          'felia kann deine Körperdaten direkt von deinem Wearable holen — <strong>Apple Watch, Oura Ring, Garmin</strong> und mehr. So fließen Schlaf, HRV, Ruhepuls und Erholung automatisch ein, und felia kann ihre Antworten auf deine echten Werte stützen — ganz ohne manuelles Eintragen.' +
+        '</div>' +
+        '<button id="ws-connect" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">⌚ Wearable verbinden</button>' +
+        '<button id="ws-manual" style="width:100%;padding:11px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px;">Lieber manuell eingeben</button>' +
+      '</div>';
+    bd.querySelector('#ws-connect').addEventListener('click', screenSearching);
+    bd.querySelector('#ws-manual').addEventListener('click', function() { bd.remove(); showManualBodyInput(); });
+  }
+
+  function screenSearching() {
+    bd.innerHTML =
+      '<div class="score-popup">' +
+        '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 24px;"></div>' +
+        '<div style="text-align:center;padding:22px 10px 28px;">' +
+          '<div style="width:44px;height:44px;border-radius:50%;border:3px solid #EDE6F5;border-top-color:#2D1B4E;margin:0 auto 18px;animation:wsSpin 0.9s linear infinite;"></div>' +
+          '<div style="font-size:15px;font-weight:600;color:#2D1B4E;margin-bottom:6px;">Suche nach Wearable…</div>' +
+          '<div style="font-size:12px;color:#A090BC;">Verbinde mich mit deinem Gerät</div>' +
+        '</div>' +
+      '</div>';
+    setTimeout(screenFound, 1600);
+  }
+
+  function screenFound() {
+    if (!document.getElementById('wearable-sync-overlay')) return;
+    bd.innerHTML =
+      '<div class="score-popup">' +
+        '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 20px;"></div>' +
+        '<div style="text-align:center;padding:8px 10px 4px;">' +
+          '<div style="width:52px;height:52px;border-radius:50%;background:#E9F5EA;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;">💍</div>' +
+          '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:4px;">Oura Ring gefunden</div>' +
+          '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:20px;">Bereit, deine aktuellen Werte auszulesen.</div>' +
+        '</div>' +
+        '<button id="ws-read" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">Oura-Daten auslesen</button>' +
+      '</div>';
+    bd.querySelector('#ws-read').addEventListener('click', function() {
+      screenReading();
+      fetchOuraData(function() { var o = document.getElementById('wearable-sync-overlay'); if (o) o.remove(); });
+    });
+  }
+
+  function screenReading() {
+    bd.innerHTML =
+      '<div class="score-popup">' +
+        '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 24px;"></div>' +
+        '<div style="text-align:center;padding:22px 10px 28px;">' +
+          '<div style="width:44px;height:44px;border-radius:50%;border:3px solid #EDE6F5;border-top-color:#2D1B4E;margin:0 auto 18px;animation:wsSpin 0.9s linear infinite;"></div>' +
+          '<div style="font-size:15px;font-weight:600;color:#2D1B4E;margin-bottom:6px;">Lese Oura-Daten…</div>' +
+          '<div style="font-size:12px;color:#A090BC;">Schlaf, HRV, Ruhepuls & Erholung</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  screenIntro();
+  phone.appendChild(bd);
+}
+
 // Holt echte Oura-Werte über den Worker (/oura) und mappt sie in manualBodyData.
 // Zyklusphase bleibt manuell — Oura liefert sie nicht.
-function fetchOuraData() {
+function fetchOuraData(onDone) {
   var btn = document.querySelector('[data-wearable-connect]');
   var prevTxt = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Lade Oura-Daten…'; }
@@ -5489,6 +5559,7 @@ function fetchOuraData() {
         btn.style.background = '#2D1B4E';
       }, 2000);
     }
+    if (typeof onDone === 'function') { try { onDone(true); } catch (e) {} }
     avieAlert(
       'Nacht auf ' + day + ': ' + window.manualBodyData.sleepStr + ' Schlaf, HRV ' +
       (hrv != null ? hrv + ' ms' : '–') + ', Ruhepuls ' + (rhr != null ? rhr + ' bpm' : '–') +
@@ -5498,6 +5569,7 @@ function fetchOuraData() {
   })
   .catch(function(err) {
     if (btn) { btn.disabled = false; btn.textContent = prevTxt || '⌚ Wearable verbinden'; }
+    if (typeof onDone === 'function') { try { onDone(false); } catch (e) {} }
     avieAlert(
       'Oura-Daten konnten nicht geladen werden: ' +
       (err && err.message ? err.message : 'Unbekannter Fehler') + '.',

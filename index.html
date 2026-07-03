@@ -2698,7 +2698,7 @@ function homeInit(fromOnboarding) {
   if (window._onboardingNoteAsk) {
     window._onboardingNoteAsk = false;
     window._awaitingOnboardingNote = true;
-    if (oq) oq.innerHTML = 'Gibt es noch etwas, das ich über dich wissen sollte?<br><br>Vielleicht etwas, das deinen Alltag aktuell prägt – Familie, Arbeit, Gesundheit, eine Veränderung oder einfach ein Gedanke, der dich beschäftigt.<br><br>Lass uns darüber reden!';
+    if (oq) oq.innerHTML = 'Bevor wir loslegen — magst du mir erst ein bisschen über dich erzählen? Dann bekomme ich einen besseren Eindruck davon, wie ich dich wirklich unterstützen kann.<br><br>Erzähl einfach los: wie dein Alltag gerade aussieht, was dich beschäftigt und was dir gerade wichtig ist.';
     return;
   }
 
@@ -7085,6 +7085,15 @@ function buildSystemPrompt() {
   const wunschList = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(function(w){ return w !== 'alles'; }).map(function(w){ return wunschTxt[w] || w; }).join(', ') : '';
   const cd = window.cycleData;
   const mb = window.manualBodyData;
+  var userTurns = (typeof chatHistory !== 'undefined' && chatHistory) ? chatHistory.filter(function(m){ return m.role === 'user' && !m.hidden; }).length : 0;
+  var phaseNote = (userTurns <= 3)
+    ? 'GESPRÄCHSPHASE — ERST KENNENLERNEN (hat in dieser Phase Vorrang):\n' +
+      '- Du kennst diese Nutzerin noch kaum. Bevor du ihre Körperdaten (HRV, Schlaf, Zyklus, Recovery …) tief interpretierst, verschaffe dir erst ein Bild von ihr als Mensch.\n' +
+      '- Stelle in deinen nächsten Antworten 1-2 warme, gezielte Rückfragen zu ihrem aktuellen Leben — Alltag, Familie, Arbeit, Gesundheit, Veränderungen, was sie gerade beschäftigt. Greife konkret auf, was sie erzählt, und frag natürlich nach.\n' +
+      '- Verzichte in dieser Phase auf ungebetene Körperdaten-Analysen (also NICHT von selbst "dein HRV von X zeigt …"). Nur wenn die Nutzerin ausdrücklich nach ihren Werten fragt, gehst du darauf ein.\n' +
+      '- In dieser Phase sind einfühlsame Rückfragen ausdrücklich erwünscht — das überschreibt hier die sonstige Regel "möglichst wenig Rückfragen".\n' +
+      '- Sobald du ein Grundverständnis von ihr hast, beziehst du Körpersignale wieder aktiv ein.\n\n'
+    : '';
   let koerperContext = '';
   if (cd) {
     koerperContext += '- Zyklusphase: ' + cd.phase + (cd.estimated ? ' (aus Körperwerten geschätzt, nicht aus Perioden-Logging)' : '') + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + (cd.estimated ? '' : ' (nächste Periode in ~' + cd.daysLeft + ' Tagen)') + '\n';
@@ -7118,6 +7127,8 @@ function buildSystemPrompt() {
 (wunschList ? 'Was sie sich von felia wünscht: ' + wunschList + '\n' +
   'Richte Ton und Fokus daran aus — natürlich, nicht mechanisch: bei "verstanden werden" kurz spiegeln, dann aber zügig einordnen und erklären (nicht nur zuhören); bei "Orientierung finden" stärker einordnen und Struktur geben; bei "Gesundheit besser verstehen" Zusammenhänge ausführlicher erklären; bei "Stress reduzieren" konkret entlasten und priorisieren helfen; bei "Energie und Balance finden" auf Erholung, Rhythmus und Pausen achten.\n' : '') +
 '\n' +
+
+phaseNote +
 
 'Körperdaten heute — das ist deine wichtigste Grundlage:\n' + koerperContext + '\n' +
 

@@ -1332,6 +1332,39 @@ html.native-app .header { padding-top: 14px; }
 
 <div class="phone">
 
+  <!-- ===== REVIEW-PASSWORTSCHIRM (nur Review-Kopie, im Telefon-Screen) ===== -->
+  <div id="review-gate" style="position:absolute;inset:0;z-index:100000;background:linear-gradient(160deg,#2D1B4E,#4A3A6A);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',system-ui,sans-serif;padding:24px;box-sizing:border-box;">
+    <div style="width:min(90%,300px);background:#FDFBFF;border-radius:22px;padding:26px 22px;box-shadow:0 16px 44px rgba(0,0,0,0.3);text-align:center;">
+      <div style="font-size:32px;margin-bottom:10px;">&#127800;</div>
+      <div style="font-size:19px;font-weight:700;color:#2D1B4E;font-family:'DM Serif Display',Georgia,serif;margin-bottom:6px;">felia &mdash; Vorschau</div>
+      <div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Passwortgesch&uuml;tzte Vorschau. Bitte gib das Passwort ein.</div>
+      <input id="review-gate-input" type="password" autocomplete="off" placeholder="Passwort" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);font-family:inherit;font-size:15px;color:#2D1B4E;background:#F7F4FC;outline:none;text-align:center;margin-bottom:10px;">
+      <button id="review-gate-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">&Ouml;ffnen</button>
+      <div id="review-gate-err" style="font-size:12px;color:#C0453A;margin-top:10px;min-height:16px;"></div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var HASH = "56a3a46a3ba4fb713fd3e4cfa51a5748abf2c2662fefb0b5a863fdef34572255"; // SHA-256 des Passworts
+    var KEY = "felia_review_ok";
+    function done(){ var g=document.getElementById('review-gate'); if(g) g.remove(); }
+    try { if (sessionStorage.getItem(KEY)==="1") { done(); return; } } catch(e){}
+    function sha256(s){ var b=new TextEncoder().encode(s); return crypto.subtle.digest('SHA-256',b).then(function(h){ return Array.prototype.map.call(new Uint8Array(h),function(x){return ('0'+x.toString(16)).slice(-2);}).join(''); }); }
+    function attempt(){
+      var inp=document.getElementById('review-gate-input'), err=document.getElementById('review-gate-err');
+      sha256((inp.value||'').trim()).then(function(h){
+        if(h===HASH){ try{sessionStorage.setItem(KEY,"1");}catch(e){} done(); }
+        else { err.textContent='Falsches Passwort.'; inp.value=''; inp.focus(); }
+      });
+    }
+    var b=document.getElementById('review-gate-btn'), i=document.getElementById('review-gate-input');
+    if(b) b.addEventListener('click', attempt);
+    if(i){ try{i.focus();}catch(e){} i.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); }); }
+  })();
+  </script>
+  <!-- ===== /REVIEW-PASSWORTSCHIRM ===== -->
+
+
   <!-- ══ ONBOARDING ══ -->
   <div id="onboarding">
 

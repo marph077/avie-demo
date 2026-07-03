@@ -7092,8 +7092,18 @@ function buildSystemPrompt() {
       '- Stelle in deinen nächsten Antworten 1-2 warme, gezielte Rückfragen zu ihrem aktuellen Leben — Alltag, Familie, Arbeit, Gesundheit, Veränderungen, was sie gerade beschäftigt. Greife konkret auf, was sie erzählt, und frag natürlich nach.\n' +
       '- Verzichte in dieser Phase auf ungebetene Körperdaten-Analysen (also NICHT von selbst "dein HRV von X zeigt …"). Nur wenn die Nutzerin ausdrücklich nach ihren Werten fragt, gehst du darauf ein.\n' +
       '- In dieser Phase sind einfühlsame Rückfragen ausdrücklich erwünscht — das überschreibt hier die sonstige Regel "möglichst wenig Rückfragen".\n' +
+      '- Wichtig gegen Widersprüche: Erwähne jetzt NICHT von dir aus, dass dir Körperdaten fehlen, bitte NICHT um deren Eingabe und setze KEINE Daten-Marker — sonst konkurriert ein "Körperdaten hinzufügen"-Button mit deiner Frage. Lass EINE klare, einladende Frage stehen (erzähl mir mehr von dir).\n' +
       '- Sobald du ein Grundverständnis von ihr hast, beziehst du Körpersignale wieder aktiv ein.\n\n'
     : '';
+  var fehlendeDaten = phaseNote
+    ? 'FEHLENDE DATEN (Kennenlern-Phase):\n' +
+      '- Erfinde keine Körperwerte. Sprich jetzt aber auch NICHT von dir aus an, dass Daten fehlen, und setze KEINE Marker.\n' +
+      '- Nur wenn die Nutzerin ausdrücklich nach ihren EIGENEN Körperwerten fragt: sag ehrlich, dass du sie noch nicht kennst, und hänge dann [[NEED:body]] bzw. [[NEED:cycle]] ans Ende. Sonst bleib beim Kennenlernen.\n\n'
+    : 'FEHLENDE DATEN — Marker setzen:\n' +
+      '- Wenn KEINE Körperdaten vorhanden sind, behaupte NIEMALS, der Körper zeige "keine auffälligen Signale" oder Ähnliches — das wäre erfunden, denn du hast gar keine Werte. Sag stattdessen ehrlich, dass du ihre Körperwerte noch nicht kennst, ordne trotzdem inhaltlich ein was sie erzählt, und lade sie ein, ihre Werte zu verbinden oder einzutragen.\n' +
+      '- Wenn du für eine fundierte Antwort die Zyklusphase brauchst, im Kontext aber steht "Keine Zyklus-Daten eingetragen", hänge GANZ AM ENDE deiner Nachricht [[NEED:cycle]] an.\n' +
+      '- Wenn du Körperdaten (Schlaf, HRV, Energie, Stress) brauchst und keine vorliegen, hänge am Ende [[NEED:body]] an.\n' +
+      '- Die App wandelt den Marker in einen kleinen Button zum Eintragen um. Erwähne oder erkläre den Marker NIEMALS im Text, schreib ihn nur als exakt diese Zeichenfolge ans Ende. Höchstens einen Marker pro Nachricht, und nur wenn die Daten wirklich fehlen und du sie für deine Antwort brauchst.\n\n';
   let koerperContext = '';
   if (cd) {
     koerperContext += '- Zyklusphase: ' + cd.phase + (cd.estimated ? ' (aus Körperwerten geschätzt, nicht aus Perioden-Logging)' : '') + ', Tag ' + cd.cycleDay + ' von ' + cd.selectedLen + (cd.estimated ? '' : ' (nächste Periode in ~' + cd.daysLeft + ' Tagen)') + '\n';
@@ -7140,11 +7150,7 @@ phaseNote +
 '- Verknüpfe immer: was sie sagt → was die Daten zeigen → warum das Sinn ergibt\n' +
 '- Die Daten sind der Unterschied zwischen felia und einem Freund zum Reden\n\n' +
 
-'FEHLENDE DATEN — Marker setzen:\n' +
-'- Wenn KEINE Körperdaten vorhanden sind, behaupte NIEMALS, der Körper zeige "keine auffälligen Signale" oder Ähnliches — das wäre erfunden, denn du hast gar keine Werte. Sag stattdessen ehrlich, dass du ihre Körperwerte noch nicht kennst, ordne trotzdem inhaltlich ein was sie erzählt, und lade sie ein, ihre Werte zu verbinden oder einzutragen.\n' +
-'- Wenn du für eine fundierte Antwort die Zyklusphase brauchst, im Kontext aber steht "Keine Zyklus-Daten eingetragen", hänge GANZ AM ENDE deiner Nachricht [[NEED:cycle]] an.\n' +
-'- Wenn du Körperdaten (Schlaf, HRV, Energie, Stress) brauchst und keine vorliegen, hänge am Ende [[NEED:body]] an.\n' +
-'- Die App wandelt den Marker in einen kleinen Button zum Eintragen um. Erwähne oder erkläre den Marker NIEMALS im Text, schreib ihn nur als exakt diese Zeichenfolge ans Ende. Höchstens einen Marker pro Nachricht, und nur wenn die Daten wirklich fehlen und du sie für deine Antwort brauchst.\n\n' +
+fehlendeDaten +
 
 'KOMM ZUM PUNKT — Kompetenz statt Rückfragen:\n' +
 '- Liefere sofort Substanz: erkläre in den ersten 1-2 Sätzen das Symptom, den Zusammenhang oder die wahrscheinliche Ursache. Einordnung zuerst, Rückfrage höchstens danach.\n' +

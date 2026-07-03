@@ -622,7 +622,8 @@ html.native-app .phone {
 @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
 .msg-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--lav-light); overflow: hidden; }
-.bubble { max-width: 88%; padding: 11px 15px; border-radius: 18px; font-size: 14px; line-height: 1.58; position: relative; }
+.msg-row > div:not(.msg-avatar) { max-width: 88%; min-width: 0; }
+.bubble { max-width: 100%; width: fit-content; word-break: break-word; padding: 11px 15px; border-radius: 18px; font-size: 14px; line-height: 1.58; position: relative; }
 .bubble.avie { background: var(--lav-pale); color: var(--text-primary); border-bottom-left-radius: 4px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(45,27,78,0.05); }
 .bubble.user { background: var(--plum); color: white; border-bottom-right-radius: 4px; box-shadow: 0 3px 12px rgba(45,27,78,0.22); }
 .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; padding: 0 4px; }

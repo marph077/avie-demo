@@ -1675,6 +1675,9 @@ html.native-app .header { padding-top: 14px; }
           <button onclick="prevSlide()" style="padding:10px 18px;border-radius:20px;border:1.5px solid rgba(155,127,192,0.3);background:transparent;color:#6B5A88;font-family:inherit;font-size:13px;cursor:pointer;">←</button>
           <button id="klStartBtn" onclick="startApp()" disabled style="padding:10px 22px;border-radius:20px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;opacity:0.4;transition:opacity 0.2s;">Los geht's ✦</button>
         </div>
+        <div style="margin-top:16px;padding:0 8px;font-size:10.5px;line-height:1.5;color:#8B7BA5;text-align:center;">
+          felia ersetzt keine ärztliche oder psychologische Beratung, Diagnose oder Behandlung. Bei gesundheitlichen Beschwerden wende dich bitte an eine Ärztin oder einen Arzt.
+        </div>
 
       </div>
     </div><!-- /slides-wrap -->
@@ -2739,25 +2742,6 @@ function homeInit(fromOnboarding) {
 
 var homeQuestionText = '';
 
-function summarizeIntoNote(text) {
-  if (!text || !text.trim()) return;
-  var prompt = 'Fasse die folgende Selbstauskunft einer Nutzerin in 1-2 knappen, sachlichen Sätzen zusammen — nur die wichtigsten, dauerhaft relevanten Punkte über ihre Person oder Situation (z.B. Familie, Arbeit, Gesundheit, aktuelle Veränderungen). Neutral formuliert, keine Anrede, kein Vorwort, keine Anführungszeichen. Wenn nichts dauerhaft Relevantes dabei ist, gib den Text nur leicht gekürzt zurück.\n\nText: "' + text.trim() + '"';
-  fetch('https://avie-proxy.hoyer2707.workers.dev', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 200, messages: [{ role: 'user', content: prompt }] })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(d) {
-    var s = ((d.content && d.content[0] && d.content[0].text) || '').trim();
-    klAnswers.notiz = s || text.trim();
-    saveUserProfile();
-  })
-  .catch(function() {
-    klAnswers.notiz = text.trim();
-    saveUserProfile();
-  });
-}
-
 function homeUserReply() {
   var input = document.getElementById('home-user-input');
   if (!input || !input.value.trim()) return;
@@ -2771,8 +2755,14 @@ function homeUserReply() {
   // Willkommensnachricht (Begrüßung + offene Frage) als avie-Bubble übernehmen
   var gtEl = document.getElementById('home-greeting-text');
   var oqEl = document.getElementById('home-open-question');
-  var welcome = gtEl ? gtEl.textContent.trim() : '';
-  var q = oqEl ? oqEl.textContent.trim() : '';
+  function _homeElText(el){
+    if (!el) return '';
+    var h = el.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+    var tmp = document.createElement('div'); tmp.innerHTML = h;
+    return (tmp.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  var welcome = _homeElText(gtEl);
+  var q = _homeElText(oqEl);
   if (q && q !== '…') welcome += (welcome ? '\n\n' : '') + q;
 
   // Neues Chatfenster öffnen (analog "weiterreden")

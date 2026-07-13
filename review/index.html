@@ -2,6 +2,20 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<script>
+/* Root-Weiche: Auf GitHub Pages den offenen avie-app-Root auf /app/ (passwortgeschützt) umleiten,
+   damit niemand durch Weglassen von /expert etc. auf einer ungeschützten Seite landet.
+   Greift NICHT in der nativen App, nicht lokal (file://) und nicht in /app, /review, /expert. */
+(function(){
+  try {
+    var h = location.hostname || "", p = location.pathname || "";
+    if (h.indexOf('github.io') === -1) return;              // nur GitHub Pages (nicht nativ/lokal)
+    if (/\/(app|review|expert)(\/|$)/i.test(p)) return;      // bereits in einem geschützten Bereich
+    if (!/\/avie-app\/?($|index\.html$)/i.test(p)) return;   // nur der avie-app-Projekt-Root
+    location.replace('app/');
+  } catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>felia — Deine Begleiterin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1332,13 +1346,21 @@ html.native-app .header { padding-top: 14px; }
 
 <div class="phone">
   <script>
-  /* Review-Passwortschirm: NUR aktiv, wenn die Seite unter einem /review/-Pfad läuft.
-     In der Produktiv-App und auf der normalen Demo bleibt er vollständig inaktiv. Passwort-Hash = SHA-256 von "1905". */
+  /* Passwortschirm für die drei geschützten Web-Pfade: /expert (2609), /review (1905), /app (2707).
+     Jeder Pfad hat ein eigenes Passwort und einen eigenen Freischalt-Merker, sodass ein Passwort nur
+     den jeweiligen Bereich öffnet. In der nativen App, am Repo-Root und auf der Demo bleibt er inaktiv. */
   (function(){
     try {
-      if (!/\/review(\/|$)/i.test(location.pathname)) return;
-      var HASH = "56a3a46a3ba4fb713fd3e4cfa51a5748abf2c2662fefb0b5a863fdef34572255";
-      var KEY = "felia_review_ok";
+      var GATES = [
+        { re: /\/expert(\/|$)/i, hash: "b171875a25de1c92084c310cc8c323c59668112c2c680f5b161a93041cb7fed0", key: "felia_expert_ok" },
+        { re: /\/review(\/|$)/i, hash: "56a3a46a3ba4fb713fd3e4cfa51a5748abf2c2662fefb0b5a863fdef34572255", key: "felia_review_ok" },
+        { re: /\/app(\/|$)/i,    hash: "c54437a17218bf679a119cb1192f18d55bf383ae8aaf298b8ffb2fb65ae51d1c", key: "felia_app_ok" }
+      ];
+      var G = null;
+      for (var gi=0; gi<GATES.length; gi++){ if (GATES[gi].re.test(location.pathname)) { G = GATES[gi]; break; } }
+      if (!G) return;
+      var HASH = G.hash;
+      var KEY = G.key;
       try { if (sessionStorage.getItem(KEY) === "1") return; } catch(e){}
       var phone = (document.currentScript && document.currentScript.parentNode) || document.querySelector('.phone');
       if (!phone) return;
@@ -5346,21 +5368,32 @@ function showWearableSync() {
   bd.onclick = function(e) { if (e.target === bd) bd.remove(); };
 
   function screenIntro() {
+    function dev(icon, name, pill, pillColor, pillBg, locked){
+      return '<div ' + (locked?'':'id="ws-oura-row" ') + 'style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(155,127,192,0.2);background:' + (locked?'#F7F4FC':'white') + ';margin-bottom:10px;' + (locked?'opacity:0.65;':'cursor:pointer;') + '">' +
+        '<div style="width:36px;height:36px;border-radius:10px;background:#EDE6F5;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">' + icon + '</div>' +
+        '<div style="flex:1;font-size:14px;font-weight:600;color:#2D1B4E;">' + name + '</div>' +
+        '<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;color:' + pillColor + ';background:' + pillBg + ';white-space:nowrap;">' + pill + '</span>' +
+      '</div>';
+    }
     bd.innerHTML =
       '<div class="score-popup">' +
         '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 18px;"></div>' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
           '<div style="width:40px;height:40px;border-radius:11px;background:#EDE6F5;display:flex;align-items:center;justify-content:center;font-size:20px;">⌚</div>' +
-          '<div><div style="font-size:16px;font-weight:600;color:#2D1B4E;">Mit Wearable synchronisieren</div>' +
-          '<div style="font-size:12px;color:#A090BC;">Automatisch statt manuell</div></div>' +
+          '<div><div style="font-size:16px;font-weight:600;color:#2D1B4E;">Wearable verbinden</div>' +
+          '<div style="font-size:12px;color:#A090BC;">Automatische Anbindung kommt in der App</div></div>' +
         '</div>' +
-        '<div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(155,127,192,0.2);margin-bottom:18px;font-size:13px;color:#4A3A6A;line-height:1.6;">' +
-          'felia kann deine Körperdaten direkt von deinem Wearable holen — <strong>Apple Watch, Oura Ring, Garmin</strong> und mehr. So fließen Schlaf, HRV, Ruhepuls und Erholung automatisch ein, und felia kann ihre Antworten auf deine echten Werte stützen — ganz ohne manuelles Eintragen.' +
+        '<div style="background:#F4F0FA;border-radius:14px;padding:13px 15px;border:1px solid rgba(155,127,192,0.2);margin-bottom:16px;font-size:12.5px;color:#4A3A6A;line-height:1.55;">' +
+          'Die Anbindung an dein <strong>eigenes</strong> Wearable kommt in der <strong>App-Version</strong>. In dieser Test-Version kannst du die Oura-Anbindung mit <strong>Beispieldaten</strong> ausprobieren, um den Ablauf zu sehen.' +
         '</div>' +
-        '<button id="ws-connect" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">⌚ Wearable verbinden</button>' +
-        '<button id="ws-manual" style="width:100%;padding:11px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:13px;cursor:pointer;margin-top:8px;">Lieber manuell eingeben</button>' +
+        dev('💍','Oura Ring','Demo · Beispieldaten','#8a5a1a','rgba(212,134,58,0.16)', false) +
+        dev('⌚','Apple Watch','in der App','#9B7FC0','#EDE6F5', true) +
+        dev('🏃','Garmin','in der App','#9B7FC0','#EDE6F5', true) +
+        dev('💗','Fitbit','in der App','#9B7FC0','#EDE6F5', true) +
+        '<button id="ws-manual" style="width:100%;padding:12px;border:none;background:none;color:#9B7FC0;font-family:inherit;font-size:13px;cursor:pointer;margin-top:6px;">Lieber manuell eingeben</button>' +
       '</div>';
-    bd.querySelector('#ws-connect').addEventListener('click', screenSearching);
+    var ouraRow = bd.querySelector('#ws-oura-row');
+    if (ouraRow) ouraRow.addEventListener('click', screenSearching);
     bd.querySelector('#ws-manual').addEventListener('click', function() { bd.remove(); showManualBodyInput(); });
   }
 
@@ -5384,8 +5417,8 @@ function showWearableSync() {
         '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 20px;"></div>' +
         '<div style="text-align:center;padding:8px 10px 4px;">' +
           '<div style="width:52px;height:52px;border-radius:50%;background:#E9F5EA;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;">💍</div>' +
-          '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:4px;">Oura Ring gefunden</div>' +
-          '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:20px;">Bereit, deine aktuellen Werte auszulesen.</div>' +
+          '<div style="font-size:16px;font-weight:600;color:#2D1B4E;margin-bottom:4px;">Oura Ring verbunden · Demo</div>' +
+          '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:20px;">Beispieldaten — in der App-Version liest felia deine <strong>eigenen</strong> Werte.</div>' +
         '</div>' +
         '<button id="ws-read" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;">Oura-Daten auslesen</button>' +
       '</div>';
@@ -6590,6 +6623,11 @@ function showProfile() {
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;margin-top:-4px;">Aus euren bisherigen Gesprächen — was felia sich gemerkt hat.</div>' +
         profileInsightsHtml() + '</div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#2D1B4E;color:white;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">💜 Änderungen speichern</button>' +
+      '<div style="' + cardStyle + '">' +
+        '<div style="' + labelStyle + '">Expert Circle</div>' +
+        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;">Deine Perspektive ist für uns von unschätzbarem Wert. Teile hier dein Feedback über felia — es fließt direkt in die Weiterentwicklung ein.</div>' +
+        '<button onclick="openExpertCircle()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">💜 Feedback geben</button>' +
+      '</div>' +
       '<div id="profile-card-backup" style="' + cardStyle + '">' +
         '<div style="' + labelStyle + '">Daten-Backup</div>' +
         '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;">Deine Daten liegen nur auf diesem Gerät. Sichere sie, um sie auf ein neues Gerät zu übertragen oder nach einer Neuinstallation wiederherzustellen.</div>' +
@@ -6597,11 +6635,6 @@ function showProfile() {
           '<button onclick="exportBackup()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Exportieren</button>' +
           '<button onclick="importBackup()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Importieren</button>' +
         '</div>' +
-      '</div>' +
-      '<div style="' + cardStyle + '">' +
-        '<div style="' + labelStyle + '">Expert Circle</div>' +
-        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;">Du begleitest Frauen fachlich? Teile hier dein Feedback zu felia — es fließt direkt in die Weiterentwicklung ein.</div>' +
-        '<button onclick="openExpertCircle()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">💜 Feedback geben</button>' +
       '</div>' +
       '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
       '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;padding:10px 0 4px;">' +
@@ -7637,13 +7670,14 @@ var FELIA_EXPERT_URL = 'https://avie-proxy.hoyer2707.workers.dev/expert-feedback
 function ecEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function openExpertCircle(){
   var old=document.getElementById('expert-overlay'); if(old) old.remove();
-  window._ec = { step:0, expertName:'', expertField:'', ratingFachlich:0, ratingSprache:0, empfehlung:'', answers:{fachlich:'',sprache:'',grenzen:'',wissen:'',empfehlung_warum:'',begeisterung:'',grossefragen:'',frei:''}, includeTranscript:false };
+  window._ec = { step:0, expertName:'', expertField:'', expertFieldOther:'', ratingGesamt:0, ratingDesign:0, ratingFachlich:0, ratingSprache:0, empfehlung:'', answers:{ux:'',fachlich:'',sprache:'',grenzen:'',wissen:'',empfehlung_warum:'',begeisterung:'',grossefragen:'',frei:''}, includeTranscript:false };
   var ov=document.createElement('div'); ov.id='expert-overlay';
   ov.style.cssText='position:absolute;inset:0;z-index:95;background:#FDFBFF;display:flex;flex-direction:column;';
   ov.innerHTML =
-    '<div style="background:#2D1B4E;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">'
-      +'<div style="color:#fff;font-family:\'DM Serif Display\',Georgia,serif;font-size:17px;">Expert Circle</div>'
-      +'<button onclick="ecClose()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;">\u00d7</button>'
+    '<div style="background:#2D1B4E;padding:calc(40px + env(safe-area-inset-top)) 20px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">'
+      +'<div><div style="color:#fff;font-family:\'DM Serif Display\',Georgia,serif;font-size:23px;line-height:1.1;">Expert Circle</div>'
+      +'<div style="color:#B9A9D6;font-size:12.5px;margin-top:3px;">Dein fachliches Feedback</div></div>'
+      +'<button onclick="ecClose()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;line-height:1;flex-shrink:0;">\u00d7</button>'
     +'</div>'
     +'<div style="height:3px;background:#EDE6F5;flex-shrink:0;"><div id="ec-progress-bar" style="height:100%;width:0;background:#D4863A;transition:width .25s;"></div></div>'
     +'<div id="ec-body" style="flex:1;overflow-y:auto;padding:20px 18px;"></div>'
@@ -7652,7 +7686,7 @@ function openExpertCircle(){
   ecRender();
 }
 function ecClose(){ var o=document.getElementById('expert-overlay'); if(o) o.remove(); }
-function ecTa(ph, val){ return '<textarea id="ec-input" rows="5" placeholder="'+ph+'" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;resize:none;outline:none;line-height:1.5;">'+ecEsc(val||'')+'</textarea>'; }
+function ecTa(ph, val){ return '<textarea id="ec-input" rows="8" placeholder="'+ph+'" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;resize:none;outline:none;line-height:1.5;">'+ecEsc(val||'')+'</textarea>'; }
 function ecScale(field){
   var v=window._ec[field]||0, out='<div style="display:flex;gap:8px;margin:6px 0 4px;">';
   for(var i=1;i<=5;i++){ var on=i<=v; out+='<button type="button" onclick="ecSetScale(\''+field+'\','+i+')" style="flex:1;padding:11px 0;border-radius:10px;border:1.5px solid '+(on?'#2D1B4E':'rgba(155,127,192,0.3)')+';background:'+(on?'#2D1B4E':'#fff')+';color:'+(on?'#fff':'#4A3A6A')+';font-family:inherit;font-size:14px;cursor:pointer;">'+i+'</button>'; }
@@ -7679,59 +7713,66 @@ function ecRender(){
   if(s===0){
     html='<div style="'+T+'">Willkommen im Expert Circle 💜</div>'
       +'<div style="font-size:13px;color:#6B5A88;margin-bottom:14px;">Frauen wirklich verstehen — gemeinsam mit dir.</div>'
-      +'<div style="font-size:14px;color:#3A2E55;line-height:1.6;margin-bottom:14px;">Danke, dass du dabei bist. Es geht nicht darum, jede Antwort im Detail zu korrigieren, sondern um den Blick aufs große Ganze: Würde sich eine Frau damit <strong>gut begleitet</strong> und zugleich <strong>sicher aufgehoben</strong> fühlen?</div>'
-      +'<div style="background:#F3EEFA;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#4A3A6A;line-height:1.6;"><strong>Was felia nicht ist:</strong><br>· Keine Ärztin — keine Diagnosen, kein Ersatz für medizinische Beratung.<br>· Keine Therapeutin — sie begleitet, behandelt nicht.<br>· Kein Tracking-Tool — sie optimiert dich nicht, sie versteht dich.</div>'
-      +'<div style="border-left:3px solid #D4863A;padding:6px 0 6px 12px;font-size:13.5px;color:#3A2E55;line-height:1.6;font-style:italic;">Stell dir vor, eine Frau öffnet felia nachts um 2 Uhr, weil sie verunsichert ist. Fühlt sie sich danach besser verstanden, beruhigt und orientierter?</div>';
+      +'<div style="font-size:14px;color:#3A2E55;line-height:1.6;margin-bottom:16px;">Danke, dass du dir die Zeit nimmst, bei felia mitzuwirken. Ich bin überzeugt, dass eine vertrauensvolle Gesundheitsbegleitung nur entstehen kann, wenn Technologie und fachliche Expertise Hand in Hand gehen.</div>'
+      +'<div style="border-left:3px solid #D4863A;padding:6px 0 6px 12px;margin-bottom:16px;font-size:13.5px;color:#3A2E55;line-height:1.6;font-style:italic;">Stell dir beispielsweise vor, eine Frau öffnet felia nachts um 2 Uhr, weil sie verunsichert ist. Fühlt sie sich nach dem Chat besser verstanden, beruhigt und orientierter?</div>'
+      +'<div style="background:#F3EEFA;border-radius:14px;padding:12px 14px;font-size:13px;color:#4A3A6A;line-height:1.6;"><strong>Was felia nicht ist — und nicht sein will:</strong><br>Klare Grenzen schaffen Vertrauen. felia positioniert sich bewusst neben dem Gesundheitssystem – nicht als Ersatz.<br><br>· Keine Ärztin — keine Diagnosen, kein Ersatz für medizinische Beratung.<br>· Keine Therapeutin — sie begleitet, behandelt nicht.<br>· Kein Tracking-Tool — sie optimiert dich nicht, sie versteht dich.</div>';
   } else if(s===1){
     html='<div style="'+T+'">Über dich</div><div style="'+H+'">Optional — hilft mir, dein Feedback einzuordnen.</div>'
       +'<div style="'+L+'">Name oder Kürzel</div>'
       +'<input id="ec-name" type="text" value="'+ecEsc(window._ec.expertName)+'" placeholder="z. B. Dr. M. / anonym" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;outline:none;">'
-      +'<div style="'+L+'">Fachrichtung</div>'+ecFieldChips();
+      +'<div style="'+L+'">Fachrichtung</div>'+ecFieldChips()
+      +(window._ec.expertField==='Andere' ? '<input id="ec-field-other" type="text" value="'+ecEsc(window._ec.expertFieldOther)+'" placeholder="Deine Fachrichtung" style="width:100%;box-sizing:border-box;margin-top:10px;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;outline:none;">' : '');
   } else if(s===2){
+    html='<div style="'+T+'">Gesamteindruck & Design</div><div style="'+H+'">Wie wirkt die App auf dich — unabhängig vom fachlichen Inhalt? Sind die Funktionen klar, ist alles übersichtlich, wirkt die Gestaltung stimmig?</div>'
+      +'<div style="'+L+'">Gesamteindruck (1–5)</div>'+ecScale('ratingGesamt')
+      +'<div style="'+L+'">App-Design (1–5)</div>'+ecScale('ratingDesign')
+      +'<div style="'+L+'">Deine Anmerkungen</div>'+ecTa('Was war klar/unklar, wo hast du dich verloren, was ist gut gelöst …', A.ux);
+  } else if(s===3){
     html='<div style="'+T+'">Fachliche Qualität</div><div style="'+H+'">Sind Aussagen korrekt? Werden Zusammenhänge sinnvoll erklärt? Fehlt Wichtiges? Wird zu stark vereinfacht?</div>'
       +'<div style="'+L+'">Fachliche Qualität insgesamt (1–5)</div>'+ecScale('ratingFachlich')
       +'<div style="'+L+'">Deine Anmerkungen</div>'+ecTa('Was ist korrekt, was nicht, was fehlt …', A.fachlich);
-  } else if(s===3){
+  } else if(s===4){
     html='<div style="'+T+'">Sprache</div><div style="'+H+'">Würdest du so mit einer Patientin/Klientin sprechen? Empathisch? Belehrend? Zu medizinisch? Zu oberflächlich?</div>'
       +'<div style="'+L+'">Sprache insgesamt (1–5)</div>'+ecScale('ratingSprache')
       +'<div style="'+L+'">Deine Anmerkungen</div>'+ecTa('Wie wirkt die Sprache auf dich …', A.sprache);
-  } else if(s===4){
-    html='<div style="'+T+'">Grenzen</div><div style="'+H+'">Wo sollte felia bewusst sagen „Hier bitte ärztliche Hilfe suchen"? Wo kann sie Frauen guten Gewissens begleiten?</div>'+ecTa('Deine Gedanken zu Grenzen …', A.grenzen);
   } else if(s===5){
-    html='<div style="'+T+'">Fehlendes Wissen</div><div style="'+H+'">Welche Themen fehlen? Welche Fragen stellen Frauen dir immer wieder? Was wird heute unterschätzt?</div>'+ecTa('Was fehlt …', A.wissen);
+    html='<div style="'+T+'">Grenzen</div><div style="'+H+'">Wo sollte felia bewusst sagen „Hier bitte ärztliche Hilfe suchen"? Wo kann sie Frauen guten Gewissens begleiten?</div>'+ecTa('Deine Gedanken zu Grenzen …', A.grenzen);
   } else if(s===6){
+    html='<div style="'+T+'">Fehlendes Wissen</div><div style="'+H+'">Welche Themen fehlen? Welche Fragen stellen Frauen dir immer wieder? Was wird heute unterschätzt?</div>'+ecTa('Was fehlt …', A.wissen);
+  } else if(s===7){
     html='<div style="'+T+'">Vertrauen</div><div style="'+H+'">Würdest du felia einer Patientin empfehlen?</div>'+ecEmpf()
       +'<div style="'+L+'">Wenn nein — warum nicht?</div>'+ecTa('Optional …', A.empfehlung_warum);
-  } else if(s===7){
-    html='<div style="'+T+'">Begeisterung</div><div style="'+H+'">Gab es ein „das ist wirklich hilfreich" — oder „das macht heute keine andere App"?</div>'+ecTa('Was hat dich begeistert …', A.begeisterung);
   } else if(s===8){
-    html='<div style="'+T+'">Große Fragen</div><div style="'+H+'">Welche Rolle sollte KI in der Frauengesundheit übernehmen? Chancen? Risiken? Was darf KI niemals tun? Welche Verantwortung trägt felia?</div>'+ecTa('Deine Gedanken …', A.grossefragen);
+    html='<div style="'+T+'">Begeisterung</div><div style="'+H+'">Gab es ein „das ist wirklich hilfreich" — oder „das macht heute keine andere App"?</div>'+ecTa('Was hat dich begeistert …', A.begeisterung);
   } else if(s===9){
+    html='<div style="'+T+'">Große Fragen</div><div style="'+H+'">Welche Rolle sollte KI in der Frauengesundheit übernehmen? Chancen? Risiken? Was darf KI niemals tun? Welche Verantwortung trägt felia?</div>'+ecTa('Deine Gedanken …', A.grossefragen);
+  } else if(s===10){
     html='<div style="'+T+'">Freies Feedback</div><div style="'+H+'">Alles ist willkommen — auch kleine Gedanken und Kritik. „Das fühlt sich komisch an." · „Hier fehlt Empathie." · „Das würde ich anders formulieren."</div>'+ecTa('Was möchtest du noch loswerden …', A.frei)
       +'<label style="display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#6B5A88;line-height:1.45;margin-top:14px;cursor:pointer;"><input type="checkbox" id="ec-incl" '+(window._ec.includeTranscript?'checked':'')+' style="margin-top:2px;flex-shrink:0;"><span>Meinen letzten Gesprächsverlauf zur Einordnung mitsenden (optional).</span></label>';
   }
   body.innerHTML=html;
-  if(bar) bar.style.width=(s===0?0:(s/9*100))+'%';
+  if(bar) bar.style.width=(s===0?0:(s/10*100))+'%';
   var f='';
   if(s===0){ f='<button onclick="ecNext()" style="flex:1;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Los geht\'s</button>'; }
-  else if(s===9){ f=ecBtnBack()+'<button onclick="ecSubmit()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Absenden</button>'; }
+  else if(s===10){ f=ecBtnBack()+'<button onclick="ecSubmit()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Absenden</button>'; }
   else { f=ecBtnBack()+'<button onclick="ecNext()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Weiter</button>'; }
   footer.innerHTML=f;
   body.scrollTop=0;
 }
 function ecReadStep(){
   var s=window._ec.step, ta=document.getElementById('ec-input'), v=ta?ta.value:null;
-  if(s===1){ var n=document.getElementById('ec-name'); if(n) window._ec.expertName=n.value; }
-  else if(s===2 && v!=null) window._ec.answers.fachlich=v;
-  else if(s===3 && v!=null) window._ec.answers.sprache=v;
-  else if(s===4 && v!=null) window._ec.answers.grenzen=v;
-  else if(s===5 && v!=null) window._ec.answers.wissen=v;
-  else if(s===6 && v!=null) window._ec.answers.empfehlung_warum=v;
-  else if(s===7 && v!=null) window._ec.answers.begeisterung=v;
-  else if(s===8 && v!=null) window._ec.answers.grossefragen=v;
-  else if(s===9){ if(v!=null) window._ec.answers.frei=v; var c=document.getElementById('ec-incl'); if(c) window._ec.includeTranscript=c.checked; }
+  if(s===1){ var n=document.getElementById('ec-name'); if(n) window._ec.expertName=n.value; var fo=document.getElementById('ec-field-other'); if(fo) window._ec.expertFieldOther=fo.value; }
+  else if(s===2 && v!=null) window._ec.answers.ux=v;
+  else if(s===3 && v!=null) window._ec.answers.fachlich=v;
+  else if(s===4 && v!=null) window._ec.answers.sprache=v;
+  else if(s===5 && v!=null) window._ec.answers.grenzen=v;
+  else if(s===6 && v!=null) window._ec.answers.wissen=v;
+  else if(s===7 && v!=null) window._ec.answers.empfehlung_warum=v;
+  else if(s===8 && v!=null) window._ec.answers.begeisterung=v;
+  else if(s===9 && v!=null) window._ec.answers.grossefragen=v;
+  else if(s===10){ if(v!=null) window._ec.answers.frei=v; var c=document.getElementById('ec-incl'); if(c) window._ec.includeTranscript=c.checked; }
 }
-function ecNext(){ ecReadStep(); if(window._ec.step<9){ window._ec.step++; ecRender(); } }
+function ecNext(){ ecReadStep(); if(window._ec.step<10){ window._ec.step++; ecRender(); } }
 function ecBack(){ ecReadStep(); if(window._ec.step>0){ window._ec.step--; ecRender(); } }
 function ecSetScale(f,v){ ecReadStep(); window._ec[f]=v; ecRender(); }
 function ecSetEmpf(o){ ecReadStep(); window._ec.empfehlung=o; ecRender(); }
@@ -7741,7 +7782,9 @@ function ecSubmit(){
   var st=window._ec;
   var hist=(typeof chatHistory!=='undefined')?chatHistory:[];
   var transcript = st.includeTranscript ? _fbTranscript(hist) : [];
-  var payload={ expertName:st.expertName, expertField:st.expertField, ratingFachlich:st.ratingFachlich||null, ratingSprache:st.ratingSprache||null, empfehlung:st.empfehlung, answers:st.answers, includeTranscript:!!st.includeTranscript, transcript:transcript, meta:{ appVersion:FELIA_FEEDBACK_VERSION, sessionId:_fbSessionId() } };
+  var field = (st.expertField==='Andere' && (st.expertFieldOther||'').trim()) ? st.expertFieldOther.trim() : st.expertField;
+  var answersOut = Object.assign({}, st.answers, { gesamteindruck: st.ratingGesamt||null, design: st.ratingDesign||null });
+  var payload={ expertName:st.expertName, expertField:field, ratingFachlich:st.ratingFachlich||null, ratingSprache:st.ratingSprache||null, empfehlung:st.empfehlung, answers:answersOut, includeTranscript:!!st.includeTranscript, transcript:transcript, meta:{ appVersion:FELIA_FEEDBACK_VERSION, sessionId:_fbSessionId() } };
   var body=document.getElementById('ec-body'), footer=document.getElementById('ec-footer'), bar=document.getElementById('ec-progress-bar');
   if(bar) bar.style.width='100%';
   if(body) body.innerHTML='<div style="text-align:center;padding:44px 10px;"><div style="font-size:38px;margin-bottom:12px;">💜</div><div style="font-family:\'DM Serif Display\',Georgia,serif;font-size:20px;color:#2D1B4E;margin-bottom:8px;">Danke dir!</div><div style="font-size:14px;color:#6B5A88;line-height:1.6;">Danke, dass du felia mit deinem Wissen und deiner Erfahrung besser machst.</div></div>';

@@ -2,6 +2,20 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<script>
+/* Root-Weiche: Auf GitHub Pages den offenen avie-app-Root auf /app/ (passwortgeschützt) umleiten,
+   damit niemand durch Weglassen von /expert etc. auf einer ungeschützten Seite landet.
+   Greift NICHT in der nativen App, nicht lokal (file://) und nicht in /app, /review, /expert. */
+(function(){
+  try {
+    var h = location.hostname || "", p = location.pathname || "";
+    if (h.indexOf('github.io') === -1) return;              // nur GitHub Pages (nicht nativ/lokal)
+    if (/\/(app|review|expert)(\/|$)/i.test(p)) return;      // bereits in einem geschützten Bereich
+    if (!/\/avie-app\/?($|index\.html$)/i.test(p)) return;   // nur der avie-app-Projekt-Root
+    location.replace('app/');
+  } catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>felia — Deine Begleiterin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">

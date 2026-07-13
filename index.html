@@ -7664,7 +7664,7 @@ function openExpertCircle(){
   ecRender();
 }
 function ecClose(){ var o=document.getElementById('expert-overlay'); if(o) o.remove(); }
-function ecTa(ph, val){ return '<textarea id="ec-input" rows="5" placeholder="'+ph+'" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;resize:none;outline:none;line-height:1.5;">'+ecEsc(val||'')+'</textarea>'; }
+function ecTa(ph, val){ return '<textarea id="ec-input" rows="8" placeholder="'+ph+'" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;resize:none;outline:none;line-height:1.5;">'+ecEsc(val||'')+'</textarea>'; }
 function ecScale(field){
   var v=window._ec[field]||0, out='<div style="display:flex;gap:8px;margin:6px 0 4px;">';
   for(var i=1;i<=5;i++){ var on=i<=v; out+='<button type="button" onclick="ecSetScale(\''+field+'\','+i+')" style="flex:1;padding:11px 0;border-radius:10px;border:1.5px solid '+(on?'#2D1B4E':'rgba(155,127,192,0.3)')+';background:'+(on?'#2D1B4E':'#fff')+';color:'+(on?'#fff':'#4A3A6A')+';font-family:inherit;font-size:14px;cursor:pointer;">'+i+'</button>'; }

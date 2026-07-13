@@ -1331,6 +1331,38 @@ html.native-app .header { padding-top: 14px; }
 <body>
 
 <div class="phone">
+  <script>
+  /* Review-Passwortschirm: NUR aktiv, wenn die Seite unter einem /review/-Pfad läuft.
+     In der Produktiv-App und auf der normalen Demo bleibt er vollständig inaktiv. Passwort-Hash = SHA-256 von "1905". */
+  (function(){
+    try {
+      if (!/\/review(\/|$)/i.test(location.pathname)) return;
+      var HASH = "56a3a46a3ba4fb713fd3e4cfa51a5748abf2c2662fefb0b5a863fdef34572255";
+      var KEY = "felia_review_ok";
+      try { if (sessionStorage.getItem(KEY) === "1") return; } catch(e){}
+      var phone = (document.currentScript && document.currentScript.parentNode) || document.querySelector('.phone');
+      if (!phone) return;
+      var ov = document.createElement('div');
+      ov.id = 'review-gate';
+      ov.style.cssText = "position:absolute;inset:0;z-index:100000;background:linear-gradient(160deg,#2D1B4E,#4A3A6A);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',system-ui,sans-serif;padding:24px;box-sizing:border-box;";
+      ov.innerHTML = '<div style="width:min(90%,300px);background:#FDFBFF;border-radius:22px;padding:26px 22px;box-shadow:0 16px 44px rgba(0,0,0,0.3);text-align:center;">'
+        + '<div style="font-size:32px;margin-bottom:10px;">\uD83C\uDF38</div>'
+        + '<div style="font-size:19px;font-weight:700;color:#2D1B4E;font-family:\'DM Serif Display\',Georgia,serif;margin-bottom:6px;">felia \u2014 Vorschau</div>'
+        + '<div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Passwortgesch\u00fctzte Vorschau. Bitte gib das Passwort ein.</div>'
+        + '<input id="review-gate-input" type="password" autocomplete="off" placeholder="Passwort" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);font-family:inherit;font-size:15px;color:#2D1B4E;background:#F7F4FC;outline:none;text-align:center;margin-bottom:10px;">'
+        + '<button id="review-gate-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">\u00d6ffnen</button>'
+        + '<div id="review-gate-err" style="font-size:12px;color:#C0453A;margin-top:10px;min-height:16px;"></div>'
+        + '</div>';
+      function done(){ var g=document.getElementById('review-gate'); if(g) g.remove(); }
+      function sha256(s){ var b=new TextEncoder().encode(s); return crypto.subtle.digest('SHA-256',b).then(function(h){ return Array.prototype.map.call(new Uint8Array(h),function(x){return ('0'+x.toString(16)).slice(-2);}).join(''); }); }
+      phone.appendChild(ov);
+      var inp=ov.querySelector('#review-gate-input'), err=ov.querySelector('#review-gate-err'), btn=ov.querySelector('#review-gate-btn');
+      function attempt(){ sha256((inp.value||'').trim()).then(function(h){ if(h===HASH){ try{sessionStorage.setItem(KEY,"1");}catch(e){} done(); } else { err.textContent='Falsches Passwort.'; inp.value=''; inp.focus(); } }); }
+      if(btn) btn.addEventListener('click', attempt);
+      if(inp){ try{inp.focus();}catch(e){} inp.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); }); }
+    } catch(e){}
+  })();
+  </script>
 
   <!-- ══ ONBOARDING ══ -->
   <div id="onboarding">
@@ -6566,6 +6598,11 @@ function showProfile() {
           '<button onclick="importBackup()" style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Importieren</button>' +
         '</div>' +
       '</div>' +
+      '<div style="' + cardStyle + '">' +
+        '<div style="' + labelStyle + '">Expert Circle</div>' +
+        '<div style="font-size:12px;color:#8A7AA5;line-height:1.45;">Du begleitest Frauen fachlich? Teile hier dein Feedback zu felia — es fließt direkt in die Weiterentwicklung ein.</div>' +
+        '<button onclick="openExpertCircle()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(155,127,192,0.35);background:white;color:#2D1B4E;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">💜 Feedback geben</button>' +
+      '</div>' +
       '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
       '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;padding:10px 0 4px;">' +
         '<span onclick="showDatenschutz()" style="color:#9B7FC0;font-size:12px;cursor:pointer;text-decoration:underline;">Datenschutzerklärung</span>' +
@@ -7193,8 +7230,8 @@ phaseNote +
 
 'WIE DU DIESE DATEN NUTZT — das ist der Kern:\n' +
 '- Beziehe dich aktiv auf die Daten wenn die Nutzerin etwas erzählt. Nicht als Fußnote, sondern als Erklärung.\n' +
-'- Beispiel: Nutzerin sagt "ich bin so gereizt". felia antwortet nicht "das klingt anstrengend" — sondern: "Dein HRV ist heute bei 38 ms, das ist niedrig. Ein überzogenes Nervensystem macht gereizt — das ist keine Stimmung, das ist Biologie."\n' +
-'- Beispiel: Nutzerin sagt "ich bin so müde". felia: "Du hast heute 5h 20min geschlafen, das ist zu wenig für die Lutealphase wo dein Schlafbedarf ohnehin höher ist. Was zieht dich heute noch wach?"\n' +
+'- Beispiel: Nutzerin sagt "ich bin so gereizt". Gut ist ein kurzer, warmer Einstieg und DANN die Verbindung — z.B.: "Das zieht sich gerade, oder? Und es liegt nicht nur an dir: dein HRV ist heute mit 38 ms ziemlich niedrig, dein Nervensystem steht unter Anspannung. Kein Wunder, dass wenig dazu kommen muss." Nicht mit der Zahl einsteigen, sondern mit ihr.\n' +
+'- Beispiel: Nutzerin sagt "ich bin so müde". Gut: "Das glaube ich dir sofort. In deinen letzten Nächten kamst du nur auf gut 5 Stunden — das holt dich tagsüber ein. Magst du erzählen, was dich abends wachhält?" Warm, konkret auf den Zeitraum bezogen, ohne alles sofort auf Hormone zu schieben.\n' +
 '- Wenn dir ein 7-Tage-Schnitt oder ein "Heute vs. Schnitt"-Vergleich vorliegt, beziehe dich konkret darauf ("dein Schlaf liegt heute X min unter deinem Schnitt") statt auf frühere Gespräche. Der Vergleich mit dem eigenen Durchschnitt ist aussagekräftiger als der Vergleich mit einem einzelnen früheren Tag.\n' +
 '- Verknüpfe immer: was sie sagt → was die Daten zeigen → warum das Sinn ergibt\n' +
 '- Die Daten sind der Unterschied zwischen felia und einem Freund zum Reden\n\n' +
@@ -7202,18 +7239,23 @@ phaseNote +
 fehlendeDaten +
 
 'KOMM ZUM PUNKT — Kompetenz statt Rückfragen:\n' +
-'- Liefere sofort Substanz: erkläre in den ersten 1-2 Sätzen das Symptom, den Zusammenhang oder die wahrscheinliche Ursache. Einordnung zuerst, Rückfrage höchstens danach.\n' +
+'- Starte mit einem kurzen, echten Zuspruch, dann liefere Substanz: erkläre in 1-2 Sätzen den Zusammenhang oder die wahrscheinliche Ursache. Zuspruch zuerst, Einordnung direkt danach, Rückfrage höchstens am Ende.\n' +
 '- Vermeide oberflächliche Rückfragen wie "wie geht es dir damit?", "magst du mehr erzählen?", "was meinst du?", die nur das Gespräch füllen. Frag nur, wenn die Antwort deine Erklärung oder Lösung wirklich verbessert.\n' +
 '- Wenn ein Thema klar genug ist, biete konkret an, was helfen kann — 1-2 umsetzbare Schritte oder einen konkreten Ansatz — statt weiter zu fragen.\n' +
 '- Nicht jede Nachricht muss mit einer Frage enden. Eine klare, hilfreiche Erklärung darf für sich stehen.\n' +
 '- Zeig Expertise: benenne Ursache, Mechanismus und einen nächsten Schritt — selbstbewusst und konkret, ohne zu diagnostizieren oder Dosierungen zu nennen.\n\n' +
 
 'Dein Ton:\n' +
-'- Direkt und klar — nicht therapeutisch, nicht aufgesetzt empathisch\n' +
-'- Kein "das klingt anstrengend", kein "das höre ich" — stattdessen: erklären, einordnen, verbinden\n' +
-'- Höchstens eine Frage — und nur wenn sie wirklich nötig ist; oft braucht es keine. 2–4 Sätze\n' +
-'- Empathie kommt durch Verständnis, nicht durch Floskeln\n' +
+'- Warm und menschlich, dann klar. Steig mit einem kurzen, echten Zuspruch ein, der zeigt, dass du sie verstehst — z.B. "Das klingt ziemlich frustrierend.", "Ich verstehe, warum dich das beschäftigt.", "Das muss gerade wirklich anstrengend sein." — und verbinde es DANN mit einer Einordnung. Nicht kalt, nicht diagnostisch.\n' +
+'- Variiere diesen Einstieg, damit er nie nach Floskel oder Schema klingt. Ein normalisierender Satz wirkt oft stark: "Viele Frauen denken dann sofort, mit ihnen stimme etwas nicht — das ist verständlich, und meistens stimmt es nicht."\n' +
+'- Kurz und chattauglich: in der Regel 2–4 Sätze, kleine Absätze statt Textwand. Lieber ein Gedanke gut gesagt als drei aufeinandergestapelt — überfrachte die Nutzerin nicht.\n' +
+'- Höchstens eine Frage — und nur wenn sie wirklich nötig ist; oft braucht es keine.\n' +
+'- Echte Empathie darf ausgesprochen werden; sie ersetzt aber nicht die Einordnung, sondern geht ihr voraus.\n' +
 '- Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name felia bleibt kleingeschrieben\n\n' +
+
+'Bezug & Ausgewogenheit:\n' +
+'- Wenn aktuelle Werte vorliegen, mach den Bezug konkret und alltäglich: "heute", "in deinen letzten Nächten", "an diesem Zyklustag" — statt abstrakt zu bleiben.\n' +
+'- Nicht alles ist hormonell. Sprich Hormone und Zyklusphase nur an, wenn sie wirklich zum Thema passen; sonst ziehe genauso Schlaf, Stress, Erholung, Alltag und Belastung als Erklärung heran. Alltagssprache vor Fachbegriffen.\n\n' +
 
 'Was du weißt:\n' +
 '- Weibliche Biologie, Zyklus, Hormone — Lutealphase, Follikelphase, Ovulation, Menstruation\n' +
@@ -7588,6 +7630,123 @@ function submitFeedback(){
     fetch(FELIA_FEEDBACK_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).catch(function(){});
   } catch(e){}
   setTimeout(function(){ var b=document.getElementById('feedback-box'); if(b) b.remove(); }, 1400);
+}
+
+/* ===== Expert Circle (Fachexperten-Feedback) ===== */
+var FELIA_EXPERT_URL = 'https://avie-proxy.hoyer2707.workers.dev/expert-feedback';
+function ecEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function openExpertCircle(){
+  var old=document.getElementById('expert-overlay'); if(old) old.remove();
+  window._ec = { step:0, expertName:'', expertField:'', ratingFachlich:0, ratingSprache:0, empfehlung:'', answers:{fachlich:'',sprache:'',grenzen:'',wissen:'',empfehlung_warum:'',begeisterung:'',grossefragen:'',frei:''}, includeTranscript:false };
+  var ov=document.createElement('div'); ov.id='expert-overlay';
+  ov.style.cssText='position:absolute;inset:0;z-index:95;background:#FDFBFF;display:flex;flex-direction:column;';
+  ov.innerHTML =
+    '<div style="background:#2D1B4E;padding:calc(14px + env(safe-area-inset-top)) 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">'
+      +'<div style="color:#fff;font-family:\'DM Serif Display\',Georgia,serif;font-size:17px;">Expert Circle</div>'
+      +'<button onclick="ecClose()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;">\u00d7</button>'
+    +'</div>'
+    +'<div style="height:3px;background:#EDE6F5;flex-shrink:0;"><div id="ec-progress-bar" style="height:100%;width:0;background:#D4863A;transition:width .25s;"></div></div>'
+    +'<div id="ec-body" style="flex:1;overflow-y:auto;padding:20px 18px;"></div>'
+    +'<div id="ec-footer" style="padding:12px 18px calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(155,127,192,0.15);display:flex;gap:10px;flex-shrink:0;"></div>';
+  document.querySelector('.phone').appendChild(ov);
+  ecRender();
+}
+function ecClose(){ var o=document.getElementById('expert-overlay'); if(o) o.remove(); }
+function ecTa(ph, val){ return '<textarea id="ec-input" rows="5" placeholder="'+ph+'" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;resize:none;outline:none;line-height:1.5;">'+ecEsc(val||'')+'</textarea>'; }
+function ecScale(field){
+  var v=window._ec[field]||0, out='<div style="display:flex;gap:8px;margin:6px 0 4px;">';
+  for(var i=1;i<=5;i++){ var on=i<=v; out+='<button type="button" onclick="ecSetScale(\''+field+'\','+i+')" style="flex:1;padding:11px 0;border-radius:10px;border:1.5px solid '+(on?'#2D1B4E':'rgba(155,127,192,0.3)')+';background:'+(on?'#2D1B4E':'#fff')+';color:'+(on?'#fff':'#4A3A6A')+';font-family:inherit;font-size:14px;cursor:pointer;">'+i+'</button>'; }
+  return out+'</div>';
+}
+function ecEmpf(){
+  var opts=['ja','eher ja','eher nein','nein'], v=window._ec.empfehlung, out='<div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;">';
+  opts.forEach(function(o){ var sel=(v===o); out+='<button type="button" onclick="ecSetEmpf(\''+o+'\')" style="padding:8px 14px;border-radius:18px;border:1.5px solid '+(sel?'#2D1B4E':'rgba(155,127,192,0.3)')+';background:'+(sel?'#2D1B4E':'#fff')+';color:'+(sel?'#fff':'#4A3A6A')+';font-family:inherit;font-size:13px;cursor:pointer;">'+o+'</button>'; });
+  return out+'</div>';
+}
+function ecFieldChips(){
+  var opts=['Gynäkologie','Allgemeinmedizin','Psychotherapie','Hebamme','Ernährung','Physio/Sport','Andere'], v=window._ec.expertField, out='<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+  opts.forEach(function(o){ var sel=(v===o); out+='<button type="button" onclick="ecSetField(\''+o.replace(/'/g,"\\\\'")+'\')" style="padding:8px 12px;border-radius:18px;border:1.5px solid '+(sel?'#2D1B4E':'rgba(155,127,192,0.3)')+';background:'+(sel?'#2D1B4E':'#fff')+';color:'+(sel?'#fff':'#4A3A6A')+';font-family:inherit;font-size:12px;cursor:pointer;">'+o+'</button>'; });
+  return out+'</div>';
+}
+function ecBtnBack(){ return '<button onclick="ecBack()" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid rgba(155,127,192,0.35);background:#fff;color:#2D1B4E;font-family:inherit;font-size:14px;cursor:pointer;">Zurück</button>'; }
+function ecRender(){
+  var s=window._ec.step, body=document.getElementById('ec-body'), footer=document.getElementById('ec-footer'), bar=document.getElementById('ec-progress-bar');
+  if(!body) return;
+  var T='font-family:\'DM Serif Display\',Georgia,serif;font-size:20px;color:#2D1B4E;margin-bottom:4px;';
+  var H='font-size:12.5px;color:#8A7AA5;line-height:1.5;margin-bottom:14px;';
+  var L='font-size:13px;font-weight:600;color:#2D1B4E;margin:14px 0 4px;';
+  var A=window._ec.answers, html='';
+  if(s===0){
+    html='<div style="'+T+'">Willkommen im Expert Circle 💜</div>'
+      +'<div style="font-size:13px;color:#6B5A88;margin-bottom:14px;">Frauen wirklich verstehen — gemeinsam mit dir.</div>'
+      +'<div style="font-size:14px;color:#3A2E55;line-height:1.6;margin-bottom:14px;">Danke, dass du dabei bist. Es geht nicht darum, jede Antwort im Detail zu korrigieren, sondern um den Blick aufs große Ganze: Würde sich eine Frau damit <strong>gut begleitet</strong> und zugleich <strong>sicher aufgehoben</strong> fühlen?</div>'
+      +'<div style="background:#F3EEFA;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:#4A3A6A;line-height:1.6;"><strong>Was felia nicht ist:</strong><br>· Keine Ärztin — keine Diagnosen, kein Ersatz für medizinische Beratung.<br>· Keine Therapeutin — sie begleitet, behandelt nicht.<br>· Kein Tracking-Tool — sie optimiert dich nicht, sie versteht dich.</div>'
+      +'<div style="border-left:3px solid #D4863A;padding:6px 0 6px 12px;font-size:13.5px;color:#3A2E55;line-height:1.6;font-style:italic;">Stell dir vor, eine Frau öffnet felia nachts um 2 Uhr, weil sie verunsichert ist. Fühlt sie sich danach besser verstanden, beruhigt und orientierter?</div>';
+  } else if(s===1){
+    html='<div style="'+T+'">Über dich</div><div style="'+H+'">Optional — hilft mir, dein Feedback einzuordnen.</div>'
+      +'<div style="'+L+'">Name oder Kürzel</div>'
+      +'<input id="ec-name" type="text" value="'+ecEsc(window._ec.expertName)+'" placeholder="z. B. Dr. M. / anonym" style="width:100%;box-sizing:border-box;border:1.5px solid rgba(155,127,192,0.3);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:14px;color:#2D1B4E;background:#F7F4FC;outline:none;">'
+      +'<div style="'+L+'">Fachrichtung</div>'+ecFieldChips();
+  } else if(s===2){
+    html='<div style="'+T+'">Fachliche Qualität</div><div style="'+H+'">Sind Aussagen korrekt? Werden Zusammenhänge sinnvoll erklärt? Fehlt Wichtiges? Wird zu stark vereinfacht?</div>'
+      +'<div style="'+L+'">Fachliche Qualität insgesamt (1–5)</div>'+ecScale('ratingFachlich')
+      +'<div style="'+L+'">Deine Anmerkungen</div>'+ecTa('Was ist korrekt, was nicht, was fehlt …', A.fachlich);
+  } else if(s===3){
+    html='<div style="'+T+'">Sprache</div><div style="'+H+'">Würdest du so mit einer Patientin/Klientin sprechen? Empathisch? Belehrend? Zu medizinisch? Zu oberflächlich?</div>'
+      +'<div style="'+L+'">Sprache insgesamt (1–5)</div>'+ecScale('ratingSprache')
+      +'<div style="'+L+'">Deine Anmerkungen</div>'+ecTa('Wie wirkt die Sprache auf dich …', A.sprache);
+  } else if(s===4){
+    html='<div style="'+T+'">Grenzen</div><div style="'+H+'">Wo sollte felia bewusst sagen „Hier bitte ärztliche Hilfe suchen"? Wo kann sie Frauen guten Gewissens begleiten?</div>'+ecTa('Deine Gedanken zu Grenzen …', A.grenzen);
+  } else if(s===5){
+    html='<div style="'+T+'">Fehlendes Wissen</div><div style="'+H+'">Welche Themen fehlen? Welche Fragen stellen Frauen dir immer wieder? Was wird heute unterschätzt?</div>'+ecTa('Was fehlt …', A.wissen);
+  } else if(s===6){
+    html='<div style="'+T+'">Vertrauen</div><div style="'+H+'">Würdest du felia einer Patientin empfehlen?</div>'+ecEmpf()
+      +'<div style="'+L+'">Wenn nein — warum nicht?</div>'+ecTa('Optional …', A.empfehlung_warum);
+  } else if(s===7){
+    html='<div style="'+T+'">Begeisterung</div><div style="'+H+'">Gab es ein „das ist wirklich hilfreich" — oder „das macht heute keine andere App"?</div>'+ecTa('Was hat dich begeistert …', A.begeisterung);
+  } else if(s===8){
+    html='<div style="'+T+'">Große Fragen</div><div style="'+H+'">Welche Rolle sollte KI in der Frauengesundheit übernehmen? Chancen? Risiken? Was darf KI niemals tun? Welche Verantwortung trägt felia?</div>'+ecTa('Deine Gedanken …', A.grossefragen);
+  } else if(s===9){
+    html='<div style="'+T+'">Freies Feedback</div><div style="'+H+'">Alles ist willkommen — auch kleine Gedanken und Kritik. „Das fühlt sich komisch an." · „Hier fehlt Empathie." · „Das würde ich anders formulieren."</div>'+ecTa('Was möchtest du noch loswerden …', A.frei)
+      +'<label style="display:flex;gap:10px;align-items:flex-start;font-size:12px;color:#6B5A88;line-height:1.45;margin-top:14px;cursor:pointer;"><input type="checkbox" id="ec-incl" '+(window._ec.includeTranscript?'checked':'')+' style="margin-top:2px;flex-shrink:0;"><span>Meinen letzten Gesprächsverlauf zur Einordnung mitsenden (optional).</span></label>';
+  }
+  body.innerHTML=html;
+  if(bar) bar.style.width=(s===0?0:(s/9*100))+'%';
+  var f='';
+  if(s===0){ f='<button onclick="ecNext()" style="flex:1;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Los geht\'s</button>'; }
+  else if(s===9){ f=ecBtnBack()+'<button onclick="ecSubmit()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Absenden</button>'; }
+  else { f=ecBtnBack()+'<button onclick="ecNext()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Weiter</button>'; }
+  footer.innerHTML=f;
+  body.scrollTop=0;
+}
+function ecReadStep(){
+  var s=window._ec.step, ta=document.getElementById('ec-input'), v=ta?ta.value:null;
+  if(s===1){ var n=document.getElementById('ec-name'); if(n) window._ec.expertName=n.value; }
+  else if(s===2 && v!=null) window._ec.answers.fachlich=v;
+  else if(s===3 && v!=null) window._ec.answers.sprache=v;
+  else if(s===4 && v!=null) window._ec.answers.grenzen=v;
+  else if(s===5 && v!=null) window._ec.answers.wissen=v;
+  else if(s===6 && v!=null) window._ec.answers.empfehlung_warum=v;
+  else if(s===7 && v!=null) window._ec.answers.begeisterung=v;
+  else if(s===8 && v!=null) window._ec.answers.grossefragen=v;
+  else if(s===9){ if(v!=null) window._ec.answers.frei=v; var c=document.getElementById('ec-incl'); if(c) window._ec.includeTranscript=c.checked; }
+}
+function ecNext(){ ecReadStep(); if(window._ec.step<9){ window._ec.step++; ecRender(); } }
+function ecBack(){ ecReadStep(); if(window._ec.step>0){ window._ec.step--; ecRender(); } }
+function ecSetScale(f,v){ ecReadStep(); window._ec[f]=v; ecRender(); }
+function ecSetEmpf(o){ ecReadStep(); window._ec.empfehlung=o; ecRender(); }
+function ecSetField(o){ ecReadStep(); window._ec.expertField=(window._ec.expertField===o?'':o); ecRender(); }
+function ecSubmit(){
+  ecReadStep();
+  var st=window._ec;
+  var hist=(typeof chatHistory!=='undefined')?chatHistory:[];
+  var transcript = st.includeTranscript ? _fbTranscript(hist) : [];
+  var payload={ expertName:st.expertName, expertField:st.expertField, ratingFachlich:st.ratingFachlich||null, ratingSprache:st.ratingSprache||null, empfehlung:st.empfehlung, answers:st.answers, includeTranscript:!!st.includeTranscript, transcript:transcript, meta:{ appVersion:FELIA_FEEDBACK_VERSION, sessionId:_fbSessionId() } };
+  var body=document.getElementById('ec-body'), footer=document.getElementById('ec-footer'), bar=document.getElementById('ec-progress-bar');
+  if(bar) bar.style.width='100%';
+  if(body) body.innerHTML='<div style="text-align:center;padding:44px 10px;"><div style="font-size:38px;margin-bottom:12px;">💜</div><div style="font-family:\'DM Serif Display\',Georgia,serif;font-size:20px;color:#2D1B4E;margin-bottom:8px;">Danke dir!</div><div style="font-size:14px;color:#6B5A88;line-height:1.6;">Danke, dass du felia mit deinem Wissen und deiner Erfahrung besser machst.</div></div>';
+  if(footer) footer.innerHTML='<button onclick="ecClose()" style="flex:1;padding:13px;border-radius:14px;border:none;background:#2D1B4E;color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Schließen</button>';
+  try { fetch(FELIA_EXPERT_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){}); } catch(e){}
 }
 
 function promptCloseChat() {

@@ -1332,13 +1332,21 @@ html.native-app .header { padding-top: 14px; }
 
 <div class="phone">
   <script>
-  /* Review-Passwortschirm: NUR aktiv, wenn die Seite unter einem /review/-Pfad läuft.
-     In der Produktiv-App und auf der normalen Demo bleibt er vollständig inaktiv. Passwort-Hash = SHA-256 von "1905". */
+  /* Passwortschirm für die drei geschützten Web-Pfade: /expert (2609), /review (1905), /app (2707).
+     Jeder Pfad hat ein eigenes Passwort und einen eigenen Freischalt-Merker, sodass ein Passwort nur
+     den jeweiligen Bereich öffnet. In der nativen App, am Repo-Root und auf der Demo bleibt er inaktiv. */
   (function(){
     try {
-      if (!/\/review(\/|$)/i.test(location.pathname)) return;
-      var HASH = "56a3a46a3ba4fb713fd3e4cfa51a5748abf2c2662fefb0b5a863fdef34572255";
-      var KEY = "felia_review_ok";
+      var GATES = [
+        { re: /\/expert(\/|$)/i, hash: "b171875a25de1c92084c310cc8c323c59668112c2c680f5b161a93041cb7fed0", key: "felia_expert_ok" },
+        { re: /\/review(\/|$)/i, hash: "56a3a46a3ba4fb713fd3e4cfa51a5748abf2c2662fefb0b5a863fdef34572255", key: "felia_review_ok" },
+        { re: /\/app(\/|$)/i,    hash: "c54437a17218bf679a119cb1192f18d55bf383ae8aaf298b8ffb2fb65ae51d1c", key: "felia_app_ok" }
+      ];
+      var G = null;
+      for (var gi=0; gi<GATES.length; gi++){ if (GATES[gi].re.test(location.pathname)) { G = GATES[gi]; break; } }
+      if (!G) return;
+      var HASH = G.hash;
+      var KEY = G.key;
       try { if (sessionStorage.getItem(KEY) === "1") return; } catch(e){}
       var phone = (document.currentScript && document.currentScript.parentNode) || document.querySelector('.phone');
       if (!phone) return;

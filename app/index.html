@@ -1613,77 +1613,21 @@ html.native-app .header { padding-top: 22px; }
 
         <div style="background:#180430;padding:52px 28px 22px;flex-shrink:0;position:relative;overflow:hidden;">
           <div style="position:absolute;bottom:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;"></div>
-          <div class="ob-header-label">Noch zwei Fragen</div>
+          <div class="ob-header-label">Lass uns reden</div>
           <div style="font-family:'Alice',Georgia,serif;font-size:24px;color:white;line-height:1.2;">Unser erstes Gespräch.</div>
         </div>
 
-        <div id="kl-chat" style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:#E6E0EE;">
+        <div id="kl-chat" style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:#E6E0EE;"></div>
 
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;" id="kl-opener">Schön, dass du hier bist.</div>
-              </div>
-            </div>
-
-          <!-- felia fragt nach den Kindern -->
-          <div id="kl-q2-wrap" style="display:none;flex-direction:column;gap:14px;">
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="kl-reply-alter"></span><br><br>Hast du Kinder?</div>
-              </div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;padding-left:42px;flex-shrink:0;">
-              <button class="kl-chip" data-group="kinder" data-val="keine">Keine (noch nicht)</button>
-              <button class="kl-chip" data-group="kinder" data-val="ja-klein">Ja, unter 6</button>
-              <button class="kl-chip" data-group="kinder" data-val="ja-gross">Ja, älter</button>
-            </div>
+        <!-- Eingabe -->
+        <div style="background:#180430;padding:10px 16px 0;flex-shrink:0;">
+          <div class="input-row">
+            <textarea id="kl-inp" class="chat-input" rows="1" placeholder="Antworte felia…" oninput="klGrow(this)" onkeydown="klKey(event)"></textarea>
+            <button class="send-btn" onclick="klSend()" aria-label="Senden">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 8M14 8L9 3M14 8L9 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
           </div>
-
-          <!-- felia antwortet auf Kinder + fragt Alltag -->
-          <div id="kl-q3-wrap" style="display:none;flex-direction:column;gap:14px;">
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="kl-reply-kinder"></span><br><br>Wie würdest du deinen Alltag beschreiben?</div>
-              </div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;padding-left:42px;flex-shrink:0;">
-              <button class="kl-chip" data-group="lifestyle" data-val="job-intensiv">Job sehr intensiv</button>
-              <button class="kl-chip" data-group="lifestyle" data-val="ausgewogen">Eher ausgewogen</button>
-              <button class="kl-chip" data-group="lifestyle" data-val="zuhause">Viel zuhause</button>
-              <button class="kl-chip" data-group="lifestyle" data-val="unberechenbar">Sehr unberechenbar</button>
-            </div>
-          </div>
-
-          <!-- felia Antwort auf Alltag + Frage nach Wunsch -->
-          <div id="kl-done-wrap" style="display:none;flex-direction:column;gap:14px;">
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="kl-reply-lifestyle"></span><span id="kl-wunsch-q"><br><br>Was wünschst du dir von felia?</span></div>
-              </div>
-            </div>
-            <div id="kl-chips-wunsch" style="padding-left:42px;display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
-              <button class="kl-chip" data-group="wunsch" data-val="verstanden" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Verstanden werden</button>
-              <button class="kl-chip" data-group="wunsch" data-val="orientierung" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Orientierung wiederfinden</button>
-              <button class="kl-chip" data-group="wunsch" data-val="stress" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Stress reduzieren</button>
-              <button class="kl-chip" data-group="wunsch" data-val="energie" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Energie und Balance finden</button>
-              <button class="kl-chip" data-group="wunsch" data-val="alles" style="padding:9px 16px;border-radius:20px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;transition:all 0.15s;">Alles davon ✨</button>
-            </div>
-            <div style="padding-left:42px;font-size:11px;color:#A090BC;flex-shrink:0;">Mehrfachauswahl möglich</div>
-          </div>
-
-          <!-- Abschluss nach Wunsch -->
-          <div id="kl-final-wrap" style="display:none;flex-direction:column;gap:14px;">
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="kl-final-text"></span></div>
-              </div>
-            </div>
-          </div></div>
+        </div>
 
         <div style="padding:12px 20px 14px;background:#180430;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative;"><div class="ru-prog"><i style="width:100%"></i></div>
           <span class="ru-step" style="flex:1;">8/8</span>
@@ -2068,154 +2012,252 @@ let userName = 'Laura'; // default
 // ── Kennenlernen Chat-Gespräch ──
 const klAnswers = {};
 
-const KL_REPLIES = {
-  kinder: {
-    'keine':    'Alles klar.',
-    'ja-klein': 'Kleine Kinder — weniger Schlaf, weniger Zeit für dich. Das spielt eine Rolle.',
-    'ja-gross': 'Ältere Kinder — der mentale Load bleibt oft unterschätzt.'
-  },
-  lifestyle: {
-    'job-intensiv':  'Job sehr intensiv — dann ist Erholung keine Option, sondern Pflicht.',
-    'ausgewogen':    'Eher ausgewogen — gute Basis.',
-    'zuhause':       'Viel zuhause — hat eigene Herausforderungen, die oft unsichtbar bleiben.',
-    'unberechenbar': 'Sehr unberechenbar — dann sind kleine, verlässliche Anker besonders wichtig.'
-  }
+
+/* ══════════════════════════════════════════════════════════
+   Erstes Gespräch — geführtes Kennenlernen auf Basis des Ramp-ups
+   Ziel: die statischen Angaben in konkrete, individuelle Details
+   überführen. Keine Beratung, keine Deutung von Körperdaten.
+   ══════════════════════════════════════════════════════════ */
+
+var klHistory = [];
+var KL_MAX_TURNS = 7;          /* Sicherheitsnetz, falls die Marke ausbleibt */
+var klUserTurns  = 0;
+var klDone       = false;
+
+var KL_SATZ_TEXT = {
+  muede:    'Ich bin müde, obwohl ich geschlafen habe.',
+  gereizt:  'Ich bin gereizt und weiß nicht warum.',
+  funktion: 'Ich funktioniere, aber es geht mir nicht gut.',
+  fremd:    'Mein Körper fühlt sich fremd an.',
+  anders:   'Irgendwas ist anders, ich kann es nicht benennen.',
+  runter:   'Ich komme abends nicht runter.'
+};
+var KL_AREA_TEXT = {
+  energie: 'Energie', schlaf: 'Schlaf', stimmung: 'Stimmung', zyklus: 'Zyklus',
+  stress: 'Anspannung', fokus: 'Konzentration', haut: 'Haut', gewicht: 'Gewicht',
+  schmerz: 'Schmerzen', libido: 'Libido', anderes: 'etwas anderes', nein: 'nichts Bestimmtes'
+};
+var KL_ZIEL_TEXT = {
+  verstanden: 'verstanden werden', orientierung: 'Orientierung finden',
+  gesundheit: 'ihre Gesundheit besser verstehen', stress: 'Stress rausnehmen',
+  energie: 'Energie und Balance finden', alles: 'alles davon', anderes: 'etwas Eigenes'
 };
 
-document.addEventListener('click', function(e) {
-  const chip = e.target.closest('.kl-chip');
-  if (!chip) return;
-  const group = chip.dataset.group;
-  const val   = chip.dataset.val;
-  klAnswers[group] = val;
+function klBand() {
+  var b = klAnswers.alter || '';
+  var map = { 'u30': 'unter 30', '30-39': '30 bis 39', '40-47': '40 bis 47',
+              '48-55': '48 bis 55', '56+': '56 oder älter' };
+  return map[b] || b || 'unbekannt';
+}
 
-  // Style selected chip in its group
-  const parent = chip.closest('[id^="kl-chips"], div[style*="padding-left:42px"]') || chip.parentNode;
-  parent.querySelectorAll('.kl-chip').forEach(b => b.classList.remove('selected'));
-  chip.classList.add('selected');
-  // Keep chips clickable so user can change their answer
+function buildKlPrompt() {
+  var name  = userName || 'sie';
+  var saetze = (window._ruSatzAll || []).map(function(v) { return KL_SATZ_TEXT[v]; })
+                 .filter(Boolean);
+  var areas  = (window._ruAreas || []).map(function(v) { return KL_AREA_TEXT[v] || v; });
+  var ziele  = (Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch : [])
+                 .map(function(v) { return KL_ZIEL_TEXT[v] || v; });
+  if (window._ruAskWunsch) ziele.push('etwas Eigenes, das sie noch nicht benannt hat');
 
-  const chat = document.getElementById('kl-chat');
+  var ctx = 'WAS SIE IM ONBOARDING ANGEGEBEN HAT:\n' +
+    '- Name: ' + name + '\n' +
+    '- Alter: ' + klBand() + '\n' +
+    (saetze.length ? '- Sie hat diese Sätze als zutreffend markiert: "' + saetze.join('" / "') + '"\n' : '') +
+    (areas.length  ? '- Verändert hat sich bei ihr: ' + areas.join(', ') + '\n' : '') +
+    (ziele.length  ? '- Sie möchte verstehen: ' + ziele.join(', ') + '\n' : '');
 
+  return 'Du bist felia, eine Begleiterin für Frauen. Du führst gerade das ERSTE Gespräch mit ' + name + ', ' +
+    'direkt nach dem Onboarding. Sie hat dort ein paar Angaben angetippt — jetzt willst du die Person dahinter kennenlernen.\n\n' +
+    ctx + '\n' +
+    'DEINE AUFGABE IN DIESEM GESPRÄCH:\n' +
+    'Mach aus diesen angetippten Stichworten konkrete, gelebte Details. Du willst wissen, wie sich das bei ' + name + ' ' +
+    'tatsächlich zeigt: seit wann, in welchen Situationen, wie oft, was sie schon versucht hat, was ihr Alltag damit macht. ' +
+    'Ein Stichwort wie "Schlaf" ist noch keine Information — "wacht seit dem Umzug im März gegen drei Uhr auf und liegt dann wach" ist eine.\n\n' +
+    'WAS DU HIER NICHT TUST:\n' +
+    '- Keine Ratschläge, keine Tipps, keine Übungen. Das kommt später, nicht heute.\n' +
+    '- Keine Deutung von Körperwerten. Du hast noch keine Messdaten von ihr.\n' +
+    '- Keine Diagnosen, keine Vermutungen über Ursachen oder Krankheiten.\n' +
+    '- Frag nichts, was oben schon steht. Beziehe dich darauf, statt es erneut zu erfragen.\n\n' +
+    'WIE DU FRAGST:\n' +
+    '- Immer nur EINE Frage pro Nachricht. Kurz halten, zwei bis vier Sätze.\n' +
+    '- Greif ihre eigenen Worte auf, bevor du weiterfragst. Zeig, dass du zugehört hast.\n' +
+    '- Offene Fragen, keine Ja-Nein-Fragen. Nicht ausfragen — nachfragen.\n' +
+    '- Wenn sie kurz oder ausweichend antwortet, akzeptiere das und geh weiter. Kein Nachbohren.\n' +
+    '- Du, nicht Sie. Warmer, klarer Ton. Kein Coaching-Sprech, keine Floskeln.\n\n' +
+    'ZWEI DINGE MUSST DU IM LAUF DES GESPRÄCHS ERFAHREN — beiläufig, nicht als Formular:\n' +
+    '1. Ob Kinder da sind und wie alt (das bestimmt, wie viel Erholung überhaupt möglich ist).\n' +
+    '2. Wie ihr Alltag getaktet ist — Job, Belastung, Fremdbestimmung.\n' +
+    'Baue beides in den Gesprächsfluss ein, dort wo es passt. Wenn sie zum Beispiel von Müdigkeit erzählt, ' +
+    'ist die Frage nach Kindern und Nächten die natürliche Folge. Frag sie nicht ab wie eine Liste.\n\n' +
+    'ABLAUF:\n' +
+    'Du hast maximal ' + KL_MAX_TURNS + ' Fragen. Beginne mit dem, was sie am deutlichsten markiert hat. ' +
+    'Wenn du zu ihren Sätzen konkrete Details hast UND Kinder sowie Alltag kennst, beende das Gespräch: ' +
+    'fasse in drei bis vier Sätzen zusammen, was du jetzt über sie weißt — in du-Form, ohne Bewertung, ' +
+    'ohne Ratschlag. Sag ihr, dass du das mitnimmst und dass ihr ab jetzt zusammen daran weiterschaut. ' +
+    'Schreibe dann als allerletztes Zeichen die Marke [[FERTIG]]. Diese Marke sieht sie nicht, sie schaltet den Weiter-Knopf frei.\n\n' +
+    'SICHERHEIT (hat Vorrang vor allem anderen):\n' +
+    'Wenn sie Suizidgedanken, Selbstverletzung, Gewalt oder eine akute Krise andeutet, brich das Kennenlernen ab. ' +
+    'Nimm es ernst, bleib ruhig, verweise klar auf die Telefonseelsorge 0800 111 0 111 (kostenlos, rund um die Uhr) ' +
+    'oder den Notruf 112. Setze danach die Marke [[FERTIG]].\n\n' +
+    'Antworte ausschließlich auf Deutsch.';
+}
 
-  if (group === 'kinder') {
-    const replyEl = document.getElementById('kl-reply-kinder');
-    const q3wrap  = document.getElementById('kl-q3-wrap');
-    if (replyEl) replyEl.textContent = KL_REPLIES.kinder[val] || '';
-    if (q3wrap)  { q3wrap.style.display = 'flex'; q3wrap.style.flexDirection = 'column'; }
-    setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+function klApiMsgs() {
+  return klHistory.map(function(m) { return { role: m.role, content: m.content }; });
+}
+
+function klBubble(text, who) {
+  var chat = document.getElementById('kl-chat');
+  if (!chat) return null;
+  var row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:10px;align-items:flex-end;flex-shrink:0;' +
+    (who === 'user' ? 'justify-content:flex-end;' : '');
+  if (who !== 'user') {
+    row.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;' +
+      'align-items:center;justify-content:center;flex-shrink:0;">' +
+      '<svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>';
   }
+  var b = document.createElement('div');
+  b.style.cssText = who === 'user'
+    ? 'background:#180430;color:#fff;border-radius:16px;border-bottom-right-radius:4px;padding:12px 15px;max-width:85%;font-size:14px;line-height:1.55;'
+    : 'background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;font-size:14px;color:#180430;line-height:1.55;';
+  b.innerHTML = text;
+  row.appendChild(b);
+  chat.appendChild(row);
+  chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+  return row;
+}
 
-  if (group === 'lifestyle') {
-    const replyEl  = document.getElementById('kl-reply-lifestyle');
-    const doneWrap = document.getElementById('kl-done-wrap');
-    if (replyEl)  replyEl.textContent = KL_REPLIES.lifestyle[val] || '';
-    if (doneWrap) { doneWrap.style.display = 'flex'; doneWrap.style.flexDirection = 'column'; }
-    /* Das Ramp-up hat das Ziel schon erfasst — dann Frage und Chips ausblenden. */
-    if (window._ruAskWunsch === false) {
-      var wq = document.getElementById('kl-wunsch-q');
-      var wc = document.getElementById('kl-chips-wunsch');
-      if (wq) wq.style.display = 'none';
-      if (wc) wc.style.display = 'none';
-      setTimeout(function() { klRevealFinal(); }, 400);
-    }
-    setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-  }
+function klTyping(on) {
+  var chat = document.getElementById('kl-chat');
+  if (!chat) return;
+  var old = document.getElementById('kl-typing');
+  if (old) old.remove();
+  if (!on) return;
+  var row = document.createElement('div');
+  row.id = 'kl-typing';
+  row.style.cssText = 'display:flex;gap:10px;align-items:flex-end;';
+  row.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+    '<svg width="24.2" height="18.6" aria-hidden="true"><use href="#felia-f"/></svg></div>' +
+    '<div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:14px 16px;border:1px solid rgba(143, 91, 189,0.15);">' +
+    '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#8F5BBD;opacity:0.5;"></span>' +
+    '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#8F5BBD;opacity:0.5;margin-left:4px;"></span>' +
+    '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#8F5BBD;opacity:0.5;margin-left:4px;"></span></div>';
+  chat.appendChild(row);
+  chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+}
 
-  if (group === 'wunsch') {
-    if (!Array.isArray(klAnswers.wunsch)) klAnswers.wunsch = [];
-    if (val === 'alles') {
-      klAnswers.wunsch = ['verstanden','orientierung','stress','energie','alles'];
-      chip.parentNode.querySelectorAll('.kl-chip').forEach(function(b) {
-        b.style.background='#180430'; b.style.color='white'; b.style.borderColor='#180430';
-      });
-    } else {
-      klAnswers.wunsch = klAnswers.wunsch.filter(function(v){ return v !== 'alles'; });
-      const alleBtn = chip.parentNode.querySelector('[data-val="alles"]');
-      if (alleBtn) { alleBtn.style.background='white'; alleBtn.style.color='#4A3A6A'; alleBtn.style.borderColor='rgba(143, 91, 189,0.3)'; }
-      const widx = klAnswers.wunsch.indexOf(val);
-      if (widx >= 0) {
-        klAnswers.wunsch.splice(widx, 1);
-        chip.style.background='white'; chip.style.color='#4A3A6A'; chip.style.borderColor='rgba(143, 91, 189,0.3)';
-      } else {
-        klAnswers.wunsch.push(val);
-        chip.style.background='#180430'; chip.style.color='white'; chip.style.borderColor='#180430';
-      }
-    }
-    if (klAnswers.wunsch.length > 0) {
-      klRevealFinal();
-      setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-    }
-    return;
-  }
-});
+function klCall(text, hidden) {
+  klHistory.push({ role: 'user', content: text });
+  return fetch('https://avie-proxy.hoyer2707.workers.dev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 700,
+      system: buildKlPrompt(),
+      messages: klApiMsgs()
+    })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    var reply = (d.content && d.content[0] && d.content[0].text) || '';
+    klHistory.push({ role: 'assistant', content: reply });
+    return reply;
+  });
+}
 
-/* Kennenlern-Chat: Eröffnung aus dem Ramp-up, Name und Alter sind bereits bekannt */
-var KL_OPENER = {
-  muede:    'dass Müdigkeit trotz Schlaf selten an den Stunden liegt',
-  gereizt:  'dass Reizbarkeit oft eine Frage der Belastbarkeit ist, nicht des Charakters',
-  funktion: 'dass Funktionieren und sich gut fühlen zwei verschiedene Dinge sind',
-  fremd:    'dass sich hormonelle Verschiebungen oft zuerst diffus anfühlen',
-  anders:   'dass dieses Gefühl ein Hinweis ist und kein Rauschen',
-  runter:   'dass Abschalten eine Frage der Regulation ist'
-};
+function klRender(reply) {
+  var done = reply.indexOf('[[FERTIG]]') >= 0;
+  var clean = reply.replace(/\[\[FERTIG\]\]/g, '').trim().replace(/\n/g, '<br>');
+  if (clean) klBubble(clean, 'avie');
+  if (done) klFinish();
+}
 
+function klFinish() {
+  if (klDone) return;
+  klDone = true;
+  var inp = document.getElementById('kl-inp');
+  if (inp) { inp.disabled = true; inp.placeholder = 'Danke — du kannst jetzt starten.'; }
+  var btn = document.getElementById('klStartBtn');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+  klExtract();
+}
+
+/* Wissenspool: einmalige, verdeckte Zusammenfassung in strukturierter Form */
+function klExtract() {
+  var ask = 'Fasse dieses Kennenlern-Gespräch für dein eigenes Gedächtnis zusammen. ' +
+    'Antworte AUSSCHLIESSLICH mit reinem JSON, ohne Markdown und ohne Vorrede:\n' +
+    '{"kinder":"keine|ja-klein|ja-gross|unbekannt",' +
+    '"lifestyle":"job-intensiv|ausgewogen|zuhause|unberechenbar|unbekannt",' +
+    '"notiz":"3 bis 5 Sätze über sie, in du-Form, nur was sie selbst gesagt hat, ohne Deutung",' +
+    '"lernen":["2 bis 4 kurze Stichpunkte, je ein konkretes Detail aus dem Gespräch"]}';
+  klCall(ask, true).then(function(reply) {
+    try {
+      var raw = reply.replace(/```json|```/g, '').trim();
+      var a = raw.indexOf('{'), b = raw.lastIndexOf('}');
+      var o = JSON.parse(raw.slice(a, b + 1));
+      if (o.kinder && o.kinder !== 'unbekannt') klAnswers.kinder = o.kinder;
+      if (o.lifestyle && o.lifestyle !== 'unbekannt') klAnswers.lifestyle = o.lifestyle;
+      if (o.notiz) klAnswers.notiz = String(o.notiz).trim();
+      var lernen = Array.isArray(o.lernen) ? o.lernen.slice(0, 4) : [];
+      try { saveUserProfile(); } catch (e) {}
+      /* Ins Archiv, damit der Wissenspool auch in kuenftige Chats einfliesst */
+      try {
+        if (typeof saveChat === 'function') {
+          saveChat({
+            thema: 'Unser erstes Gespräch',
+            erkenntnis: klAnswers.notiz || 'Du hast mir erzählt, wie es dir gerade geht.',
+            avie_lernt: lernen.length ? lernen.join(' · ') : (klAnswers.notiz || '')
+          }, klHistory.filter(function(m) { return m.role === 'user' || m.role === 'assistant'; }));
+        }
+      } catch (e) {}
+    } catch (e) {}
+  }).catch(function() {});
+}
+
+function klGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+}
+
+function klKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); klSend(); }
+}
+
+function klSend() {
+  if (klDone) return;
+  var inp = document.getElementById('kl-inp');
+  if (!inp) return;
+  var text = inp.value.trim();
+  if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  klBubble(text.replace(/\n/g, '<br>'), 'user');
+  klUserTurns++;
+  klTyping(true);
+  klCall(text).then(function(reply) {
+    klTyping(false);
+    klRender(reply);
+    if (!klDone && klUserTurns >= KL_MAX_TURNS) klFinish();
+  }).catch(function() {
+    klTyping(false);
+    klBubble('Ich bin kurz nicht erreichbar. Du kannst trotzdem weitermachen.', 'avie');
+    klFinish();
+  });
+}
+
+/* Start: felia eröffnet auf Basis des Ramp-ups */
 function klInitFromRampup() {
   if (window._klInited) return;
   window._klInited = true;
-  var op = document.getElementById('kl-opener');
-  if (op) {
-    var name = userName || 'du';
-    var satz = KL_OPENER[window._ruSatz];
-    op.innerHTML = satz
-      ? ('Danke, ' + name + '. Wir haben gerade darüber gesprochen, ' + satz +
-         '.<br><br>Damit ich das für dich einordnen kann, brauche ich noch zwei Dinge über deinen Alltag.')
-      : ('Schön, dass du da bist, ' + name +
-         '.<br><br>Damit ich dich gut einordnen kann, brauche ich noch zwei Dinge über deinen Alltag.');
-  }
-  var q2 = document.getElementById('kl-q2-wrap');
-  if (q2) { q2.style.display = 'flex'; q2.style.flexDirection = 'column'; }
-  var chat = document.getElementById('kl-chat');
-  setTimeout(function() { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 120);
-}
-
-function klWishReaction() {
-  const name = userName || 'du';
-  const reactions = {
-    verstanden:   'mich darauf konzentrieren, dir gut zuzuhören',
-    orientierung: 'dir helfen, wieder Orientierung zu finden',
-    gesundheit:   'dir helfen, deine Gesundheit besser zu verstehen',
-    stress:       'mit dir schauen, wie du Stress rausnehmen kannst',
-    energie:      'mit dir mehr Energie und Balance finden'
-  };
-  const all = Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch : [];
-  const sel = all.filter(function(w){ return w !== 'alles'; });
-  let phrase = '';
-  if (all.indexOf('alles') >= 0) {
-    phrase = 'für all das da sein — zuhören, Orientierung geben und mit dir an Gesundheit, Stress und Energie arbeiten';
-  } else if (sel.length === 1) {
-    phrase = reactions[sel[0]] || '';
-  } else if (sel.length > 1) {
-    const parts = sel.map(function(w){ return reactions[w]; }).filter(Boolean);
-    phrase = parts.slice(0, parts.length - 1).join(', ') + ' und ' + parts[parts.length - 1];
-  }
-  return phrase ? ('Ok ' + name + ', ich werde ' + phrase + '.') : '';
-}
-
-function klRevealFinal() {
-  const finalWrap = document.getElementById('kl-final-wrap');
-  const finalText = document.getElementById('kl-final-text');
-  const name_val = userName || 'du';
-  if (finalWrap && finalWrap.style.display === 'none') {
-    finalWrap.style.display = 'flex'; finalWrap.style.flexDirection = 'column';
-    var reaction = klWishReaction();
-    var opener = reaction ? reaction : ('Gut, ' + name_val + '. Das gibt mir ein erstes Bild.');
-    if (finalText) finalText.innerHTML = opener + '<br><br>felia lernt durch jedes Gespräch mit dir — je mehr du teilst, desto besser kann ich Zusammenhänge zwischen deinem Körper, deinem Zyklus und deinem Alltag erkennen und erklären.<br><br>Lass uns starten. 🌸';
-  }
-  const startBtn = document.getElementById('klStartBtn');
-  if (startBtn) { startBtn.disabled = false; startBtn.style.opacity = '1'; startBtn.style.cursor = 'pointer'; }
-  const chat = document.getElementById('kl-chat');
-  setTimeout(function() { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+  klTyping(true);
+  klCall('Beginne jetzt das Gespräch. Begrüße mich mit meinem Namen, nimm Bezug auf das, ' +
+         'was ich im Onboarding angegeben habe, und stelle deine erste Frage.', true)
+    .then(function(reply) { klTyping(false); klRender(reply); })
+    .catch(function() {
+      klTyping(false);
+      klBubble('Schön, dass du da bist. Ich bin gerade nicht erreichbar — ' +
+               'du kannst direkt starten, wir holen das Gespräch später nach.', 'avie');
+      klFinish();
+    });
 }
 
 function saveOnboardingNote() {

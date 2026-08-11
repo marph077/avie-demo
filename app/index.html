@@ -1630,9 +1630,9 @@ html.native-app .header { padding-top: 22px; }
         </div>
 
         <div style="padding:12px 20px 14px;background:#180430;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative;"><div class="ru-prog"><i style="width:100%"></i></div>
-          <span class="ru-step" style="flex:1;">8/8</span>
-          <button onclick="prevSlide()" style="padding:10px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.32);background:transparent;color:rgba(255,255,255,0.65);font-family:inherit;font-size:13px;cursor:pointer;">←</button>
-          <button id="klStartBtn" onclick="startApp()" disabled style="padding:10px 22px;border-radius:20px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;opacity:0.62;transition:opacity 0.2s;">Los geht's ✦</button>
+          <button class="ru-back" onclick="prevSlide()" aria-label="Zurück">←</button>
+            <span class="ru-step">8/8</span>
+            <button class="ru-next" id="klStartBtn" onclick="startApp()" disabled>Los geht's ✦</button>
         </div>
         <div style="margin:0;padding:2px 22px 28px;background:#180430;font-size:10.5px;line-height:1.5;color:rgba(255,255,255,0.55);text-align:center;">
           felia ersetzt keine ärztliche oder psychologische Beratung, Diagnose oder Behandlung. Bei gesundheitlichen Beschwerden wende dich bitte an eine Ärztin oder einen Arzt.
@@ -2020,7 +2020,7 @@ const klAnswers = {};
    ══════════════════════════════════════════════════════════ */
 
 var klHistory = [];
-var KL_MAX_TURNS = 7;          /* Sicherheitsnetz, falls die Marke ausbleibt */
+var KL_MAX_TURNS = 3;          /* kurz halten — die Tiefe kommt auf der Startseite */
 var klUserTurns  = 0;
 var klDone       = false;
 
@@ -2066,35 +2066,34 @@ function buildKlPrompt() {
     (areas.length  ? '- Verändert hat sich bei ihr: ' + areas.join(', ') + '\n' : '') +
     (ziele.length  ? '- Sie möchte verstehen: ' + ziele.join(', ') + '\n' : '');
 
-  return 'Du bist felia, eine Begleiterin für Frauen. Du führst gerade das ERSTE Gespräch mit ' + name + ', ' +
-    'direkt nach dem Onboarding. Sie hat dort ein paar Angaben angetippt — jetzt willst du die Person dahinter kennenlernen.\n\n' +
+  return 'Du bist felia, eine Begleiterin für Frauen. Du führst gerade das ERSTE, KURZE Gespräch mit ' + name + ', ' +
+    'direkt nach dem Onboarding. Sie hat dort Angaben angetippt. Du fasst jetzt nur kurz nach — ' +
+    'das ausführliche Gespräch findet danach in der App statt, nicht hier.\n\n' +
     ctx + '\n' +
-    'DEINE AUFGABE IN DIESEM GESPRÄCH:\n' +
-    'Mach aus diesen angetippten Stichworten konkrete, gelebte Details. Du willst wissen, wie sich das bei ' + name + ' ' +
-    'tatsächlich zeigt: seit wann, in welchen Situationen, wie oft, was sie schon versucht hat, was ihr Alltag damit macht. ' +
-    'Ein Stichwort wie "Schlaf" ist noch keine Information — "wacht seit dem Umzug im März gegen drei Uhr auf und liegt dann wach" ist eine.\n\n' +
+    'DEINE AUFGABE — und nur diese:\n' +
+    'Du hast GENAU DREI Fragen. Nicht mehr. Nutze sie so:\n' +
+    '1. Fasse zu dem nach, was sie am deutlichsten markiert hat: eine konkrete Rückfrage, ' +
+    'die aus dem Stichwort ein gelebtes Detail macht (seit wann, wie oft, in welcher Situation).\n' +
+    '2. Frag nach ihrem Alltag — Kinder und Tagesstruktur in EINER Frage, beiläufig gestellt.\n' +
+    '3. Frag, ob sie noch etwas ergänzen möchte, das du wissen solltest.\n' +
+    'Danach ist Schluss. Nicht vertiefen, nicht weiterfragen, nicht ausholen.\n\n' +
+    'LÄNGE UND FORM — das ist wichtig:\n' +
+    '- Maximal zwei bis drei Sätze pro Nachricht. Kurz. Keine Absätze.\n' +
+    '- GENAU EINE Frage pro Nachricht. Kein zweiter Fragesatz, kein "und" mit angehängter Zusatzfrage.\n' +
+    '- Höchstens ein kurzer halber Satz, um ihre Antwort aufzugreifen. Keine ausgeschmückten Spiegelungen, ' +
+    'keine Bilder und Vergleiche, keine Deutungen wie "das ist wie ein Schalter, der nicht umlegt".\n' +
+    '- Du, nicht Sie. Warm, aber knapp.\n\n' +
     'WAS DU HIER NICHT TUST:\n' +
-    '- Keine Ratschläge, keine Tipps, keine Übungen. Das kommt später, nicht heute.\n' +
-    '- Keine Deutung von Körperwerten. Du hast noch keine Messdaten von ihr.\n' +
-    '- Keine Diagnosen, keine Vermutungen über Ursachen oder Krankheiten.\n' +
-    '- Frag nichts, was oben schon steht. Beziehe dich darauf, statt es erneut zu erfragen.\n\n' +
-    'WIE DU FRAGST:\n' +
-    '- Immer nur EINE Frage pro Nachricht. Kurz halten, zwei bis vier Sätze.\n' +
-    '- Greif ihre eigenen Worte auf, bevor du weiterfragst. Zeig, dass du zugehört hast.\n' +
-    '- Offene Fragen, keine Ja-Nein-Fragen. Nicht ausfragen — nachfragen.\n' +
-    '- Wenn sie kurz oder ausweichend antwortet, akzeptiere das und geh weiter. Kein Nachbohren.\n' +
-    '- Du, nicht Sie. Warmer, klarer Ton. Kein Coaching-Sprech, keine Floskeln.\n\n' +
-    'ZWEI DINGE MUSST DU IM LAUF DES GESPRÄCHS ERFAHREN — beiläufig, nicht als Formular:\n' +
-    '1. Ob Kinder da sind und wie alt (das bestimmt, wie viel Erholung überhaupt möglich ist).\n' +
-    '2. Wie ihr Alltag getaktet ist — Job, Belastung, Fremdbestimmung.\n' +
-    'Baue beides in den Gesprächsfluss ein, dort wo es passt. Wenn sie zum Beispiel von Müdigkeit erzählt, ' +
-    'ist die Frage nach Kindern und Nächten die natürliche Folge. Frag sie nicht ab wie eine Liste.\n\n' +
-    'ABLAUF:\n' +
-    'Du hast maximal ' + KL_MAX_TURNS + ' Fragen. Beginne mit dem, was sie am deutlichsten markiert hat. ' +
-    'Wenn du zu ihren Sätzen konkrete Details hast UND Kinder sowie Alltag kennst, beende das Gespräch: ' +
-    'fasse in drei bis vier Sätzen zusammen, was du jetzt über sie weißt — in du-Form, ohne Bewertung, ' +
-    'ohne Ratschlag. Sag ihr, dass du das mitnimmst und dass ihr ab jetzt zusammen daran weiterschaut. ' +
-    'Schreibe dann als allerletztes Zeichen die Marke [[FERTIG]]. Diese Marke sieht sie nicht, sie schaltet den Weiter-Knopf frei.\n\n' +
+    '- Keine Ratschläge, keine Tipps, keine Übungen.\n' +
+    '- Keine Deutung von Körperwerten — du hast noch keine Messdaten.\n' +
+    '- Keine Diagnosen, keine Ursachenvermutungen.\n' +
+    '- Nichts erfragen, was oben schon steht.\n' +
+    '- Nicht nachbohren. Antwortet sie knapp, nimm es und geh zur nächsten Frage.\n\n' +
+    'ABSCHLUSS:\n' +
+    'Nach der dritten Antwort beendest du das Gespräch, egal wie viel du weißt. ' +
+    'Zwei bis drei Sätze: was du dir gemerkt hast, in du-Form, ohne Bewertung und ohne Ratschlag. ' +
+    'Sag ihr, dass ihr in der App weiterredest. Setze dann als allerletztes Zeichen die Marke [[FERTIG]] — ' +
+    'sie sieht diese Marke nicht, sie schaltet den Weiter-Knopf frei.\n\n' +
     'SICHERHEIT (hat Vorrang vor allem anderen):\n' +
     'Wenn sie Suizidgedanken, Selbstverletzung, Gewalt oder eine akute Krise andeutet, brich das Kennenlernen ab. ' +
     'Nimm es ernst, bleib ruhig, verweise klar auf die Telefonseelsorge 0800 111 0 111 (kostenlos, rund um die Uhr) ' +
@@ -2178,7 +2177,7 @@ function klFinish() {
   var inp = document.getElementById('kl-inp');
   if (inp) { inp.disabled = true; inp.placeholder = 'Danke — du kannst jetzt starten.'; }
   var btn = document.getElementById('klStartBtn');
-  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+  if (btn) btn.disabled = false;
   klExtract();
 }
 
@@ -2189,7 +2188,8 @@ function klExtract() {
     '{"kinder":"keine|ja-klein|ja-gross|unbekannt",' +
     '"lifestyle":"job-intensiv|ausgewogen|zuhause|unberechenbar|unbekannt",' +
     '"notiz":"3 bis 5 Sätze über sie, in du-Form, nur was sie selbst gesagt hat, ohne Deutung",' +
-    '"lernen":["2 bis 4 kurze Stichpunkte, je ein konkretes Detail aus dem Gespräch"]}';
+    '"lernen":["2 bis 4 kurze Stichpunkte, je ein konkretes Detail aus dem Gespräch"],' +
+    '"offen":"eine einzige konkrete Frage, die du ihr als erstes in der App stellen würdest, um tiefer zu gehen — in du-Form"}';
   klCall(ask, true).then(function(reply) {
     try {
       var raw = reply.replace(/```json|```/g, '').trim();
@@ -2198,6 +2198,7 @@ function klExtract() {
       if (o.kinder && o.kinder !== 'unbekannt') klAnswers.kinder = o.kinder;
       if (o.lifestyle && o.lifestyle !== 'unbekannt') klAnswers.lifestyle = o.lifestyle;
       if (o.notiz) klAnswers.notiz = String(o.notiz).trim();
+      if (o.offen) klAnswers.offen = String(o.offen).trim();
       var lernen = Array.isArray(o.lernen) ? o.lernen.slice(0, 4) : [];
       try { saveUserProfile(); } catch (e) {}
       /* Ins Archiv, damit der Wissenspool auch in kuenftige Chats einfliesst */
@@ -2249,8 +2250,8 @@ function klInitFromRampup() {
   if (window._klInited) return;
   window._klInited = true;
   klTyping(true);
-  klCall('Beginne jetzt das Gespräch. Begrüße mich mit meinem Namen, nimm Bezug auf das, ' +
-         'was ich im Onboarding angegeben habe, und stelle deine erste Frage.', true)
+  klCall('Beginne jetzt. Ein kurzer Satz mit meinem Namen und Bezug auf meine Angaben, ' +
+         'dann direkt deine erste Frage. Zusammen höchstens drei Sätze.', true)
     .then(function(reply) { klTyping(false); klRender(reply); })
     .catch(function() {
       klTyping(false);
@@ -2264,7 +2265,8 @@ function saveOnboardingNote() {
   // Onboarding fragt die "über mich"-Notiz nicht mehr selbst ab — sie kommt als
   // erste Willkommensfrage auf dem Hauptscreen. Hier nur markieren, dass diese
   // Frage gestellt werden soll (sofern noch keine Notiz vorhanden ist).
-  window._onboardingNoteAsk = !(klAnswers.notiz && klAnswers.notiz.trim());
+  /* Nach dem kurzen Kennenlernen fasst die Startseite in jedem Fall nach — dort ist Platz für Tiefe. */
+  window._onboardingNoteAsk = true;
   saveUserProfile();
 }
 
@@ -2682,7 +2684,10 @@ function homeInit(fromOnboarding) {
   if (window._onboardingNoteAsk) {
     window._onboardingNoteAsk = false;
     window._awaitingOnboardingNote = true;
-    if (oq) oq.innerHTML = 'Bevor wir loslegen — magst du mir erst ein bisschen über dich erzählen? Dann bekomme ich einen besseren Eindruck davon, wie ich dich wirklich unterstützen kann.<br><br>Erzähl einfach los: wie dein Alltag gerade aussieht, was dich beschäftigt und was dir gerade wichtig ist.';
+    var offen = (klAnswers.offen || '').trim();
+    if (oq) oq.innerHTML = offen
+      ? ('Danke für vorhin — das nehme ich mit.<br><br>' + offen)
+      : 'Bevor wir loslegen — magst du mir erst ein bisschen über dich erzählen? Dann bekomme ich einen besseren Eindruck davon, wie ich dich wirklich unterstützen kann.<br><br>Erzähl einfach los: wie dein Alltag gerade aussieht, was dich beschäftigt und was dir gerade wichtig ist.';
     return;
   }
 
@@ -8171,10 +8176,15 @@ function ruZielList() {
   var picked = ruAreaOrder().filter(function(k) { return RU.areas.indexOf(k) >= 0; });
   var tail = [];
   if (picked.length === 1 && RU_AREA_GOALS[picked[0]]) {
-    tail = RU_AREA_GOALS[picked[0]].slice(0, 2);
+    /* eigene id je Vorschlag — zwei Vorschläge desselben Bereichs teilen oft denselben Wert */
+    tail = RU_AREA_GOALS[picked[0]].slice(0, 2).map(function(o, i) {
+      return { id: picked[0] + ':' + i, v: o.v, t: o.t };
+    });
   } else if (picked.length >= 2) {
     picked.slice(0, 2).forEach(function(k) {
-      if (RU_AREA_GOALS[k]) tail.push(RU_AREA_GOALS[k][0]);
+      if (RU_AREA_GOALS[k]) {
+        tail.push({ id: k + ':0', v: RU_AREA_GOALS[k][0].v, t: RU_AREA_GOALS[k][0].t });
+      }
     });
   }
   var texts = tail.map(function(o) { return o.t; });
@@ -8182,17 +8192,17 @@ function ruZielList() {
   /* Auch sinngleiche Standardpunkte aussortieren, nicht nur wortgleiche */
   var rest = RU_ZIEL.filter(function(o) {
     return texts.indexOf(o.t) < 0 && vals.indexOf(o.v) < 0;
-  });
+  }).map(function(o) { return { id: o.v, v: o.v, t: o.t }; });
   if (tail.length) rest = rest.slice(0, 4);
-  return tail.concat(rest).concat([{ v: 'anderes', t: 'Etwas anderes' }]);
+  return tail.concat(rest).concat([{ id: 'anderes', v: 'anderes', t: 'Etwas anderes' }]);
 }
 
 function ruRenderZiel() {
   var el = document.getElementById('ru-ziel');
   if (!el) return;
   el.innerHTML = ruZielList().map(function(o) {
-    return '<button class="ru-row' + (RU.ziel.indexOf(o.v) >= 0 ? ' sel' : '') +
-           '" onclick="ruPickZiel(\'' + o.v + '\')"><span>' + o.t +
+    return '<button class="ru-row' + (RU.ziel.indexOf(o.id) >= 0 ? ' sel' : '') +
+           '" onclick="ruPickZiel(\'' + o.id + '\')"><span>' + o.t +
            '</span><span class="ru-tick">✓</span></button>';
   }).join('');
   var btn = document.getElementById('ru-next-5');
@@ -8264,10 +8274,18 @@ function ruBackToRampup() {
 /* Übergabe an das bestehende Einwilligungs-Slide */
 function ruFinish() {
   if (RU.band) klAnswers.alter = RU.band;
-  var ziele = RU.ziel.filter(function(v) { return v !== 'anderes'; });
+  /* ausgewählte ids in die zugehörigen wunsch-Werte auflösen */
+  var liste = ruZielList();
+  var werte = [];
+  RU.ziel.forEach(function(id) {
+    for (var i = 0; i < liste.length; i++) {
+      if (liste[i].id === id && werte.indexOf(liste[i].v) < 0) { werte.push(liste[i].v); break; }
+    }
+  });
+  var ziele = werte.filter(function(v) { return v !== 'anderes'; });
   if (ziele.length) klAnswers.wunsch = ziele;
   /* 'Etwas anderes' -> der Chat fragt nach der Einwilligung nach dem Wunsch */
-  window._ruAskWunsch = RU.ziel.indexOf('anderes') >= 0;
+  window._ruAskWunsch = werte.indexOf('anderes') >= 0;
   window._ruAreas = RU.areas.slice();
   window._ruSatzAll = RU.satz.slice();
   window._ruSatz = RU.satz[0] || '';

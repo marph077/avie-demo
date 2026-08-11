@@ -131,31 +131,9 @@ body {
   overflow: hidden;
 }
 
-/* ── Slide 1: Splash ── */
-.slide-1 {
-  background: var(--plum);
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-}
-.slide-1::before {
-  content: '';
-  position: absolute;
-  top: -60px; left: -60px;
-  width: 280px; height: 280px;
-  border-radius: 50%;
-  background: rgba(143, 91, 189,0.12);
-  pointer-events: none;
-}
-.slide-1::after {
-  content: '';
-  position: absolute;
-  bottom: -80px; right: -80px;
-  width: 320px; height: 320px;
-  border-radius: 50%;
-  background: rgba(225, 234, 125,0.07);
-  pointer-events: none;
-}
+
+
+
 .splash-balls {
   width: 170px;
   height: auto;
@@ -238,8 +216,7 @@ body {
   line-height: 1.6;
 }
 
-/* ── Slide 2: Was felia ist ── */
-.slide-2 { background: #E6E0EE; padding: 0; }
+
 
 .ob-header {
   background: var(--plum);
@@ -314,8 +291,7 @@ body {
   font-weight: 300;
 }
 
-/* ── Slide 3: Was felia nicht ist ── */
-.slide-3 { background: #E6E0EE; }
+
 .ob-limit-card {
   background: #FFFFFF;
   border-radius: 14px;
@@ -348,8 +324,7 @@ body {
 }
 .ob-crisis strong { color: var(--apricot); font-weight: 500; }
 
-/* ── Slide 4: Datenschutz ── */
-.slide-4 { background: #E6E0EE; }
+
 .ob-data-row {
   display: flex;
   gap: 12px;
@@ -469,29 +444,11 @@ body {
   gap: 12px;
   flex-shrink: 0;
 }
-.slide-1 .ob-nav { background: transparent; }
-.slide-1 .ob-dot { background: rgba(255,255,255,0.28); }
-.slide-1 .ob-dot.active { background: #e1ea7d !important; }
-.slide-5 .ob-nav { background: var(--plum); }
-.slide-2 .ob-nav, .slide-3 .ob-nav, .slide-4 .ob-nav { background: var(--plum); }
 
-/* progress dots */
-.ob-dots {
-  display: flex;
-  gap: 5px;
-  flex: 1;
-}
-.ob-dot {
-  width: 6px; height: 6px;
-  border-radius: 3px;
-  background: rgba(255,255,255,0.25);
-  transition: all 0.3s;
-}
-.ob-dot { background: rgba(255,255,255,0.28); }
-.ob-dot.active {
-  width: 18px;
-  background: var(--apricot) !important;
-}
+
+
+.slide-5 .ob-nav { background: var(--plum); }
+
 
 .ob-back {
   width: 42px;
@@ -506,7 +463,7 @@ body {
   transition: all 0.18s;
   flex-shrink: 0;
 }
-.slide-1 .ob-back { display: none; }
+
 .ob-back:hover { opacity: 0.7; }
 
 .ob-next {
@@ -1373,6 +1330,63 @@ html.native-app .header { padding-top: 22px; }
   flex-shrink: 0;
 }
 .guide-next:hover { background: #E6E0EE; }
+/* ══ Ramp-up (neues Onboarding) ══ */
+#rampup { position: absolute; inset: 0; z-index: 101; background: var(--surface); display: flex; flex-direction: column; overflow: hidden; }
+.ru { flex: 1; min-height: 0; display: none; flex-direction: column; }
+.ru.active { display: flex; }
+
+/* Kopf: Frage auf Deep Plum */
+.ru-head { background: var(--plum); flex-shrink: 0; padding: max(calc(env(safe-area-inset-top, 0px) + 16px), 44px) 26px 20px; position: relative; overflow: hidden; }
+.ru-head::after { content: ''; position: absolute; top: -40px; right: -50px; width: 170px; height: 170px; border-radius: 50%; background: rgba(143, 91, 189,0.16); pointer-events: none; }
+.ru-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: #e1ea7d; margin-bottom: 9px; position: relative; }
+.ru-q { font-family: var(--font-display); font-size: 25px; line-height: 1.22; color: #FFFFFF; position: relative; }
+.ru-qsub { font-size: 13px; font-weight: 300; line-height: 1.5; color: rgba(255,255,255,0.62); margin-top: 8px; position: relative; }
+
+/* Körper: helle Auswahlfläche */
+.ru-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 8px; scrollbar-width: none; }
+.ru-body::-webkit-scrollbar { display: none; }
+.ru-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8F5BBD; margin: 0 0 8px; }
+.ru-label + .ru-hint { font-size: 12px; color: var(--text-secondary); font-weight: 300; margin: -4px 0 10px; line-height: 1.45; }
+.ru-input { width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; border: 1.5px solid rgba(143, 91, 189,0.25); background: #FFFFFF; font-family: var(--font-body); font-size: 15px; color: var(--plum); outline: none; box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); }
+.ru-input:focus { border-color: var(--lila); }
+.ru-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ru-opt { padding: 13px 14px; border-radius: 14px; border: 1.5px solid rgba(143, 91, 189,0.2); background: #FFFFFF; font-family: var(--font-body); font-size: 13.5px; color: var(--plum); cursor: pointer; text-align: center; box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); transition: all 0.15s; }
+.ru-opt.sel { background: var(--plum); color: #FFFFFF; border-color: var(--plum); }
+.ru-list { display: flex; flex-direction: column; gap: 8px; }
+.ru-row { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; border: 1.5px solid rgba(143, 91, 189,0.2); background: #FFFFFF; font-family: var(--font-body); font-size: 13.5px; line-height: 1.4; color: var(--plum); cursor: pointer; text-align: left; box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); transition: all 0.15s; }
+.ru-row.sel { border-color: var(--plum); }
+.ru-tick { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(143, 91, 189,0.4); flex-shrink: 0; margin-left: auto; display: flex; align-items: center; justify-content: center; font-size: 11px; color: transparent; }
+.ru-row.sel .ru-tick { background: var(--plum); border-color: var(--plum); color: #e1ea7d; }
+.ru-note { font-size: 11px; color: var(--text-muted); text-align: center; margin: 16px 0 4px; line-height: 1.45; }
+.ru-bub { display: flex; gap: 13px; align-items: flex-start; background: #FFFFFF; border-radius: 16px; border: 1px solid rgba(143, 91, 189,0.2); padding: 15px 16px; box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); }
+.ru-bub + .ru-bub { margin-top: 8px; }
+.ru-bub-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 19px; color: var(--plum); }
+.ru-bub-ico.is { background: rgba(225, 234, 125,0.42); }
+.ru-bub-ico.not { background: rgba(24, 4, 48,0.07); }
+.ru-bub h4 { font-size: 14px; font-weight: 600; color: var(--plum); margin: 0 0 3px; }
+.ru-bub p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; font-weight: 300; }
+.ru-card { background: #FFFFFF; border-radius: 18px; border: 1px solid rgba(143, 91, 189,0.2); padding: 18px; box-shadow: 0 2px 10px rgba(24, 4, 48,0.06); }
+.ru-sig { display: flex; gap: 11px; align-items: flex-start; padding: 12px 0; border-top: 1px solid rgba(143, 91, 189,0.14); }
+.ru-sig:first-child { border-top: none; padding-top: 0; }
+.ru-sig h5 { font-size: 13px; font-weight: 600; color: var(--plum); margin: 0 0 2px; }
+.ru-sig p { font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin: 0; font-weight: 300; }
+
+/* Fuß: Navigation auf Deep Plum mit Fortschrittsbalken */
+.ru-nav { background: var(--plum); flex-shrink: 0; position: relative; padding: 20px 24px calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; }
+.ru-prog { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.16); }
+.ru-prog i { display: block; height: 100%; width: 0; background: #e1ea7d; transition: width 0.38s cubic-bezier(0.4,0,0.2,1); }
+.ru-back { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.32); background: transparent; color: rgba(255,255,255,0.65); font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: var(--font-body); }
+.ru-step { font-size: 11px; color: rgba(255,255,255,0.45); flex-shrink: 0; }
+.ru-next { flex: 1; padding: 14px 20px; border-radius: 24px; border: none; background: var(--apricot); color: var(--plum); font-family: var(--font-body); font-size: 14.5px; font-weight: 500; cursor: pointer; transition: background 0.18s, transform 0.15s; }
+.ru-next:hover { background: var(--apricot-light); transform: translateY(-1px); }
+.ru-next:disabled { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.55); cursor: not-allowed; transform: none; }
+
+/* Splash */
+.ru-splash { background: var(--plum); align-items: center; justify-content: center; }
+.ru-splash-foot { width: 100%; box-sizing: border-box; padding: 0 24px; margin-top: 26px; }
+.ru-splash-cta { width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--apricot); color: var(--plum); font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; }
+.ru-splash-link { display: block; margin: 14px auto 0; background: none; border: none; color: #DAB3E4; font-family: var(--font-body); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.ru-dev { position: absolute; right: 10px; bottom: calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 130; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22); color: rgba(255,255,255,0.75); font-size: 10px; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-family: var(--font-body); }
 </style>
 </head>
 <body>
@@ -1420,170 +1434,153 @@ html.native-app .header { padding-top: 22px; }
   })();
   </script>
 
+  <!-- ══ RAMP-UP (neues Onboarding) ══ -->
+  <div id="rampup">
+
+    <!-- RU 0: Splash -->
+    <div class="ru ru-splash active" id="ru-0">
+      <div style="text-align:center;padding:0 24px;">
+        <div class="splash-claim">seen by</div>
+        <svg class="splash-word" viewBox="0 0 1043 446" aria-label="felia"><use href="#felia-word"/></svg>
+        <div class="splash-sub">Dein Körper sendet ständig Signale.<br>felia hilft dir, sie zu verstehen.</div>
+      </div>
+      <svg class="splash-balls" viewBox="0 0 1204 362" fill="none" aria-hidden="true"><g transform="translate(63.5 97)"><g class="bs b1"><use href="#felia-ball1" width="236.5" height="168.5"/></g></g><g transform="translate(360.5 97.5)"><g class="bs b2"><use href="#felia-ball2" width="220.5" height="178.5"/></g></g><g transform="translate(652.5 97)"><g class="bs b3"><use href="#felia-ball3" width="236.5" height="168.5"/></g></g><g transform="translate(972 63.5)"><g class="bs b4"><use href="#felia-ball4" width="168.5" height="236.5"/></g></g></svg>
+      <div class="ru-splash-foot">
+        <button class="ru-splash-cta" onclick="ruGo(1)">Los geht&#39;s →</button>
+        <button class="ru-splash-link" onclick="importBackup()">Schon dabei? Backup wiederherstellen</button>
+      </div>
+    </div>
+
+    <!-- RU 1: Was ist felia -->
+    <div class="ru" id="ru-1">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Was ist felia?</div>
+        <div class="ru-q">Dein Körper sendet ständig Signale.</div>
+        <div class="ru-qsub">felia hilft dir, sie zu verstehen.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-bub"><div class="ru-bub-ico is"><svg class="ico"><use href="#i-chat"/></svg></div><div><h4>Echte Gespräche</h4><p>felia unterstützt dich dabei, deinen Körper und deine Bedürfnisse besser zu verstehen – als Begleiterin, die nicht nur deinen Körper sieht, sondern auch das Leben dahinter.</p></div></div>
+        <div class="ru-bub"><div class="ru-bub-ico is"><svg class="ico"><use href="#i-wind"/></svg></div><div><h4>Belastung erkennen</h4><p>felia hilft dir, Stress, Energie und Erschöpfung einzuordnen – damit du Warnsignale früh erkennst, bevor Überforderung zur Normalität wird.</p></div></div>
+        <div class="ru-bub" style="margin-top:18px;"><div class="ru-bub-ico not"><svg class="ico"><use href="#i-pulse"/></svg></div><div><h4>Keine Ärztin</h4><p>felia stellt keine Diagnosen und ersetzt keine medizinische Beratung. Bei gesundheitlichen Fragen wende dich an Fachpersonen.</p></div></div>
+        <div class="ru-bub"><div class="ru-bub-ico not"><svg class="ico"><use href="#i-mind"/></svg></div><div><h4>Keine Therapeutin</h4><p>felia begleitet dich — aber behandelt nicht. Psychologische Unterstützung bekommst du bei ausgebildeten Fachleuten.</p></div></div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-1"></i></div>
+        <button class="ru-back" onclick="ruGo(0)" aria-label="Zurück">←</button>
+        <span class="ru-step">1/6</span>
+        <button class="ru-next" onclick="ruGo(2)">Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 2: Name + Altersband -->
+    <div class="ru" id="ru-2">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Schön, dass du da bist</div>
+        <div class="ru-q">Wie darf ich dich nennen?</div>
+        <div class="ru-qsub">Zwei Angaben, dann geht es um dich.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-label">Dein Name</div>
+        <input class="ru-input" id="ru-name" type="text" placeholder="Vorname oder Spitzname" maxlength="30" autocomplete="given-name">
+        <div class="ru-label" style="margin-top:20px;">Wie alt bist du?</div>
+        <div class="ru-hint">Damit ich dir die passenden Themen zuerst zeige. Ausgeblendet wird nichts.</div>
+        <div class="ru-grid" id="ru-bands"></div>
+        <div class="ru-note">Alles, was du jetzt eingibst, bleibt bis zur Einwilligung nur auf deinem Gerät — nichts wird gespeichert oder gesendet.</div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-2"></i></div>
+        <button class="ru-back" onclick="ruGo(1)" aria-label="Zurück">←</button>
+        <span class="ru-step">2/6</span>
+        <button class="ru-next" id="ru-next-2" onclick="ruGo(3)" disabled>Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 3: Ich-Sätze -->
+    <div class="ru" id="ru-3">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Dein Moment</div>
+        <div class="ru-q">Was davon klingt am meisten nach dir?</div>
+        <div class="ru-qsub">Wähle den Satz, den du selbst schon gedacht hast.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-list" id="ru-satz"></div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-3"></i></div>
+        <button class="ru-back" onclick="ruGo(2)" aria-label="Zurück">←</button>
+        <span class="ru-step">3/6</span>
+        <button class="ru-next" id="ru-next-3" onclick="ruGo(4)" disabled>Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 4: Hat sich etwas verändert -->
+    <div class="ru" id="ru-4">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Veränderungen</div>
+        <div class="ru-q" id="ru-h3">Hat sich etwas bei dir verändert?</div>
+        <div class="ru-qsub">Mehrfach möglich. Es gibt kein richtig oder falsch.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-grid" id="ru-areas"></div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-4"></i></div>
+        <button class="ru-back" onclick="ruGo(3)" aria-label="Zurück">←</button>
+        <span class="ru-step">4/6</span>
+        <button class="ru-next" id="ru-next-4" onclick="ruGo(5)" disabled>Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 5: Ziel -->
+    <div class="ru" id="ru-5">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Dein Ziel</div>
+        <div class="ru-q">Was möchtest du besser verstehen?</div>
+        <div class="ru-qsub">Danach richte ich mich aus.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-list" id="ru-ziel"></div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-5"></i></div>
+        <button class="ru-back" onclick="ruGo(4)" aria-label="Zurück">←</button>
+        <span class="ru-step">5/6</span>
+        <button class="ru-next" id="ru-next-5" onclick="ruGo(6)" disabled>Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 6: Einordnung -->
+    <div class="ru" id="ru-6">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Einordnung</div>
+        <div class="ru-q" id="ru-payoff-h">Dafür gibt es einen Grund.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-card">
+          <div class="ru-label">Was dahinter steckt</div>
+          <div id="ru-payoff-text" style="font-size:14px;color:var(--plum);line-height:1.6;"></div>
+        </div>
+        <div class="ru-label" style="margin:20px 0 8px;">Darauf schaue ich mit dir</div>
+        <div class="ru-card" id="ru-signals"></div>
+        <div class="ru-note">felia stellt keine Diagnosen. Sie erklärt Zusammenhänge und sagt dir, wann du ärztliche Hilfe brauchst.</div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-6"></i></div>
+        <button class="ru-back" onclick="ruGo(5)" aria-label="Zurück">←</button>
+        <span class="ru-step">6/6</span>
+        <button class="ru-next" onclick="ruFinish()">Weiter →</button>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ══ ONBOARDING ══ -->
-  <div id="onboarding">
+  <div id="onboarding" style="display:none;">
 
     <!-- Slides wrapper -->
     <div class="slides-wrap" id="slidesWrap">
 
       <!-- SLIDE 1: Splash -->
-      <div class="slide slide-1" id="slide-0">
-        <div style="text-align:center;padding:0 0 8px;">
-          <div class="splash-claim">seen by</div>
-          <svg class="splash-word" viewBox="0 0 1043 446" fill="none" aria-label="felia"><path fill="#e1ea7d" d="M320.0 445.2 C296.2 444.0 273.3 437.5 255.5 426.9 C219.9 405.7 198.1 369.9 192.2 322.8 C191.1 314.1 190.9 291.7 191.9 284.5 C197.5 243.5 216.6 209.3 246.8 186.4 C271.6 167.6 300.1 159.2 333.2 161.0 C366.1 162.8 389.2 171.7 407.0 189.5 C421.5 203.9 430.2 219.6 435.3 240.8 C441.7 267.8 438.3 283.0 424.3 289.7 C413.2 295.1 415.2 295.0 327.3 295.0 L251.8 295.0L252.2 303.9 C253.8 351.3 268.9 385.7 295.3 402.6 C320.1 418.5 363.1 419.9 387.8 405.7 C399.5 398.9 411.9 386.0 421.6 370.5 C425.4 364.4 429.1 363.0 434.6 365.4 C440.0 367.8 442.5 371.6 442.5 377.6 L442.5 381.4L438.9 386.8 C418.8 416.9 389.4 436.9 356.8 443.0 C346.9 444.8 331.0 445.7 320.0 445.2 Z M848.0 445.1 C812.5 443.0 784.1 420.4 777.7 389.2 C776.4 383.0 776.2 368.3 777.2 360.9 C780.2 340.0 789.0 326.1 806.8 314.3 C822.3 303.9 839.2 297.4 860.2 293.7 C878.1 290.6 916.3 286.7 944.2 285.2 L950.6 284.8L950.4 255.8 C950.2 223.5 950.0 222.2 946.7 212.0 C940.6 193.5 927.9 183.1 906.9 179.5 C899.0 178.2 888.4 177.7 882.5 178.5 C863.6 180.9 848.4 193.2 844.6 209.0 C840.8 224.7 844.2 234.6 857.0 245.9 C859.6 248.2 861.8 250.4 861.9 250.8 C862.5 253.4 856.1 260.0 850.3 262.7 C845.5 265.0 842.3 265.6 836.1 265.6 C817.8 265.5 804.9 254.4 799.2 234.0 C797.8 228.9 797.9 213.8 799.4 207.8 C804.1 189.3 817.4 177.1 842.5 168.4 C871.1 158.4 914.9 158.2 946.5 167.9 C977.0 177.2 993.2 192.5 999.7 218.3 C1002.8 230.5 1002.6 225.5 1003.0 312.5 C1003.3 392.1 1003.3 392.3 1004.3 396.0 C1007.6 407.6 1012.9 415.4 1019.8 418.9 C1023.9 421.0 1026.3 421.5 1032.9 422.0 C1040.6 422.5 1042.3 423.8 1042.9 429.4 C1043.6 437.6 1038.6 441.2 1022.2 444.3 C1016.1 445.5 1003.8 445.5 997.8 444.3 C973.9 439.6 956.7 424.5 951.9 404.0 C950.3 397.2 950.5 397.3 947.6 401.9 C929.1 430.8 890.1 447.7 848.0 445.1 Z M11.7 439.1 C10.6 438.6 9.2 437.5 8.6 436.7 C4.7 431.8 5.7 420.1 10.2 418.5 C11.0 418.2 15.5 417.7 20.1 417.5 C28.6 417.0 33.6 416.2 37.2 414.6 C42.5 412.4 46.8 407.8 48.7 402.4 L49.8 399.2L49.9 295.1 L50.0 191.0L28.7 191.0 L7.3 191.0L5.2 189.7 C-1.4 185.9 -1.7 171.4 4.8 169.0 C6.4 168.4 10.9 168.2 28.4 168.1 L50.0 167.9L50.0 153.6 C50.0 131.9 51.1 116.6 53.6 103.5 C60.7 65.4 79.5 34.6 105.5 18.5 C127.4 5.0 157.6 -0.1 182.6 5.7 C199.7 9.7 218.1 21.0 227.0 33.0 C245.6 58.1 234.9 97.8 207.6 105.3 C203.2 106.5 194.4 106.7 190.1 105.8 C183.5 104.4 175.7 99.5 172.3 94.6 C170.2 91.5 170.4 91.0 176.4 84.8 C186.3 74.6 190.3 66.8 190.8 56.8 C191.4 46.9 188.9 40.4 182.0 33.4 C174.2 25.6 168.2 23.2 155.8 23.3 C137.5 23.4 126.6 30.2 118.1 46.8 C107.6 67.4 105.0 86.6 105.0 146.1 L105.0 168.0L138.6 168.1 C177.0 168.3 174.5 168.0 177.0 172.7 C179.7 178.1 178.3 185.6 173.8 189.2 L171.9 190.8L138.6 191.0 L105.2 191.2L105.1 285.8 C105.0 381.0 105.1 390.6 106.8 398.6 C108.8 408.5 114.2 413.7 124.2 415.7 C129.6 416.7 133.3 417.0 145.8 417.4 C157.6 417.8 158.5 418.1 159.8 421.4 C161.1 424.4 161.3 430.6 160.3 433.3 C158.1 438.9 155.5 440.3 147.3 439.8 C116.4 438.0 58.6 438.0 20.0 439.8 C14.5 440.0 13.5 439.9 11.7 439.1 Z M466.7 439.1 C461.5 436.6 459.4 429.8 461.6 422.5 C462.8 418.4 464.7 417.8 476.2 417.3 C491.1 416.7 498.5 413.1 502.5 404.4 C505.4 398.2 505.2 405.7 505.2 229.8 C505.2 57.5 505.3 63.2 502.8 57.8 C498.9 49.3 491.8 45.9 476.0 45.0 C465.8 44.5 463.7 43.8 461.9 40.1 C460.5 37.1 460.3 31.1 461.7 28.5 C464.0 24.1 466.3 22.9 474.0 21.8 C494.5 18.8 514.5 13.9 532.8 7.5 C549.6 1.7 555.2 1.8 558.4 8.0 L559.5 10.2L559.5 193.2 C559.5 367.6 559.7 394.2 561.0 399.6 C562.9 408.1 569.6 414.3 578.9 416.3 C589.6 418.5 633.9 418.5 644.6 416.3 C654.5 414.2 660.6 408.0 662.2 398.5 C663.0 393.1 663.0 223.9 662.2 218.5 C661.4 213.6 659.1 209.1 656.0 206.3 C651.0 201.9 645.5 200.3 633.0 199.6 C623.1 199.0 621.0 198.2 619.4 194.6 C617.9 191.3 617.9 185.5 619.4 182.7 C621.7 178.3 623.3 177.6 634.8 175.8 C654.2 172.8 669.3 169.1 688.4 162.7 L701.2 158.3L706.6 158.3 C712.9 158.2 714.0 158.8 716.0 162.8 L717.2 165.2L717.3 272.0 C717.5 406.3 717.3 399.9 720.7 405.8 C725.4 413.7 732.6 416.7 748.2 417.4 C757.6 417.9 758.7 418.2 760.4 421.5 C763.7 428.2 761.2 437.7 755.6 439.5 C754.4 439.9 752.0 440.0 748.0 439.8 C723.1 438.4 677.9 438.1 651.1 439.1 C630.2 439.9 594.1 439.9 571.9 439.1 C543.8 438.1 505.1 438.3 474.8 439.8 C469.4 440.0 468.5 439.9 466.7 439.1 Z M888.1 412.0 C918.7 406.8 942.6 383.2 949.1 351.6 C950.1 346.7 950.2 344.6 950.4 324.2 L950.6 302.2L948.4 302.4 C941.8 302.9 929.6 304.2 921.8 305.3 C861.8 313.8 839.1 330.6 836.7 368.2 C835.2 393.6 845.3 409.0 865.8 412.5 C870.6 413.3 882.1 413.1 888.1 412.0 Z M360.0 271.4 C368.4 269.3 373.4 266.2 376.9 261.0 C380.7 255.3 381.9 249.2 381.0 239.8 C378.3 210.9 362.9 189.7 340.5 183.8 C328.4 180.7 314.3 181.2 302.8 185.2 C287.3 190.5 273.3 203.3 264.8 219.9 C258.0 233.4 253.6 250.2 252.2 268.2 L251.8 272.6L304.3 272.4 C350.4 272.2 357.1 272.1 360.0 271.4 Z M660.5 101.0 C633.7 97.7 610.3 81.5 598.4 58.1 C595.7 53.0 592.6 45.2 593.1 44.8 C593.5 44.4 741.7 0.0 741.9 0.2 C742.6 1.0 744.6 11.1 745.0 16.4 C747.6 48.1 730.1 79.5 702.0 93.5 C689.9 99.6 673.3 102.6 660.5 101.0 Z"/></svg>
-          <div class="splash-sub">Die Antworten sind oft schon da.<br>felia hilft, sie zu erkennen.</div>
-        </div>
-
-        <svg class="splash-balls" viewBox="0 0 1204 362" fill="none" aria-hidden="true"><g transform="translate(63.5 97)"><g class="bs b1"><use href="#felia-ball1" width="236.5" height="168.5"/></g></g><g transform="translate(360.5 97.5)"><g class="bs b2"><use href="#felia-ball2" width="220.5" height="178.5"/></g></g><g transform="translate(652.5 97)"><g class="bs b3"><use href="#felia-ball3" width="236.5" height="168.5"/></g></g><g transform="translate(972 63.5)"><g class="bs b4"><use href="#felia-ball4" width="168.5" height="236.5"/></g></g></svg>
-
-        <div class="ob-nav" style="margin-top:32px;">
-          <div class="ob-dots">
-            <div class="ob-dot active"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-          </div>
-          <button class="ob-next" onclick="nextSlide()">Los geht's →</button>
-        </div>
-        <div style="text-align:center;margin-top:20px;">
-          <span onclick="importBackup()" style="font-size:13px;color:#DAB3E4;cursor:pointer;text-decoration:underline;text-underline-offset:2px;">Schon dabei? Backup wiederherstellen</span>
-        </div>
-      </div>
-
-
-
-      
-
-      <!-- SLIDE 2: Was felia ist -->
-      <div class="slide slide-2" id="slide-1">
-        <div class="ob-header">
-          <div class="ob-header-label">Was ist felia?</div>
-          <div class="ob-header-title">Dein Körper. Dein Alltag. Endlich im Einklang.</div>
-        </div>
-        <div class="ob-body">
-          <div class="ob-card">
-            <div class="ob-card-icon"><svg class="ico"><use href="#i-chat"/></svg></div>
-            <div class="ob-card-text">
-              <h4>Echte Gespräche</h4>
-              <p>felia hört zu und unterstützt dich dabei, deinen Körper und deine Bedürfnisse besser zu verstehen.</p>
-            </div>
-          </div>
-          <div class="ob-card">
-            <div class="ob-card-icon"><svg class="ico"><use href="#i-wind"/></svg></div>
-            <div class="ob-card-text">
-              <h4>Belastung erkennen</h4>
-              <p>felia hilft dir, Stress, Energie und Erschöpfung einzuordnen – damit du Warnsignale frühzeitig erkennst, bevor Überforderung zur Normalität wird.</p>
-            </div>
-          </div>
-          <div class="ob-card">
-            <div class="ob-card-icon"><svg class="ico"><use href="#i-bloom"/></svg></div>
-            <div class="ob-card-text">
-              <h4>Dich verstanden fühlen</h4>
-              <p>Kein Tool, kein Tracker. Eine Begleiterin, die nicht nur deinen Körper sieht, sondern auch das Leben dahinter.</p>
-            </div>
-          </div>
-        </div>
-        <div class="ob-nav">
-          <div class="ob-dots">
-            <div class="ob-dot active"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-          </div>
-          <button class="ob-back" onclick="prevSlide()">←</button>
-          <button class="ob-next" onclick="nextSlide()">Weiter →</button>
-        </div>
-      </div>
-
-      <!-- SLIDE 3: Was felia nicht ist -->
-      <div class="slide slide-3" id="slide-2">
-        <div class="ob-header">
-          <div class="ob-header-label">Wichtig zu wissen</div>
-          <div class="ob-header-title">Was felia nicht ist — und nicht sein will.</div>
-        </div>
-        <div class="ob-body">
-          <div class="ob-card">
-            <div class="ob-card-icon"><svg class="ico"><use href="#i-pulse"/></svg></div>
-            <div class="ob-card-text"><h4>Keine Ärztin</h4><p>felia stellt keine Diagnosen und ersetzt keine medizinische Beratung. Bei gesundheitlichen Fragen wende dich an Fachpersonen.</p></div>
-          </div>
-          <div class="ob-card">
-            <div class="ob-card-icon"><svg class="ico"><use href="#i-mind"/></svg></div>
-            <div class="ob-card-text"><h4>Keine Therapeutin</h4><p>felia begleitet dich — aber behandelt nicht. Psychologische Unterstützung bekommst du bei ausgebildeten Fachleuten.</p></div>
-          </div>
-          <div class="ob-card">
-            <div class="ob-card-icon"><svg class="ico"><use href="#i-chart"/></svg></div>
-            <div class="ob-card-text"><h4>Kein Tracking-Tool</h4><p>felia optimiert dich nicht. Sie versteht dich.</p></div>
-          </div>
-          <div class="ob-crisis">
-            <p>In einer ernsten Krise? Bitte wende dich an die <strong>Telefonseelsorge: 0800 111 0 111</strong> (kostenlos, 24/7).</p>
-          </div>
-        </div>
-        <div class="ob-nav">
-          <div class="ob-dots">
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot active"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-          </div>
-          <button class="ob-back" onclick="prevSlide()">←</button>
-          <button class="ob-next" onclick="nextSlide()">Verstanden →</button>
-        </div>
-      </div>
-
-      <!-- SLIDE 4: Datenschutz -->
-      <div class="slide slide-4" id="slide-3">
-        <div class="ob-header">
-          <div class="ob-header-label">Deine Daten</div>
-          <div class="ob-header-title">Privacy by Design. Dein Vertrauen ist alles.</div>
-        </div>
-        <div class="ob-body">
-          <div class="ob-data-row">
-            <div class="ob-data-icon"><svg class="ico"><use href="#i-lock"/></svg></div>
-            <div class="ob-data-text">
-              <h4>DSGVO-konform</h4>
-              <p>Alle Daten werden nach höchsten europäischen Standards verarbeitet.</p>
-            </div>
-          </div>
-          <div class="ob-data-row">
-            <div class="ob-data-icon"><svg class="ico"><use href="#i-box"/></svg></div>
-            <div class="ob-data-text">
-              <h4>Minimale Datensammlung</h4>
-              <p>Wir speichern nur, was für dein Wohlbefinden wirklich nötig ist — nichts mehr.</p>
-            </div>
-          </div>
-          <div class="ob-data-row">
-            <div class="ob-data-icon"><svg class="ico"><use href="#i-eye"/></svg></div>
-            <div class="ob-data-text">
-              <h4>Volle Transparenz</h4>
-              <p>Du siehst jederzeit, was gespeichert ist — und kannst alles löschen.</p>
-            </div>
-          </div>
-          <div class="ob-data-row">
-            <div class="ob-data-icon"><svg class="ico"><use href="#i-sliders"/></svg></div>
-            <div class="ob-data-text">
-              <h4>Du hast die Kontrolle</h4>
-              <p>Deine Daten gehören dir. Immer. Keine Weitergabe ohne deine Zustimmung.</p>
-            </div>
-          </div>
-        </div>
-        <div class="ob-nav">
-          <div class="ob-dots">
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot active"></div>
-            <div class="ob-dot"></div>
-          </div>
-          <button class="ob-back" onclick="prevSlide()">←</button>
-          <button class="ob-next" onclick="nextSlide()">Weiter →</button>
-        </div>
-      </div>
-
-      <!-- SLIDE 5: Consent -->
       <div class="slide slide-5" id="slide-4">
         <div class="ob-header">
           <div class="ob-header-label">Fast geschafft</div>
@@ -1606,15 +1603,10 @@ html.native-app .header { padding-top: 22px; }
             <span onclick="showDatenschutz()" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span>&nbsp;·&nbsp;<span onclick="showImpressum()" style="text-decoration:underline;cursor:pointer;">Impressum</span>&nbsp;·&nbsp;<span onclick="showAGB()" style="text-decoration:underline;cursor:pointer;">AGB</span>
           </div>
         </div>
-        <div class="ob-nav">
-          <div class="ob-dots">
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot"></div>
-            <div class="ob-dot active"></div>
-          </div>
-          <button class="ob-back" onclick="prevSlide()">←</button>
+        <div class="ob-nav" style="position:relative;">
+          <div class="ru-prog"><i style="width:87.5%"></i></div>
+          <button class="ob-back" onclick="ruBackToRampup()">←</button>
+          <span class="ru-step" style="margin-right:auto;">7/8</span>
           <button class="ob-next" id="startBtn" onclick="nextSlide()" disabled>Weiter ✦</button>
         </div>
       </div>
@@ -1624,7 +1616,7 @@ html.native-app .header { padding-top: 22px; }
 
         <div style="background:#180430;padding:52px 28px 22px;flex-shrink:0;position:relative;overflow:hidden;">
           <div style="position:absolute;bottom:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;"></div>
-          <div class="ob-header-label">Schön, dass du da bist</div>
+          <div class="ob-header-label">Noch zwei Fragen</div>
           <div style="font-family:'Alice',Georgia,serif;font-size:24px;color:white;line-height:1.2;">Unser erstes Gespräch.</div>
         </div>
 
@@ -1633,55 +1625,11 @@ html.native-app .header { padding-top: 22px; }
           <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
               <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;">Schön, dass du hier bist. Wie heißt du?</div>
+                <div style="font-size:14px;color:#180430;line-height:1.55;" id="kl-opener">Schön, dass du hier bist.</div>
               </div>
             </div>
 
-          <!-- Name Input -->
-          <div style="padding-left:42px;flex-shrink:0;">
-            <input
-              id="name-input"
-              type="text"
-              placeholder="Dein Vorname…"
-              maxlength="30"
-              oninput="onNameInput(this)"
-              onblur="onNameBlur(this)"
-              style="width:100%;padding:13px 16px;border-radius:14px;border:2px solid rgba(143, 91, 189,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:16px;color:#180430;outline:none;box-sizing:border-box;box-shadow:0 2px 8px rgba(24, 4, 48,0.06);"
-              onfocus="this.style.borderColor='#8F5BBD'"
-              onblur2="this.style.borderColor='rgba(143, 91, 189,0.25)'"
-            />
-          </div>
-
-          <!-- felia antwortet auf Name + fragt Alter -->
-          <div id="kl-q1-wrap" style="display:none;flex-direction:column;gap:14px;">
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-              <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
-              <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="name-reply-text"></span><br><br>Und damit ich dich noch besser verstehe — wie alt bist du?</div>
-              </div>
-            </div>
-            <div style="padding-left:0;flex-shrink:0;">
-              <style>
-                #age-input { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:3px; outline:none; cursor:pointer; background: linear-gradient(to right, #180430 37.5%, #DDD5F0 37.5%); }
-                #age-input::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:26px; height:26px; border-radius:50%; background:#180430; border:3px solid white; box-shadow:0 2px 8px rgba(24, 4, 48,0.35); cursor:pointer; }
-                #age-input::-moz-range-thumb { width:26px; height:26px; border-radius:50%; background:#180430; border:3px solid white; box-shadow:0 2px 8px rgba(24, 4, 48,0.35); cursor:pointer; }
-                #age-input::-webkit-slider-runnable-track { border-radius:3px; }
-              </style>
-              <div style="text-align:center;margin-bottom:12px;">
-                <span id="age-display" style="font-family:'Alice',Georgia,serif;font-size:48px;color:#180430;font-weight:400;line-height:1;">28</span>
-                <span style="font-size:16px;color:#A090BC;margin-left:5px;">Jahre</span>
-              </div>
-              <input id="age-input" type="range" min="18" max="80" value="28"
-                oninput="var pct=((this.value-18)/(80-18)*100).toFixed(1);this.style.background='linear-gradient(to right,#180430 '+pct+'%,#DDD5F0 '+pct+'%)';document.getElementById('age-display').textContent=this.value;"
-                onchange="onAgeBlur(this)"
-                style="width:100%;display:block;background:linear-gradient(to right,#180430 16.1%,#DDD5F0 16.1%);"/>
-              <div style="display:flex;justify-content:space-between;margin:8px 0 0;font-size:11px;color:#C0B0D0;">
-                <span>18</span><span>80</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- felia antwortet auf Alter + fragt Kinder -->
+          <!-- felia fragt nach den Kindern -->
           <div id="kl-q2-wrap" style="display:none;flex-direction:column;gap:14px;">
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
               <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
@@ -1717,7 +1665,7 @@ html.native-app .header { padding-top: 22px; }
             <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
               <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="24.2" height="18.6" aria-label="felia"><use href="#felia-f"/></svg></div>
               <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;">
-                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="kl-reply-lifestyle"></span><br><br>Was wünschst du dir von felia?</div>
+                <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="kl-reply-lifestyle"></span><span id="kl-wunsch-q"><br><br>Was wünschst du dir von felia?</span></div>
               </div>
             </div>
             <div id="kl-chips-wunsch" style="padding-left:42px;display:flex;flex-wrap:wrap;gap:8px;flex-shrink:0;">
@@ -1740,15 +1688,8 @@ html.native-app .header { padding-top: 22px; }
             </div>
           </div></div>
 
-        <div style="padding:12px 20px 14px;background:#180430;display:flex;align-items:center;gap:12px;flex-shrink:0;">
-          <div style="display:flex;gap:5px;flex:1;">
-            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.28);"></div>
-            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.28);"></div>
-            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.28);"></div>
-            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.28);"></div>
-            <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.28);"></div>
-            <div style="width:20px;height:6px;border-radius:3px;background:#e1ea7d;"></div>
-          </div>
+        <div style="padding:12px 20px 14px;background:#180430;display:flex;align-items:center;gap:12px;flex-shrink:0;position:relative;"><div class="ru-prog"><i style="width:100%"></i></div>
+          <span class="ru-step" style="flex:1;">8/8</span>
           <button onclick="prevSlide()" style="padding:10px 18px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.32);background:transparent;color:rgba(255,255,255,0.65);font-family:inherit;font-size:13px;cursor:pointer;">←</button>
           <button id="klStartBtn" onclick="startApp()" disabled style="padding:10px 22px;border-radius:20px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;opacity:0.62;transition:opacity 0.2s;">Los geht's ✦</button>
         </div>
@@ -1994,7 +1935,7 @@ var BLOOM = '<svg width="22" height="17" aria-label="felia"><use href="#felia-f"
 
 // ── Onboarding state ──
 let currentSlide = 0;
-const totalSlides = 6;
+const totalSlides = 2;   /* Einwilligung + Kennenlern-Chat */
 const consents = { c1: false, c2: false, c3: false };
 
 const slideEls = document.querySelectorAll('.slide');
@@ -2003,6 +1944,8 @@ function updateSlides() {
   slideEls.forEach((s, i) => {
     s.style.display = i === currentSlide ? 'flex' : 'none';
   });
+  var cur = slideEls[currentSlide];
+  if (cur && cur.id === 'slide-name' && typeof klInitFromRampup === 'function') klInitFromRampup();
 }
 
 // Init: show only first slide
@@ -2122,144 +2065,39 @@ const DASHBOARD_GUIDE_STEPS = [
   }
 ];
 
-// ── Name input ──
 let userName = 'Laura'; // default
 
-function onNameInput(input) {
-  const val = input.value.trim();
-  const btn = document.getElementById('name-next-btn');
-  if (btn) {
-    btn.disabled = val.length < 2;
-    btn.style.opacity = val.length < 2 ? '0.4' : '1';
-  }
-  if (val.length >= 2) userName = val;
-  // Hide reply while typing — only shown on blur
-  const reply = document.getElementById('name-reply');
-  if (reply) reply.style.display = 'none';
-}
-
-function onNameBlur(input) {
-  const val = input.value.trim();
-  if (val.length >= 2) showNameReply(val);
-}
-
-function onAgeBlur(input) {
-  const val = parseInt(input.value);
-  if (!val || val < 10) return;
-  // Prevent double-trigger
-  if (klAnswers.alterExact === val) return;
-  klAnswers.alter = val < 25 ? '18-24' : val < 35 ? '25-34' : val < 45 ? '35-44' : '45+';
-  klAnswers.alterExact = val;
-  const chat = document.getElementById('kl-chat');
-  const replyEl = document.getElementById('kl-reply-alter');
-  const q2wrap  = document.getElementById('kl-q2-wrap');
-  const ageReplies = {
-    '18-24': 'Mit ' + val + ' — viel passiert in dieser Zeit.',
-    '25-34': 'Mit ' + val + ' — da ist oft gleichzeitig viel los.',
-    '35-44': val + ' Jahre — eine Zeit wo viele anfangen, anders auf sich zu schauen.',
-    '45+':   'Mit ' + val + ' — hormonell eine besondere Phase, das fließt mit ein.'
-  };
-  if (replyEl) replyEl.textContent = ageReplies[klAnswers.alter] || '';
-  if (q2wrap) { q2wrap.style.display = 'flex'; q2wrap.style.flexDirection = 'column'; }
-  setTimeout(function() { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-}
-
-function showNameReply(name) {
-  const q1wrap   = document.getElementById('kl-q1-wrap');
-  const replyText = document.getElementById('name-reply-text');
-  if (replyText) replyText.innerHTML = `Hey <strong>${name}</strong>. 👋 Schön, dass du da bist.`;
-  if (q1wrap) { q1wrap.style.display = 'flex'; q1wrap.style.flexDirection = 'column'; }
-  const chat = document.getElementById('kl-chat');
-  setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-}
-
-// ── Kennenlernen Chat-Gespräch ──
-const klAnswers = {};
-
-const KL_REPLIES = {
-  alter: {
-    '18-24': 'Anfang Zwanzig — viel passiert in dieser Zeit.',
-    '25-34': 'Mitte bis Ende Zwanzig — da ist oft gleichzeitig viel los.',
-    '35-44': 'Mitte Dreißig bis Vierzig — eine Zeit wo viele anfangen, anders auf sich zu schauen.',
-    '45+':   'Ab Mitte Vierzig — hormonell eine besondere Phase, das fließt mit ein.'
-  },
-  kinder: {
-    'keine':    'Alles klar.',
-    'ja-klein': 'Kleine Kinder — weniger Schlaf, weniger Zeit für dich. Das spielt eine Rolle.',
-    'ja-gross': 'Ältere Kinder — der mentale Load bleibt oft unterschätzt.'
-  },
-  lifestyle: {
-    'job-intensiv':  'Job sehr intensiv — dann ist Erholung keine Option, sondern Pflicht.',
-    'ausgewogen':    'Eher ausgewogen — gute Basis.',
-    'zuhause':       'Viel zuhause — hat eigene Herausforderungen, die oft unsichtbar bleiben.',
-    'unberechenbar': 'Sehr unberechenbar — dann sind kleine, verlässliche Anker besonders wichtig.'
-  }
+/* Kennenlern-Chat: Eröffnung aus dem Ramp-up, Name und Alter sind bereits bekannt */
+var KL_OPENER = {
+  muede:    'dass Müdigkeit trotz Schlaf selten an den Stunden liegt',
+  gereizt:  'dass Reizbarkeit oft eine Frage der Belastbarkeit ist, nicht des Charakters',
+  funktion: 'dass Funktionieren und sich gut fühlen zwei verschiedene Dinge sind',
+  fremd:    'dass sich hormonelle Verschiebungen oft zuerst diffus anfühlen',
+  anders:   'dass dieses Gefühl ein Hinweis ist und kein Rauschen',
+  runter:   'dass Abschalten eine Frage der Regulation ist'
 };
 
-document.addEventListener('click', function(e) {
-  const chip = e.target.closest('.kl-chip');
-  if (!chip) return;
-  const group = chip.dataset.group;
-  const val   = chip.dataset.val;
-  klAnswers[group] = val;
-
-  // Style selected chip in its group
-  const parent = chip.closest('[id^="kl-chips"], div[style*="padding-left:42px"]') || chip.parentNode;
-  parent.querySelectorAll('.kl-chip').forEach(b => b.classList.remove('selected'));
-  chip.classList.add('selected');
-  // Keep chips clickable so user can change their answer
-
-  const chat = document.getElementById('kl-chat');
-
-  // 'alter' is now handled by onAgeBlur input field
-
-  if (group === 'kinder') {
-    const replyEl = document.getElementById('kl-reply-kinder');
-    const q3wrap  = document.getElementById('kl-q3-wrap');
-    if (replyEl) replyEl.textContent = KL_REPLIES.kinder[val] || '';
-    if (q3wrap)  { q3wrap.style.display = 'flex'; q3wrap.style.flexDirection = 'column'; }
-    setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+function klInitFromRampup() {
+  if (window._klInited) return;
+  window._klInited = true;
+  var op = document.getElementById('kl-opener');
+  if (op) {
+    var name = userName || 'du';
+    var satz = KL_OPENER[window._ruSatz];
+    op.innerHTML = satz
+      ? ('Danke, ' + name + '. Wir haben gerade darüber gesprochen, ' + satz +
+         '.<br><br>Damit ich das für dich einordnen kann, brauche ich noch zwei Dinge über deinen Alltag.')
+      : ('Schön, dass du da bist, ' + name +
+         '.<br><br>Damit ich dich gut einordnen kann, brauche ich noch zwei Dinge über deinen Alltag.');
   }
-
-  if (group === 'lifestyle') {
-    const replyEl  = document.getElementById('kl-reply-lifestyle');
-    const doneWrap = document.getElementById('kl-done-wrap');
-    if (replyEl)  replyEl.textContent = KL_REPLIES.lifestyle[val] || '';
-    if (doneWrap) { doneWrap.style.display = 'flex'; doneWrap.style.flexDirection = 'column'; }
-    setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-  }
-
-  if (group === 'wunsch') {
-    if (!Array.isArray(klAnswers.wunsch)) klAnswers.wunsch = [];
-    if (val === 'alles') {
-      klAnswers.wunsch = ['verstanden','orientierung','stress','energie','alles'];
-      chip.parentNode.querySelectorAll('.kl-chip').forEach(function(b) {
-        b.style.background='#180430'; b.style.color='white'; b.style.borderColor='#180430';
-      });
-    } else {
-      klAnswers.wunsch = klAnswers.wunsch.filter(function(v){ return v !== 'alles'; });
-      const alleBtn = chip.parentNode.querySelector('[data-val="alles"]');
-      if (alleBtn) { alleBtn.style.background='white'; alleBtn.style.color='#4A3A6A'; alleBtn.style.borderColor='rgba(143, 91, 189,0.3)'; }
-      const widx = klAnswers.wunsch.indexOf(val);
-      if (widx >= 0) {
-        klAnswers.wunsch.splice(widx, 1);
-        chip.style.background='white'; chip.style.color='#4A3A6A'; chip.style.borderColor='rgba(143, 91, 189,0.3)';
-      } else {
-        klAnswers.wunsch.push(val);
-        chip.style.background='#180430'; chip.style.color='white'; chip.style.borderColor='#180430';
-      }
-    }
-    if (klAnswers.wunsch.length > 0) {
-      klRevealFinal();
-      setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
-    }
-    return;
-  }
-});
+  var q2 = document.getElementById('kl-q2-wrap');
+  if (q2) { q2.style.display = 'flex'; q2.style.flexDirection = 'column'; }
+  var chat = document.getElementById('kl-chat');
+  setTimeout(function() { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 120);
+}
 
 function klWishReaction() {
-  const nameEl = document.getElementById('name-input');
-  const name = (nameEl && nameEl.value.trim()) || 'du';
+  const name = userName || 'du';
   const reactions = {
     verstanden:   'mich darauf konzentrieren, dir gut zuzuhören',
     orientierung: 'dir helfen, wieder Orientierung zu finden',
@@ -2284,8 +2122,7 @@ function klWishReaction() {
 function klRevealFinal() {
   const finalWrap = document.getElementById('kl-final-wrap');
   const finalText = document.getElementById('kl-final-text');
-  const nameEl = document.getElementById('name-input');
-  const name_val = (nameEl && nameEl.value.trim()) || 'du';
+  const name_val = userName || 'du';
   if (finalWrap && finalWrap.style.display === 'none') {
     finalWrap.style.display = 'flex'; finalWrap.style.flexDirection = 'column';
     var reaction = klWishReaction();
@@ -6179,6 +6016,7 @@ function hideAvieLoaderMinDelay(minMs) {
 }
 
 function enterAppFromStorage() {
+  var ru = document.getElementById('rampup'); if (ru) ru.style.display = 'none';
   var ob = document.getElementById('onboarding'); if (ob) ob.style.display = 'none';
   var app = document.getElementById('app'); if (app) app.classList.add('visible');
   updateClock();
@@ -7002,7 +6840,9 @@ function showOnboarding() {
   var sb = document.getElementById('startBtn');
   if (sb) sb.disabled = true;
   updateSlides();
-  document.getElementById('onboarding').style.display = 'flex';
+  var ru0 = document.getElementById('rampup');
+  if (ru0) { ru0.style.display = 'flex'; if (typeof ruGo === 'function') ruGo(0); }
+  document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.remove('visible');
 }
 
@@ -7985,6 +7825,335 @@ function feliaReactToNewData(kind) {
 
 initApp();
 
+</script>
+<script>
+/* ══ Ramp-up: Zustand und Ablauf ══ */
+var RU = { step: 0, name: '', band: '', areas: [], satz: '', ziel: '' };
+var RU_TOTAL = 6;   /* Bildschirme 1..6, der Splash zählt nicht mit */
+
+var RU_BANDS = [
+  { v: 'u30',   l: 'unter 30' },
+  { v: '30-39', l: '30–39' },
+  { v: '40-47', l: '40–47' },
+  { v: '48-55', l: '48–55' },
+  { v: '56+',   l: '56+' }
+];
+
+var RU_AREAS = {
+  energie:  'Energie',
+  schlaf:   'Schlaf',
+  stimmung: 'Stimmung',
+  zyklus:   'Zyklus',
+  stress:   'Anspannung',
+  fokus:    'Konzentration',
+  haut:     'Haut',
+  gewicht:  'Gewicht',
+  schmerz:  'Schmerzen',
+  libido:   'Libido'
+};
+
+/* Alter sortiert nur die Reihenfolge — es blendet nichts aus. */
+var RU_ORDER = {
+  'u30':   ['zyklus','stimmung','energie','haut','schlaf','stress','schmerz','fokus','gewicht','libido'],
+  '30-39': ['energie','schlaf','stress','stimmung','zyklus','fokus','gewicht','haut','schmerz','libido'],
+  '40-47': ['schlaf','energie','stimmung','zyklus','stress','fokus','gewicht','haut','libido','schmerz'],
+  '48-55': ['schlaf','stimmung','energie','zyklus','gewicht','fokus','libido','stress','haut','schmerz'],
+  '56+':   ['schlaf','energie','stimmung','gewicht','libido','fokus','haut','stress','schmerz','zyklus']
+};
+
+var RU_H3 = {
+  'u30':   'Hat sich etwas bei dir verändert?',
+  '30-39': 'Hat sich etwas bei dir verändert?',
+  '40-47': 'Hat sich in den letzten Monaten etwas verändert?',
+  '48-55': 'Hat sich in den letzten Monaten etwas verändert?',
+  '56+':   'Hat sich in den letzten Monaten etwas verändert?'
+};
+
+/* Der gewählte Ich-Satz zieht die naheliegenden Bereiche nach vorne. */
+var RU_SATZ_AREAS = {
+  muede:    ['schlaf','energie'],
+  gereizt:  ['stimmung','stress'],
+  funktion: ['energie','stimmung'],
+  fremd:    ['haut','gewicht'],
+  anders:   ['zyklus','schlaf'],
+  runter:   ['stress','schlaf']
+};
+
+/* Zwei Ziel-Vorschläge je Bereich. Bei einem Bereich beide, bei mehreren der erste je Bereich. */
+var RU_AREA_GOALS = {
+  schlaf:   [{ t: 'Warum sich mein Schlaf verändert hat',        v: 'gesundheit' },
+             { t: 'Warum ich morgens nicht erholt aufwache',     v: 'energie' }],
+  energie:  [{ t: 'Warum meine Energie nachgelassen hat',        v: 'energie' },
+             { t: 'Warum meine Kraft im Tagesverlauf kippt',     v: 'energie' }],
+  stimmung: [{ t: 'Warum meine Stimmung schwankt',               v: 'verstanden' },
+             { t: 'Was meine Reizbarkeit auslöst',               v: 'verstanden' }],
+  zyklus:   [{ t: 'Was mein Zyklus damit zu tun hat',            v: 'gesundheit' },
+             { t: 'Wie meine Zyklusphasen sich auf mich auswirken', v: 'gesundheit' }],
+  stress:   [{ t: 'Warum meine Anspannung nicht nachlässt',      v: 'stress' },
+             { t: 'Warum ich abends nicht runterkomme',          v: 'stress' }],
+  fokus:    [{ t: 'Warum mir das Konzentrieren schwerer fällt',  v: 'gesundheit' },
+             { t: 'Wann mein Kopf am klarsten ist',              v: 'orientierung' }],
+  haut:     [{ t: 'Was meine Haut mir sagen will',               v: 'gesundheit' },
+             { t: 'Was meine Haut mit meinen Hormonen zu tun hat', v: 'gesundheit' }],
+  gewicht:  [{ t: 'Warum sich mein Gewicht verändert hat',       v: 'gesundheit' },
+             { t: 'Warum mein Körper anders reagiert als früher', v: 'gesundheit' }],
+  schmerz:  [{ t: 'Woher meine Schmerzen kommen könnten',        v: 'gesundheit' },
+             { t: 'Wann meine Schmerzen stärker werden',         v: 'orientierung' }],
+  libido:   [{ t: 'Warum meine Lust nachgelassen hat',           v: 'gesundheit' },
+             { t: 'Was meine Lust beeinflusst',                   v: 'gesundheit' }]
+};
+
+var RU_SATZ = [
+  { v: 'muede',    t: 'Ich bin müde, obwohl ich geschlafen habe.' },
+  { v: 'gereizt',  t: 'Ich bin gereizt und weiß nicht warum.' },
+  { v: 'funktion', t: 'Ich funktioniere, aber es geht mir nicht gut.' },
+  { v: 'fremd',    t: 'Mein Körper fühlt sich fremd an.' },
+  { v: 'anders',   t: 'Irgendwas ist anders, ich kann es nicht benennen.' },
+  { v: 'runter',   t: 'Ich komme abends nicht runter.' }
+];
+
+/* ENTWURF — fachlich noch nicht freigegeben. */
+var RU_PAYOFF = {
+  muede: {
+    h: 'Müdigkeit trotz Schlaf hat selten mit der Dauer zu tun.',
+    t: 'Entscheidend ist nicht, wie lange du liegst, sondern wie tief dein Körper nachts herunterfährt. Wenn tagsüber viel Druck war, bleibt das Nervensystem auch im Schlaf angespannt — die Erholung fällt kürzer aus, obwohl die Stunden stimmen. Genau das lässt sich messen. Und es heißt nicht, dass du dich nur mehr anstrengen müsstest.'
+  },
+  gereizt: {
+    h: 'Reizbarkeit ist oft ein Zustand, keine Eigenschaft.',
+    t: 'Wie viel dich etwas mitnimmt, hängt davon ab, wie belastbar dein Nervensystem gerade ist — und das schwankt mit Schlaf, Erholung und Zyklusphase. In der zweiten Zyklushälfte sinkt die Stresstoleranz hormonell, dasselbe fühlt sich dann schwerer an. Dieselbe Situation, andere Ausgangslage. Es liegt nicht an dir.'
+  },
+  funktion: {
+    h: 'Funktionieren und sich gut fühlen sind zwei verschiedene Dinge.',
+    t: 'Der Körper kann lange leisten, während die Erholung längst zurückgeht — im Alltag merkst du es erst an Kleinigkeiten: kürzere Geduld, flacherer Schlaf, weniger Antrieb am Nachmittag. Diese Verschiebung ist sichtbar, bevor sie sich als Erschöpfung anfühlt. Danach schaue ich mit dir.'
+  },
+  fremd: {
+    h: 'Wenn sich der Körper fremd anfühlt, hat sich meist etwas verschoben.',
+    t: 'Hormonelle Übergänge verändern Schlaf, Temperatur, Haut und Stimmung oft, bevor sich der Zyklus selbst verändert. Viele Frauen erleben das als diffus und schwer zu benennen — nicht weil es unklar ist, sondern weil niemand die einzelnen Beobachtungen zusammensetzt. Genau das ist meine Aufgabe.'
+  },
+  anders: {
+    h: 'Dieses Gefühl ist ein Hinweis, kein Rauschen.',
+    t: 'Dass du eine Veränderung spürst, ohne sie benennen zu können, ist typisch für Phasen, in denen mehrere Werte gleichzeitig leicht kippen — Schlaf etwas kürzer, Erholung etwas niedriger, Stimmung schwankender. Einzeln fällt nichts davon auf. Zusammen ergibt es ein Muster. Ich helfe dir, es sichtbar zu machen.'
+  },
+  runter: {
+    h: 'Abends nicht runterzukommen ist eine Frage des Nervensystems.',
+    t: 'Nach einem dichten Tag bleibt der Sympathikus länger aktiv — der Puls sinkt langsamer, die Herzratenvariabilität bleibt niedrig, der Einschlafdruck fehlt. Das ist keine Frage der Disziplin, sondern der Regulation. Und Regulation lässt sich beobachten und beeinflussen.'
+  }
+};
+
+var RU_SIGNALS = [
+  { n: 'Schlafdauer',  d: 'Wie viel Zeit dein Körper wirklich zur Verfügung hatte.' },
+  { n: 'Erholung',     d: 'Ob dein Nervensystem nachts heruntergefahren ist — oder nicht.' },
+  { n: 'Ruhepuls',     d: 'Ein früher Hinweis auf Belastung, oft bevor du sie merkst.' },
+  { n: 'Zyklustag',    d: 'Welche Hormone gerade aktiv sind und was das erklärt.' }
+];
+
+var RU_ZIEL = [
+  { v: 'energie',      t: 'Warum meine Energie schwankt' },
+  { v: 'orientierung', t: 'Warum manche Tage leichter sind als andere' },
+  { v: 'verstanden',   t: 'Was meine Stimmung beeinflusst' },
+  { v: 'gesundheit',   t: 'Wie mein Zyklus mich beeinflusst' },
+  { v: 'stress',       t: 'Warum ich abends nicht runterkomme' },
+  { v: 'alles',        t: 'Ob es überhaupt ein Muster gibt' }
+];
+
+function ruRenderBands() {
+  var el = document.getElementById('ru-bands');
+  if (!el) return;
+  el.innerHTML = RU_BANDS.map(function(b) {
+    return '<button class="ru-opt' + (RU.band === b.v ? ' sel' : '') +
+           '" onclick="ruPickBand(\'' + b.v + '\')">' + b.l + '</button>';
+  }).join('');
+}
+
+function ruPickBand(v) {
+  RU.band = v;
+  ruRenderBands();
+  ruCheck1();
+}
+
+function ruCheck1() {
+  var n = document.getElementById('ru-name');
+  RU.name = n ? n.value.trim() : '';
+  var btn = document.getElementById('ru-next-2');
+  if (btn) btn.disabled = !(RU.name && RU.band);
+}
+
+function ruAreaOrder() {
+  var base = (RU_ORDER[RU.band] || RU_ORDER['30-39']).slice();
+  var lead = RU_SATZ_AREAS[RU.satz] || [];
+  var out = [];
+  lead.forEach(function(k) { if (base.indexOf(k) >= 0 && out.indexOf(k) < 0) out.push(k); });
+  base.forEach(function(k) { if (out.indexOf(k) < 0) out.push(k); });
+  return out;
+}
+
+function ruRenderAreas() {
+  var el = document.getElementById('ru-areas');
+  if (!el) return;
+  var h = ruAreaOrder().map(function(k) {
+    return '<button class="ru-opt' + (RU.areas.indexOf(k) >= 0 ? ' sel' : '') +
+           '" onclick="ruToggleArea(\'' + k + '\')">' + RU_AREAS[k] + '</button>';
+  }).join('');
+  h += '<button class="ru-opt' + (RU.areas.indexOf('anderes') >= 0 ? ' sel' : '') +
+       '" style="grid-column:1 / -1;" onclick="ruToggleArea(\'anderes\')">Etwas anderes</button>';
+  h += '<button class="ru-opt' + (RU.areas.indexOf('nein') >= 0 ? ' sel' : '') +
+       '" style="grid-column:1 / -1;" onclick="ruToggleArea(\'nein\')">Nein, eigentlich nicht</button>';
+  el.innerHTML = h;
+  var head = document.getElementById('ru-h3');
+  if (head) head.textContent = RU_H3[RU.band] || RU_H3['30-39'];
+  var btn = document.getElementById('ru-next-4');
+  if (btn) btn.disabled = RU.areas.length === 0;
+}
+
+function ruToggleArea(k) {
+  var i = RU.areas.indexOf(k);
+  if (i >= 0) {
+    RU.areas.splice(i, 1);
+  } else if (k === 'nein') {
+    RU.areas = ['nein'];           /* schließt alles andere aus */
+  } else {
+    var n = RU.areas.indexOf('nein');
+    if (n >= 0) RU.areas.splice(n, 1);
+    RU.areas.push(k);
+  }
+  ruRenderAreas();
+}
+
+function ruRenderSatz() {
+  var el = document.getElementById('ru-satz');
+  if (!el) return;
+  el.innerHTML = RU_SATZ.map(function(o) {
+    return '<button class="ru-row' + (RU.satz === o.v ? ' sel' : '') +
+           '" onclick="ruPickSatz(\'' + o.v + '\')"><span>' + o.t +
+           '</span><span class="ru-tick">✓</span></button>';
+  }).join('');
+  var btn = document.getElementById('ru-next-3');
+  if (btn) btn.disabled = !RU.satz;
+}
+
+function ruPickSatz(v) { RU.satz = v; RU.areas = []; ruRenderSatz(); }
+
+function ruZielList() {
+  /* gewählte Bereiche in Anzeigereihenfolge, ohne 'nein' und 'anderes' */
+  var picked = ruAreaOrder().filter(function(k) { return RU.areas.indexOf(k) >= 0; });
+  var tail = [];
+  if (picked.length === 1 && RU_AREA_GOALS[picked[0]]) {
+    tail = RU_AREA_GOALS[picked[0]].slice(0, 2);
+  } else if (picked.length >= 2) {
+    picked.slice(0, 2).forEach(function(k) {
+      if (RU_AREA_GOALS[k]) tail.push(RU_AREA_GOALS[k][0]);
+    });
+  }
+  var texts = tail.map(function(o) { return o.t; });
+  var vals  = tail.map(function(o) { return o.v; });
+  /* Auch sinngleiche Standardpunkte aussortieren, nicht nur wortgleiche */
+  var rest = RU_ZIEL.filter(function(o) {
+    return texts.indexOf(o.t) < 0 && vals.indexOf(o.v) < 0;
+  });
+  if (tail.length) rest = rest.slice(0, 4);
+  return tail.concat(rest).concat([{ v: 'anderes', t: 'Etwas anderes' }]);
+}
+
+function ruRenderZiel() {
+  var el = document.getElementById('ru-ziel');
+  if (!el) return;
+  el.innerHTML = ruZielList().map(function(o) {
+    return '<button class="ru-row' + (RU.ziel === o.v ? ' sel' : '') +
+           '" onclick="ruPickZiel(\'' + o.v + '\')"><span>' + o.t +
+           '</span><span class="ru-tick">✓</span></button>';
+  }).join('');
+  var btn = document.getElementById('ru-next-5');
+  if (btn) btn.disabled = !RU.ziel;
+}
+
+function ruPickZiel(v) { RU.ziel = v; ruRenderZiel(); }
+
+function ruRenderPayoff() {
+  var p = RU_PAYOFF[RU.satz] || RU_PAYOFF.anders;
+  var h = document.getElementById('ru-payoff-h');
+  var t = document.getElementById('ru-payoff-text');
+  if (h) h.textContent = (RU.name ? RU.name + ', ' : '') + p.h.charAt(0).toLowerCase() + p.h.slice(1);
+  if (t) t.textContent = p.t;
+  var sig = document.getElementById('ru-signals');
+  if (sig) {
+    sig.innerHTML = RU_SIGNALS.map(function(o) {
+      return '<div class="ru-sig"><div><h5>' + o.n + '</h5><p>' + o.d + '</p></div></div>';
+    }).join('');
+  }
+}
+
+function ruGo(step) {
+  if (step >= 3 && !RU.band) return;
+  if (step >= 4 && !RU.satz) return;
+  RU.step = step;
+  for (var i = 0; i <= 6; i++) {
+    var el = document.getElementById('ru-' + i);
+    if (el) el.classList.toggle('active', i === step);
+  }
+  var pr = document.getElementById('ru-prog-' + step);
+  if (pr) pr.style.width = Math.round(step / RU_TOTAL * 100) + '%';
+  if (step === 2) { ruRenderBands(); ruCheck1(); }
+  if (step === 3) ruRenderSatz();
+  if (step === 4) ruRenderAreas();
+  if (step === 5) ruRenderZiel();
+  if (step === 6) ruRenderPayoff();
+  var b = document.getElementById('ru-' + step);
+  var body = b ? b.querySelector('.ru-body') : null;
+  if (body) body.scrollTop = 0;
+}
+
+/* Zurück von der Einwilligung in das Ramp-up */
+function ruBackToRampup() {
+  var ob = document.getElementById('onboarding');
+  if (ob) ob.style.display = 'none';
+  var ru = document.getElementById('rampup');
+  if (ru) ru.style.display = 'flex';
+  ruGo(6);
+}
+
+/* Übergabe an das bestehende Einwilligungs-Slide */
+function ruFinish() {
+  if (RU.band) klAnswers.alter = RU.band;
+  if (RU.ziel === 'anderes') {
+    window._ruAskWunsch = true;          /* Ziel offen -> Chat fragt nach der Einwilligung */
+  } else if (RU.ziel) {
+    klAnswers.wunsch = [RU.ziel];
+    window._ruAskWunsch = false;         /* Ziel bekannt -> Chat überspringt die Frage */
+  }
+  window._ruAreas = RU.areas.slice();
+  window._ruSatz = RU.satz;
+  var ni = document.getElementById('ru-name');
+  if (ni) RU.name = ni.value.trim();
+  if (RU.name) { try { userName = RU.name; } catch (e) {} }
+  var ru = document.getElementById('rampup');
+  if (ru) ru.style.display = 'none';
+  var ob = document.getElementById('onboarding');
+  if (ob) ob.style.display = 'flex';
+  currentSlide = 0;   /* Index 0 = Einwilligung */
+  updateSlides();
+}
+
+(function ruInit() {
+  var n = document.getElementById('ru-name');
+  if (n) n.addEventListener('input', ruCheck1);
+  /* Alterslabels um die neuen Bänder ergänzen, damit das Profil sie anzeigen kann */
+  try {
+    if (typeof alterLabels === 'object' && alterLabels) {
+      alterLabels['u30'] = 'unter 30 Jahre';
+      alterLabels['30-39'] = '30–39 Jahre';
+      alterLabels['40-47'] = '40–47 Jahre';
+      alterLabels['48-55'] = '48–55 Jahre';
+      alterLabels['56+'] = '56+ Jahre';
+    }
+  } catch (e) {}
+  /* Wiederkehrende Nutzerin: Ramp-up gar nicht zeigen */
+  try {
+    if (localStorage.getItem('avie_profile')) {
+      var ru = document.getElementById('rampup');
+      if (ru) ru.style.display = 'none';
+    }
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>

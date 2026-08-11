@@ -1500,7 +1500,7 @@ html.native-app .header { padding-top: 22px; }
       <div class="ru-head">
         <div class="ru-eyebrow">Dein Moment</div>
         <div class="ru-q">Was davon klingt am meisten nach dir?</div>
-        <div class="ru-qsub">Wähle den Satz, den du selbst schon gedacht hast.</div>
+        <div class="ru-qsub">Mehrfach möglich — wähle die Sätze, die du selbst schon gedacht hast.</div>
       </div>
       <div class="ru-body">
         <div class="ru-list" id="ru-satz"></div>
@@ -1536,7 +1536,7 @@ html.native-app .header { padding-top: 22px; }
       <div class="ru-head">
         <div class="ru-eyebrow">Dein Ziel</div>
         <div class="ru-q">Was möchtest du besser verstehen?</div>
-        <div class="ru-qsub">Danach richte ich mich aus.</div>
+        <div class="ru-qsub">Mehrfach möglich. Danach richte ich mich aus.</div>
       </div>
       <div class="ru-body">
         <div class="ru-list" id="ru-ziel"></div>
@@ -1552,14 +1552,11 @@ html.native-app .header { padding-top: 22px; }
     <!-- RU 6: Einordnung -->
     <div class="ru" id="ru-6">
       <div class="ru-head">
-        <div class="ru-eyebrow">Einordnung</div>
+        <div class="ru-eyebrow" id="ru-payoff-eyebrow">Einordnung</div>
         <div class="ru-q" id="ru-payoff-h">Dafür gibt es einen Grund.</div>
       </div>
       <div class="ru-body">
-        <div class="ru-card">
-          <div class="ru-label">Was dahinter steckt</div>
-          <div id="ru-payoff-text" style="font-size:14px;color:var(--plum);line-height:1.6;"></div>
-        </div>
+        <div id="ru-payoff-cards"></div>
         <div class="ru-label" style="margin:20px 0 8px;">Darauf schaue ich mit dir</div>
         <div class="ru-card" id="ru-signals"></div>
         <div class="ru-note">felia stellt keine Diagnosen. Sie erklärt Zusammenhänge und sagt dir, wann du ärztliche Hilfe brauchst.</div>
@@ -2065,7 +2062,93 @@ const DASHBOARD_GUIDE_STEPS = [
   }
 ];
 
+// ── Nutzername (kommt aus dem Ramp-up) ──
 let userName = 'Laura'; // default
+
+// ── Kennenlernen Chat-Gespräch ──
+const klAnswers = {};
+
+const KL_REPLIES = {
+  kinder: {
+    'keine':    'Alles klar.',
+    'ja-klein': 'Kleine Kinder — weniger Schlaf, weniger Zeit für dich. Das spielt eine Rolle.',
+    'ja-gross': 'Ältere Kinder — der mentale Load bleibt oft unterschätzt.'
+  },
+  lifestyle: {
+    'job-intensiv':  'Job sehr intensiv — dann ist Erholung keine Option, sondern Pflicht.',
+    'ausgewogen':    'Eher ausgewogen — gute Basis.',
+    'zuhause':       'Viel zuhause — hat eigene Herausforderungen, die oft unsichtbar bleiben.',
+    'unberechenbar': 'Sehr unberechenbar — dann sind kleine, verlässliche Anker besonders wichtig.'
+  }
+};
+
+document.addEventListener('click', function(e) {
+  const chip = e.target.closest('.kl-chip');
+  if (!chip) return;
+  const group = chip.dataset.group;
+  const val   = chip.dataset.val;
+  klAnswers[group] = val;
+
+  // Style selected chip in its group
+  const parent = chip.closest('[id^="kl-chips"], div[style*="padding-left:42px"]') || chip.parentNode;
+  parent.querySelectorAll('.kl-chip').forEach(b => b.classList.remove('selected'));
+  chip.classList.add('selected');
+  // Keep chips clickable so user can change their answer
+
+  const chat = document.getElementById('kl-chat');
+
+
+  if (group === 'kinder') {
+    const replyEl = document.getElementById('kl-reply-kinder');
+    const q3wrap  = document.getElementById('kl-q3-wrap');
+    if (replyEl) replyEl.textContent = KL_REPLIES.kinder[val] || '';
+    if (q3wrap)  { q3wrap.style.display = 'flex'; q3wrap.style.flexDirection = 'column'; }
+    setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+  }
+
+  if (group === 'lifestyle') {
+    const replyEl  = document.getElementById('kl-reply-lifestyle');
+    const doneWrap = document.getElementById('kl-done-wrap');
+    if (replyEl)  replyEl.textContent = KL_REPLIES.lifestyle[val] || '';
+    if (doneWrap) { doneWrap.style.display = 'flex'; doneWrap.style.flexDirection = 'column'; }
+    /* Das Ramp-up hat das Ziel schon erfasst — dann Frage und Chips ausblenden. */
+    if (window._ruAskWunsch === false) {
+      var wq = document.getElementById('kl-wunsch-q');
+      var wc = document.getElementById('kl-chips-wunsch');
+      if (wq) wq.style.display = 'none';
+      if (wc) wc.style.display = 'none';
+      setTimeout(function() { klRevealFinal(); }, 400);
+    }
+    setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+  }
+
+  if (group === 'wunsch') {
+    if (!Array.isArray(klAnswers.wunsch)) klAnswers.wunsch = [];
+    if (val === 'alles') {
+      klAnswers.wunsch = ['verstanden','orientierung','stress','energie','alles'];
+      chip.parentNode.querySelectorAll('.kl-chip').forEach(function(b) {
+        b.style.background='#180430'; b.style.color='white'; b.style.borderColor='#180430';
+      });
+    } else {
+      klAnswers.wunsch = klAnswers.wunsch.filter(function(v){ return v !== 'alles'; });
+      const alleBtn = chip.parentNode.querySelector('[data-val="alles"]');
+      if (alleBtn) { alleBtn.style.background='white'; alleBtn.style.color='#4A3A6A'; alleBtn.style.borderColor='rgba(143, 91, 189,0.3)'; }
+      const widx = klAnswers.wunsch.indexOf(val);
+      if (widx >= 0) {
+        klAnswers.wunsch.splice(widx, 1);
+        chip.style.background='white'; chip.style.color='#4A3A6A'; chip.style.borderColor='rgba(143, 91, 189,0.3)';
+      } else {
+        klAnswers.wunsch.push(val);
+        chip.style.background='#180430'; chip.style.color='white'; chip.style.borderColor='#180430';
+      }
+    }
+    if (klAnswers.wunsch.length > 0) {
+      klRevealFinal();
+      setTimeout(() => { if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }, 100);
+    }
+    return;
+  }
+});
 
 /* Kennenlern-Chat: Eröffnung aus dem Ramp-up, Name und Alter sind bereits bekannt */
 var KL_OPENER = {
@@ -7828,7 +7911,7 @@ initApp();
 </script>
 <script>
 /* ══ Ramp-up: Zustand und Ablauf ══ */
-var RU = { step: 0, name: '', band: '', areas: [], satz: '', ziel: '' };
+var RU = { step: 0, name: '', band: '', areas: [], satz: [], ziel: [] };
 var RU_TOTAL = 6;   /* Bildschirme 1..6, der Splash zählt nicht mit */
 
 var RU_BANDS = [
@@ -7980,7 +8063,10 @@ function ruCheck1() {
 
 function ruAreaOrder() {
   var base = (RU_ORDER[RU.band] || RU_ORDER['30-39']).slice();
-  var lead = RU_SATZ_AREAS[RU.satz] || [];
+  var lead = [];
+  RU.satz.forEach(function(v) {
+    (RU_SATZ_AREAS[v] || []).forEach(function(k) { if (lead.indexOf(k) < 0) lead.push(k); });
+  });
   var out = [];
   lead.forEach(function(k) { if (base.indexOf(k) >= 0 && out.indexOf(k) < 0) out.push(k); });
   base.forEach(function(k) { if (out.indexOf(k) < 0) out.push(k); });
@@ -8023,15 +8109,20 @@ function ruRenderSatz() {
   var el = document.getElementById('ru-satz');
   if (!el) return;
   el.innerHTML = RU_SATZ.map(function(o) {
-    return '<button class="ru-row' + (RU.satz === o.v ? ' sel' : '') +
+    return '<button class="ru-row' + (RU.satz.indexOf(o.v) >= 0 ? ' sel' : '') +
            '" onclick="ruPickSatz(\'' + o.v + '\')"><span>' + o.t +
            '</span><span class="ru-tick">✓</span></button>';
   }).join('');
   var btn = document.getElementById('ru-next-3');
-  if (btn) btn.disabled = !RU.satz;
+  if (btn) btn.disabled = RU.satz.length === 0;
 }
 
-function ruPickSatz(v) { RU.satz = v; RU.areas = []; ruRenderSatz(); }
+function ruPickSatz(v) {
+  var i = RU.satz.indexOf(v);
+  if (i >= 0) { RU.satz.splice(i, 1); } else { RU.satz.push(v); }
+  RU.areas = [];            /* Reihenfolge der Bereiche haengt an der Auswahl */
+  ruRenderSatz();
+}
 
 function ruZielList() {
   /* gewählte Bereiche in Anzeigereihenfolge, ohne 'nein' und 'anderes' */
@@ -8058,22 +8149,39 @@ function ruRenderZiel() {
   var el = document.getElementById('ru-ziel');
   if (!el) return;
   el.innerHTML = ruZielList().map(function(o) {
-    return '<button class="ru-row' + (RU.ziel === o.v ? ' sel' : '') +
+    return '<button class="ru-row' + (RU.ziel.indexOf(o.v) >= 0 ? ' sel' : '') +
            '" onclick="ruPickZiel(\'' + o.v + '\')"><span>' + o.t +
            '</span><span class="ru-tick">✓</span></button>';
   }).join('');
   var btn = document.getElementById('ru-next-5');
-  if (btn) btn.disabled = !RU.ziel;
+  if (btn) btn.disabled = RU.ziel.length === 0;
 }
 
-function ruPickZiel(v) { RU.ziel = v; ruRenderZiel(); }
+function ruPickZiel(v) {
+  var i = RU.ziel.indexOf(v);
+  if (i >= 0) { RU.ziel.splice(i, 1); } else { RU.ziel.push(v); }
+  ruRenderZiel();
+}
 
 function ruRenderPayoff() {
-  var p = RU_PAYOFF[RU.satz] || RU_PAYOFF.anders;
+  var picked = RU.satz.filter(function(v) { return RU_PAYOFF[v]; }).slice(0, 2);
+  if (!picked.length) picked = ['anders'];
+  var first = RU_PAYOFF[picked[0]];
+  var eb = document.getElementById('ru-payoff-eyebrow');
+  if (eb) eb.textContent = RU.name ? ('Einordnung für ' + RU.name) : 'Einordnung';
   var h = document.getElementById('ru-payoff-h');
-  var t = document.getElementById('ru-payoff-text');
-  if (h) h.textContent = (RU.name ? RU.name + ', ' : '') + p.h.charAt(0).toLowerCase() + p.h.slice(1);
-  if (t) t.textContent = p.t;
+  if (h) h.textContent = first.h;
+  var cards = document.getElementById('ru-payoff-cards');
+  if (cards) {
+    cards.innerHTML = picked.map(function(v, idx) {
+      var pf = RU_PAYOFF[v];
+      var label = idx === 0 ? 'Was dahinter steckt' : 'Und dazu';
+      var head  = idx === 0 ? '' : '<div style="font-size:13.5px;font-weight:600;color:var(--plum);margin-bottom:6px;">' + pf.h + '</div>';
+      return '<div class="ru-card"' + (idx ? ' style="margin-top:10px;"' : '') + '>' +
+             '<div class="ru-label">' + label + '</div>' + head +
+             '<div style="font-size:14px;color:var(--plum);line-height:1.6;">' + pf.t + '</div></div>';
+    }).join('');
+  }
   var sig = document.getElementById('ru-signals');
   if (sig) {
     sig.innerHTML = RU_SIGNALS.map(function(o) {
@@ -8084,7 +8192,7 @@ function ruRenderPayoff() {
 
 function ruGo(step) {
   if (step >= 3 && !RU.band) return;
-  if (step >= 4 && !RU.satz) return;
+  if (step >= 4 && RU.satz.length === 0) return;
   RU.step = step;
   for (var i = 0; i <= 6; i++) {
     var el = document.getElementById('ru-' + i);
@@ -8114,14 +8222,13 @@ function ruBackToRampup() {
 /* Übergabe an das bestehende Einwilligungs-Slide */
 function ruFinish() {
   if (RU.band) klAnswers.alter = RU.band;
-  if (RU.ziel === 'anderes') {
-    window._ruAskWunsch = true;          /* Ziel offen -> Chat fragt nach der Einwilligung */
-  } else if (RU.ziel) {
-    klAnswers.wunsch = [RU.ziel];
-    window._ruAskWunsch = false;         /* Ziel bekannt -> Chat überspringt die Frage */
-  }
+  var ziele = RU.ziel.filter(function(v) { return v !== 'anderes'; });
+  if (ziele.length) klAnswers.wunsch = ziele;
+  /* 'Etwas anderes' -> der Chat fragt nach der Einwilligung nach dem Wunsch */
+  window._ruAskWunsch = RU.ziel.indexOf('anderes') >= 0;
   window._ruAreas = RU.areas.slice();
-  window._ruSatz = RU.satz;
+  window._ruSatzAll = RU.satz.slice();
+  window._ruSatz = RU.satz[0] || '';
   var ni = document.getElementById('ru-name');
   if (ni) RU.name = ni.value.trim();
   if (RU.name) { try { userName = RU.name; } catch (e) {} }

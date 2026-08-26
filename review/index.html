@@ -2202,6 +2202,13 @@ function klCall(text, hidden) {
     })
   }).then(function(r) { return r.json(); }).then(function(d) {
     var reply = (d.content && d.content[0] && d.content[0].text) || '';
+    if (!reply) {
+      /* Leere oder fehlerhafte Antwort — als Fehlschlag behandeln, nicht als
+         leere Nachricht auflösen. Vorher loeste das Promise trotzdem auf,
+         klRender zeigte bei leerem Text gar nichts, und die Nutzerin blieb
+         ohne jede Rueckmeldung im Eingabefeld stehen. */
+      throw new Error('felia-Antwort leer: ' + ((d && d.error && d.error.message) || 'unbekannter Grund'));
+    }
     klHistory.push({ role: 'assistant', content: reply });
     return reply;
   });

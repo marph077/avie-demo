@@ -2945,6 +2945,10 @@ function homeShowAnalyseAfterChat() {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     var resp = (data.content && data.content[0] && data.content[0].text) || '';
+    /* Leere Antwort als Fehlschlag behandeln, damit der vorhandene
+       .catch()-Text tatsächlich erscheint, statt dass die Platzhalterzeile
+       für immer stehen bleibt. */
+    if (!resp) throw new Error('leere Analyse-Antwort');
     if (resp && text) {
       text.innerHTML = resp.replace(/\n/g, '<br>');
       // Store felia's analysis reply for chat context
@@ -3108,6 +3112,10 @@ function homeShowAnalyse() {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     var resp = (data.content && data.content[0] && data.content[0].text) || '';
+    /* Leere Antwort als Fehlschlag behandeln — sonst bleibt die Platzhalterzeile
+       'felia analysiert deine Werte…' fuer immer stehen, statt dass der
+       vorhandene .catch()-Block mit seinem datenbasierten Rückfalltext greift. */
+    if (!resp) throw new Error('leere Analyse-Antwort');
     if (resp) {
       var rendered = resp
         .replace(/\*\*([^*]+)\*\*/g, '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8F5BBD;margin-top:14px;margin-bottom:4px;">$1</div>')
@@ -3223,6 +3231,9 @@ function homeMoodSelect(btn) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     var text = (data.content && data.content[0] && data.content[0].text) || '';
+    /* Leere Antwort als Fehlschlag behandeln, damit der vorhandene
+       .catch()-Block mit seinem stimmungsbasierten Rückfalltext greift. */
+    if (!text) throw new Error('leere Stimmungs-Antwort');
     if (text && replyText) {
       // Render **heading** as styled section headers, then paragraphs
       var rendered = text

@@ -7885,7 +7885,14 @@ function callAvie(userMessage, opts) {
     body: JSON.stringify({
       model: 'claude-sonnet-5',
       max_tokens: 1000,
-      system: buildSystemPrompt(),
+      /* Zwei Bloecke statt eines Strings: der stabile Teil traegt die
+         Cache-Marke, der Worker liest beides. Jede Aenderung am stabilen
+         Block invalidiert den Cache — feliaPromptStable() darf deshalb
+         keine dynamischen Werte enthalten. */
+      system: [
+        { type: 'text', text: feliaPromptStable(), cache_control: { type: 'ephemeral' } },
+        { type: 'text', text: feliaPromptContext() }
+      ],
       messages: apiMsgs()
     })
   }).then(function(response) {

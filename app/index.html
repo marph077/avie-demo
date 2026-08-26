@@ -1475,6 +1475,7 @@ body.is-native .status-bar { display: none !important; }
   <!-- ══ APP-SPLASH (Startbildschirm beim Öffnen) ══ -->
   <div id="app-splash" role="status" aria-label="felia wird geladen">
     <svg class="app-splash-mark" viewBox="0 0 464.6 396.2" aria-hidden="true"><use href="#felia-wbm"/></svg>
+    <div id="app-splash-build" style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:0.04em;color:rgba(255,255,255,0.35);font-family:inherit;"></div>
   </div>
 
   <!-- ══ RAMP-UP (neues Onboarding) ══ -->
@@ -2195,13 +2196,13 @@ function klCall(text, hidden) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5', thinking: { type: 'disabled' },
       max_tokens: 700,
       system: buildKlPrompt(),
       messages: klApiMsgs()
     })
   }).then(function(r) { return r.json(); }).then(function(d) {
-    var reply = (d.content && d.content[0] && d.content[0].text) || '';
+    var reply = feliaReplyText(d) || '';
     if (!reply) {
       /* Leere oder fehlerhafte Antwort — als Fehlschlag behandeln, nicht als
          leere Nachricht auflösen. Vorher loeste das Promise trotzdem auf,
@@ -2764,11 +2765,11 @@ function homeInit(fromOnboarding) {
     feliaFetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 150, system: feliaGuardrails(), messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ model: 'claude-sonnet-5', thinking: { type: 'disabled' }, max_tokens: 150, system: feliaGuardrails(), messages: [{ role: 'user', content: prompt }] })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var text = (data.content && data.content[0] && data.content[0].text) || '';
+      var text = feliaReplyText(data) || '';
       if (oq) oq.innerHTML = text ? mdToHtml(text) : question;
     })
     .catch(function() {
@@ -2939,12 +2940,12 @@ function homeShowAnalyseAfterChat() {
   feliaFetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 200, system: feliaGuardrails(),
+    body: JSON.stringify({ model: 'claude-sonnet-5', thinking: { type: 'disabled' }, max_tokens: 200, system: feliaGuardrails(),
       messages: contextMessages })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    var resp = (data.content && data.content[0] && data.content[0].text) || '';
+    var resp = feliaReplyText(data) || '';
     /* Leere Antwort als Fehlschlag behandeln, damit der vorhandene
        .catch()-Text tatsächlich erscheint, statt dass die Platzhalterzeile
        für immer stehen bleibt. */
@@ -3107,11 +3108,11 @@ function homeShowAnalyse() {
   feliaFetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 900, system: feliaGuardrails(), messages: [{ role: 'user', content: prompt }] })
+    body: JSON.stringify({ model: 'claude-sonnet-5', thinking: { type: 'disabled' }, max_tokens: 900, system: feliaGuardrails(), messages: [{ role: 'user', content: prompt }] })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    var resp = (data.content && data.content[0] && data.content[0].text) || '';
+    var resp = feliaReplyText(data) || '';
     /* Leere Antwort als Fehlschlag behandeln — sonst bleibt die Platzhalterzeile
        'felia analysiert deine Werte…' fuer immer stehen, statt dass der
        vorhandene .catch()-Block mit seinem datenbasierten Rückfalltext greift. */
@@ -3223,14 +3224,14 @@ function homeMoodSelect(btn) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5', thinking: { type: 'disabled' },
       max_tokens: 800, system: feliaGuardrails(),
       messages: [{ role: 'user', content: prompt }]
     })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    var text = (data.content && data.content[0] && data.content[0].text) || '';
+    var text = feliaReplyText(data) || '';
     /* Leere Antwort als Fehlschlag behandeln, damit der vorhandene
        .catch()-Block mit seinem stimmungsbasierten Rückfalltext greift. */
     if (!text) throw new Error('leere Stimmungs-Antwort');
@@ -4530,9 +4531,24 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIA_BUILD = '2026-08-19';
+var FELIA_BUILD = '2026-08-26-thinking-fix';
 
 /* ══ Gemeinsame Helfer ══ */
+
+/* Sonnet 5 aktiviert adaptives Denken standardmaessig und stellt der
+   Antwort einen Denk-Block voran — content[0] ist dann kein Text mehr,
+   sondern { type: 'thinking', thinking: '...' }. Diese Funktion sucht den
+   ERSTEN Block vom Typ 'text', unabhaengig von seiner Position. */
+function feliaReplyText(data) {
+  if (!data || !Array.isArray(data.content)) return '';
+  for (var i = 0; i < data.content.length; i++) {
+    var b = data.content[i];
+    if (b && b.type === 'text' && typeof b.text === 'string') return b.text;
+  }
+  return '';
+}
+
+
 
 /* Overlay als echten Dialog fuehren: Rolle, Escape zum Schliessen und
    Fokus-Fang, damit die Tabulatortaste nicht hinter das Overlay wandert.
@@ -6035,12 +6051,12 @@ function reopenSavedChat(ts) {
       'Knüpf in 2-3 warmen Sätzen daran an und lade sie ein, dort weiterzumachen. Kein neuer Gruß. Achte auf korrekte deutsche Groß- und Kleinschreibung; nur der Name felia bleibt kleingeschrieben.';
     feliaFetch('https://avie-proxy.hoyer2707.workers.dev', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-5', max_tokens: 180, system: feliaGuardrails(), messages: [{ role: 'user', content: reentryPrompt }] })
+      body: JSON.stringify({ model: 'claude-sonnet-5', thinking: { type: 'disabled' }, max_tokens: 180, system: feliaGuardrails(), messages: [{ role: 'user', content: reentryPrompt }] })
     })
     .then(function(r){ return r.json(); })
     .then(function(data){
       removeTyping();
-      var t = (data.content && data.content[0] && data.content[0].text) ||
+      var t = feliaReplyText(data) ||
         ('Schön, dass du nochmal an „' + (chat.thema||'unser Thema') + '" anknüpfst. Magst du erzählen, wo du gerade stehst?');
       chatHistory.push({ role: 'assistant', content: t });
       addMsg(t, 'avie');
@@ -7901,7 +7917,7 @@ function callAvie(userMessage, opts) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5', thinking: { type: 'disabled' },
       max_tokens: 1000,
       /* Vorlaeufig zurueckgestellt: das Array-Format mit cache_control hat
          im Betrieb dazu gefuehrt, dass der Hauptchat keine Antworten mehr
@@ -7910,28 +7926,9 @@ function callAvie(userMessage, opts) {
       messages: apiMsgs()
     })
   }).then(function(response) {
-    /* TEMPORAER — Fehlerursache in den Chat schreiben, statt sie zu
-       verschlucken. Zeigt HTTP-Status und die tatsaechliche Fehlermeldung
-       direkt in der Sprechblase, damit sie auf jedem Geraet lesbar ist,
-       auch ohne Entwicklertools. Nach der Fehlersuche wieder entfernen. */
-    window._lastHttpStatus = response.status;
     return response.json();
   }).then(function(data) {
-    var reply = (data.content && data.content[0] && data.content[0].text);
-    if (!reply) {
-      var status = window._lastHttpStatus;
-      var errInfo;
-      if (data && data.error && typeof data.error === 'object') {
-        /* Anthropic-Fehlerform: { error: { type, message } } */
-        errInfo = (data.error.type || 'error') + ': ' + (data.error.message || JSON.stringify(data.error));
-      } else if (data && typeof data.error === 'string') {
-        /* Worker-eigene Fehlerform: { error: 'Text' } */
-        errInfo = data.error;
-      } else {
-        errInfo = JSON.stringify(data).slice(0, 300);
-      }
-      reply = '⚠️ DIAGNOSE (HTTP ' + status + '): ' + errInfo;
-    }
+    var reply = feliaReplyText(data) || 'Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜';
     chatHistory.push({ role: 'assistant', content: reply });
     /* Bei max_tokens schneidet die API mitten im Satz ab — merken für den Weiterschreiben-Knopf */
     window._lastCut = (data.stop_reason === 'max_tokens');
@@ -8450,14 +8447,14 @@ function generateChatSummary(historySnapshot) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-5',
+      model: 'claude-sonnet-5', thinking: { type: 'disabled' },
       max_tokens: 300, system: feliaGuardrails(),
       messages: messages
     })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    var text = (data.content && data.content[0] && data.content[0].text) || '';
+    var text = feliaReplyText(data) || '';
     text = text.trim().replace(/^```json?\s*/,'').replace(/\s*```$/,'');
     var summary;
     try {
@@ -9052,6 +9049,11 @@ function ruFinish() {
   currentSlide = 0;   /* Index 0 = Einwilligung */
   updateSlides();
 }
+
+  try {
+    var bTag = document.getElementById('app-splash-build');
+    if (bTag) bTag.textContent = 'Build ' + FELIA_BUILD;
+  } catch (e) {}
 
   /* Sicherheitsnetz: Splash niemals dauerhaft stehen lassen */
   setTimeout(function() { try { hideAppSplash(0); } catch (e) {} }, 3500);

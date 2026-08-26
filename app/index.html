@@ -7910,9 +7910,28 @@ function callAvie(userMessage, opts) {
       messages: apiMsgs()
     })
   }).then(function(response) {
+    /* TEMPORAER — Fehlerursache in den Chat schreiben, statt sie zu
+       verschlucken. Zeigt HTTP-Status und die tatsaechliche Fehlermeldung
+       direkt in der Sprechblase, damit sie auf jedem Geraet lesbar ist,
+       auch ohne Entwicklertools. Nach der Fehlersuche wieder entfernen. */
+    window._lastHttpStatus = response.status;
     return response.json();
   }).then(function(data) {
-    var reply = (data.content && data.content[0] && data.content[0].text) || 'Ich bin kurz nicht erreichbar. Versuch es gleich nochmal. 💜';
+    var reply = (data.content && data.content[0] && data.content[0].text);
+    if (!reply) {
+      var status = window._lastHttpStatus;
+      var errInfo;
+      if (data && data.error && typeof data.error === 'object') {
+        /* Anthropic-Fehlerform: { error: { type, message } } */
+        errInfo = (data.error.type || 'error') + ': ' + (data.error.message || JSON.stringify(data.error));
+      } else if (data && typeof data.error === 'string') {
+        /* Worker-eigene Fehlerform: { error: 'Text' } */
+        errInfo = data.error;
+      } else {
+        errInfo = JSON.stringify(data).slice(0, 300);
+      }
+      reply = '⚠️ DIAGNOSE (HTTP ' + status + '): ' + errInfo;
+    }
     chatHistory.push({ role: 'assistant', content: reply });
     /* Bei max_tokens schneidet die API mitten im Satz ab — merken für den Weiterschreiben-Knopf */
     window._lastCut = (data.stop_reason === 'max_tokens');

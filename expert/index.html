@@ -1467,6 +1467,54 @@ body.is-native .status-bar { display: none !important; }
 .ru-splash-cta { width: 100%; padding: 15px; border-radius: 24px; border: none; background: var(--apricot); color: var(--plum); font-family: var(--font-body); font-size: 15px; font-weight: 500; cursor: pointer; }
 .ru-splash-link { display: block; margin: 14px auto 0; background: none; border: none; color: #DAB3E4; font-family: var(--font-body); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .ru-dev { position: absolute; right: 10px; bottom: calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 130; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22); color: rgba(255,255,255,0.75); font-size: 10px; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-family: var(--font-body); }
+
+/* ══ Koerperdaten per Screenshot ══ */
+.bss-tabs { display: flex; gap: 6px; background: #F4F0FA; border-radius: 14px; padding: 4px; }
+.bss-tab {
+  flex: 1; padding: 9px 4px; text-align: center; border-radius: 10px; font-size: 12.5px;
+  font-weight: 600; color: #6B5A88; cursor: pointer; border: none; background: none;
+  font-family: inherit; transition: background 0.15s, color 0.15s;
+}
+.bss-tab.active { background: #180430; color: #e1ea7d; }
+.bss-instructions {
+  background: #F4F0FA; border-radius: 14px; padding: 13px 15px; border: 1px solid rgba(143, 91, 189,0.2);
+  font-size: 12.5px; color: #4A3A6A; line-height: 1.55;
+}
+.bss-instructions b { color: #180430; }
+.bss-instructions ol { margin: 7px 0 0; padding-left: 18px; }
+.bss-instructions li { margin-bottom: 3px; }
+.bss-dropzone {
+  border: 1.5px dashed rgba(143,91,189,0.4); border-radius: 16px; background: white;
+  padding: 24px 14px; text-align: center; cursor: pointer;
+}
+.bss-dropzone svg { width: 26px; height: 26px; color: #dab3e4; margin-bottom: 6px; }
+.bss-dropzone .main { font-size: 13px; font-weight: 600; color: #180430; margin-bottom: 3px; }
+.bss-dropzone .hint { font-size: 11px; color: #6B5A88; }
+.bss-dropzone input { display: none; }
+.bss-paste-btn {
+  margin-top: 10px; width: 100%; background: white; color: #180430; border: 1px solid rgba(143,91,189,0.35);
+  border-radius: 12px; padding: 10px 16px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.bss-paste-btn svg { width: 14px; height: 14px; color: #dab3e4; }
+.bss-paste-note { font-size: 11px; color: #6B5A88; margin-top: 6px; line-height: 1.5; text-align: center; }
+.bss-preview-wrap { position: relative; border-radius: 14px; overflow: hidden; border: 1px solid rgba(143,91,189,0.2); margin-bottom: 8px; }
+.bss-preview-wrap img { display: block; width: 100%; max-height: 200px; object-fit: contain; background: #180430; }
+.bss-preview-remove {
+  position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(24,4,48,0.75); color: white; border: none; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.bss-field-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(143,91,189,0.1); }
+.bss-field-row:last-of-type { border-bottom: none; }
+.bss-field-label { font-size: 13px; color: #4A3A6A; }
+.bss-field-label .est { font-size: 10.5px; color: #6B5A88; display: block; margin-top: 1px; }
+.bss-field-input {
+  width: 92px; padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(143,91,189,0.25);
+  font-family: inherit; font-size: 13.5px; text-align: right; color: #180430; font-weight: 600;
+}
+.bss-confidence-note { font-size: 11.5px; color: #8a5a22; background: rgba(225,234,125,0.15); border: 1px solid rgba(225,234,125,0.4); border-radius: 10px; padding: 9px 11px; line-height: 1.5; }
+.bss-error-note { font-size: 12.5px; color: #7a1f1f; background: #fbeaea; border-radius: 10px; padding: 10px 12px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -5566,6 +5614,11 @@ function showWearableSync() {
           'Die Anbindung an dein <strong>eigenes</strong> Wearable kommt in der <strong>App-Version</strong>. In dieser Test-Version kannst du die Oura-Anbindung mit <strong>Beispieldaten</strong> ausprobieren, um den Ablauf zu sehen.' +
         '</div>' +
         dev('💍','Oura Ring','Demo · Beispieldaten','#8a5a1a','rgba(225, 234, 125,0.16)', false) +
+        '<div id="ws-screenshot-row" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(143, 91, 189,0.2);background:white;margin-bottom:10px;cursor:pointer;">' +
+          '<div style="width:36px;height:36px;border-radius:10px;background:#E6E0EE;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📷</div>' +
+          '<div style="flex:1;font-size:14px;font-weight:600;color:#180430;">Per Screenshot</div>' +
+          '<span style="font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;color:#4A7A3E;background:rgba(99,153,34,0.14);white-space:nowrap;">Jetzt verfügbar</span>' +
+        '</div>' +
         dev('⌚','Apple Watch','in der App','#8F5BBD','#E6E0EE', true) +
         dev('🏃','Garmin','in der App','#8F5BBD','#E6E0EE', true) +
         dev('💗','Fitbit','in der App','#8F5BBD','#E6E0EE', true) +
@@ -5573,6 +5626,8 @@ function showWearableSync() {
       '</div>';
     var ouraRow = bd.querySelector('#ws-oura-row');
     if (ouraRow) ouraRow.addEventListener('click', screenSearching);
+    var screenshotRow = bd.querySelector('#ws-screenshot-row');
+    if (screenshotRow) screenshotRow.addEventListener('click', function() { bd.remove(); showBodyScreenshotFlow(); });
     bd.querySelector('#ws-manual').addEventListener('click', function() { bd.remove(); showManualBodyInput(); });
   }
 
@@ -5798,6 +5853,314 @@ function fetchOuraData(onDone) {
     );
   });
 }
+
+/* ══ Koerperdaten per Screenshot — nutzt denselben Worker/Modell-Pfad wie
+   der Rest der App, kein direkter Anthropic-Aufruf. Bewusst mit
+   Bestaetigen-vor-Speichern: geschaetzte Werte (Energie/Stress) werden nie
+   automatisch uebernommen, ohne dass die Nutzerin sie sieht. */
+var BSS_APPS = {
+  apple: {
+    label: 'Apple Health',
+    html: '<b>Welcher Screen?</b> Öffne die Health-App auf dem iPhone.<ol>' +
+      '<li>Tab „Durchsuchen" unten → „Schlaf" → Wochenansicht</li>' +
+      '<li>Zusätzlich hilfreich: „Herz" → Ruheherzfrequenz, HRV</li>' +
+      '</ol>Am besten zwei Screenshots hochladen, wenn beides auf unterschiedlichen Screens steht.'
+  },
+  oura: {
+    label: 'Oura',
+    html: '<b>Welcher Screen?</b> Öffne die Oura-App.<ol>' +
+      '<li>Start-Tab mit den drei Ringen (Schlaf, Aktivität, Bereitschaft)</li>' +
+      '<li>Oder: Tab „Schlaf" für die Detailansicht mit HRV</li>' +
+      '</ol>Der Bereitschafts-Score hilft felia, Energie und Stress grob einzuordnen.'
+  },
+  garmin: {
+    label: 'Garmin',
+    html: '<b>Welcher Screen?</b> Öffne Garmin Connect.<ol>' +
+      '<li>Start-Tab mit „Body Battery" und Schlafdauer</li>' +
+      '<li>Oder: „Stress" → Tagesübersicht mit Ruheherzfrequenz</li>' +
+      '</ol>Body Battery entspricht ungefähr felias Energie-Wert.'
+  }
+};
+
+function showBodyScreenshotFlow() {
+  var phone = document.querySelector('.phone');
+  var old = document.getElementById('bss-overlay');
+  if (old) old.remove();
+
+  var bd = document.createElement('div');
+  bd.id = 'bss-overlay';
+  bd.className = 'score-popup-backdrop';
+  bd.onclick = function(e) { if (e.target === bd) bd.remove(); };
+
+  var state = {
+    app: 'apple',
+    images: [],       // { base64, mediaType, previewUrl }
+    analyzing: false,
+    result: null,
+    error: null
+  };
+
+  function fileToBase64(file) {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function() {
+        resolve({ base64: reader.result.split(',')[1], mediaType: file.type || 'image/png' });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function addFile(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return Promise.resolve();
+    return fileToBase64(file).then(function(r) {
+      state.images.push({ base64: r.base64, mediaType: r.mediaType, previewUrl: URL.createObjectURL(file) });
+      state.result = null;
+      state.error = null;
+      render();
+    }).catch(function() {
+      state.error = 'Bild konnte nicht gelesen werden.';
+      render();
+    });
+  }
+
+  function pasteFromClipboard() {
+    var noteEl = bd.querySelector('#bss-paste-note');
+    if (noteEl) noteEl.textContent = '';
+    if (!navigator.clipboard || !navigator.clipboard.read) {
+      if (noteEl) noteEl.textContent = 'Wird von diesem Browser nicht unterstützt — bitte „Screenshot hochladen" nutzen.';
+      return;
+    }
+    navigator.clipboard.read().then(function(items) {
+      var found = false;
+      var chain = Promise.resolve();
+      items.forEach(function(item) {
+        var imgType = item.types.filter(function(t) { return t.indexOf('image/') === 0; })[0];
+        if (imgType) {
+          found = true;
+          chain = chain.then(function() { return item.getType(imgType); }).then(addFile);
+        }
+      });
+      chain.then(function() {
+        if (!found && noteEl) noteEl.textContent = 'Kein Bild in der Zwischenablage. Screenshot zuerst in „Fotos" kopieren (Teilen → Kopieren).';
+      });
+    }).catch(function(err) {
+      if (!noteEl) return;
+      if (err && err.name === 'NotAllowedError') noteEl.textContent = 'Zugriff auf die Zwischenablage nicht erlaubt.';
+      else noteEl.textContent = 'Zwischenablage konnte nicht gelesen werden.';
+    });
+  }
+
+  function analyze() {
+    if (!state.images.length) return;
+    state.analyzing = true;
+    state.error = null;
+    render();
+
+    var prompt = 'Du bekommst ' + state.images.length + ' Screenshot(s) aus der App "' + BSS_APPS[state.app].label + '". ' +
+      'Lies daraus Gesundheitswerte fuer heute bzw. letzte Nacht aus.\n\n' +
+      'Antworte AUSSCHLIESSLICH mit einem JSON-Objekt, keine Erklaerung, kein Markdown, kein Codeblock, exakt dieses Format:\n' +
+      '{\n' +
+      '  "sleepMins": <Schlafdauer in Minuten als Zahl, oder null wenn nicht sichtbar>,\n' +
+      '  "restingHR": <Ruheherzfrequenz in bpm als Zahl, oder null>,\n' +
+      '  "hrv": <HRV in ms als Zahl, oder null>,\n' +
+      '  "energyScore": <geschaetzter Energie-Wert 0-100, oder null wenn keine Grundlage>,\n' +
+      '  "stressScore": <geschaetzter Stress-Wert 0-100, hoehere Zahl = mehr Stress, oder null>,\n' +
+      '  "confidence": "hoch" | "mittel" | "niedrig",\n' +
+      '  "notes": "<ein kurzer Satz auf Deutsch: was war gut lesbar, was ist unsicher oder geschaetzt>"\n' +
+      '}\n\n' +
+      'energyScore und stressScore sind immer Schaetzungen, das ist normal — kennzeichne das ehrlich in notes/confidence. ' +
+      'Erfinde keine sleepMins/restingHR/hrv-Werte, die nicht wirklich im Bild zu erkennen sind — dann null setzen.';
+
+    var content = state.images.map(function(img) {
+      return { type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } };
+    });
+    content.push({ type: 'text', text: prompt });
+
+    feliaFetch('https://avie-proxy.hoyer2707.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5', thinking: { type: 'disabled' },
+        max_tokens: 500,
+        system: feliaGuardrails(),
+        messages: [{ role: 'user', content: content }]
+      })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      var text = feliaReplyText(data);
+      if (!text) throw new Error('leere Antwort');
+      var clean = text.trim().replace(/^```(json)?\s*/i, '').replace(/```$/, '').trim();
+      var parsed = JSON.parse(clean);
+      state.result = parsed;
+      state.analyzing = false;
+      render();
+    }).catch(function() {
+      state.analyzing = false;
+      state.error = 'Auswertung ist fehlgeschlagen. Versuch es mit einem klareren Screenshot noch einmal.';
+      state.result = null;
+      render();
+    });
+  }
+
+  function fmtMinsToStr(mins) {
+    if (mins == null) return '';
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h + 'h ' + m + 'm';
+  }
+  function parseMinsFromStr(str) {
+    if (!str) return null;
+    var m = str.match(/(\d+)\s*h/i), mm = str.match(/(\d+)\s*m/i);
+    var h = m ? parseInt(m[1], 10) : 0, min = mm ? parseInt(mm[1], 10) : 0;
+    return (h || min) ? (h * 60 + min) : null;
+  }
+  function parseNum(str) {
+    if (!str) return null;
+    var m = String(str).match(/\d+/);
+    return m ? parseInt(m[0], 10) : null;
+  }
+
+  function confirmValues() {
+    var sleepMins = parseMinsFromStr(bd.querySelector('#bss_f_sleep').value);
+    var hr = parseNum(bd.querySelector('#bss_f_hr').value);
+    var hrv = parseNum(bd.querySelector('#bss_f_hrv').value);
+    var energy = parseNum(bd.querySelector('#bss_f_energy').value);
+    var stress = parseNum(bd.querySelector('#bss_f_stress').value);
+
+    var mb = window.manualBodyData || {};
+    if (sleepMins != null) { mb.sleepMins = sleepMins; mb.sleepStr = fmtMinsToStr(sleepMins); }
+    if (hr != null) mb.rhr = hr;
+    if (hrv != null) mb.hrv = hrv;
+    if (energy != null) mb.energyScore = energy;
+    if (stress != null) mb.stressScore = stress;
+    mb.source = 'screenshot';
+    mb.screenshotApp = state.app;
+    window.manualBodyData = mb;
+    /* updateManualScoreCards() erledigt bodyStampFields()+saveBodyData() und die
+       Dashboard/Home-Anzeigen bereits selbst — kein doppelter Aufruf noetig. */
+    try { updateManualScoreCards(mb.energyScore, { str: mb.sleepStr, mins: mb.sleepMins }, mb.stressScore); } catch (e) {}
+    try { removeDashWearableBanner(); } catch (e) {}
+    try { personalizeApp(); } catch (e) {}
+    try { refreshGreeting(); } catch (e) {}
+    try { rewireDashCTA(); } catch (e) {}
+
+    bd.remove();
+    avieAlert('Werte aus dem Screenshot übernommen.', 'Gespeichert');
+  }
+
+  function render() {
+    var body = '';
+
+    body += '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 16px;"></div>';
+    body += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
+      '<div style="width:40px;height:40px;border-radius:11px;background:#E6E0EE;display:flex;align-items:center;justify-content:center;font-size:20px;">📷</div>' +
+      '<div><div style="font-size:16px;font-weight:600;color:#180430;">Per Screenshot ausfüllen</div>' +
+      '<div style="font-size:12px;color:#6B5A88;">felia liest die Werte, du bestätigst sie</div></div>' +
+      '</div>';
+
+    body += '<div class="bss-tabs">';
+    Object.keys(BSS_APPS).forEach(function(key) {
+      body += '<button class="bss-tab' + (key === state.app ? ' active' : '') + '" data-app="' + key + '">' + BSS_APPS[key].label + '</button>';
+    });
+    body += '</div>';
+
+    body += '<div class="bss-instructions" style="margin-top:12px;">' + BSS_APPS[state.app].html + '</div>';
+
+    body += '<div style="margin-top:12px;">';
+    if (state.images.length === 0) {
+      body += '<div class="bss-dropzone" id="bss-dropzone">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5M7 9l5-5 5 5M12 4v13"/></svg>' +
+        '<div class="main">Screenshot hochladen</div>' +
+        '<div class="hint">Tippen zum Auswählen · am Computer auch Strg/Cmd+V</div>' +
+        '<input type="file" id="bss-file" accept="image/*" multiple>' +
+        '</div>' +
+        '<button class="bss-paste-btn" id="bss-paste-btn" type="button">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>' +
+        'Aus Zwischenablage einfügen</button>' +
+        '<div class="bss-paste-note" id="bss-paste-note"></div>';
+    } else {
+      state.images.forEach(function(img, i) {
+        body += '<div class="bss-preview-wrap"><img src="' + img.previewUrl + '"><button class="bss-preview-remove" data-idx="' + i + '">✕</button></div>';
+      });
+      body += '<button class="btn-primary-bss" id="bss-analyze" ' + (state.analyzing ? 'disabled' : '') +
+        ' style="width:100%;padding:13px;border:none;border-radius:14px;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">' +
+        (state.analyzing ? 'felia liest die Werte…' : 'Werte auslesen') + '</button>';
+      body += '<div style="display:flex;gap:14px;justify-content:center;margin-top:10px;">' +
+        '<button class="btn-ghost-bss" id="bss-add-more" style="background:none;border:none;color:#6B5A88;font-size:12.5px;cursor:pointer;font-family:inherit;">+ weiterer Screenshot</button>' +
+        '<button class="btn-ghost-bss" id="bss-paste-btn2" style="background:none;border:none;color:#6B5A88;font-size:12.5px;cursor:pointer;font-family:inherit;">+ aus Zwischenablage</button>' +
+        '</div>' +
+        '<div class="bss-paste-note" id="bss-paste-note" style="text-align:center;"></div>' +
+        '<input type="file" id="bss-file2" accept="image/*" multiple style="display:none;">';
+    }
+    body += '</div>';
+
+    if (state.error) {
+      body += '<div class="bss-error-note" style="margin-top:12px;">⚠️ ' + state.error + '</div>';
+    }
+
+    if (state.result) {
+      var r = state.result;
+      var confColor = r.confidence === 'hoch' ? '#2E1C4F' : (r.confidence === 'mittel' ? '#8a5a22' : '#7a1f1f');
+      body += '<div style="background:white;border-radius:16px;padding:16px;border:1px solid rgba(143,91,189,0.15);margin-top:14px;">' +
+        '<div style="font-size:12px;font-weight:700;color:#180430;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Ausgelesene Werte — bitte prüfen</div>' +
+        bssField('Schlaf', 'bss_f_sleep', r.sleepMins != null ? fmtMinsToStr(r.sleepMins) : '', r.sleepMins != null ? 'direkt abgelesen' : 'nicht erkannt', 'z.B. 7h 20m') +
+        bssField('Ruheherzfrequenz', 'bss_f_hr', r.restingHR != null ? r.restingHR + ' bpm' : '', r.restingHR != null ? 'direkt abgelesen' : 'nicht erkannt', 'bpm') +
+        bssField('HRV', 'bss_f_hrv', r.hrv != null ? r.hrv + ' ms' : '', r.hrv != null ? 'direkt abgelesen' : 'nicht erkannt', 'ms') +
+        bssField('Energie', 'bss_f_energy', r.energyScore != null ? r.energyScore : '', 'geschätzt, bitte prüfen', '0–100') +
+        bssField('Stress', 'bss_f_stress', r.stressScore != null ? r.stressScore : '', 'geschätzt, bitte prüfen', '0–100') +
+        '<div class="bss-confidence-note" style="margin-top:10px;"><b style="color:' + confColor + '">Sicherheit: ' + (r.confidence || 'unbekannt') + '.</b> ' + (r.notes || '') + '</div>' +
+        '<button id="bss-confirm" style="width:100%;padding:13px;border:none;border-radius:14px;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;">Werte übernehmen</button>' +
+        '</div>';
+    }
+
+    bd.innerHTML = '<div class="score-popup">' + body + '</div>';
+    wire();
+  }
+
+  function bssField(label, id, value, est, placeholder) {
+    return '<div class="bss-field-row"><div class="bss-field-label">' + label + '<span class="est">' + est + '</span></div>' +
+      '<input class="bss-field-input" id="' + id + '" value="' + String(value).replace(/"/g,'&quot;') + '" placeholder="' + placeholder + '"></div>';
+  }
+
+  function wire() {
+    bd.querySelectorAll('.bss-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() { state.app = btn.dataset.app; render(); });
+    });
+    var dz = bd.querySelector('#bss-dropzone');
+    var fi = bd.querySelector('#bss-file');
+    if (dz && fi) {
+      dz.addEventListener('click', function() { fi.click(); });
+      fi.addEventListener('change', function(e) {
+        Array.from(e.target.files).forEach(addFile);
+        fi.value = '';
+      });
+    }
+    var pasteBtn = bd.querySelector('#bss-paste-btn');
+    if (pasteBtn) pasteBtn.addEventListener('click', function(e) { e.stopPropagation(); pasteFromClipboard(); });
+    var pasteBtn2 = bd.querySelector('#bss-paste-btn2');
+    if (pasteBtn2) pasteBtn2.addEventListener('click', pasteFromClipboard);
+
+    bd.querySelectorAll('.bss-preview-remove').forEach(function(btn) {
+      btn.addEventListener('click', function() { state.images.splice(parseInt(btn.dataset.idx, 10), 1); render(); });
+    });
+    var analyzeBtn = bd.querySelector('#bss-analyze');
+    if (analyzeBtn) analyzeBtn.addEventListener('click', analyze);
+    var addMoreBtn = bd.querySelector('#bss-add-more');
+    var fi2 = bd.querySelector('#bss-file2');
+    if (addMoreBtn && fi2) {
+      addMoreBtn.addEventListener('click', function() { fi2.click(); });
+      fi2.addEventListener('change', function(e) {
+        Array.from(e.target.files).forEach(addFile);
+        fi2.value = '';
+      });
+    }
+    var confirmBtn = bd.querySelector('#bss-confirm');
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmValues);
+  }
+
+  render();
+  phone.appendChild(bd);
+}
+
 
 function updateManualScoreCards(energyScore, sleep, stressScore) {
   window._bodyUpdatedAt = Date.now();

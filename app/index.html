@@ -2468,7 +2468,6 @@ function personalizeApp() {
       const phaseDesc = {
         'Lutealphase':   'Progesteron steigt, Östrogen sinkt — die Stresstoleranz ist hormonal niedriger als in anderen Phasen. Dasselbe fühlt sich gerade mehr an.',
         'Follikelphase': 'Östrogen steigt — du bist hormonell im Aufschwung. Konzentration und Belastbarkeit sind gerade auf deiner Seite.',
-        'Ovulation':     'Östrogen und LH auf dem Höhepunkt — die Phase mit der höchsten Energie und Kommunikationsstärke.',
         'Menstruation':  'Östrogen und Progesteron sind niedrig — der Körper regeneriert sich. Weniger verlangen ist heute Stärke.'
       };
       parts.push('Du bist in der <strong>' + cd.phase + '</strong>' + cycleDayPart(cd, ', ') + '. ' + (phaseDesc[cd.phase] || ''));
@@ -2623,7 +2622,7 @@ function buildMoodExplanation(moodKey) {
     if (mb && mb.hrv && parseInt(mb.hrv) >= 55) {
       reasons.push('HRV <strong>' + mb.hrv + ' ms</strong> — dein Nervensystem ist in guter Verfassung.');
     }
-    if (phase === 'Follikelphase' || phase === 'Ovulation') {
+    if (phase === 'Follikelphase') {
       reasons.push('In der <strong>' + phase + '</strong> steigt Östrogen — Energie, Konzentration und Motivation sind hormonal auf deiner Seite.');
     }
   }
@@ -3755,11 +3754,6 @@ function buildAnalysisSteps() {
       energy:  'Konzentration, Motivation, Belastbarkeit steigen. Die Phase zum Anpacken.',
       tip:     'Guter Moment für neue Projekte, schwierige Gespräche, Sport mit mehr Intensität.'
     },
-    'Ovulation': {
-      hormone: 'Östrogen und LH sind auf dem Höhepunkt.',
-      energy:  'Viele Frauen fühlen sich in dieser Phase am leistungsfähigsten — körperlich und kommunikativ.',
-      tip:     'Nutze das Fenster für wichtige Gespräche, Präsentationen, körperlich anspruchsvolle Einheiten.'
-    },
     'Lutealphase': {
       hormone: 'Progesteron steigt, Östrogen sinkt.',
       energy:  'Die Stresstoleranz ist hormonal niedriger — dasselbe fühlt sich mehr an als in anderen Phasen.',
@@ -3840,7 +3834,7 @@ function buildAnalysisSteps() {
     tipp = '<strong>Heute abend eine Stunde früher als geplant.</strong><br><br>Nicht als Strafe, sondern als Investition. Schlaf ist die einzige Maßnahme, die Energie, HRV und Stimmung gleichzeitig verbessert. Alles andere kommt danach.';
   } else if (phase === 'Lutealphase') {
     tipp = '<strong>' + pv.tip + '</strong><br><br>Du bist in Tag ' + cycleDay + ' von ' + cycleLen + '. In ' + daysLeft + ' Tagen beginnt ein neuer Zyklus — der Körper arbeitet gerade im Hintergrund. Was heute hilft: Wärme, Bewegung ohne Druck, und nicht zu viel von dir verlangen.';
-  } else if (phase === 'Follikelphase' || phase === 'Ovulation') {
+  } else if (phase === 'Follikelphase') {
     tipp = '<strong>' + pv.tip + '</strong><br><br>Deine Energie ist gerade auf deiner Seite — nutze das Fenster bewusst. Nicht alles auf einmal, aber die Dinge die dir wichtig sind und die du in der zweiten Zyklushälfte schwerer angehst.';
   } else {
     tipp = '<strong>Ruhig sein darf heute reichen.</strong><br><br>Menstruation bedeutet: der Körper regeneriert sich. Nicht der Moment für Hochleistung — sondern für Wärme, leichte Bewegung, und die Erlaubnis nicht funktionieren zu müssen.';
@@ -3889,7 +3883,7 @@ function buildDashEmpfehlungen(container) {
 
   if (phase === 'Lutealphase') {
     allTips.push({ type:'tip-gentle', icon:'🌿', cat:'ZYKLUSPHASE', title:'Erwartungen für heute anpassen', body: 'Du bist in der Lutealphase — Stresstoleranz und Energie sind hormonal niedriger. Dasselbe fühlt sich heute mehr an. Ein guter Tag um bewusst weniger zu verlangen.' });
-  } else if (phase === 'Follikelphase' || phase === 'Ovulation') {
+  } else if (phase === 'Follikelphase') {
     allTips.push({ type:'tip-good', icon:'⚡', cat:'ENERGIE', title:'Diese Phase aktiv nutzen', body: 'Östrogen steigt — Energie, Konzentration und Belastbarkeit sind gerade auf deiner Seite. Guter Moment für anspruchsvolle Aufgaben, schwierige Gespräche, Sport.' });
   } else if (phase === 'Menstruation') {
     allTips.push({ type:'tip-rest', icon:'🌸', cat:'MENSTRUATION', title:'Ruhe als Priorität setzen', body: 'Östrogen und Progesteron sind niedrig. Wärme, leichte Bewegung, wenig Entscheidungen erzwingen — das ist heute die klügste Strategie.' });
@@ -3975,7 +3969,7 @@ function buildDashTipp() {
   } else if (phase === 'Menstruation') {
     emoji = '🌸';
     tipp = 'Menstruation ist die Zeit für Ruhe, nicht Leistung. Was helfen kann: Wärme, leichte Bewegung, und heute keine großen Entscheidungen erzwingen.';
-  } else if (phase === 'Follikelphase' || phase === 'Ovulation') {
+  } else if (phase === 'Follikelphase') {
     emoji = '⚡';
     tipp = 'Du bist hormonell im Aufschwung — Energie und Konzentration sind gerade auf deiner Seite. Ein guter Tag für Dinge die dir wichtig sind und die du in der zweiten Zyklushälfte schwerer angehst.';
   } else if (schlechtSchlaf) {
@@ -4142,7 +4136,7 @@ const BODY_INFO = {
     icon: '<svg class="ico"><use href="#i-temp"/></svg>', iconBg: 'rgba(143, 91, 189,0.12)',
     title: 'Temperatur: +0.4°C',
     components: [
-      { dot: '#8F5BBD', text: '<strong>+0.4°C über Basaltemperatur</strong> — nach der Ovulation vollkommen normal.' },
+      { dot: '#8F5BBD', text: '<strong>+0.4°C über Basaltemperatur</strong> — in der zweiten Zyklushälfte vollkommen normal.' },
       { dot: '#180430', text: '<strong>Progesteron erhöht die Temperatur</strong> um ~0.3–0.5°C. Das ist ein zuverlässiger Zyklus-Indikator.' },
       { dot: '#180430', text: '<strong>Bestätigung der Lutealphase</strong> — du hast ovuliert. Positives Zeichen.' },
     ],
@@ -4469,7 +4463,7 @@ function showDashboard() {
           </div>
         </div>
         <div class="dash-zyklus-bar"><div class="dash-zyklus-fill" id="zy-fill"></div></div>
-        <div class="dash-zyklus-labels"><span>Menstruation</span><span>Follikel</span><span>Ovulation</span><span>Luteal</span></div>
+        <div class="dash-zyklus-labels"><span>Menstruation</span><span>Follikel</span><span>Luteal</span></div>
         <div class="dash-zyklus-info">
           <div>
             <div class="dash-zyklus-item-label">Nächste Periode</div>
@@ -4835,8 +4829,7 @@ function cycleDaysBetween(a, b) {
 
 var CYCLE_PHASES = [
   { max: 5,  phase: 'Menstruation',   val: '↓ Östrogen + Progesteron', sub: 'Beide Hormone niedrig' },
-  { max: 13, phase: 'Follikelphase',  val: '↑ Östrogen steigt',        sub: 'Energie & Antrieb nehmen zu' },
-  { max: 16, phase: 'Ovulation',      val: '↑ LH-Peak',                sub: 'Höchste Energie-Phase' },
+  { max: 16, phase: 'Follikelphase',  val: '↑ Östrogen steigt',        sub: 'Energie & Antrieb nehmen zu' },
   { max: 99, phase: 'Lutealphase',    val: '↑ Progesteron',            sub: '↓ Östrogen sinkt' }
 ];
 
@@ -8329,7 +8322,7 @@ function feliaPromptStable() {
 '- Nicht alles ist hormonell. Sprich Hormone und Zyklusphase nur an, wenn sie wirklich zum Thema passen; sonst ziehe genauso Schlaf, Stress, Erholung, Alltag und Belastung als Erklärung heran. Alltagssprache vor Fachbegriffen.\n\n' +
 
 'Was du weißt:\n' +
-'- Weibliche Biologie, Zyklus, Hormone — Lutealphase, Follikelphase, Ovulation, Menstruation\n' +
+'- Weibliche Biologie, Zyklus, Hormone — Lutealphase, Follikelphase, Menstruation\n' +
 '- Perimenopause und Wechseljahre: Östrogen/Progesteron-Abfall, Schlaf, Gewicht, Stimmung\n' +
 '- Postpartum, Hashimoto, Lipödem, Eisenmangel — typische Muster und Zusammenhänge\n' +
 '- HRV, Ruhepuls, Schlafphasen, Recovery Score — was sie bedeuten und wie sie interagieren\n' +

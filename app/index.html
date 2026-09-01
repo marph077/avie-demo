@@ -1924,7 +1924,7 @@ body.is-native .status-bar { display: none !important; }
             <div style="font-size:12.5px;color:rgba(255,255,255,0.75);" id="chat-topic-label">Deine Begleiterin</div>
           </div>
         </div>
-        <button onclick="promptCloseChat()" aria-label="Chat schließen" style="background:rgba(255,255,255,0.14);border:none;cursor:pointer;color:white;font-size:20px;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+        <button onclick="promptDiscardChat()" aria-label="Chat ohne Speichern schließen" style="background:rgba(255,255,255,0.14);border:none;cursor:pointer;color:white;font-size:20px;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
       </div>
       <!-- Close confirmation dialog -->
       <div id="chat-close-dialog" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(24, 4, 48,0.6);z-index:10;align-items:flex-end;justify-content:center;">
@@ -1962,7 +1962,7 @@ body.is-native .status-bar { display: none !important; }
         </div>
         <div style="font-size:10.5px;color:rgba(255,255,255,0.58);text-align:center;padding:2px 0 8px;">KI-gestützt — Antworten können Fehler enthalten</div>
         <div class="input-hints" style="justify-content:center;">
-          <button onclick="promptCloseChat()" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);color:#FFFFFF;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-chat"/></svg>Chat schließen</button>
+          <button onclick="endChatToCard()" style="width:100%;padding:11px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);color:#FFFFFF;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-box"/></svg>Chat beenden</button>
         </div>
       </div>
     </div>
@@ -2519,17 +2519,20 @@ function personalizeApp() {
       }
     } else if (mb && mb.recovery) {
       const rec = parseInt(mb.recovery);
+      /* Den Wert so benennen, wie ihn die Nutzerin in ihrer eigenen App sieht —
+         "Body Battery" heisst bei Garmin nun mal nicht "Recovery Score". */
+      const recName = recoveryKurz(mb);
       if (rec < 50) {
-        parts.push('Dein Recovery Score liegt bei <strong>' + mb.recovery + '</strong> — dein Körper ist noch nicht erholt. Weniger fordern heute ist keine Schwäche.');
+        parts.push(recName + ' <strong>' + mb.recovery + '</strong> — dein Körper ist noch nicht erholt. Weniger fordern heute ist keine Schwäche.');
       } else if (rec >= 70) {
-        parts.push('Recovery Score <strong>' + mb.recovery + '</strong> — dein Körper ist gut erholt. Ein guter Tag um Dinge anzugehen die dir wichtig sind.');
+        parts.push(recName + ' <strong>' + mb.recovery + '</strong> — dein Körper ist gut erholt. Ein guter Tag um Dinge anzugehen die dir wichtig sind.');
       }
     }
 
     // 4. Energie & Stress
     if (mb) {
-      const lowEnergy = mb.energyScore < 50;
-      const highStress = mb.stressScore > 65;
+      const lowEnergy = mb.energyScore != null && mb.energyScore < 50;
+      const highStress = mb.stressScore != null && mb.stressScore > 65;
       if (lowEnergy && highStress) {
         parts.push('Niedrige Energie (<strong>' + mb.energyScore + '</strong>) und erhöhter Stress (<strong>' + mb.stressScore + '</strong>) zusammen — das ist eine Kombination die den Körper doppelt belastet.');
       } else if (lowEnergy) {
@@ -3039,9 +3042,10 @@ function homeShowAnalyseAfterChat() {
   if (mb) {
     var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
-    dataContext += 'Energie: ' + mb.energyScore + '/100, Stress: ' + mb.stressScore + '/100\n';
+    if (mb.energyScore != null) dataContext += 'Energie: ' + mb.energyScore + '/100\n';
+    if (mb.stressScore != null) dataContext += 'Stress: ' + mb.stressScore + '/100\n';
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
-    if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
+    if (mb.recovery) dataContext += recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
     if (mb.rem) dataContext += 'REM-Schlaf: ' + mb.rem + ' min\n';
@@ -3204,10 +3208,10 @@ function homeShowAnalyse() {
   if (mb) {
     var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
-    dataContext += 'Energie: ' + mb.energyScore + '/100\n';
-    dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    if (mb.energyScore != null) dataContext += 'Energie: ' + mb.energyScore + '/100\n';
+    if (mb.stressScore != null) dataContext += 'Stress: ' + mb.stressScore + '/100\n';
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
-    if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
+    if (mb.recovery) dataContext += recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
     if (mb.rem) dataContext += 'REM-Schlaf: ' + mb.rem + ' min\n';
@@ -3312,10 +3316,10 @@ function homeMoodSelect(btn) {
   if (mb) {
     var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
     dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
-    dataContext += 'Energie: ' + mb.energyScore + '/100\n';
-    dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    if (mb.energyScore != null) dataContext += 'Energie: ' + mb.energyScore + '/100\n';
+    if (mb.stressScore != null) dataContext += 'Stress: ' + mb.stressScore + '/100\n';
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
-    if (mb.recovery) dataContext += 'Recovery: ' + mb.recovery + '/100\n';
+    if (mb.recovery) dataContext += recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep) dataContext += 'Tiefschlaf: ' + mb.deep + ' min\n';
     if (mb.rem) dataContext += 'REM-Schlaf: ' + mb.rem + ' min\n';
@@ -3426,7 +3430,11 @@ function homeStartChat(msg) {
   var msgs = document.getElementById('messages');
   if (msgs) msgs.innerHTML = '';
   // Seed history silently (don't show user message as bubble)
-  window._hasNewUserMsg = true;
+  /* Kein _hasNewUserMsg hier: der Einstiegstext kommt von der App, nicht von
+     der Nutzerin. Sonst fragt das Schließen nach dem Speichern, obwohl sie
+     selbst noch kein Wort geschrieben hat. Gesetzt wird das Flag erst in
+     send() bzw. sendQR(). */
+  window._hasNewUserMsg = false;
   chatHistory.push({ role: 'user', content: msg });
   showTyping();
   callFelie(msg).then(function(reply) {
@@ -3766,10 +3774,17 @@ function buildAnalysisSteps() {
   const cd = (function(){ try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
   const mb = window.manualBodyData;
 
-  const phase    = cd ? cd.phase    : 'Lutealphase';
-  const cycleDay = (cd && cd.cycleDay != null) ? cd.cycleDay : 19;
-  const cycleLen = cd ? cd.selectedLen : 28;
-  const daysLeft = cd ? cd.daysLeft : 9;
+  /* Ohne hinterlegte Zyklusdaten wird KEINE Phase behauptet. Frueher standen
+     hier feste Rueckfallwerte (Lutealphase, Tag 19 von 28, noch 9 Tage) — die
+     App hat damit einen Zyklusstand bei Nutzerinnen behauptet, von denen sie
+     nichts wusste. Eine Phasenbestimmung ohne Grundlage ist eine Aussage ueber
+     einen physiologischen Zustand (MDR Art. 2 Nr. 1). */
+  const phase    = cd ? cd.phase : null;
+  const cycleDay = (cd && cd.cycleDay != null) ? cd.cycleDay : null;
+  const cycleLen = cd ? cd.selectedLen : null;
+  /* Formulierungshilfen, damit die Texte auch ohne Phase lesbar bleiben. */
+  const inPhase  = phase ? 'in der ' + phase : 'gerade';
+  const derPhase = phase ? 'die ' + phase : 'manche Zyklusphase';
 
   const energyScore = mb ? mb.energyScore : null;
   const sleepStr    = (mb && mb.sleepStr) ? mb.sleepStr : null;
@@ -3781,22 +3796,22 @@ function buildAnalysisSteps() {
   // Phase descriptions in felie's voice
   const phaseVoice = {
     'Menstruation':  {
-      hormone: 'Östrogen und Progesteron sind gerade am niedrigsten.',
+      hormone: 'In dieser Phase liegen Östrogen und Progesteron bei den meisten Frauen am niedrigsten.',
       energy:  'Die meisten Frauen merken in dieser Phase: der Körper will Ruhe, keine Leistung.',
       tip:     'Wärme, leichte Bewegung, keine großen Entscheidungen — der Körper weiß was er braucht.'
     },
     'Follikelphase': {
-      hormone: 'Östrogen steigt — du bist hormonell im Aufschwung.',
+      hormone: 'In dieser Phase steigt bei den meisten Frauen das Östrogen.',
       energy:  'Konzentration, Motivation, Belastbarkeit steigen. Die Phase zum Anpacken.',
       tip:     'Guter Moment für neue Projekte, schwierige Gespräche, Sport mit mehr Intensität.'
     },
     'Lutealphase': {
-      hormone: 'Progesteron steigt, Östrogen sinkt.',
-      energy:  'Die Stresstoleranz ist hormonal niedriger — dasselbe fühlt sich mehr an als in anderen Phasen.',
+      hormone: 'In dieser Phase ist Progesteron bei den meisten Frauen höher und Östrogen niedriger.',
+      energy:  'Viele Frauen erleben die Stresstoleranz dann als niedriger — dasselbe kann sich mehr anfühlen als sonst.',
       tip:     'Erholung priorisieren. Nicht weniger leisten — anders leisten.'
     }
   };
-  const pv = phaseVoice[phase] || phaseVoice['Lutealphase'];
+  const pv = phase ? phaseVoice[phase] : null;
 
   // ── STEP 1: Das Gesamtbild ──
   let signals = [];
@@ -3811,27 +3826,31 @@ function buildAnalysisSteps() {
     else                        signals.push('Energie niedrig');
   }
   if (stressScore !== null && stressScore > 60) signals.push('Stresslevel erhöht');
-  if (hrv !== null) {
-    signals.push('HRV ' + hrv + ' ms');
-  }
-  if (recovery !== null) {
-    signals.push('Recovery ' + recovery + '/100');
-  }
+  /* != null statt !== null: fehlende Felder sind undefined, nicht null —
+     sonst stand im Text "HRV undefined ms". */
+  if (hrv != null && hrv !== '') signals.push('HRV ' + hrv + ' ms');
+  if (recovery != null && recovery !== '') signals.push(recoveryKurz(mb) + ' ' + recovery + '/100');
 
   let gesamtText = '';
   if (signals.length > 0) {
     gesamtText = signals.join(' · ') + '.<br><br>';
   }
-  gesamtText += 'Du bist heute in der <strong>' + phase + '</strong>';
-  if (cd) gesamtText += ', Tag ' + cycleDay + ' von ' + cycleLen;
-  gesamtText += '. ' + pv.hormone + ' ' + pv.energy;
+  if (phase) {
+    /* "Rechnerisch" statt "du bist": die Phase folgt aus der eigenen Angabe zur
+       letzten Periode, sie ist keine Messung und kein Befund. */
+    gesamtText += 'Rechnerisch liegst du gerade in der <strong>' + phase + '</strong>';
+    if (cycleDay != null && cycleLen) gesamtText += ', Tag ' + cycleDay + ' von ' + cycleLen;
+    gesamtText += ' — das ergibt sich aus deiner Angabe zur letzten Periode. ' + pv.hormone + ' ' + pv.energy;
+  } else {
+    gesamtText += 'Zu deinem Zyklus liegt mir gerade nichts vor — die Einordnung stützt sich nur auf die Werte oben.';
+  }
 
   if (sleepMins !== null && sleepMins < 360 && stressScore !== null && stressScore > 60) {
-    gesamtText += '<br><br>Kurzer Schlaf und erhöhter Stress gleichzeitig — das ist eine Kombination, die den Körper doppelt belastet. Kein Wunder wenn heute alles etwas schwerer wirkt.';
+    gesamtText += '<br><br>Kurzer Schlaf und erhöhter Stress gleichzeitig — eine Kombination, die viele Frauen als doppelt belastend erleben. Kein Wunder, wenn heute alles etwas schwerer wirkt.';
   } else if (sleepMins !== null && sleepMins < 360) {
     gesamtText += '<br><br>Dazu kommt der Schlaf: ' + sleepStr + ' ist wenig. Schlafmangel verstärkt alles — Stressempfinden, Heißhunger, Reizbarkeit. Das ist Biologie, kein Charakter.';
   } else if (stressScore !== null && stressScore > 60) {
-    gesamtText += '<br><br>Dein Stresslevel ist erhöht. In der ' + phase + ' ist die Stresstoleranz hormonal ohnehin niedriger — dasselbe fühlt sich gerade mehr an als sonst.';
+    gesamtText += '<br><br>Dein Stresslevel ist erhöht.' + (phase ? ' Viele Frauen erleben ihre Stresstoleranz in der ' + phase + ' ohnehin als niedriger — dasselbe kann sich gerade mehr anfühlen als sonst.' : '');
   }
 
   // ── STEP 2: Was das bedeutet ──
@@ -3842,44 +3861,31 @@ function buildAnalysisSteps() {
   if (stressScore !== null && stressScore > 70) problems.push('stress');
 
   if (problems.length === 0) {
-    bedeutungText = 'Deine Werte sehen heute ordentlich aus. Trotzdem gilt: die ' + phase + ' kostet mehr als andere Phasen — auch wenn die Zahlen das nicht direkt zeigen.<br><br>Was heute sinnvoll ist: bewusst wählen wo du Energie investierst. Nicht alles gleichzeitig. Die ' + phase + ' verträgt fokussierte Arbeit besser als Multitasking.';
+    /* Der Zusatz passt nur zu den kraftzehrenden Phasen — in der Follikelphase
+       waere "kostet mehr Kraft als andere" schlicht falsch. */
+    var fordernd = (phase === 'Lutealphase' || phase === 'Menstruation');
+    bedeutungText = (signals.length ? 'Deine Werte sehen heute ordentlich aus.' : 'Zu deinen Körperwerten liegt mir heute nichts vor.')
+      + (fordernd ? ' Trotzdem: ' + derPhase + ' kostet bei vielen Frauen mehr Kraft als andere — auch wenn die Zahlen das nicht direkt zeigen.' : '')
+      + '<br><br>Was heute helfen kann: bewusst wählen, wo du Energie investierst. Nicht alles gleichzeitig — fokussierte Arbeit fällt vielen dann leichter als Multitasking.';
   } else {
     if (problems.includes('schlaf') && problems.includes('stress')) {
-      bedeutungText = 'Kurzer Schlaf und hoher Stress zusammen bedeuten: dein Nervensystem hat heute wenig Puffer. Entscheidungen fallen schwerer, Kleinigkeiten kosten mehr. Das ist keine schlechte Phase — das ist ein Körper der gerade viel trägt.<br><br>Für heute: eine Sache nach der anderen. Kein Multitasking. Keine großen Entscheidungen wenn möglich.';
+      bedeutungText = 'Kurzer Schlaf und hoher Stress zusammen können bedeuten, dass dein Nervensystem heute wenig Puffer hat. Entscheidungen fallen dann oft schwerer, Kleinigkeiten kosten mehr. Das ist keine schlechte Phase — das ist ein Körper, der gerade viel trägt.<br><br>Was heute helfen kann: eine Sache nach der anderen. Kein Multitasking. Große Entscheidungen möglichst verschieben.';
     } else if (problems.includes('schlaf')) {
-      bedeutungText = sleepStr + ' Schlaf bedeutet konkret: Konzentration, Gedächtnis und emotionale Regulation sind heute eingeschränkt. Nicht weil du nicht willst — sondern weil das Gehirn Schlaf zum Konsolidieren braucht.<br><br>Was das für den Tag heißt: wichtige Gespräche oder Entscheidungen wenn möglich verschieben. Pausen aktiv einplanen statt durchziehen.';
+      bedeutungText = 'Bei ' + sleepStr + ' Schlaf können Konzentration, Gedächtnis und emotionale Regulation heute eingeschränkt sein. Nicht weil du nicht willst — sondern weil das Gehirn Schlaf zum Konsolidieren braucht.<br><br>Was helfen kann: wichtige Gespräche oder Entscheidungen möglichst verschieben. Pausen aktiv einplanen statt durchziehen.';
     } else if (problems.includes('energie')) {
-      bedeutungText = 'Niedrige Energie in der ' + phase + ' ist meistens kein Motivationsproblem — es ist Biologie. Progesteron erhöht den Schlafbedarf, senkt den Antrieb. Dazu kommt was immer gerade sonst noch läuft.<br><br>Für heute: realistisch planen was wirklich heute sein muss — und was warten kann. Weniger ist gerade mehr.';
+      bedeutungText = 'Niedrige Energie ist selten ein Motivationsproblem.' + (phase ? ' ' + derPhase + ' spielt oft mit hinein — bei vielen Frauen erhöht Progesteron den Schlafbedarf und senkt den Antrieb.' : '') + ' Dazu kommt, was gerade sonst noch läuft.<br><br>Was helfen kann: realistisch planen, was wirklich heute sein muss — und was warten kann. Weniger ist gerade oft mehr.';
     } else if (problems.includes('stress')) {
-      bedeutungText = 'Ein erhöhter Stresslevel signalisiert: dein Nervensystem ist gerade im Alarm-Modus. In der ' + phase + ' ist die Stresstoleranz hormonal ohnehin niedriger — das verstärkt sich gegenseitig.<br><br>Was das bedeutet: auch kleine Reize kosten heute mehr. Das liegt nicht an dir. Eine kurze Pause — auch 10 Minuten ohne Input — kann das Nervensystem spürbar runterregeln.';
+      bedeutungText = 'Ein erhöhter Stresslevel kann darauf hindeuten, dass dein Nervensystem gerade wenig Spielraum hat.' + (phase ? ' In ' + derPhase + ' erleben viele Frauen ihre Stresstoleranz ohnehin als niedriger — beides kann sich gegenseitig verstärken.' : '') + '<br><br>Auch kleine Reize kosten dann mehr. Das liegt nicht an dir. Eine kurze Pause — auch 10 Minuten ohne Input — kann dem Nervensystem spürbar helfen.';
     }
   }
 
-  // ── STEP 3: felies Tipp ──
-  let tipp = '';
-  const name = userName || '';
-  const namePrefix = name ? name + ', ' : '';
-
-  if (problems.includes('schlaf') && sleepMins < 300) {
-    tipp = '<strong>Heute Abend: so früh wie möglich ins Bett.</strong><br><br>Mit ' + sleepStr + ' fehlt dir die Basis für alles andere. Kein Supplement, kein Training, kein Plan ersetzt Schlaf. Wenn heute Abend eine Sache zählt — dann das.';
-  } else if (problems.includes('stress') && problems.includes('energie')) {
-    tipp = '<strong>Eine Sache weglassen.</strong><br><br>' + namePrefix + 'schau auf deine Liste heute: was muss wirklich heute sein, und was kann morgen? Dein Körper schickt gerade ein klares Signal. Das zu ignorieren kostet morgen mehr als es heute bringt.';
-  } else if (problems.includes('stress')) {
-    tipp = '<strong>15 Minuten ohne Input.</strong><br><br>Kein Handy, kein Podcast, keine Aufgabe. Einfach draußen stehen, kurz gehen, atmen. Das klingt nach wenig — aber ein Nervensystem im Alarm braucht genau das: Stille statt mehr Input.';
-  } else if (problems.includes('schlaf')) {
-    tipp = '<strong>Heute abend eine Stunde früher als geplant.</strong><br><br>Nicht als Strafe, sondern als Investition. Schlaf ist die einzige Maßnahme, die Energie, HRV und Stimmung gleichzeitig verbessert. Alles andere kommt danach.';
-  } else if (phase === 'Lutealphase') {
-    tipp = '<strong>' + pv.tip + '</strong><br><br>Du bist in Tag ' + cycleDay + ' von ' + cycleLen + '. In ' + daysLeft + ' Tagen beginnt ein neuer Zyklus — der Körper arbeitet gerade im Hintergrund. Was heute hilft: Wärme, Bewegung ohne Druck, und nicht zu viel von dir verlangen.';
-  } else if (phase === 'Follikelphase') {
-    tipp = '<strong>' + pv.tip + '</strong><br><br>Deine Energie ist gerade auf deiner Seite — nutze das Fenster bewusst. Nicht alles auf einmal, aber die Dinge die dir wichtig sind und die du in der zweiten Zyklushälfte schwerer angehst.';
-  } else {
-    tipp = '<strong>Ruhig sein darf heute reichen.</strong><br><br>Menstruation bedeutet: der Körper regeneriert sich. Nicht der Moment für Hochleistung — sondern für Wärme, leichte Bewegung, und die Erlaubnis nicht funktionieren zu müssen.';
-  }
+  /* Schlusssatz als Überleitung ins Gespräch: eine offene Rückfrage, keine
+     weitere Deutung. Die Nutzerin ist die Einzige, die weiß, ob es stimmt. */
+  bedeutungText += '<br><br>Kannst du dich darin wiedererkennen — oder fühlt es sich für dich ganz anders an?';
 
   return [
-    { label: 'Das Gesamtbild',   icon: 'i-eye',   title: 'Dein Körper heute', text: gesamtText },
-    { label: 'Was das bedeutet', icon: 'i-mind',  title: 'Für deinen Tag',    text: bedeutungText },
-    { label: 'felies Tipp',      icon: 'i-bloom', title: 'Eine Sache heute',  text: tipp }
+    { label: 'Das Gesamtbild',   icon: 'i-eye',  title: 'Dein Körper heute', text: gesamtText },
+    { label: 'Was das bedeutet', icon: 'i-mind', title: 'Für deinen Tag',    text: bedeutungText }
   ];
 }
 
@@ -4048,10 +4054,11 @@ function startDashAnalysis() {
         <div style="font-family:'Alice',Georgia,serif;font-size:19px;color:#180430;line-height:1.2;" id="ana-title">${ANALYSIS_STEPS[0].title}</div>
       </div>
       <div id="ana-text" style="font-size:14px;color:#4A3A6A;line-height:1.65;font-weight:300;min-height:90px;margin-bottom:22px;">${ANALYSIS_STEPS[0].text}</div>
-      <div style="display:flex;gap:10px;">
-        <button id="ana-prev" style="flex:1;padding:13px;border-radius:20px;border:1.5px solid #180430;background:transparent;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;opacity:0;pointer-events:none;transition:opacity 0.2s;">← Zurück</button>
-        <button id="ana-next" style="flex:1.5;padding:13px 20px;border-radius:20px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Weiter →</button>
-      </div>
+      <button id="ana-next" style="width:100%;padding:13px 20px;border-radius:20px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Weiter →</button>
+      <!-- Zweiter Weg auf Seite 1: wer reden will, muss nicht erst durchblättern.
+           Auf der letzten Seite steht hier stattdessen "Schließen". -->
+      <button id="ana-skip" style="width:100%;margin-top:10px;padding:13px 20px;border-radius:20px;border:1.5px solid #180430;background:transparent;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;">Mit felie besprechen</button>
+      <button id="ana-close" style="width:100%;margin-top:10px;padding:13px 20px;border-radius:20px;border:1.5px solid #180430;background:transparent;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:none;">Schließen</button>
     </div>`;
 
   const container = document.getElementById('dashboard') || document.querySelector('.phone');
@@ -4063,7 +4070,6 @@ function startDashAnalysis() {
     const isLast = step === ANALYSIS_STEPS.length - 1;
     const title = overlay.querySelector('#ana-title');
     const text  = overlay.querySelector('#ana-text');
-    const prev  = overlay.querySelector('#ana-prev');
     const next  = overlay.querySelector('#ana-next');
 
     // Instantly clear and replace — no fade, no overlap
@@ -4083,22 +4089,30 @@ function startDashAnalysis() {
       if (lbl) lbl.style.color = i === step ? 'white' : '#6B5A88';
     });
 
-    prev.style.opacity = step > 0 ? '1' : '0';
-    prev.style.pointerEvents = step > 0 ? 'auto' : 'none';
-    next.textContent = isLast ? 'Fertig ✓' : 'Weiter →';
+    /* Seite 1: Weiter + Mit felie besprechen. Letzte Seite: Mit felie
+       besprechen + Schließen. Nie drei Wege gleichzeitig. */
+    next.textContent = isLast ? 'Mit felie besprechen' : 'Weiter →';
+    var skip = overlay.querySelector('#ana-skip');
+    var close = overlay.querySelector('#ana-close');
+    if (skip)  skip.style.display  = isLast ? 'none' : 'block';
+    if (close) close.style.display = isLast ? 'block' : 'none';
+  }
+
+  function insGespraech() {
+    overlay.remove();
+    dashChatAusAnalyse();
   }
 
   overlay.querySelector('#ana-next').addEventListener('click', function() {
-    if (analysisStep === ANALYSIS_STEPS.length - 1) { // local ANALYSIS_STEPS
-      overlay.style.animation = 'dashOut 0.25s ease both';
-      overlay.addEventListener('animationend', function() { overlay.remove(); });
-    } else {
-      goTo(analysisStep + 1);
-    }
+    if (analysisStep === ANALYSIS_STEPS.length - 1) insGespraech();
+    else goTo(analysisStep + 1);
   });
 
-  overlay.querySelector('#ana-prev').addEventListener('click', function() {
-    if (analysisStep > 0) goTo(analysisStep - 1);
+  overlay.querySelector('#ana-skip').addEventListener('click', insGespraech);
+
+  overlay.querySelector('#ana-close').addEventListener('click', function() {
+    overlay.style.animation = 'dashOut 0.25s ease both';
+    overlay.addEventListener('animationend', function() { overlay.remove(); });
   });
 
   // Tabs are also clickable
@@ -4119,7 +4133,7 @@ const BODY_INFO = {
     components: [
       { dot: '#8F5BBD', text: '<strong>Progesteron am höchsten</strong> — das "Beruhigungshormon" macht müder, sensibler, kann PMS-Symptome auslösen.' },
       { dot: '#180430', text: '<strong>Östrogen sinkt</strong> — damit sinkt Stresstoleranz und emotionale Pufferkapazität. Kleinigkeiten fühlen sich größer an.' },
-      { dot: '#180430', text: '<strong>Nächste Periode in ~9 Tagen</strong> — Progesteron beginnt bald zu fallen, dann kommt die Menstruation.' },
+      { dot: '#180430', text: '<strong>Am Ende der Phase</strong> sinkt Progesteron bei den meisten Frauen wieder ab — darauf folgt die Menstruation.' },
     ],
     tips: [
       { dot: '#8F5BBD', text: '<strong>Heute ist ein Erholungstag</strong> — nicht wegen Schwäche, sondern wegen Biologie.' },
@@ -4170,21 +4184,44 @@ const BODY_INFO = {
   },
   temp: {
     icon: '<svg class="ico"><use href="#i-temp"/></svg>', iconBg: 'rgba(143, 91, 189,0.12)',
-    title: 'Temperatur: +0.4°C',
+    title: 'Körpertemperatur',
     components: [
-      { dot: '#8F5BBD', text: '<strong>+0.4°C über Basaltemperatur</strong> — in der zweiten Zyklushälfte vollkommen normal.' },
-      { dot: '#180430', text: '<strong>Progesteron erhöht die Temperatur</strong> um ~0.3–0.5°C. Das ist ein zuverlässiger Zyklus-Indikator.' },
-      { dot: '#180430', text: '<strong>Bestätigung der Lutealphase</strong> — du hast ovuliert. Positives Zeichen.' },
+      { dot: '#8F5BBD', text: '<strong>Angezeigt wird die Abweichung</strong> von deinem persönlichen Durchschnitt, nicht die absolute Temperatur.' },
+      { dot: '#180430', text: '<strong>Der Wert schwankt im Zyklus</strong> — in der zweiten Zyklushälfte liegt er bei vielen Frauen etwas höher.' },
     ],
     tips: [
-      { dot: '#8F5BBD', text: '<strong>Kühlere Umgebung</strong> beim Schlafen — dein Körper ist wärmer als sonst.' },
-      { dot: '#180430', text: '<strong>Mehr trinken</strong> — erhöhte Temperatur bedeutet höherer Flüssigkeitsbedarf.' },
+      { dot: '#8F5BBD', text: '<strong>Einzelne Nächte sagen wenig</strong> — erst über mehrere Tage wird ein Muster sichtbar.' },
     ]
   }
 };
 
+/* Der Temperatur-Text wird aus dem tatsaechlichen Wert gebaut. Frueher stand
+   hier ein fester Beispieltext ("+0.4°C … du hast ovuliert"), der unabhaengig
+   vom eingetragenen Wert erschien. Das war doppelt falsch: sachlich, sobald ein
+   anderer Wert vorlag, und inhaltlich, weil eine Eisprung-Bestaetigung aus einem
+   Koerpermesswert eine medizinische Aussage ist (MDR Art. 2 Nr. 1) — die
+   KI-Leitplanken greifen bei fest verdrahtetem UI-Text nicht. */
+function bodyInfoTemp() {
+  var mb = window.manualBodyData;
+  var wert = (mb && mb.temp != null && mb.temp !== '') ? parseFloat(mb.temp) : null;
+  var basis = JSON.parse(JSON.stringify(BODY_INFO.temp));
+  if (wert == null || isNaN(wert)) return basis;
+
+  var vorz = wert > 0 ? '+' : '';
+  basis.title = 'Körpertemperatur: ' + vorz + wert + '°C';
+  if (wert >= 0.2) {
+    basis.components.unshift({ dot: '#180430', text: '<strong>' + vorz + wert + '°C über deinem Schnitt.</strong> Eine leicht erhöhte Temperatur kann viele Gründe haben — Zyklusphase, Schlafumgebung, Alkohol am Vorabend oder ein beginnender Infekt.' });
+    basis.tips.push({ dot: '#180430', text: '<strong>Kühler schlafen und mehr trinken</strong> — beides tut gut, wenn dein Körper wärmer läuft als sonst.' });
+  } else if (wert <= -0.2) {
+    basis.components.unshift({ dot: '#180430', text: '<strong>' + wert + '°C unter deinem Schnitt.</strong> Auch das ist normal und schwankt unter anderem mit Zyklusphase und Schlafumgebung.' });
+  } else {
+    basis.components.unshift({ dot: '#180430', text: '<strong>' + vorz + wert + '°C — praktisch auf deinem Schnitt.</strong> Kein auffälliger Ausschlag.' });
+  }
+  return basis;
+}
+
 function showBodyInfo(key) {
-  const info = BODY_INFO[key];
+  const info = (key === 'körpertemperatur' || key === 'temp') ? bodyInfoTemp() : BODY_INFO[key];
   if (!info) return;
   const phone = document.querySelector('.phone');
   const backdrop = document.createElement('div');
@@ -4376,6 +4413,34 @@ function buildTips(moodKey, container) {
   });
 }
 
+/* Uebergabe an den Chat mit dem Kontext, den die Nutzerin gerade gelesen hat.
+   Ohne den Kontext faengt felie bei null an, obwohl die Einordnung schon auf
+   dem Schirm stand. Die Frage bleibt bewusst offen ("wie fuehlt sich das an")
+   statt eine weitere Deutung anzukuendigen. */
+/* Einstieg vom Dashboard aus. Liegen keine Werte vor, saehe die Nutzerin
+   zweimal "liegt mir nichts vor" — dann geht es direkt ins Gespraech. */
+function openDashInsight() {
+  var mb = window.manualBodyData;
+  var cd = null;
+  try { cd = cycleRefresh(); } catch (e) { cd = window.cycleData; }
+  var leer = (!mb || (mb.energyScore == null && mb.sleepMins == null && mb.stressScore == null)) && !cd;
+  if (leer) dashStartChat('Ich möchte über meine Körperdaten sprechen.');
+  else startDashAnalysis();
+}
+
+function dashChatAusAnalyse() {
+  var txt = '';
+  try {
+    txt = buildAnalysisSteps().map(function(s) {
+      return s.text.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
+    }).join(' ');
+  } catch (e) {}
+  var opener = 'Ich habe mir gerade meine Körperdaten im Dashboard angesehen.';
+  if (txt) opener += ' Das stand dort: ' + txt;
+  opener += ' Wie fühlt sich das für dich an — magst du mit mir darüber sprechen?';
+  dashStartChat(opener);
+}
+
 function dashStartChat(topic) {
   closeDashboard();
   setTimeout(function() { homeStartChat(topic || 'Ich möchte mit dir sprechen.'); }, 320);
@@ -4518,7 +4583,7 @@ function showDashboard() {
 
     <!-- CTA: Schließen + über Körperdaten sprechen -->
     <div style="padding:14px 16px 28px;background:#180430;border-top:1px solid rgba(255,255,255,0.10);flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
-      ${_chatOpen ? '' : '<button onclick="dashStartChat(\'Ich möchte über meine Körperdaten sprechen.\')" style="width:100%;padding:14px;border-radius:16px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:16px;height:16px"><use href="#i-chat"/></svg>Über Körperdaten sprechen</button>'}
+      ${_chatOpen ? '' : '<button onclick="openDashInsight()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:16px;height:16px"><use href="#i-eye"/></svg>Körperdaten einordnen</button>'}
           <button onclick="closeDashboard()" style="width:100%;padding:14px;border-radius:16px;border:1.5px solid rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);color:#FFFFFF;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">${_chatOpen ? 'Zurück zum Chat' : 'Schließen'}</button>
     </div>
   `;
@@ -4774,6 +4839,18 @@ function markScrollables() {
   });
 }
 
+/* Sheet-Animation nur beim ersten Aufbau spielen lassen.
+   Die mehrstufigen Overlays bauen ihren Inhalt bei jedem Schritt komplett per
+   innerHTML neu auf. Dabei entsteht ein frisches .ci-sheet bzw. .score-popup,
+   dessen slideUpPop-Animation erneut anlaeuft — es sieht dann so aus, als
+   oeffne sich pro Schritt ein eigenes Popup, statt im selben Fenster
+   weiterzublaettern. Ab dem zweiten Rendern wird die Animation deshalb
+   abgeschaltet. */
+function sheetOhneNeuanimation(container) {
+  var sheet = container && container.querySelector('.ci-sheet, .score-popup');
+  if (sheet) sheet.style.animation = 'none';
+}
+
 function felieDialog(el, opts) {
   if (!el || el.dataset.dlg) return;
   opts = opts || {};
@@ -4795,14 +4872,31 @@ function felieDialog(el, opts) {
     var f = fokussierbare();
     if (!f.length) return;
     var erst = f[0], letzt = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === erst) { e.preventDefault(); letzt.focus(); }
-    else if (!e.shiftKey && document.activeElement === letzt) { e.preventDefault(); erst.focus(); }
+    if (e.shiftKey && document.activeElement === erst) { e.preventDefault(); fokusOhneSprung(letzt); }
+    else if (!e.shiftKey && document.activeElement === letzt) { e.preventDefault(); fokusOhneSprung(erst); }
   }
   document.addEventListener('keydown', taste, true);
 
+  /* Fokus setzen, ohne dass der Browser dabei Vorfahren scrollt.
+     .phone ist zwar overflow:hidden, laesst sich per focus() aber trotzdem
+     programmatisch verschieben — sichtbar als Springen des Hintergrundscreens.
+     Verstaerkt wird das dadurch, dass wir mitten in der Slide-up-Animation des
+     Sheets fokussieren: das Ziel liegt dann noch ausserhalb des Rahmens, der
+     Browser scrollt es herein, und der Versatz bleibt nach der Animation stehen.
+     preventScroll loest das; die Wiederherstellung darunter faengt Browser ab,
+     die die Option ignorieren. */
+  function fokusOhneSprung(node) {
+    if (!node || !node.focus) return;
+    var buehne = document.querySelector('.phone');
+    var st = buehne ? buehne.scrollTop : 0;
+    var sl = buehne ? buehne.scrollLeft : 0;
+    try { node.focus({ preventScroll: true }); } catch (e) { try { node.focus(); } catch (e2) {} }
+    if (buehne) { buehne.scrollTop = st; buehne.scrollLeft = sl; }
+  }
+
   setTimeout(function() {
     var f = fokussierbare();
-    if (f.length) f[0].focus();
+    if (f.length) fokusOhneSprung(f[0]);
   }, 60);
 
   /* Fokus zurueckgeben, sobald das Overlay aus dem DOM verschwindet */
@@ -4811,7 +4905,7 @@ function felieDialog(el, opts) {
       if (!document.body.contains(el)) {
         beob.disconnect();
         document.removeEventListener('keydown', taste, true);
-        if (vorher && vorher.focus) { try { vorher.focus(); } catch (e) {} }
+        if (vorher && vorher.focus) fokusOhneSprung(vorher);
       }
     });
     beob.observe(document.querySelector('.phone') || document.body, { childList: true, subtree: true });
@@ -5041,12 +5135,44 @@ function showCycleInput() {
 }
 
 // ── Manuelle Körperdaten Eingabe ──
+/* Eine Tabelle statt Feld-pro-Hersteller: die Speicherschluessel (recovery,
+   hrv, rhr, deep, rem) bleiben ueberall gleich, nur die Beschriftung wechselt.
+   Fehlt ein Eintrag, gibt es den Wert auf dem Geraet nicht — dann wird das Feld
+   gar nicht erst gezeigt, statt als totes Feld mitzulaufen. Apple Watch hat
+   z.B. nativ keinen Erholungs-Score. */
+var WEARABLES = {
+  oura:    { name: 'Oura Ring',    recovery: { label: 'Readiness',      ph: 'z.B. 72' }, hrv: 1, rhr: 1, phasen: 1 },
+  apple:   { name: 'Apple Watch',  recovery: null,                                      hrv: 1, rhr: 1, phasen: 1 },
+  garmin:  { name: 'Garmin',       recovery: { label: 'Body Battery',   ph: 'z.B. 65' }, hrv: 1, rhr: 1, phasen: 1 },
+  fitbit:  { name: 'Fitbit',       recovery: { label: 'Tagesbereitschaft', ph: 'z.B. 70' }, hrv: 1, rhr: 1, phasen: 1 },
+  whoop:   { name: 'Whoop',        recovery: { label: 'Recovery',       ph: 'z.B. 68' }, hrv: 1, rhr: 1, phasen: 1 },
+  samsung: { name: 'Galaxy Watch', recovery: { label: 'Energiewert',    ph: 'z.B. 70' }, hrv: 1, rhr: 1, phasen: 1 }
+};
+
+function ladeWearable() {
+  try { return localStorage.getItem('felie_wearable') || ''; } catch (e) { return ''; }
+}
+function speichereWearable(key) {
+  try { localStorage.setItem('felie_wearable', key); } catch (e) {}
+}
+
 function showManualBodyInput(startStep) {
   const phone = document.querySelector('.phone');
   const old = document.getElementById('mb-overlay');
   if (old) old.remove();
 
-  const manualData = window.manualBodyData || { bedTime: '23:00', wakeTime: '07:00', energy: 3, stress: 3, recovery: '', hrv: '', rhr: '', deep: '', rem: '', temp: '', wachphasen: undefined };
+  const manualData = window.manualBodyData || { bedTime: '23:00', wakeTime: '07:00', recovery: '', hrv: '', rhr: '', deep: '', rem: '', temp: '', wachphasen: undefined };
+  /* Energie und Stress haben bewusst KEINE Vorauswahl. Sonst wuerde die Stufe 3
+     als echte Angabe gespeichert, obwohl die Nutzerin nur weitergeklickt hat.
+     Beim erneuten Oeffnen rechnen wir die frueher gewaehlte Stufe aus dem
+     gespeicherten Score zurueck (Score = Stufe x 20), damit die Auswahl wieder
+     markiert ist und beim Speichern nicht verloren geht. */
+  if (manualData.energy == null && manualData.energyScore != null) {
+    manualData.energy = Math.min(5, Math.max(1, Math.round(manualData.energyScore / 20)));
+  }
+  if (manualData.stress == null && manualData.stressScore != null) {
+    manualData.stress = Math.min(5, Math.max(1, Math.round(manualData.stressScore / 20)));
+  }
   /* Merkt sich, ob die Nutzerin die Schlafzeiten wirklich angefasst hat.
      Ohne das wurde die Vorbelegung 23:00–07:00 als echte Angabe gespeichert. */
   let sleepTouched = !!(window.manualBodyData && window.manualBodyData.sleepMins);
@@ -5063,6 +5189,65 @@ function showManualBodyInput(startStep) {
   /* Direkt zum passenden Schritt springen: Schlaf ist 1, Energie und
      Stress liegen auf 2. Vorher landete jeder Tap auf Schritt 1. */
   let mbStep = (startStep === 2 || startStep === 3) ? startStep : 1;
+  let mbErstesRendern = true;
+
+  var mbGeraet = ladeWearable();
+
+  var FELD_STIL = 'width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);'
+    + 'background:white;font-family:inherit;font-size:16px;color:#180430;outline:none;box-sizing:border-box;text-align:center;';
+
+  function mbFeld(id, label, ph, wert, min, max) {
+    return '<div><div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">' + label + '</div>'
+      + '<input type="number" id="' + id + '" min="' + min + '" max="' + max + '" placeholder="' + ph + '"'
+      + ' style="' + FELD_STIL + '" value="' + (wert || '') + '" aria-label="' + label + '"></div>';
+  }
+
+  /* Geraeteauswahl: einmal treffen, danach nur noch als Zeile mit "ändern".
+     Das Wearable wechselt selten, die Werte traegt man taeglich ein — eine
+     Auswahl bei jedem Oeffnen waere eine Frage, deren Antwort sich nie aendert. */
+  function mbWearableBlock() {
+    var karte = 'background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(143, 91, 189,0.2);margin-bottom:16px;';
+
+    if (!mbGeraet || !WEARABLES[mbGeraet]) {
+      var knoepfe = Object.keys(WEARABLES).map(function(k) {
+        return '<button class="mb-dev-btn" data-dev="' + k + '" style="padding:11px 12px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.25);'
+          + 'background:white;color:#180430;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;">' + WEARABLES[k].name + '</button>';
+      }).join('');
+      return '<div style="' + karte + '">'
+        + '<div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#8F5BBD;margin-bottom:6px;display:flex;align-items:center;gap:7px;">'
+        + icoSvg('i-pulse', 14) + 'Welches Wearable nutzt du?</div>'
+        + '<div style="font-size:11px;color:#6B5A88;margin-bottom:12px;">Dann heißen die Felder unten so wie in deiner App.</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' + knoepfe + '</div>'
+        + '<button id="mb-dev-andere" style="width:100%;padding:11px;border-radius:12px;border:1.5px dashed rgba(143, 91, 189,0.4);'
+        + 'background:transparent;color:#8F5BBD;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;">Anderes Gerät — Screenshot hochladen</button>'
+        + '</div>';
+    }
+
+    var dev = WEARABLES[mbGeraet];
+    var felder = '';
+    if (dev.recovery) felder += mbFeld('mb-recovery', dev.recovery.label + ' (0–100)', dev.recovery.ph, manualData.recovery, 0, 100);
+    if (dev.hrv)      felder += mbFeld('mb-hrv', 'HRV (ms)', 'z.B. 42', manualData.hrv, 10, 120);
+    if (dev.rhr)      felder += mbFeld('mb-rhr', 'Ruhepuls (bpm)', 'z.B. 58', manualData.rhr, 35, 100);
+
+    var phasen = '';
+    if (dev.phasen) {
+      phasen = '<div style="font-size:11px;color:#6B5A88;margin:14px 0 8px;font-weight:600;">Schlafphasen (min)</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+        + mbFeld('mb-deep', 'Tiefschlaf', 'z.B. 90', manualData.deep, 0, 200)
+        + mbFeld('mb-rem', 'REM', 'z.B. 100', manualData.rem, 0, 200)
+        + '</div>';
+    }
+
+    return '<div style="' + karte + '">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+      + '<div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#8F5BBD;display:flex;align-items:center;gap:7px;">'
+      + icoSvg('i-pulse', 14) + dev.name + '</div>'
+      + '<button id="mb-dev-wechseln" style="background:none;border:none;color:#8F5BBD;font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;padding:2px 4px;">ändern</button>'
+      + '</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' + felder + '</div>'
+      + phasen
+      + '</div>';
+  }
 
   function renderStep() {
     const pages = {
@@ -5149,10 +5334,10 @@ function showManualBodyInput(startStep) {
             <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
               ${[1,2,3,4,5].map(function(n){
                 var sel = manualData.energy === n;
-                return '<div class="mb-energy-btn" data-val="'+n+'" style="width:52px;height:52px;border-radius:12px;border:1.5px solid '+(sel?'#e1ea7d':'rgba(143, 91, 189,0.2)')+';background:'+(sel?'#e1ea7d':'white')+';color:#180430'+';font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;">'+n+'</div>';
+                return '<div class="mb-energy-btn" data-val="'+n+'" style="width:52px;height:52px;border-radius:12px;border:1.5px solid '+(sel?'#180430':'rgba(143, 91, 189,0.2)')+';background:'+(sel?'#180430':'white')+';color:'+(sel?'white':'#180430')+';font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;">'+n+'</div>';
               }).join('')}
             </div>
-            <div id="mb-energy-label" style="text-align:center;font-size:11px;color:#6B5A88;">${energyLabels[manualData.energy] || 'Okay'}</div>
+            <div id="mb-energy-label" style="text-align:center;font-size:11px;color:#6B5A88;">${energyLabels[manualData.energy] || 'Noch nichts gewählt — optional'}</div>
           </div>
 
           <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(143, 91, 189,0.2);margin-bottom:16px;">
@@ -5160,10 +5345,10 @@ function showManualBodyInput(startStep) {
             <div style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">
               ${[1,2,3,4,5].map(function(n){
                 var sel = manualData.stress === n;
-                return '<div class="mb-stress-btn" data-val="'+n+'" style="width:52px;height:52px;border-radius:12px;border:1.5px solid '+(sel?'#6B8FD4':'rgba(143, 91, 189,0.2)')+';background:'+(sel?'#6B8FD4':'white')+';color:'+(sel?'white':'#180430')+';font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;">'+n+'</div>';
+                return '<div class="mb-stress-btn" data-val="'+n+'" style="width:52px;height:52px;border-radius:12px;border:1.5px solid '+(sel?'#180430':'rgba(143, 91, 189,0.2)')+';background:'+(sel?'#180430':'white')+';color:'+(sel?'white':'#180430')+';font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;">'+n+'</div>';
               }).join('')}
             </div>
-            <div id="mb-stress-label" style="text-align:center;font-size:11px;color:#6B5A88;">${stressLabels[manualData.stress] || 'Leicht angespannt'}</div>
+            <div id="mb-stress-label" style="text-align:center;font-size:11px;color:#6B5A88;">${stressLabels[manualData.stress] || 'Noch nichts gewählt — optional'}</div>
           </div>
 
           </div>
@@ -5189,48 +5374,7 @@ function showManualBodyInput(startStep) {
             <div style="flex:1;height:3px;border-radius:2px;background:#180430;"></div>
           </div>
 
-          <div style="background:#F4F0FA;border-radius:14px;padding:16px 18px;border:1px solid rgba(143, 91, 189,0.2);margin-bottom:16px;">
-            <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#8F5BBD;margin-bottom:14px;display:flex;align-items:center;gap:7px;"><svg class="ico" style="width:14px;height:14px"><use href="#i-pulse"/></svg>Wearable-Daten</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <div>
-                <div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">Recovery Score (0–100)</div>
-                <input type="number" id="mb-recovery" min="0" max="100" placeholder="z.B. 72"
-                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:inherit;font-size:15px;color:#180430;outline:none;box-sizing:border-box;text-align:center;"
-                  value="${manualData.recovery || ''}"/ aria-label="Erholung">
-              </div>
-              <div>
-                <div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">HRV (ms)</div>
-                <input type="number" id="mb-hrv" min="10" max="120" placeholder="z.B. 42"
-                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:inherit;font-size:15px;color:#180430;outline:none;box-sizing:border-box;text-align:center;"
-                  value="${manualData.hrv || ''}"/ aria-label="HRV">
-              </div>
-              <div>
-                <div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">Ruhepuls (bpm)</div>
-                <input type="number" id="mb-rhr" min="35" max="100" placeholder="z.B. 58"
-                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:inherit;font-size:15px;color:#180430;outline:none;box-sizing:border-box;text-align:center;"
-                  value="${manualData.rhr || ''}"/ aria-label="Ruhepuls">
-              </div>
-              <div>
-                <div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">Temp. Abw. (°C)</div>
-                <input type="number" id="mb-temp" min="-2" max="3" step="0.1" placeholder="z.B. +0.2"
-                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:inherit;font-size:15px;color:#180430;outline:none;box-sizing:border-box;text-align:center;"
-                  value="${manualData.temp || ''}"/ aria-label="Temperatur">
-              </div>
-              <div>
-                <div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">Tiefschlaf (min)</div>
-                <input type="number" id="mb-deep" min="0" max="200" placeholder="z.B. 90"
-                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:inherit;font-size:15px;color:#180430;outline:none;box-sizing:border-box;text-align:center;"
-                  value="${manualData.deep || ''}"/ aria-label="Tiefschlaf">
-              </div>
-              <div>
-                <div style="font-size:11px;color:#6B5A88;margin-bottom:5px;">REM-Schlaf (min)</div>
-                <input type="number" id="mb-rem" min="0" max="200" placeholder="z.B. 100"
-                  style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:inherit;font-size:15px;color:#180430;outline:none;box-sizing:border-box;text-align:center;"
-                  value="${manualData.rem || ''}"/ aria-label="REM-Schlaf">
-              </div>
-            </div>
-            <div style="font-size:11px;color:#6B5A88;text-align:center;">Funktioniert mit Oura, Apple Watch, Garmin & Co.</div>
-          </div>
+          ${mbWearableBlock()}
 
           </div>
         <div class="ci-sheet-foot">
@@ -5241,6 +5385,8 @@ function showManualBodyInput(startStep) {
     };
 
     bd.innerHTML = pages[mbStep];
+    if (!mbErstesRendern) sheetOhneNeuanimation(bd);
+    mbErstesRendern = false;
 
     // Step 1 handlers
     if (mbStep === 1) {
@@ -5297,9 +5443,9 @@ function showManualBodyInput(startStep) {
           manualData.energy = parseInt(this.dataset.val);
           bd.querySelectorAll('.mb-energy-btn').forEach(function(b) {
             var sel = parseInt(b.dataset.val) === manualData.energy;
-            b.style.background = sel ? '#e1ea7d' : 'white';
-            b.style.color = '#180430';
-            b.style.borderColor = sel ? '#e1ea7d' : 'rgba(143, 91, 189,0.2)';
+            b.style.background = sel ? '#180430' : 'white';
+            b.style.color = sel ? 'white' : '#180430';
+            b.style.borderColor = sel ? '#180430' : 'rgba(143, 91, 189,0.2)';
           });
           bd.querySelector('#mb-energy-label').textContent = energyLabels[manualData.energy];
         });
@@ -5309,9 +5455,9 @@ function showManualBodyInput(startStep) {
           manualData.stress = parseInt(this.dataset.val);
           bd.querySelectorAll('.mb-stress-btn').forEach(function(b) {
             var sel = parseInt(b.dataset.val) === manualData.stress;
-            b.style.background = sel ? '#6B8FD4' : 'white';
+            b.style.background = sel ? '#180430' : 'white';
             b.style.color = sel ? 'white' : '#180430';
-            b.style.borderColor = sel ? '#6B8FD4' : 'rgba(143, 91, 189,0.2)';
+            b.style.borderColor = sel ? '#180430' : 'rgba(143, 91, 189,0.2)';
           });
           bd.querySelector('#mb-stress-label').textContent = stressLabels[manualData.stress];
         });
@@ -5322,26 +5468,59 @@ function showManualBodyInput(startStep) {
 
     // Step 3 handlers
     if (mbStep === 3) {
+      bd.querySelectorAll('.mb-dev-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          mbGeraet = this.dataset.dev;
+          speichereWearable(mbGeraet);
+          renderStep();
+        });
+      });
+      var devAndere = bd.querySelector('#mb-dev-andere');
+      if (devAndere) devAndere.addEventListener('click', function() {
+        /* Geraet unbekannt -> die Werte per Screenshot auslesen lassen, statt
+           generische Felder zu zeigen, die niemand zuordnen kann. */
+        bd.remove();
+        showBodyScreenshotFlow();
+      });
+      var devWechseln = bd.querySelector('#mb-dev-wechseln');
+      if (devWechseln) devWechseln.addEventListener('click', function() {
+        mbGeraet = '';
+        speichereWearable('');
+        renderStep();
+      });
       bd.querySelector('#mb-back-3').addEventListener('click', function() { mbStep = 2; renderStep(); });
+      /* Fehlt ein Feld (weil das Geraet den Wert nicht liefert), bleibt der
+         bisher gespeicherte Wert stehen statt geloescht zu werden. */
+      function feldWert(sel) {
+        var el = bd.querySelector(sel);
+        if (!el) return manualData[sel.replace('#mb-', '')] || null;
+        return el.value || null;
+      }
       bd.querySelector('#mb-save').addEventListener('click', function() {
         /* Unangetastete Vorbelegung wird NICHT gespeichert — sonst landet
            erfundener Schlaf im Verlauf und im Systemprompt. */
         var sleep = sleepTouched
           ? { str: manualData._sleepStr || '—', mins: manualData._sleepMins || null }
           : { str: '—', mins: null };
-        var energyScore = Math.round((manualData.energy / 5) * 100);
-        var stressScore  = Math.round((manualData.stress / 5) * 100);
+        var energyScore = manualData.energy ? Math.round((manualData.energy / 5) * 100) : null;
+        var stressScore = manualData.stress ? Math.round((manualData.stress / 5) * 100) : null;
         window.manualBodyData = {
           energyScore: energyScore,
           sleepStr:    sleep.str,
           sleepMins:   sleep.mins,
           stressScore: stressScore,
-          recovery: bd.querySelector('#mb-recovery').value || null,
-          hrv:      bd.querySelector('#mb-hrv').value      || null,
-          rhr:      bd.querySelector('#mb-rhr').value      || null,
-          deep:     bd.querySelector('#mb-deep').value     || null,
-          rem:      bd.querySelector('#mb-rem').value      || null,
-          temp:     bd.querySelector('#mb-temp').value     || null,
+          /* Nur die Felder lesen, die das gewaehlte Geraet ueberhaupt zeigt. */
+          recovery: feldWert('#mb-recovery'),
+          hrv:      feldWert('#mb-hrv'),
+          rhr:      feldWert('#mb-rhr'),
+          deep:     feldWert('#mb-deep'),
+          rem:      feldWert('#mb-rem'),
+          /* Temperatur wird nicht mehr manuell erfasst — als Einzelwert ohne
+             persoenliche Baseline traegt sie nichts zum Gespraech bei. Ueber
+             Wearable-Anbindung und Screenshot kommt sie weiter herein, deshalb
+             bleibt ein vorhandener Wert erhalten. */
+          temp:     manualData.temp || null,
+          geraet:   mbGeraet || null,
           updatedAt: Date.now()
         };
         window._bodyUpdatedAt = Date.now();
@@ -5425,10 +5604,8 @@ function connectSimWearable() {
 function rewireDashCTA() {
   const dash = document.getElementById('dashboard');
   if (!dash) return;
-  const analyseBtn = dash.querySelector('#dash-analyse-btn');
   const chatBtn    = dash.querySelector('#dash-chat-btn');
   const wearableBtn = dash.querySelector('[data-wearable-connect]');
-  if (analyseBtn) { analyseBtn.onclick = null; analyseBtn.addEventListener('click', startDashAnalysis); }
   if (chatBtn)    { chatBtn.onclick = null;    chatBtn.addEventListener('click', closeDashboard); }
   if (wearableBtn) { wearableBtn.onclick = null; wearableBtn.addEventListener('click', fetchOuraData); }
 }
@@ -5906,6 +6083,7 @@ function showBodyScreenshotFlow() {
     error: null,
     reqId: 0            // schuetzt vor veralteten Antworten nach "Zurueck"
   };
+  var bssErstesRendern = true;
 
   function fileToBase64(file) {
     return new Promise(function(resolve, reject) {
@@ -6144,6 +6322,8 @@ function showBodyScreenshotFlow() {
     var body = '<div style="width:36px;height:4px;border-radius:2px;background:#E0D8F0;margin:0 auto 16px;"></div>';
     body += (state.step === 1) ? renderStep1() : renderStep2();
     bd.innerHTML = '<div class="score-popup">' + body + '</div>';
+    if (!bssErstesRendern) sheetOhneNeuanimation(bd);
+    bssErstesRendern = false;
     wire();
   }
 
@@ -6205,7 +6385,7 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
     scoreCards.innerHTML = `
       <div data-score="energie" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:1px solid rgba(143, 91, 189,0.12);box-shadow:0 2px 10px rgba(24, 4, 48,0.07);">
         <div style="color:#8F5BBD;"><svg class="ico" style="width:20px;height:20px"><use href="#i-bolt"/></svg></div>
-        <div style="font-family:'Alice',Georgia,serif;font-size:26px;color:#180430;line-height:1;">${energyScore}</div>
+        <div style="font-family:'Alice',Georgia,serif;font-size:26px;color:#180430;line-height:1;">${energyScore == null ? '—' : energyScore}</div>
         <div style="font-size:10px;color:#6B5A88;text-align:center;">Energie</div>
         <div style="font-size:9px;color:#6B5A88;margin-top:2px;">manuell</div>
       </div>
@@ -6217,7 +6397,7 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
       </div>
       <div data-score="stress" style="background:white;border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border:1px solid rgba(143, 91, 189,0.12);box-shadow:0 2px 10px rgba(24, 4, 48,0.07);">
         <div style="color:#8F5BBD;"><svg class="ico" style="width:20px;height:20px;display:inline-block;vertical-align:-2px"><use href="#i-wind"/></svg></div>
-        <div style="font-family:'Alice',Georgia,serif;font-size:26px;color:#180430;line-height:1;">${stressScore}</div>
+        <div style="font-family:'Alice',Georgia,serif;font-size:26px;color:#180430;line-height:1;">${stressScore == null ? '—' : stressScore}</div>
         <div style="font-size:10px;color:#6B5A88;text-align:center;">Stress</div>
         <div style="font-size:9px;color:#6B5A88;margin-top:2px;">manuell</div>
       </div>`;
@@ -6262,7 +6442,7 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
         (mb.deep ? (mb.wachphasen != null ? ' · ' : '') + 'Tief: ' + mb.deep + 'min' : '') +
         (mb.rem ? ' · REM: ' + mb.rem + 'min' : '') || 'manuell',
         sleepTag, sleepCol) +
-      (mb.recovery ? row('i-battery', 'Recovery Score', mb.recovery + '/100', '', mb.recovery >= 70 ? 'gut' : mb.recovery >= 50 ? 'okay' : 'niedrig', mb.recovery >= 70 ? '#8F5BBD' : mb.recovery >= 50 ? '#8F5BBD' : '#C0392B') : '') +
+      (mb.recovery ? row('i-battery', recoveryKurz(mb), mb.recovery + '/100', '', mb.recovery >= 70 ? 'gut' : mb.recovery >= 50 ? 'okay' : 'niedrig', mb.recovery >= 70 ? '#8F5BBD' : mb.recovery >= 50 ? '#8F5BBD' : '#C0392B') : '') +
       (mb.hrv  ? row('i-pulse', 'HRV', mb.hrv + ' ms', '', mb.hrv < 35 ? 'niedrig' : mb.hrv < 55 ? 'normal' : 'gut', mb.hrv < 35 ? '#C0392B' : mb.hrv < 55 ? '#8F5BBD' : '#8F5BBD') : '') +
       (mb.rhr  ? row('i-heart', 'Ruhepuls', mb.rhr + ' bpm', '', mb.rhr <= 60 ? 'gut' : mb.rhr <= 70 ? 'normal' : 'erhöht', mb.rhr <= 60 ? '#8F5BBD' : mb.rhr <= 70 ? '#8F5BBD' : '#C0392B') : '') +
       (mb.temp ? row('i-temp', 'Körpertemperatur', (mb.temp > 0 ? '+' : '') + mb.temp + '°C', 'Abweichung vom Schnitt', '', '') : '');
@@ -6273,7 +6453,7 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
         koerperLocked.remove();
         if (koerperReal) {
           const content = koerperReal.querySelector('#koerper-card-real-content') || koerperReal;
-          content.innerHTML = '<div style="display:flex;justify-content:flex-end;gap:8px;padding:4px 0 4px;"><button style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(24, 4, 48,0.25);background:transparent;color:#180430;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;" onclick="startDashAnalysis()"><svg class="ico" style="width:12px;height:12px"><use href="#i-search"/></svg>Analysieren</button><button style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(143, 91, 189,0.3);background:transparent;color:#8F5BBD;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;" onclick="showManualBodyInput()"><svg class="ico" style="width:12px;height:12px"><use href="#i-pencil"/></svg>bearbeiten</button></div>' + newHTML;
+          content.innerHTML = '<div style="display:flex;justify-content:flex-end;gap:8px;padding:4px 0 4px;"><button style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(143, 91, 189,0.3);background:transparent;color:#8F5BBD;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;" onclick="showManualBodyInput()"><svg class="ico" style="width:12px;height:12px"><use href="#i-pencil"/></svg>bearbeiten</button></div>' + newHTML;
           // Keep collapsed — user can expand manually
           content.style.maxHeight = '0px';
           content.style.opacity = '0';
@@ -6835,20 +7015,13 @@ function renderDashCheckin() {
   }
 }
 
-/* Zeile unter dem Check-in: Alter der Werte links, Analysieren rechts.
-   Der Knopf lag vorher in der ausgeklappten Körperdaten-Sektion. */
+/* Hinweis auf das Alter der Werte unter dem Check-in. */
 function dashAnalyseChip(sub) {
-  var mb = window.manualBodyData;
-  var leer = !mb || (mb.energyScore == null && mb.sleepMins == null && mb.stressScore == null);
-  var left = sub ? '<span style="font-size:11px;color:#6B5A88;">' + sub + '</span>' : '<span></span>';
-  var right = leer ? '' :
-    '<button onclick="startDashAnalysis()" style="font-size:11px;padding:4px 10px;border-radius:9px;' +
-    'border:1px solid rgba(24, 4, 48,0.22);background:transparent;color:#180430;cursor:pointer;' +
-    'font-family:inherit;display:inline-flex;align-items:center;gap:5px;line-height:1;">' +
-    '<svg class="ico" style="width:12px;height:12px"><use href="#i-search"/></svg>Analysieren</button>';
-  if (!sub && !right) return '';
-  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 2px 0;">' +
-    left + right + '</div>';
+  /* Der "Analysieren"-Knopf ist entfallen — die Einordnung laeuft jetzt ueber
+     den zentralen CTA am Fuss des Dashboards. Uebrig bleibt der Hinweis auf das
+     Alter der Werte, der ohne den Knopf keine eigene Zeile mehr braucht. */
+  if (!sub) return '';
+  return '<div style="font-size:11px;color:#6B5A88;padding:8px 2px 0;">' + sub + '</div>';
 }
 
 function dashAgeText() {
@@ -8244,10 +8417,19 @@ function showPersonality() {
   div.id = 'personality-overlay';
   div.style.cssText = 'position:absolute;inset:0;background:#E6E0EE;z-index:120;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
   div.innerHTML =
-    '<div style="background:var(--plum);padding:44px 20px 16px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
-      '<div><div style="font-size:16px;font-weight:600;color:white;">felies Persönlichkeit</div>' +
-      '<div style="font-size:12px;color:rgba(255,255,255,0.5);">So verhält sich felie dir gegenüber</div></div>' +
+    '<div style="padding:14px 20px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:var(--plum);">' +
+    '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.9);">' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + '</span>' +
+    '<div style="font-size:12px;color:rgba(255,255,255,0.4);display:flex;gap:5px;align-items:center;"><span>●●●</span><svg class="ico" style="width:13px;height:13px"><use href="#i-battery"/></svg></div>' +
+    '</div>' +
+    '<div style="background:var(--plum);padding:20px 20px 16px;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div>' +
+        '<span class="header-word" role="img" aria-label="felie"></span>' +
+        '<div style="margin-top:14px;"><div style="font-size:16px;font-weight:600;color:white;">felies Persönlichkeit</div>' +
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;">So verhält sich felie dir gegenüber</div></div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;align-self:stretch;">' +
       '<button onclick="document.getElementById(\'personality-overlay\').remove()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+      '</div>' +
     '</div>' +
     '<div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
       '<div style="font-size:13px;color:#6B5A88;line-height:1.5;padding:0 2px;">Stell ein, wie sich felie anfühlen soll. Du kannst das jederzeit ändern — felie richtet sich ab dem nächsten Gespräch danach.</div>' +
@@ -8265,6 +8447,19 @@ function showPersonality() {
     '</div>';
   document.querySelector('.phone').appendChild(div);
   felieDialog(div, { label: 'Persönlichkeit', onClose: function() { div.remove(); } });
+}
+
+/* Oura-Readiness, Garmin Body Battery und Whoop Recovery sind alle 0–100 und
+   messen trotzdem nicht dasselbe. felie soll den Namen benutzen, den die
+   Nutzerin kennt, statt eine Vergleichbarkeit zu behaupten, die es nicht gibt. */
+function recoveryKurz(mb) {
+  var dev = mb && mb.geraet && typeof WEARABLES !== 'undefined' ? WEARABLES[mb.geraet] : null;
+  return (dev && dev.recovery) ? dev.recovery.label : 'Erholungswert';
+}
+
+function recoveryLabel(mb) {
+  var dev = mb && mb.geraet && typeof WEARABLES !== 'undefined' ? WEARABLES[mb.geraet] : null;
+  return (dev && dev.recovery) ? dev.recovery.label + ' (' + dev.name + ')' : 'Erholungswert';
 }
 
 function bodyRecencyNote(mb) {
@@ -8435,9 +8630,9 @@ function feliePromptContext() {
     var rec = bodyRecencyNote(mb);
     if (rec) koerperContext += '- ' + rec + '\n';
     koerperContext += '- Schlaf: ' + mb.sleepStr + (mb.wachphasen !== null && mb.wachphasen !== undefined ? ' (' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + (mb.wachphasen >= 5 ? '+' : '') + 'x aufgewacht') + ')' : '') + '\n';
-    koerperContext += '- Energie (selbst): ' + mb.energyScore + '/100\n';
-    koerperContext += '- Stress (selbst): ' + mb.stressScore + '/100\n';
-    if (mb.recovery) koerperContext += '- Recovery Score: ' + mb.recovery + '/100\n';
+    if (mb.energyScore != null) koerperContext += '- Energie (selbst): ' + mb.energyScore + '/100\n';
+    if (mb.stressScore != null) koerperContext += '- Stress (selbst): ' + mb.stressScore + '/100\n';
+    if (mb.recovery) koerperContext += '- ' + recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.hrv)      koerperContext += '- HRV: ' + mb.hrv + ' ms\n';
     if (mb.rhr)      koerperContext += '- Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep)     koerperContext += '- Tiefschlaf: ' + mb.deep + ' min\n';
@@ -8582,7 +8777,7 @@ Schreib einfach los — ich lese alles und helfe dir danach sortieren was wirkli
 
   // ── SPAZIEREN / BEWEGTE STILLE ──
   else if (titleKey.includes('spazier') || catKey.includes('bewegte stille')) {
-    const minText = mb && mb.energyScore < 50 ? '10–15 Minuten reichen heute völlig.' : '20–30 Minuten wären ideal.';
+    const minText = mb && mb.energyScore != null && mb.energyScore < 50 ? '10–15 Minuten reichen heute völlig.' : '20–30 Minuten wären ideal.';
     opener = `Das ist einer der wirksamsten Tipps den ich dir heute geben kann — und er kostet nichts. 🚶‍♀️<br><br>
 <strong>Spazieren ohne Input — jetzt oder nach dem Feierabend</strong><br><br>
 <strong>Die Regel:</strong> Kein Podcast, keine Musik, kein Telefonieren. Nur du und deine Gedanken.<br><br>
@@ -8632,7 +8827,7 @@ Wo stehst du gerade beim Koffein heute?`;
 <strong>Prioritäten-Check für heute</strong><br><br>
 Schreib mir kurz: Was steht heute noch auf deiner Liste?<br><br>
 Ich helfe dir dann einzuschätzen was <strong>wirklich heute</strong> sein muss, was morgen kann — und was du getrost streichen darfst.<br><br>
-${mb && mb.energyScore < 60 ? ('Mit deinem heutigen Energielevel (' + mb.energyScore + ') ist es besonders wichtig, die eine wirklich wichtige Sache zu identifizieren — und alles andere loszulassen.') : `In der ${phase} kostet Entscheidungen treffen mehr Energie als sonst. Weniger ist heute mehr.`}`;
+${mb && mb.energyScore != null && mb.energyScore < 60 ? ('Mit deinem heutigen Energielevel (' + mb.energyScore + ') ist es besonders wichtig, die eine wirklich wichtige Sache zu identifizieren — und alles andere loszulassen.') : `In der ${phase} kostet Entscheidungen treffen mehr Energie als sonst. Weniger ist heute mehr.`}`;
   }
 
   // ── BEWEGUNG / SPORT ──
@@ -8955,6 +9150,38 @@ function ecSubmit(){
   try { fetch(FELIE_EXPERT_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){}); } catch(e){}
 }
 
+/* "Chat beenden": schliesst ohne Zwischenfrage und erzeugt die Zusammenfassung.
+   Die Entscheidung ueber Behalten oder Verwerfen faellt erst auf der Karte —
+   dort sieht die Nutzerin, worueber sie entscheidet. Wegwischen behaelt. */
+function endChatToCard() {
+  var dialog = document.getElementById('chat-close-dialog');
+  if (dialog) dialog.style.display = 'none';
+  window._hasNewUserMsg = false;
+  var historySnapshot = chatHistory.slice();
+  /* Fuer "Weiterschreiben" muss der Verlauf das Schliessen ueberleben. */
+  window._letzterChatVerlauf = historySnapshot;
+  var _cw = document.getElementById('chat-window'); if (_cw) _cw.classList.remove('open');
+  showFelieLoader();
+  setTimeout(hideFelieLoader, 8000);
+  generateChatSummary(historySnapshot);
+  armFeedback(historySnapshot);
+}
+
+/* Das × verlaesst den Chat bewusst ohne Zusammenfassung — deshalb hier die
+   Rueckfrage: anders als auf der Karte sieht die Nutzerin nicht, was verloren
+   geht. */
+function promptDiscardChat() {
+  if (!window._hasNewUserMsg) { discardChatAndClose(); return; }
+  felieConfirm({
+    title: 'Ohne Speichern schließen?',
+    message: 'Dieses Gespräch wird nicht ins Archiv übernommen und lässt sich später nicht mehr aufrufen.',
+    confirmText: 'Verwerfen',
+    cancelText: 'Weitersprechen',
+    danger: true,
+    onConfirm: function() { discardChatAndClose(); }
+  });
+}
+
 function promptCloseChat() {
   if (window._hasNewUserMsg) {
     var dialog = document.getElementById('chat-close-dialog');
@@ -8989,7 +9216,7 @@ function discardChatAndClose() {
 }
 
 function closeChat() {
-  promptCloseChat();
+  endChatToCard();
 }
 
 function generateChatSummary(historySnapshot) {
@@ -9061,6 +9288,7 @@ function saveChat(summary, messages) {
   try {
     var chats = getSavedChats();
     var ts = Date.now();
+    window._letzteChatId = ts;
     chats.push({
       id: ts,
       thema: summary.thema,
@@ -9073,7 +9301,9 @@ function saveChat(summary, messages) {
     // Speicher schlank halten
     if (chats.length > 50) chats = chats.slice(-50);
     localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
+    return ts;
   } catch(e) {}
+  return null;
 }
 
 function showChatSummaryCard(summary, messages) {
@@ -9148,9 +9378,50 @@ function showSummaryPopup(summary) {
         '<div style="background:rgba(225, 234, 125,0.06);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">felie merkt sich</div><div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(summary.felie_lernt) + '</div></div>' +
       '</div>' +
       backupHint() +
-      '<button onclick="document.getElementById(\'summary-popup\').remove()" style="margin-top:12px;width:100%;padding:12px;border-radius:14px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Schließen</button>' +
+      '<button onclick="document.getElementById(\'summary-popup\').remove()" style="margin-top:12px;width:100%;padding:12px;border-radius:14px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Speichern</button>' +
+      '<div style="display:flex;gap:8px;margin-top:8px;">' +
+        '<button onclick="verwerfeLetztesGespraech()" style="flex:1;padding:11px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;">Verwerfen</button>' +
+        '<button onclick="weiterschreiben()" style="flex:1;padding:11px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;">Weiterschreiben</button>' +
+      '</div>' +
     '</div>';
   document.querySelector('.phone').appendChild(ov);
+}
+
+/* Das Gespraech wurde beim Erzeugen der Karte bereits archiviert — Wegwischen
+   behaelt es also. "Verwerfen" nimmt den Eintrag wieder heraus. Eine zweite
+   Rueckfrage gibt es hier bewusst nicht: die Nutzerin sieht auf der Karte
+   genau, was sie wegwirft. */
+function verwerfeLetztesGespraech() {
+  var id = window._letzteChatId;
+  if (id != null) {
+    try {
+      var chats = getSavedChats().filter(function(c) { return (c.id || c.timestamp) !== id; });
+      localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
+    } catch (e) {}
+    window._letzteChatId = null;
+  }
+  window._letzterChatVerlauf = null;
+  var pop = document.getElementById('summary-popup');
+  if (pop) pop.remove();
+  try { refreshHome(); } catch (e) {}
+}
+
+/* Zurueck ins Gespraech: der Eintrag im Archiv wird wieder entfernt, sonst
+   entstuende beim naechsten Beenden ein zweiter Datensatz zum selben Chat. */
+function weiterschreiben() {
+  var verlauf = window._letzterChatVerlauf;
+  verwerfeLetztesGespraech();
+  if (!verlauf || !verlauf.length) return;
+  chatHistory.length = 0;
+  var msgs = document.getElementById('messages');
+  if (msgs) msgs.innerHTML = '';
+  verlauf.forEach(function(m) {
+    chatHistory.push({ role: m.role, content: m.content });
+    if (!m.hidden) addMsg(m.content, m.role === 'user' ? 'user' : 'felie');
+  });
+  window._hasNewUserMsg = true;
+  var cw = document.getElementById('chat-window');
+  if (cw) cw.classList.add('open');
 }
 
 // Dashboard "Mit felie besprechen" → just close dashboard, return to main screen

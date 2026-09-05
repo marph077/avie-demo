@@ -2017,22 +2017,6 @@ body.is-native .status-bar { display: none !important; }
           </div>
         </div>
 
-        <!-- Dritte Bubble: Quittung nach der Selbstreflexion.
-             Bewusst UNTER der offenen Frage und bewusst ohne eigene Frage:
-             Bubble 2 knuepft an die letzten Gespraeche und offene Faeden an
-             und hat damit Vorrang. Zwei Fragen hintereinander wuerden die
-             obere verdraengen. Diese Bubble quittiert nur, dass die
-             Selbstreflexion angekommen ist — sonst schliesst das Sheet
-             still und die Nutzerin weiss nicht, ob etwas passiert ist. -->
-        <div id="home-ritual-echo-wrap" style="display:none;flex-direction:column;gap:0;">
-          <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
-            <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="26" height="26" aria-label="felie"><use href="#felie-mark"/></svg></div>
-            <div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:88%;">
-              <div style="font-size:14px;color:#180430;line-height:1.55;"><span id="home-ritual-echo-text"></span></div>
-            </div>
-          </div>
-        </div>
-
         <!-- Nutzer Eingabefeld -->
         <div id="home-input-wrap" style="padding-left:42px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;">
           <textarea id="home-user-input"
@@ -3496,6 +3480,18 @@ function personalizeApp() {
       parts.push('Du bist in der <strong>' + cd.phase + '</strong>' + cycleDayPart(cd, ', ') + '. ' + (phaseDesc[cd.phase] || ''));
     }
 
+    /* "Du hast deine Energie als wenig beschrieben" laesst offen, WO sie das
+       gesagt hat — im Gespraech, im Dashboard, irgendwann. Der Bezug zur
+       Selbstreflexion muss benannt werden, sonst ist der Satz unklar.
+       Genau einmal pro Begruessung, bei der ersten Erwaehnung ihrer
+       eigenen Angaben — zweimal gelesen wirkt es wie eine Belehrung. */
+    var quelleGenannt = false;
+    function ausReflexion() {
+      if (quelleGenannt) return '';
+      quelleGenannt = true;
+      return ' in deiner Selbstreflexion';
+    }
+
     /* 2. Nacht — Selbstauskunft zuerst. Die gemessene Dauer kommt nur
        zum Zug, wenn sie NICHTS berichtet hat: "6h 48m" sagt nichts
        darueber, ob die Nacht erholsam war. */
@@ -3505,10 +3501,10 @@ function personalizeApp() {
       var wNacht = felieStufenWort('schlafqualitaet', eNacht.wert);
       var bNacht = felieBand('schlafqualitaet', eNacht.wert, 'selbst');
       if (bNacht === 'niedrig') {
-        parts.push('Deine Nacht hast du als <strong>' + wNacht + '</strong> beschrieben — das trägt in den Tag hinein.'
+        parts.push('Deine Nacht hast du' + ausReflexion() + ' als <strong>' + wNacht + '</strong> beschrieben — das trägt in den Tag hinein.'
           + (phase === 'Lutealphase' ? ' In der Lutealphase erholt sich das Nervensystem ohnehin langsamer.' : ''));
       } else if (bNacht === 'hoch') {
-        parts.push('Deine Nacht war <strong>' + wNacht + '</strong> — eine gute Basis für heute.');
+        parts.push('Deine Nacht war' + ausReflexion() + ' <strong>' + wNacht + '</strong> — eine gute Basis für heute.');
       }
     } else if (mb && mb.sleepMins) {
       if (mb.sleepMins < 300) {
@@ -3554,11 +3550,11 @@ function personalizeApp() {
       const wortE = felieStufenWort('energie', mb.energyScore);
       const wortS = felieStufenWort('anspannung', mb.stressScore);
       if (lowEnergy && highStress) {
-        parts.push('Du hast deine Energie als <strong>' + wortE + '</strong> und deine Anspannung als <strong>' + wortS + '</strong> beschrieben — beides zusammen fordert viel.');
+        parts.push('Du hast' + ausReflexion() + ' deine Energie als <strong>' + wortE + '</strong> und deine Anspannung als <strong>' + wortS + '</strong> beschrieben — beides zusammen fordert viel.');
       } else if (lowEnergy) {
-        parts.push('Deine Energie hast du als <strong>' + wortE + '</strong> beschrieben — heute muss nicht alles auf Hochtouren laufen.');
+        parts.push('Deine Energie hast du' + ausReflexion() + ' als <strong>' + wortE + '</strong> beschrieben — heute muss nicht alles auf Hochtouren laufen.');
       } else if (highStress) {
-        parts.push('Deine Anspannung hast du als <strong>' + wortS + '</strong> beschrieben — das nehme ich ernst.');
+        parts.push('Deine Anspannung hast du' + ausReflexion() + ' als <strong>' + wortS + '</strong> beschrieben — das nehme ich ernst.');
       }
     }
 
@@ -4233,11 +4229,6 @@ function homeInit(fromOnboarding) {
   if (qWrap) { qWrap.style.display = 'flex'; qWrap.style.flexDirection = 'column'; }
   if (oq) oq.innerHTML = '<span style="color:#6B5A88;">…</span>';
 
-  /* Riegel: homeInit laeuft bei JEDEM Betreten der Startseite und baut
-     Bubble 2 neu. Die Quittung darunter haengt an der Sitzung, nicht am
-     Aufruf — sie muss den Rerender ueberleben. */
-  try { renderRitualEcho(false); } catch (e) {}
-
   // Direkt nach dem Onboarding: felie stellt die "über mich"-Frage als Willkommen
   if (window._onboardingNoteAsk) {
     window._onboardingNoteAsk = false;
@@ -4338,14 +4329,6 @@ function homeUserReply() {
   var welcome = _homeElText(gtEl);
   var q = _homeElText(oqEl);
   if (q && q !== '…') welcome += (welcome ? '\n\n' : '') + q;
-  /* Die Quittung war auf der Startseite Teil derselben felie-Nachricht und
-     geht als dritter Block mit ins Gespraech. Ohne sie beginnt der Chat
-     mit einem Sprung: die Nutzerin hat drei Bubbles gelesen, im Verlauf
-     stehen zwei. */
-  var echoEl = document.getElementById('home-ritual-echo-text');
-  var echo = (echoEl && echoEl.textContent || '').trim();
-  if (echo) welcome += (welcome ? '\n\n' : '') + echo;
-  felieRitualEchoLoeschen();
 
   // Neues Chatfenster öffnen (analog "weiterreden")
   var cw = document.getElementById('chat-window');
@@ -4815,10 +4798,6 @@ function homeMoodSelect(btn) {
 }
 
 function homeStartChat(msg) {
-  /* Auch die anderen Wege in den Chat verbrauchen die Quittung — sonst
-     steht sie nach der Rueckkehr auf der Startseite noch da, obwohl das
-     Gespraech schon gelaufen ist. */
-  try { felieRitualEchoLoeschen(); } catch (e) {}
   // Thema + Icon im Chat-Header setzen
   var topicLabel = document.getElementById('chat-topic-label');
   var topicIconWrap = document.getElementById('chat-topic-icon-wrap');
@@ -6958,16 +6937,20 @@ function felieRitualStarten() {
       + '</div>'
       + '<div class="ritual-mitte"><div class="ritual-abschluss">' + satz + '</div></div>'
       + '<div class="ritual-fuss">'
-        /* Frueher stand hier ein zweiter Knopf "Mit felie besprechen", der
-           ueber dashChatAusAnalyse() ein eigenes Gespraech eroeffnete. Das
-           war ein Einstieg neben dem Hauptchat: felie musste das Thema
-           raten, und die Nutzerin hatte zwei Wege ins selbe Gespraech.
-           Jetzt fuehrt der Abschluss immer auf die Startseite zurueck —
-           dort quittiert eine dritte Bubble die Reflexion, und das Thema
-           setzt die Nutzerin selbst ueber das Eingabefeld. */
-        + '<button class="ritual-fertig" id="ritual-ende">Fertig</button>'
+        /* Uebergang ins Gespraech direkt aus dem Abschluss — derselbe Weg
+           wie "Körperdaten einordnen" im Dashboard, damit felie in beiden
+           Faellen denselben Stand bekommt. Nur anbieten, wenn ueberhaupt
+           etwas erfasst wurde. */
+        + (erfasst > 0 ? '<button class="ritual-fertig">Mit felie besprechen</button>' : '')
+        + '<button class="' + (erfasst > 0 ? 'ritual-zurueck' : 'ritual-fertig') + '" id="ritual-ende">Fertig</button>'
       + '</div>'
       + '</div>';
+    if (erfasst > 0) {
+      bd.querySelector('.ritual-fertig').addEventListener('click', function () {
+        felieRitualSchliessen(erfasst);
+        setTimeout(function () { try { dashChatAusAnalyse(); } catch (e) {} }, 260);
+      });
+    }
     bd.querySelector('#ritual-ende').addEventListener('click', function () {
       felieRitualSchliessen(erfasst);
     });
@@ -7002,74 +6985,12 @@ function felieRitualSchliessen(erfasstAnzahl) {
   if (erfasstAnzahl > 0) window._felieRitualGesehen = true;
   var bd = document.getElementById('ritual-overlay');
   if (bd) bd.remove();
-  /* Die Quittung haengt am Schliessen, nicht am Abschlussbild: sie kommt
-     auch bei ×, Backdrop-Tap und Abbruch mitten im Ritual. Ohne Angabe
-     keine Quittung — felie haette sonst nichts, worauf sie sich bezieht. */
-  if (erfasstAnzahl > 0) felieRitualEchoSetzen();
   try { saveBodyData(); } catch (e) {}
   try { personalizeApp(); } catch (e) {}
   try { refreshGreeting(); } catch (e) {}
   try { renderRitualAngebot(); } catch (e) {}
   try { renderSpiegel(); } catch (e) {}
   try { fillHomeData(); } catch (e) {}
-}
-
-/* ── Quittung nach der Selbstreflexion ────────────────────────────────
-   Bewusst deterministisch. Eine Bestaetigung ohne Deutung braucht kein
-   Modell: sie ist sofort da, funktioniert offline, kostet nichts und
-   kann nicht versehentlich doch bewerten oder eine Zahl nennen, die die
-   Nutzerin nie gesehen hat. Der INHALT der Reflexion geht nicht in die
-   Bubble, sondern in den Prompt-Kontext (feliePromptContext) — dort
-   gehoert er hin.
-     Drei Formulierungen im Wechsel, damit es bei woechentlicher Nutzung
-   nicht mechanisch klingt. Keine davon stellt eine Frage: die offene
-   Frage steht in Bubble 2 und hat Vorrang. */
-var FELIE_RITUAL_ECHOS = [
-  'Deine Selbstreflexion habe ich mitgenommen — ich beziehe sie mit ein.',
-  'Danke, das nehme ich mit ins Gespräch.',
-  'Ist bei mir angekommen. Ich hab\u2019s im Hinterkopf.'
-];
-
-function felieRitualEchoSetzen() {
-  /* Laeuft das Ritual ueber einem offenen Gespraech, bekommt die Nutzerin
-     ihre Rueckmeldung dort (felieReactToNewData). Eine Bubble auf der
-     Startseite waere bis zum Schliessen des Chats unsichtbar und danach
-     veraltet. */
-  var cw = document.getElementById('chat-window');
-  if (cw && cw.classList.contains('open')) return;
-  var i = Math.floor(Math.random() * FELIE_RITUAL_ECHOS.length);
-  /* Einmal gewuerfelt, dann festgehalten: renderRitualEcho laeuft bei
-     jedem Betreten der Startseite erneut, der Satz darf dabei nicht
-     wechseln. */
-  window._felieRitualEchoText = FELIE_RITUAL_ECHOS[i];
-  /* Marker fuer den Prompt: die naechste Nachricht der Nutzerin faellt
-     unmittelbar hinter die Reflexion. */
-  window._felieRitualFrisch = Date.now();
-  try { renderRitualEcho(true); } catch (e) {}
-}
-
-function renderRitualEcho(scrollen) {
-  var wrap = document.getElementById('home-ritual-echo-wrap');
-  var el = document.getElementById('home-ritual-echo-text');
-  if (!wrap || !el) return;
-  var txt = window._felieRitualEchoText;
-  if (!txt) { wrap.style.display = 'none'; el.textContent = ''; return; }
-  el.textContent = txt;
-  wrap.style.display = 'flex';
-  wrap.style.flexDirection = 'column';
-  /* Nur scrollen, wenn die Startseite auch sichtbar ist. Wird das Ritual
-     aus dem Spiegel gestartet, bleibt das Dashboard offen — dann darf
-     darunter nichts wandern. */
-  if (scrollen && !document.getElementById('dashboard')) {
-    setTimeout(function () { try { scrollHomeToEl(wrap, 'nearest'); } catch (e) {} }, 200);
-  }
-}
-
-/* Die Quittung ist verbraucht, sobald das Gespraech laeuft — sie ist ein
-   Uebergang, kein Dauerzustand. */
-function felieRitualEchoLoeschen() {
-  window._felieRitualEchoText = null;
-  try { renderRitualEcho(false); } catch (e) {}
 }
 
 /* ── Einzelwert bearbeiten ────────────────────────────────────────── */
@@ -10402,6 +10323,10 @@ function felieSessionZuruecksetzen() {
   window._felieGefragt = {};
   window._felieOffeneFrage = null;
   window._felieDivergenzGezeigt = false;
+  /* Ohne das trug ein neues Gespraech das Thema des alten weiter — und
+     die erste Antwort haette Chips zu einem Thema bekommen, ueber das
+     gerade gar nicht gesprochen wird. */
+  window._felieThemaInput = '';
 }
 
 function addMsg(text, who) {
@@ -10438,11 +10363,22 @@ function addMsg(text, who) {
        Die Rueckfrage laeuft jetzt deterministisch: Thema aus ihrer
        Nachricht, Bedarf aus dem Store. Das Budget begrenzt es ohnehin auf
        zwei pro Sitzung und ein Signal genau einmal. */
+    /* Nur auf eine ANTWORT anhaengen, nie an die Eroeffnung. Sonst hingen
+       die Chips unter felies Begruessung, noch bevor die Nutzerin ein Wort
+       geschrieben hatte — und waren mit ihrer ersten Nachricht sofort
+       ueberholt. _hasNewUserMsg wird in send() gesetzt und in
+       homeStartChat() bewusst auf false gelassen.
+       Ausserdem: ohne Text kein Thema. Vorher fiel die Erkennung dann auf
+       die abgeleitete Stimmung zurueck und fragte nach der Nacht, obwohl
+       die Nutzerin ueber Arbeitsdruck geschrieben hatte. */
     var nfKey = null;
-    try {
-      nfKey = felieNachfrageBedarf(window._felieThemaInput || '',
-        (typeof dashMoodKey === 'function' ? dashMoodKey() : null));
-    } catch (e) {}
+    var nfText = window._felieThemaInput || '';
+    if (window._hasNewUserMsg && nfText.trim()) {
+      try {
+        nfKey = felieNachfrageBedarf(nfText,
+          (typeof dashMoodKey === 'function' ? dashMoodKey() : null));
+      } catch (e) {}
+    }
     /* Antwort wurde vom Token-Limit gekappt -> Knopf zum Fortsetzen */
     if (window._lastCut) {
       ctaBtns.push('<button onclick="continueFelie(this)" class="data-cta">' +
@@ -10802,7 +10738,17 @@ function feliePromptContext() {
   const cd = (function(){ try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
   const mb = window.manualBodyData;
   var userTurns = (typeof chatHistory !== 'undefined' && chatHistory) ? chatHistory.filter(function(m){ return m.role === 'user' && !m.hidden; }).length : 0;
-  var phaseNote = (userTurns <= 3)
+  /* userTurns zaehlt nur den LAUFENDEN Chat, und chatHistory wird bei jedem
+     neuen Gespraech geleert. Damit fiel felie nach Monaten Beziehung in
+     jedem neuen Chat zurueck in "ich kenne dich noch kaum" — und bat um
+     Kennenlern-Antworten, obwohl Archiv und Fakten voll waren.
+     Die Phase haengt jetzt an der Beziehung: gespeicherte Gespraeche und
+     bekannte Fakten. */
+  var archivAnz = 0, faktenAnz = 0;
+  try { archivAnz = (getSavedChats() || []).length; } catch (e) {}
+  try { faktenAnz = felieFakten().length; } catch (e) {}
+  var felieKenntSieKaum = (archivAnz < 2 && faktenAnz < 3);
+  var phaseNote = (felieKenntSieKaum && userTurns <= 3)
     ? 'GESPRÄCHSPHASE — ERST KENNENLERNEN (hat in dieser Phase Vorrang):\n' +
       '- Du kennst diese Nutzerin noch kaum. Bevor du ihre Körperdaten (HRV, Schlaf, Zyklus, Recovery …) tief interpretierst, verschaffe dir erst ein Bild von ihr als Mensch.\n' +
       '- Stelle in deinen nächsten Antworten 1-2 warme, gezielte Rückfragen zu ihrem aktuellen Leben — Alltag, Familie, Arbeit, Gesundheit, Veränderungen, was sie gerade beschäftigt. Greife konkret auf, was sie erzählt, und frag natürlich nach.\n' +
@@ -10848,23 +10794,6 @@ function feliePromptContext() {
     koerperContext += '- Noch KEINE Körperdaten vorhanden (kein Wearable verbunden, nichts manuell eingetragen). Du kennst ihre Werte NICHT.\n';
   }
 
-  /* Frueher eroeffnete "Mit felie besprechen" nach der Reflexion ein
-     eigenes Gespraech mit einer Regieanweisung (dashChatAusAnalyse):
-     felie musste sich einen Punkt aussuchen und das Thema raten. Jetzt
-     schreibt die Nutzerin zuerst — der Block sagt deshalb nur noch, WO
-     ihre Nachricht herkommt, und nimmt felie das Thema-Raten ausdruecklich
-     aus der Hand.
-       Greift nur beim ersten Zug: userTurns zaehlt ihre sichtbaren
-     Nachrichten, callFelie legt die aktuelle vorher ab. Danach klingt der
-     Block von selbst ab, ohne dass ein Merker geloescht werden muss. */
-  var ritualNote = (window._felieRitualFrisch && userTurns <= 1)
-    ? 'SELBSTREFLEXION GERADE ABGESCHLOSSEN:\n' +
-      '- Sie hat unmittelbar vor dieser Nachricht die Selbstreflexion ausgefüllt. Ihre Angaben stehen oben unter Körperdaten.\n' +
-      '- Sie hat auf der Startseite schon gelesen, dass du das mitbekommen hast. Bedanke dich nicht dafür und zähle ihre Angaben nicht auf.\n' +
-      '- IHRE Nachricht setzt das Thema. Eröffne kein eigenes, schlage keines vor und such dir keinen Punkt aus ihren Werten heraus.\n' +
-      '- Nutze die Angaben nur, wenn sie zu ihrem Thema gehören — dann als ihre Worte, nicht als Messung.\n\n'
-    : '';
-
   return 'Zur Nutzerin: Sie ist ' + klBandText() + '.\n' +
 'Aktuelle Nutzerin:\n' +
 'Name: ' + name + ' | Alter: ' + alter + ' | ' + (kinderTxt[kinder] || '') + ' | Alltag: ' + (lifeTxt[lifestyle] || '') + '\n' +
@@ -10875,7 +10804,6 @@ function feliePromptContext() {
 phaseNote +
 
 'Körperdaten heute — das ist deine wichtigste Grundlage:\n' + koerperContext + '\n' +
-ritualNote +
 fehlendeDaten +
 profileNote() + felieKernNote() + archiveContext() + felieThemenNote() + hedgeNote() + buildPersonalityPrompt();
 }

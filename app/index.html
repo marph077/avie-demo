@@ -8927,10 +8927,14 @@ function felieConfirmYes() {
 }
 
 function felieBackupData() {
-  var keys = ['felie_profile', 'felie_saved_chats', 'felie_body_data', 'felie_personality',
-              'felie_checkins', 'felie_body_reminder_date',
+  /* felie_store_v1 haelt Signale, Fakten und Episoden — also praktisch
+     alles, was felie ueber die Nutzerin gelernt hat. Es fehlte hier und
+     fiel damit lautlos aus jedem Backup. felie_body_history ist der
+     stillgelegte Parallelspeicher und dafuer entfallen. */
+  var keys = ['felie_profile', 'felie_saved_chats', 'felie_body_data', 'felie_store_v1',
+              'felie_personality', 'felie_checkins', 'felie_body_reminder_date',
               'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil', 'felie_guide_home',
-              'felie_guide_home_deferred', 'felie_backup_hint_off', 'felie_body_history'];
+              'felie_guide_home_deferred', 'felie_backup_hint_off'];
   var store = {};
   keys.forEach(function(k) { var v = localStorage.getItem(k); if (v !== null) store[k] = v; });
   return { app: 'felie', version: 1, exportedAt: new Date().toISOString(), store: store };

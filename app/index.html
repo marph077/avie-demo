@@ -3646,6 +3646,37 @@ function felieSkalaWert(key, i) {
    weiter mit mb.sleepMins — das ist seit der Umstellung ein reiner
    Geraetewert und bei Nutzerinnen ohne Wearable immer leer. Die berichtete
    Schlafqualitaet wurde dort also stillschweigend ignoriert. */
+/* Koerperzeilen fuer den Prompt: Selbstauskunft in Worten mit Alter,
+   Geraetewerte klar als solche benannt. Eine Quelle statt drei Kopien. */
+function felieKoerperZeilen() {
+  var out = '';
+  function zeile(label, key) {
+    var e = null, frisch = true;
+    try { e = felieAktuell(key, { quelle: 'selbst' }); } catch (err) {}
+    if (!e) {
+      frisch = false;
+      try { var v = felieVerlauf(key, { quelle: 'selbst' }); e = v.length ? v[v.length - 1] : null; }
+      catch (err) {}
+    }
+    if (!e) return;
+    var w = (key === 'stimmung') ? felieStimmungLabel(e.wert) : felieStufenWort(key, e.wert);
+    if (!w) return;
+    out += label + ': ' + w + (frisch ? '' : ' — Angabe ' + felieAlterText(e.ts)
+      + ', NICHT als heutiger Wert behandeln') + '\n';
+  }
+  zeile('Stimmung (ihre Worte)', 'stimmung');
+  zeile('Nacht (ihre Worte)', 'schlafqualitaet');
+  zeile('Energie (ihre Worte)', 'energie');
+  zeile('Anspannung (ihre Worte)', 'anspannung');
+  try {
+    var m = felieAktuell('schlaf', { quelle: 'oura' });
+    if (m) out += 'Schlafdauer (Wearable-Messung): '
+      + ((m.meta && m.meta.str) || ouraFmtSleep(m.wert)) + '\n';
+  } catch (err) {}
+  if (!out) out = 'Zu ihrem Befinden liegt heute nichts vor.\n';
+  return out;
+}
+
 function felieNachtBand() {
   try {
     var e = felieAktuell('schlafqualitaet', { quelle: 'selbst' });
@@ -4363,9 +4394,12 @@ function homeShowAnalyseAfterChat() {
   var dataContext = '';
   if (mb) {
     var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
-    dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
-    if (mb.energyScore != null) dataContext += 'Energie: ' + mb.energyScore + '/100\n';
-    if (mb.stressScore != null) dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    /* Frueher stand hier 'Energie: 40/100'. Das sind angetippte Stufen —
+       als Score gelesen klingen sie gemessen, und das Modell gibt die Zahl
+       dann an die Nutzerin weiter ("deine Energie lag bei 40 von 100"),
+       obwohl sie diese Zahl nie gesehen hat. Ausserdem schrieb die
+       Schlafzeile ungeprueft mb.sleepStr — ohne Wearable also 'undefined'. */
+    dataContext += felieKoerperZeilen();
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
     if (mb.recovery) dataContext += recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
@@ -4529,9 +4563,12 @@ function homeShowAnalyse() {
   var dataContext = '';
   if (mb) {
     var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
-    dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
-    if (mb.energyScore != null) dataContext += 'Energie: ' + mb.energyScore + '/100\n';
-    if (mb.stressScore != null) dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    /* Frueher stand hier 'Energie: 40/100'. Das sind angetippte Stufen —
+       als Score gelesen klingen sie gemessen, und das Modell gibt die Zahl
+       dann an die Nutzerin weiter ("deine Energie lag bei 40 von 100"),
+       obwohl sie diese Zahl nie gesehen hat. Ausserdem schrieb die
+       Schlafzeile ungeprueft mb.sleepStr — ohne Wearable also 'undefined'. */
+    dataContext += felieKoerperZeilen();
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
     if (mb.recovery) dataContext += recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
@@ -4644,9 +4681,12 @@ function homeMoodSelect(btn) {
   var dataContext = '';
   if (mb) {
     var __rec = bodyRecencyNote(mb); if (__rec) dataContext += __rec + '\n';
-    dataContext += 'Schlaf: ' + mb.sleepStr + (mb.wachphasen != null ? ', ' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + 'x aufgewacht') : '') + '\n';
-    if (mb.energyScore != null) dataContext += 'Energie: ' + mb.energyScore + '/100\n';
-    if (mb.stressScore != null) dataContext += 'Stress: ' + mb.stressScore + '/100\n';
+    /* Frueher stand hier 'Energie: 40/100'. Das sind angetippte Stufen —
+       als Score gelesen klingen sie gemessen, und das Modell gibt die Zahl
+       dann an die Nutzerin weiter ("deine Energie lag bei 40 von 100"),
+       obwohl sie diese Zahl nie gesehen hat. Ausserdem schrieb die
+       Schlafzeile ungeprueft mb.sleepStr — ohne Wearable also 'undefined'. */
+    dataContext += felieKoerperZeilen();
     if (mb.hrv) dataContext += 'HRV: ' + mb.hrv + ' ms\n';
     if (mb.recovery) dataContext += recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.rhr) dataContext += 'Ruhepuls: ' + mb.rhr + ' bpm\n';
@@ -5259,7 +5299,7 @@ function buildDashEmpfehlungen(container) {
   }
 
   if (energy && energy < 50) {
-    allTips.push({ type:'tip-gentle', icon:icoSvg('i-bowl', 20), cat:'ENERGIE', title:'Pensum heute halbieren', body: 'Energie ' + energy + '/100 — das ist ein Signal. Schau was wirklich heute sein muss und was morgen kann. Weniger ist heute mehr.' });
+    allTips.push({ type:'tip-gentle', icon:icoSvg('i-bowl', 20), cat:'ENERGIE', title:'Pensum heute halbieren', body: 'Deine Energie hast du als ' + (felieStufenWort('energie', energy) || 'niedrig') + ' beschrieben — das ist ein Signal. Schau was wirklich heute sein muss und was morgen kann. Weniger ist heute mehr.' });
   }
 
   if (allTips.length < 3) {
@@ -5804,13 +5844,22 @@ function felieStandText() {
 }
 
 function dashChatAusAnalyse() {
+  /* homeStartChat() spielt den Text als versteckte NUTZERNACHRICHT ein.
+     Frueher stand dort ein Satz in ihrer Stimme ("Ich habe mir gerade
+     mein Dashboard angesehen…") — felie hat darauf geantwortet, statt das
+     Gespraech zu eroeffnen, und bestaetigte Aussagen, die die Nutzerin nie
+     gemacht hatte. Jetzt ist es eine Regieanweisung: felie spricht als
+     Erste, und der Stand steht als Information daneben, nicht als Zitat. */
   var stand = '';
   try { stand = felieStandText(); } catch (e) {}
-  var opener = stand
-    ? 'Ich habe mir gerade mein Dashboard angesehen. Stand: ' + stand
-      + '. Magst du mir helfen, das einzuordnen?'
-    : 'Ich habe mir gerade mein Dashboard angesehen, da steht aber noch nicht viel. '
-      + 'Magst du mich fragen, wie es mir gerade geht?';
+  var opener = '[Regieanweisung, nicht beantworten und nicht erwähnen] '
+    + 'Sie hat gerade ihr Dashboard geöffnet und dort ihre Einordnung gelesen. '
+    + (stand ? 'Stand laut Dashboard: ' + stand + '. ' : 'Im Dashboard steht noch wenig. ')
+    + 'ERÖFFNE das Gespräch von dir aus: sprich sie direkt an, greif in ein bis zwei Sätzen auf, '
+    + 'was du siehst, und stell genau eine offene Frage. '
+    + 'Beziehe dich NICHT auf diese Nachricht und nicht darauf, dass sie etwas gesagt hätte — '
+    + 'sie hat noch nichts geschrieben. Nenne keine Zahlen und keine Datumsangaben, '
+    + 'die oben nicht ausdrücklich stehen.';
   dashStartChat(opener);
 }
 
@@ -10606,9 +10655,11 @@ function feliePromptContext() {
   if (mb) {
     var rec = bodyRecencyNote(mb);
     if (rec) koerperContext += '- ' + rec + '\n';
-    koerperContext += '- Schlaf: ' + mb.sleepStr + (mb.wachphasen !== null && mb.wachphasen !== undefined ? ' (' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + (mb.wachphasen >= 5 ? '+' : '') + 'x aufgewacht') + ')' : '') + '\n';
-    if (mb.energyScore != null) koerperContext += '- Energie (selbst): ' + mb.energyScore + '/100\n';
-    if (mb.stressScore != null) koerperContext += '- Stress (selbst): ' + mb.stressScore + '/100\n';
+    /* Selbstauskunft in ihren Worten statt als Score. Sie hat nie eine
+       Zahl gesehen — gibt das Modell "40 von 100" zurueck, ist das fuer
+       sie ohne Bezug. */
+    koerperContext += felieKoerperZeilen().split('\n').filter(function(l){ return l.trim(); })
+      .map(function(l){ return '- ' + l; }).join('\n') + '\n';
     if (mb.recovery) koerperContext += '- ' + recoveryLabel(mb) + ': ' + mb.recovery + '/100\n';
     if (mb.hrv)      koerperContext += '- HRV: ' + mb.hrv + ' ms\n';
     if (mb.rhr)      koerperContext += '- Ruhepuls: ' + mb.rhr + ' bpm\n';

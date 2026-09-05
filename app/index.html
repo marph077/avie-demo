@@ -5843,23 +5843,73 @@ function felieStandText() {
   return teile.join(' · ');
 }
 
+/* Was felie fuer die Eroeffnung braucht: nicht der rohe Stand, sondern
+   die EINORDNUNG, die die Nutzerin gerade gelesen hat. Ohne sie fasst
+   das Modell die letzten Tage zusammen ("vor ein paar Tagen klang alles
+   nach viel Druck") und laesst genau das weg, was zaehlt — Zyklustag,
+   Muster und offene Faeden. */
+function felieEinordnungKurz() {
+  var teile = [];
+  try {
+    var z = felieZyklusAttribut(Date.now());
+    if (z && z.phase) teile.push('Zyklus: ' + z.phase + ', Tag ' + z.zyklusTag);
+  } catch (e) {}
+
+  /* Heute getrennt von aelteren Angaben — sonst verschwimmt beides. */
+  var heute = [], alt = [];
+  [['stimmung', 'Stimmung'], ['schlafqualitaet', 'Nacht'],
+   ['energie', 'Energie'], ['anspannung', 'Anspannung']].forEach(function (p) {
+    var e = null;
+    try { e = felieAktuell(p[0], { quelle: 'selbst' }); } catch (err) {}
+    if (e) {
+      var w1 = (p[0] === 'stimmung') ? felieStimmungLabel(e.wert) : felieStufenWort(p[0], e.wert);
+      if (w1) heute.push(p[1] + ': ' + w1);
+      return;
+    }
+    try { var v = felieVerlauf(p[0], { quelle: 'selbst' }); e = v.length ? v[v.length - 1] : null; }
+    catch (err) {}
+    if (!e) return;
+    var w2 = (p[0] === 'stimmung') ? felieStimmungLabel(e.wert) : felieStufenWort(p[0], e.wert);
+    if (w2) alt.push(p[1] + ': ' + w2 + ' (' + felieAlterText(e.ts) + ')');
+  });
+  if (heute.length) teile.push('Heute von ihr: ' + heute.join(', '));
+  if (alt.length) teile.push('Aelter, NICHT als heutiger Stand behandeln: ' + alt.join(', '));
+  if (!heute.length) teile.push('Von HEUTE liegt nichts vor.');
+
+  /* Das Muster ist das Wertvollste, was felie hat — es beruht auf ihrer
+     eigenen Historie und nicht auf einem Modell. */
+  try {
+    var km = felieKombiMuster();
+    if (km.muster.length) teile.push('Muster aus ihrer Historie: ' + km.muster[0].text);
+  } catch (e) {}
+  try {
+    var offen = felieEpisoden({ nurAktuell: true });
+    if (offen.length) teile.push('Offen bei ihr: ' + offen.map(function (x) { return x.text; }).join(', '));
+  } catch (e) {}
+
+  return teile.join('\n');
+}
+
 function dashChatAusAnalyse() {
   /* homeStartChat() spielt den Text als versteckte NUTZERNACHRICHT ein.
-     Frueher stand dort ein Satz in ihrer Stimme ("Ich habe mir gerade
-     mein Dashboard angesehen…") — felie hat darauf geantwortet, statt das
-     Gespraech zu eroeffnen, und bestaetigte Aussagen, die die Nutzerin nie
-     gemacht hatte. Jetzt ist es eine Regieanweisung: felie spricht als
-     Erste, und der Stand steht als Information daneben, nicht als Zitat. */
-  var stand = '';
-  try { stand = felieStandText(); } catch (e) {}
-  var opener = '[Regieanweisung, nicht beantworten und nicht erwähnen] '
-    + 'Sie hat gerade ihr Dashboard geöffnet und dort ihre Einordnung gelesen. '
-    + (stand ? 'Stand laut Dashboard: ' + stand + '. ' : 'Im Dashboard steht noch wenig. ')
-    + 'ERÖFFNE das Gespräch von dir aus: sprich sie direkt an, greif in ein bis zwei Sätzen auf, '
-    + 'was du siehst, und stell genau eine offene Frage. '
-    + 'Beziehe dich NICHT auf diese Nachricht und nicht darauf, dass sie etwas gesagt hätte — '
-    + 'sie hat noch nichts geschrieben. Nenne keine Zahlen und keine Datumsangaben, '
-    + 'die oben nicht ausdrücklich stehen.';
+     Frueher stand dort ein Satz in ihrer Stimme — felie hat darauf
+     geantwortet, statt zu eroeffnen, und bestaetigte Aussagen, die die
+     Nutzerin nie gemacht hatte. Jetzt eine Regieanweisung. */
+  var einordnung = '';
+  try { einordnung = felieEinordnungKurz(); } catch (e) {}
+  var opener = '[Regieanweisung an dich, nicht beantworten und nicht erwaehnen]\n'
+    + 'Sie hat gerade im Dashboard ihre Einordnung gelesen. Das steht dort:\n'
+    + (einordnung || 'Noch kaum Daten.') + '\n\n'
+    + 'ERÖFFNE das Gespräch von dir aus, in zwei bis drei Sätzen:\n'
+    + '1. Sprich sie direkt an und knüpf an das an, was sie gerade gelesen hat — '
+    + 'nicht an eine Zusammenfassung der letzten Tage.\n'
+    + '2. Greif GENAU EINEN Punkt heraus, der heraussticht (bevorzugt das Muster, sonst die Phase). '
+    + 'Zähle nicht alles auf.\n'
+    + '3. Stell eine offene Frage, die auf HEUTE zielt — nicht "ist das noch so".\n\n'
+    + 'Regeln: Sie hat noch nichts geschrieben, beziehe dich also nicht auf eine Aussage von ihr. '
+    + 'Keine Zahlen und keine Datumsangaben, die oben nicht stehen. '
+    + 'Ältere Angaben nicht als heutigen Zustand darstellen. '
+    + 'Wenn von heute nichts vorliegt, sag das beiläufig und frag danach.';
   dashStartChat(opener);
 }
 

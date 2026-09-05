@@ -754,18 +754,154 @@ html.native-app .phone {
 .merk-kicker { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--lila); }
 .merk-sub { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
-.merk-zeile { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px;
-  margin-bottom: 5px; border-radius: 10px; border: 1px solid var(--border); background: #FBF9FE;
-  font-family: inherit; text-align: left; cursor: pointer; transition: opacity 0.15s, background 0.15s; }
+/* Die Zeile ist jetzt ein Container, kein Button mehr: neben dem Antippen zum
+   Weglassen sitzt der Stift, und ein Button im Button ist kein gueltiges
+   Markup. Rahmen und Flaeche bleiben deshalb hier, die Reihe innen. */
+.merk-zeile { width: 100%; padding: 8px 10px; margin-bottom: 5px; border-radius: 10px;
+  border: 1px solid var(--border); background: #FBF9FE;
+  transition: opacity 0.15s, background 0.15s; }
+.merk-inner { display: flex; align-items: center; gap: 6px; }
+.merk-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px;
+  background: none; border: none; padding: 0; margin: 0; font-family: inherit;
+  text-align: left; cursor: pointer; color: inherit; }
+.merk-toggle:focus-visible { outline: 2px solid var(--lila); outline-offset: 3px; border-radius: 6px; }
 .merk-zeile.aktiv { background: #F3EFFA; border-color: rgba(143,91,189,0.3); }
 .merk-zeile:not(.aktiv) { opacity: 0.42; }
 .merk-zeile:not(.aktiv) .merk-text { text-decoration: line-through; }
-.merk-zeile:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+/* Weggelassen und gleichzeitig bearbeiten waere widerspruechlich — der Stift
+   verschwindet daher mit dem Haken statt beides anzubieten. */
+.merk-zeile:not(.aktiv) .snip-edit { visibility: hidden; pointer-events: none; }
 .merk-haken { font-size: 11px; color: var(--lila); width: 12px; flex-shrink: 0; }
 .merk-zeile:not(.aktiv) .merk-haken { visibility: hidden; }
-.merk-text { font-size: 12.5px; color: var(--text-primary); flex: 1; }
+.merk-text { font-size: 12.5px; color: var(--text-primary); flex: 1; min-width: 0; }
 .merk-tag { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase;
   letter-spacing: 0.06em; flex-shrink: 0; }
+
+/* ── Snippet-Bearbeitung (Stift auf der Notizkarte) ──
+   Ein Stift pro erfasstem Snippet. Bewusst inline und nicht als zweites
+   Sheet: die Nutzerin soll den Satz im Zusammenhang der ganzen Karte
+   aendern, nicht in einem leeren Kontext. */
+.snip { position: relative; }
+.snip-edit { flex-shrink: 0; width: 26px; height: 26px; display: flex; align-items: center;
+  justify-content: center; padding: 0; border: none; border-radius: 8px;
+  background: rgba(143,91,189,0.09); color: var(--lila); cursor: pointer;
+  font-family: inherit; transition: background 0.15s; }
+.snip-edit:hover { background: rgba(143,91,189,0.18); }
+.snip-edit:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+.snip-form { display: flex; flex-direction: column; gap: 7px; }
+.snip-input { width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
+  padding: 8px 10px; border-radius: 9px; border: 1.5px solid var(--lila);
+  background: #FEFEFE; color: var(--text-primary); font-family: inherit;
+  font-size: 12.5px; line-height: 1.5; }
+.snip-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(143,91,189,0.16); }
+.snip-aktionen { display: flex; align-items: center; gap: 7px; }
+.snip-zaehler { flex: 1; font-size: 9.5px; color: var(--text-muted);
+  letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.snip-ab, .snip-ok { font-family: inherit; font-size: 11.5px; padding: 6px 11px;
+  border-radius: 9px; cursor: pointer; }
+.snip-ab { border: 1px solid rgba(24,4,48,0.2); background: transparent; color: var(--text-secondary); }
+.snip-ok { border: none; background: var(--plum); color: var(--apricot); font-weight: 500; }
+.snip-ab:focus-visible, .snip-ok:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+
+/* Notizkarte: Kopfzeile mit Kicker + Stift, darunter der Text ── */
+.notiz-thema { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.notiz-thema .snip-view { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+.notiz-thema .snip-text { font-size: 16px; font-weight: 600; color: var(--plum); flex: 1; min-width: 0; }
+.notiz-thema .snip-form { flex: 1; }
+.notiz-feld { border-radius: 10px; padding: 10px 12px; }
+.notiz-feld--erkenntnis { background: var(--lav-pale); }
+.notiz-feld--erkenntnis .notiz-kicker { color: var(--lila); }
+.notiz-feld--lernt { background: rgba(225, 234, 125, 0.06); }
+.notiz-feld--lernt .notiz-kicker { color: var(--plum); }
+.notiz-kopf { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.notiz-kicker { flex: 1; min-width: 0; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; }
+.notiz-kopf .snip-edit { width: 22px; height: 22px; margin: -3px -3px -3px 0; }
+.notiz-text { font-size: 13px; color: #4A3A6A; line-height: 1.5; }
+
+/* ── Gedächtnis ──────────────────────────────────────────────────────
+   Vier Bloecke, sortiert nach Interaktionshaeufigkeit: was sich
+   wochentlich aendert steht oben, was einmal gesetzt wird unten.
+   Faeden → Gespraeche → Fakten → Mitgabe. */
+.ged-karte { background: #FFFFFF; border-radius: 16px; border: 1px solid var(--border);
+  padding: 16px; box-shadow: 0 2px 10px rgba(24, 4, 48, 0.07);
+  display: flex; flex-direction: column; gap: 10px; }
+.ged-kopf { display: flex; align-items: baseline; gap: 8px; }
+.ged-kicker { flex: 1; min-width: 0; font-size: 11px; font-weight: 600; color: var(--plum);
+  text-transform: uppercase; letter-spacing: 0.08em; }
+.ged-zahl { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.ged-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin-top: -6px; }
+.ged-leer { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+
+.ged-gruppe { font-size: 10px; font-weight: 600; color: var(--lila);
+  text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
+.ged-gruppe:first-of-type { margin-top: 0; }
+
+/* Zeile = Container mit .snip-view innen, damit der Stift-Editor der
+   Notizkarte hier unveraendert weiterarbeitet. */
+.ged-zeile { border-radius: 11px; background: var(--lav-pale); padding: 9px 11px; }
+.ged-zeile .snip-view { display: flex; align-items: flex-start; gap: 8px; }
+.ged-zeile .snip-text { flex: 1; min-width: 0; font-size: 12.5px; color: #4A3A6A; line-height: 1.5; }
+.ged-akt { flex-shrink: 0; display: flex; align-items: center; gap: 2px; }
+.ged-del { font-family: inherit; font-size: 10.5px; color: var(--text-muted); background: none;
+  border: none; padding: 4px 5px; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+.ged-del:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; border-radius: 6px; }
+.ged-badge { display: inline-block; margin-top: 4px; font-size: 9.5px; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-muted); }
+.ged-badge.warn { color: #B8763C; }
+
+/* Gesprächseintrag: Themen-Icon links, Satz rechts */
+.ged-lernt { display: flex; gap: 10px; align-items: flex-start;
+  border-radius: 12px; background: var(--lav-pale); padding: 11px 12px; }
+.ged-lernt-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--plum);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--apricot); }
+.ged-lernt-body { min-width: 0; flex: 1; }
+.ged-lernt .snip-view { display: flex; align-items: flex-start; gap: 8px; }
+.ged-lernt .snip-text { flex: 1; min-width: 0; font-size: 13px; color: #4A3A6A; line-height: 1.5; }
+.ged-meta { font-size: 11px; color: #9B8AB5; margin-top: 3px; }
+
+.ged-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.ged-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px; border: 1.5px solid var(--border);
+  background: #FFFFFF; color: #4A3A6A; font-family: inherit; font-size: 12px;
+  font-weight: 500; cursor: pointer; white-space: nowrap; }
+.ged-chip.aktiv { background: var(--plum); border-color: var(--plum); color: #FFFFFF; }
+.ged-chip:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+.ged-chip-n { opacity: 0.55; }
+
+.ged-mehr { font-family: inherit; font-size: 12px; font-weight: 500; color: var(--lila);
+  background: none; border: none; padding: 4px 0; cursor: pointer; text-decoration: underline;
+  align-self: flex-start; }
+.ged-mehr:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+
+/* Ergänzen: bewusst dezent. Es ist kein Pflegeauftrag, sondern der
+   Notausgang, wenn felie etwas nicht mitbekommen hat. */
+.ged-add { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 12px; border-radius: 11px; border: 1.5px dashed rgba(143, 91, 189, 0.35);
+  background: transparent; color: var(--lila); font-family: inherit; font-size: 12.5px;
+  font-weight: 500; cursor: pointer; }
+.ged-add:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+.ged-form { display: flex; flex-direction: column; gap: 8px; padding: 11px;
+  border-radius: 11px; border: 1.5px solid var(--lila); background: #FBF9FE; }
+.ged-form textarea { width: 100%; box-sizing: border-box; resize: none; padding: 8px 10px;
+  border-radius: 9px; border: 1px solid var(--border); background: #FEFEFE;
+  color: var(--text-primary); font-family: inherit; font-size: 12.5px; line-height: 1.5; }
+.ged-form textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(143, 91, 189, 0.16); }
+.ged-form-label { font-size: 10px; font-weight: 600; color: var(--lila);
+  text-transform: uppercase; letter-spacing: 0.07em; }
+.ged-optionen { display: flex; flex-wrap: wrap; gap: 6px; }
+.ged-opt { padding: 6px 10px; border-radius: 999px; border: 1.5px solid var(--border);
+  background: #FFFFFF; color: #4A3A6A; font-family: inherit; font-size: 11.5px;
+  cursor: pointer; }
+.ged-opt.aktiv { background: var(--lila); border-color: var(--lila); color: #FFFFFF; }
+.ged-opt:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+.ged-form-aktionen { display: flex; gap: 7px; justify-content: flex-end; }
+
+.ged-mitgabe textarea { width: 100%; box-sizing: border-box; resize: none; padding: 11px 14px;
+  border-radius: 12px; border: 1.5px solid rgba(143, 91, 189, 0.3); background: #FBF9FE;
+  color: var(--text-primary); font-family: inherit; font-size: 14px; line-height: 1.5; }
+.ged-mitgabe textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(143, 91, 189, 0.16); }
 
 /* ── Das weiß felie über dich ── */
 .wissen-kicker { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
@@ -1982,6 +2118,12 @@ body.is-native .status-bar { display: none !important; }
       <button onclick="showPersonality()" id="home-personality-btn" title="felies Persönlichkeit" style="margin-left:auto;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="4" y1="8" x2="20" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="8" r="2.6" fill="#180430" stroke="currentColor" stroke-width="1.8"/><line x1="4" y1="16" x2="20" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="16" r="2.6" fill="#180430" stroke="currentColor" stroke-width="1.8"/></svg>
       </button>
+      <!-- Profil sitzt jetzt hier statt in der Bottom-Nav: dort steht das
+           Gedaechtnis. Die Selbstauskunft wird selten geaendert und gehoert
+           damit nicht auf einen der drei Hauptplaetze. -->
+      <button onclick="showProfile()" id="home-profile-btn" title="Profil" aria-label="Profil" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.65);padding:6px;display:flex;align-items:center;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c0-4 3.4-6.8 7.5-6.8S19.5 16 19.5 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
     </div>
 
     <!-- Körperdaten-Score darunter (öffnet das Dashboard) -->
@@ -2175,9 +2317,9 @@ body.is-native .status-bar { display: none !important; }
         <span style="font-size:11px;font-weight:600;color:#e1ea7d;">Neuer Chat</span>
       </button>
 
-      <button id="home-nav-profil" onclick="showProfile()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        <span style="font-size:11px;">Profil</span>
+      <button id="home-nav-gedaechtnis" onclick="showGedaechtnis()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><use href="#i-mind"/></svg>
+        <span style="font-size:11px;">Gedächtnis</span>
       </button>
     </div>
 
@@ -2805,6 +2947,20 @@ function felieEpisode(ep) {
   return id;
 }
 
+/* Text einer Episode nachtraeglich korrigieren. Eigene Funktion, weil
+   felieEpisode() die id aus dem Text ableitet — ein Aufruf mit korrigiertem
+   Text wuerde also einen ZWEITEN Faden anlegen statt den alten zu aendern.
+   Die id bleibt bewusst stehen: sie ist opak, und ein Wechsel wuerde
+   Verweise brechen. */
+function felieEpisodeAendern(id, text) {
+  if (!id || !text) return false;
+  var liste = felieStore().episoden;
+  for (var i = 0; i < liste.length; i++) {
+    if (liste[i].id === id) { liste[i].text = text; felieRevision(true); return true; }
+  }
+  return false;
+}
+
 /* Ein abgeschlossener Faden darf nicht weiter aufgegriffen werden —
    das wirkt nicht aufmerksam, sondern als haette felie nicht
    mitbekommen, dass es vorbei ist. */
@@ -3082,8 +3238,13 @@ const GUIDE_STEPS = [
     label: 'Körperwerte'
   },
   {
-    text: `Und im <strong>Profil</strong> stehen deine Angaben, was ich über dich gelernt habe, und dein Daten-Backup — alles, was mich persönlicher macht und ganz bei dir bleibt.`,
-    target: 'nav-profil',
+    text: `In meinem <strong>Gedächtnis</strong> siehst du, was ich von dir mitgenommen habe — was gerade läuft, meine Notizen aus euren Gesprächen und was dauerhaft über dich gilt. Du kannst dort alles ändern, ergänzen oder löschen.`,
+    target: 'nav-gedaechtnis',
+    label: 'Gedächtnis'
+  },
+  {
+    text: `Und hier oben liegt dein <strong>Profil</strong>: deine Angaben, dein Daten-Backup und deine Einwilligung. Alles bleibt auf diesem Gerät.`,
+    target: 'profil-btn',
     label: 'Profil'
   },
   {
@@ -3098,7 +3259,10 @@ let activeGuideSteps = GUIDE_STEPS;
 
 const ARCHIV_GUIDE_STEPS = [
   {
-    text: `Dein <strong>Archiv</strong> ist mein Gedächtnis für das, was dir wichtig ist. Jedes gespeicherte Gespräch bleibt hier festgehalten, zusammen mit dem, was ich daraus über dich gelernt habe. So kann ich beim nächsten Mal daran anknüpfen, statt bei null anzufangen.`,
+    /* Frueher stand hier "ist mein Gedaechtnis". Das kollidiert jetzt mit
+       dem eigenen Gedaechtnisbereich: das Archiv haelt die Gespraeche,
+       das Gedaechtnis das Wissen darueber. */
+    text: `Dein <strong>Archiv</strong> hält jedes Gespräch fest, das du mit mir speicherst — Wort für Wort, mit deiner Erkenntnis und meiner Notiz dazu. So kann ich beim nächsten Mal daran anknüpfen, statt bei null anzufangen. Was ich daraus über dich gelernt habe, findest du in meinem <strong>Gedächtnis</strong>.`,
     target: null,
     label: 'Archiv'
   },
@@ -3111,7 +3275,7 @@ const ARCHIV_GUIDE_STEPS = [
 
 const PROFIL_GUIDE_STEPS = [
   {
-    text: `Dein <strong>Profil</strong> ist die Basis für alles, was ich über dich weiß. Alter, Alltag, was du dir wünschst, und was ich mit der Zeit über dich lerne — all das fließt in meine Antworten ein. Je vollständiger deine Angaben, desto persönlicher kann ich mit dir sprechen. Du entscheidest dabei jederzeit selbst, was du mir erzählst.`,
+    text: `Dein <strong>Profil</strong> ist deine Selbstauskunft: Alter, Alltag, was du dir wünschst. All das fließt in meine Antworten ein — je vollständiger, desto persönlicher kann ich mit dir sprechen. Du entscheidest jederzeit selbst, was du mir erzählst.`,
     target: null,
     label: 'Profil'
   },
@@ -3122,22 +3286,50 @@ const PROFIL_GUIDE_STEPS = [
     label: 'Deine Angaben'
   },
   {
-    text: `Hier kannst du mir <strong>alles Wichtige über dich</strong> erzählen — z.B. Schwangerschaft, Kinderwunsch oder wie es dir gerade geht. Ich beziehe das in meine Antworten ein.`,
-    target: 'profile-about',
-    scrollSel: '#profile-card-about',
-    label: 'Über dich'
-  },
-  {
-    text: `<strong>Was ich über dich gelernt habe</strong> — Erkenntnisse aus unseren Gesprächen, nach Themen filterbar. So baue ich mit der Zeit ein echtes Bild von dir auf.`,
-    target: 'profile-learned',
-    scrollSel: '#profile-card-learned',
-    label: 'Gelernt'
+    text: `Was ich aus euren Gesprächen mitgenommen habe, steht nicht hier, sondern in meinem <strong>Gedächtnis</strong> — samt dem, was du mir ausdrücklich mitgeben möchtest. Von hier kommst du direkt hin.`,
+    target: 'profile-gedaechtnis',
+    scrollSel: '#profile-card-gedaechtnis',
+    label: 'Gedächtnis'
   },
   {
     text: `Und dein <strong>Daten-Backup</strong> — sichere deine Daten als Datei oder hol sie auf ein neues Gerät. Deine Daten bleiben sonst nur auf diesem Gerät.`,
     target: 'profile-backup',
     scrollSel: '#profile-card-backup',
     label: 'Backup'
+  }
+];
+
+/* Rundgang fuer das Gedaechtnis. Die Reihenfolge folgt der Ansicht und
+   damit der Interaktionshaeufigkeit — nicht der Wichtigkeit. */
+const GEDAECHTNIS_GUIDE_STEPS = [
+  {
+    text: `Das ist mein <strong>Gedächtnis</strong>. Hier liegt alles, was ich von dir mitbekommen habe — und du siehst es vollständig. Jeder Eintrag lässt sich ändern, ergänzen oder löschen. Nichts davon musst du pflegen: was ich für eine Antwort brauche, frage ich dich einfach.`,
+    target: null,
+    label: 'Gedächtnis'
+  },
+  {
+    text: `<strong>Gerade offen</strong> — Themen mit einem Ablaufdatum, z.B. „Abgabe nächste Woche". Sie verfallen von allein, du musst nichts abhaken. Wenn etwas früher vorbei ist, tippe auf „Erledigt".`,
+    target: 'ged-faeden',
+    scrollSel: '#ged-card-faeden',
+    label: 'Offen'
+  },
+  {
+    text: `<strong>Aus euren Gesprächen</strong> — was ich mir am Ende eines Gesprächs notiert habe, nach Themen filterbar. Löschen entfernt nur die Notiz; das Gespräch bleibt im Archiv.`,
+    target: 'ged-lernt',
+    scrollSel: '#ged-card-lernt',
+    label: 'Gespräche'
+  },
+  {
+    text: `<strong>Über dich</strong> — was unabhängig vom Thema gilt und deshalb in jede meiner Antworten eingeht. Wenn ich etwas nicht mitbekommen habe, kannst du es hier ergänzen.`,
+    target: 'ged-fakten',
+    scrollSel: '#ged-card-fakten',
+    label: 'Über dich'
+  },
+  {
+    text: `Und ganz unten <strong>deine Worte</strong>: etwas, das in unseren Gesprächen nie vorkam und das ich über dich wissen sollte. Das schreibst du selbst — ich fülle es nicht.`,
+    target: 'ged-mitgabe',
+    scrollSel: '#ged-card-mitgabe',
+    label: 'Deine Worte'
   }
 ];
 
@@ -3357,15 +3549,28 @@ function klFinish() {
   klExtract();
 }
 
-/* Wissenspool: einmalige, verdeckte Zusammenfassung in strukturierter Form */
+/* Wissenspool: einmalige, verdeckte Zusammenfassung in strukturierter Form.
+   ──────────────────────────────────────────────────────────────────────
+   Frueher landete das Ergebnis als 3 bis 5 Saetze Freitext in
+   klAnswers.notiz. Das hatte zwei Probleme. Erstens ging es in einen
+   Prosablock, der als Ganzes im Prompt haengt: einzelne Angaben waren
+   nicht loeschbar, nicht korrigierbar und verfielen nie. Zweitens fand
+   die Nutzerin im Profil ein Textfeld vor, das sie nie getippt hatte,
+   und korrigierte in Wahrheit eine Modellzusammenfassung ueber sich.
+     Jetzt kommen dieselben Informationen als FAKTEN und FAEDEN zurueck
+   und gehen in den Store. Damit sind sie ab dem ersten Moment im
+   Gedaechtnis einsehbar, einzeln aenderbar und einzeln loeschbar — und
+   Faeden verfallen wie ueberall sonst von allein.
+     Das Freitextfeld gehoert damit ausschliesslich der Nutzerin. */
 function klExtract() {
   var ask = 'Fasse dieses Kennenlern-Gespräch für dein eigenes Gedächtnis zusammen. ' +
     'Antworte AUSSCHLIESSLICH mit reinem JSON, ohne Markdown und ohne Vorrede:\n' +
     '{"kinder":"keine|ja-klein|ja-gross|unbekannt",' +
     '"lifestyle":"job-intensiv|ausgewogen|zuhause|unberechenbar|unbekannt",' +
-    '"notiz":"3 bis 5 Sätze über sie, in du-Form, nur was sie selbst gesagt hat, ohne Deutung",' +
+    '"erkenntnis":"1 Satz, direkt an sie gerichtet in du-Form: was in diesem Gespräch über dich deutlich geworden ist",' +
     '"lernen":["2 bis 4 kurze Stichpunkte, je ein konkretes Detail aus dem Gespräch"],' +
-    '"offen":"eine einzige konkrete Frage, die du ihr als erstes in der App stellen würdest, um tiefer zu gehen — in du-Form"}';
+    '"offen":"eine einzige konkrete Frage, die du ihr als erstes in der App stellen würdest, um tiefer zu gehen — in du-Form"}' +
+    felieMerkPromptTeil();
   klCall(ask, true).then(function(reply) {
     try {
       var raw = reply.replace(/```json|```/g, '').trim();
@@ -3373,17 +3578,33 @@ function klExtract() {
       var o = JSON.parse(raw.slice(a, b + 1));
       if (o.kinder && o.kinder !== 'unbekannt') klAnswers.kinder = o.kinder;
       if (o.lifestyle && o.lifestyle !== 'unbekannt') klAnswers.lifestyle = o.lifestyle;
-      if (o.notiz) klAnswers.notiz = String(o.notiz).trim();
       if (o.offen) klAnswers.offen = String(o.offen).trim();
       var lernen = Array.isArray(o.lernen) ? o.lernen.slice(0, 4) : [];
       try { saveUserProfile(); } catch (e) {}
+
+      /* Fakten und Faeden direkt in den Store. Hier ohne
+         Bestaetigungsschritt: die Notizkarte, auf der die Nutzerin sonst
+         auswaehlt, gibt es im Onboarding nicht — und ein leeres
+         Gedaechtnis nach dem Kennenlernen waere das schlechtere Ergebnis.
+         Alles ist im Gedaechtnis sofort sichtbar und einzeln loeschbar. */
+      try {
+        var v = felieMerkVorschlaege(o);
+        v.fakten.forEach(function (f) {
+          felieFaktSetzen({ text: f.text, kategorie: f.kategorie, klasse: f.klasse, quelle: 'kennenlernen' });
+        });
+        v.faeden.forEach(function (e) {
+          felieEpisode({ text: e.text, faelligBis: Date.now() + e.tage * 86400000 });
+        });
+        felieStoreSpeichern();
+      } catch (e) {}
+
       /* Ins Archiv, damit der Wissenspool auch in kuenftige Chats einfliesst */
       try {
         if (typeof saveChat === 'function') {
           saveChat({
             thema: 'Unser erstes Gespräch',
-            erkenntnis: klAnswers.notiz || 'Du hast mir erzählt, wie es dir gerade geht.',
-            felie_lernt: lernen.length ? lernen.join(' · ') : (klAnswers.notiz || '')
+            erkenntnis: (o.erkenntnis && String(o.erkenntnis).trim()) || 'Du hast mir erzählt, wie es dir gerade geht.',
+            felie_lernt: lernen.length ? lernen.join(' · ') : ''
           }, klHistory.filter(function(m) { return m.role === 'user' || m.role === 'assistant'; }));
         }
       } catch (e) {}
@@ -4298,20 +4519,14 @@ function homeInit(fromOnboarding) {
 
 var homeQuestionText = '';
 
-/* Nimmt die erste freie Selbstbeschreibung in das Profil auf. Ergaenzt eine
-   bestehende Notiz statt sie zu ersetzen, damit die felie-Zusammenfassung aus
-   dem Kennenlern-Gespraech nicht verloren geht. */
-function captureOnboardingNote(text) {
-  var t = (text || '').trim();
-  if (t.length < 12) return;                 /* zu kurz, um Inhalt zu sein */
-  try {
-    var alt = (klAnswers.notiz || '').trim();
-    if (alt.indexOf(t) >= 0) return;         /* schon enthalten */
-    klAnswers.notiz = alt ? (alt + '\n\nSie selbst über sich: ' + t) : t;
-    if (klAnswers.notiz.length > 1200) klAnswers.notiz = klAnswers.notiz.slice(0, 1200);
-    saveUserProfile();
-  } catch (e) {}
-}
+/* Die erste freie Selbstbeschreibung wanderte hier bis zuletzt in
+   klAnswers.notiz. Das ist entfallen: das Feld heisst jetzt "Was ich felie
+   mitgeben moechte" und ist ausschliesslich die Stimme der Nutzerin — Text,
+   den sie nie getippt hat, darf dort nicht auftauchen. Ihre Antwort geht
+   ohnehin als normale Nachricht ins Gespraech und wird am Gespraechsende
+   zu Fakten und Faeden verarbeitet, also strukturiert, sichtbar und
+   einzeln loeschbar statt als Prosablock. */
+function captureOnboardingNote(text) { /* absichtlich leer, siehe oben */ }
 
 function homeUserReply() {
   var input = document.getElementById('home-user-input');
@@ -4928,15 +5143,19 @@ function getLiveSpot(target) {
       'input':          '#home-input-wrap',
       'greeting-input': ['#home-greeting-block', '#home-question-bubble-wrap', '#home-input-wrap'],
       'personality':    '#home-personality-btn',
+      'profil-btn':     '#home-profile-btn',
       'nav-newchat':    '#home-nav-newchat',
       'nav-archiv':     '#home-nav-archiv',
-      'nav-profil':     '#home-nav-profil',
+      'nav-gedaechtnis': '#home-nav-gedaechtnis',
       'verlauf-list':   '#verlauf-list',
       'verlauf-card':   '#verlauf-list > div:first-child',
       'profile-group':   '#profile-fields-group',
-      'profile-about':   '#profile-card-about',
-      'profile-learned': '#profile-card-learned',
+      'profile-gedaechtnis': '#profile-card-gedaechtnis',
       'profile-backup':  '#profile-card-backup',
+      'ged-faeden':      '#ged-card-faeden',
+      'ged-lernt':       '#ged-card-lernt',
+      'ged-fakten':      '#ged-card-fakten',
+      'ged-mitgabe':     '#ged-card-mitgabe',
       'dash-wearable':   '#wearable-banner',
       'dash-scores':     '#score-cards',
       'dash-zyklus':     ['#zyklus-locked', '#zyklus-real'],
@@ -5020,15 +5239,19 @@ function positionGuideSpot() {
     'greeting':        { t: 230, l: 8,   w: 360, h: 160 },
     'input':           { t: 400, l: 50,  w: 320, h: 60  },
     'greeting-input':  { t: 230, l: 8,   w: 360, h: 230 },
-    'personality':     { t: 96,  l: 330, w: 48,  h: 40  },
+    'personality':     { t: 96,  l: 296, w: 40,  h: 40  },
+    'profil-btn':      { t: 96,  l: 336, w: 40,  h: 40  },
     'nav-newchat':     { t: 730, l: 165, w: 60,  h: 68  },
     'nav-archiv':      { t: 742, l: 40,  w: 56,  h: 44  },
-    'nav-profil':      { t: 742, l: 290, w: 56,  h: 44  },
+    'nav-gedaechtnis': { t: 742, l: 278, w: 74,  h: 44  },
     'verlauf-card':    { t: 96,  l: 12,  w: 366, h: 200 },
     'profile-group':   { t: 96,  l: 12,  w: 366, h: 560 },
-    'profile-about':   { t: 96,  l: 12,  w: 366, h: 220 },
-    'profile-learned': { t: 96,  l: 12,  w: 366, h: 240 },
+    'profile-gedaechtnis': { t: 96, l: 12, w: 366, h: 190 },
     'profile-backup':  { t: 96,  l: 12,  w: 366, h: 180 },
+    'ged-faeden':      { t: 96,  l: 12,  w: 366, h: 220 },
+    'ged-lernt':       { t: 96,  l: 12,  w: 366, h: 260 },
+    'ged-fakten':      { t: 96,  l: 12,  w: 366, h: 240 },
+    'ged-mitgabe':     { t: 96,  l: 12,  w: 366, h: 230 },
     'dash-wearable':   { t: 110, l: 16,  w: 358, h: 130 },
     'dash-scores':     { t: 110, l: 16,  w: 358, h: 96  },
     'dash-zyklus':     { t: 110, l: 16,  w: 358, h: 120 },
@@ -8697,9 +8920,12 @@ var PROFILE_OPTS = {
   wunsch: [['verstanden','verstanden werden'],['orientierung','Orientierung finden'],['gesundheit','Körpersignale verstehen'],['stress','Stress reduzieren'],['energie','Energie & Balance']]
 };
 
+/* Der Freitext ist jetzt garantiert von der Nutzerin selbst geschrieben —
+   felie befuellt ihn nicht mehr. Deshalb darf der Prompt ihn auch als ihre
+   eigenen Worte ausweisen statt nur als "mitgeteilt". */
 function profileNote() {
   return (klAnswers.notiz && klAnswers.notiz.trim())
-    ? '\n\nWas die Nutzerin dir ausdrücklich über sich mitgeteilt hat (beziehe das aktiv ein, um persönlicher und passender zu antworten — aber dränge es nicht in jede Antwort): "' + klAnswers.notiz.trim() + '"\n'
+    ? '\n\nDas hat die Nutzerin dir mit ihren eigenen Worten mitgegeben (beziehe es aktiv ein, um persönlicher und passender zu antworten — aber dränge es nicht in jede Antwort): "' + klAnswers.notiz.trim() + '"\n'
     : '';
 }
 
@@ -8953,7 +9179,8 @@ function saveProfile() {
   if (e.kinder) klAnswers.kinder = e.kinder;
   if (e.lifestyle) klAnswers.lifestyle = e.lifestyle;
   if (Array.isArray(e.wunsch)) klAnswers.wunsch = e.wunsch.slice();
-  klAnswers.notiz = (e.notiz || '').trim();
+  /* klAnswers.notiz wird hier bewusst NICHT angefasst — sie gehoert dem
+     Gedaechtnis und wird dort gespeichert. */
   saveUserProfile();
   var ov = document.getElementById('profile-overlay');
   if (ov) ov.remove();
@@ -9211,7 +9438,8 @@ function felieBackupData() {
      stillgelegte Parallelspeicher und dafuer entfallen. */
   var keys = ['felie_profile', 'felie_saved_chats', 'felie_body_data', 'felie_store_v1',
               'felie_personality', 'felie_checkins', 'felie_body_reminder_date',
-              'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil', 'felie_guide_home',
+              'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
+              'felie_guide_gedaechtnis', 'felie_guide_home',
               'felie_guide_home_deferred', 'felie_backup_hint_off'];
   var store = {};
   keys.forEach(function(k) { var v = localStorage.getItem(k); if (v !== null) store[k] = v; });
@@ -9375,7 +9603,7 @@ function restoreBackup(text) {
 /* Die Rundgaenge liefen nur einmal — wer sie wegtippte, bekam sie nie
    wieder. Hier lassen sich die Marker zuruecksetzen. */
 function restartGuides() {
-  /* Dashboard, Archiv und Profil sind nicht mehr an einen "gesehen"-Zustand
+  /* Dashboard, Archiv, Gedaechtnis und Profil sind nicht mehr an einen "gesehen"-Zustand
      gebunden — sie starten jederzeit ueber den Erklaerung-Marker im
      jeweiligen Header, es gibt dort nichts zurueckzusetzen. Nur der
      Startseiten-Rundgang kennt noch dieses Onboarding-Popup/Hinweis-System. */
@@ -9384,7 +9612,7 @@ function restartGuides() {
     localStorage.setItem('felie_guide_home_deferred', '1');
     updateHomeGuideUI(false);
   } catch (e) {}
-  felieAlert('Der Startseiten-Hinweis erscheint wieder im Header. Die Rundgänge für Dashboard, Archiv und Profil startest du jederzeit über „Erklärung" im jeweiligen Kopfbereich.');
+  felieAlert('Der Startseiten-Hinweis erscheint wieder im Header. Die Rundgänge für Dashboard, Archiv, Gedächtnis und Profil startest du jederzeit über „Erklärung" im jeweiligen Kopfbereich.');
 }
 
 function resetUserData() {
@@ -9432,6 +9660,7 @@ function doResetUserData() {
     localStorage.removeItem('felie_personality');
     localStorage.removeItem('felie_guide_archiv');
     localStorage.removeItem('felie_guide_profil');
+    localStorage.removeItem('felie_guide_gedaechtnis');
     localStorage.removeItem('felie_guide_dashboard');
     localStorage.removeItem('felie_guide_home');
     localStorage.removeItem('felie_guide_home_deferred');
@@ -9459,78 +9688,504 @@ function themeCategory(thema) {
   return { key:'sonstiges', label:'Sonstiges', icon:'<svg class="ico" style="width:16px;height:16px"><use href="#i-chat"/></svg>' };
 }
 
-function buildProfileInsightsData() {
+/* ══════════════════════════════════════════════════════════════════════
+   GEDAECHTNIS — was felie ueber die Nutzerin weiss
+   ──────────────────────────────────────────────────────────────────────
+   Frueher steckte das alles in einer einzigen Profilkarte ("Was felie
+   ueber dich gelernt hat") und mischte dabei drei voellig verschiedene
+   Datenspuren zu einer Liste. Jetzt ist es ein eigener Bereich mit dem
+   Platz der bisherigen Profil-Navigation; das Profil selbst wandert in
+   den Header und haelt nur noch die Selbstauskunft.
+
+   Vier Bloecke, sortiert nach INTERAKTIONSHAEUFIGKEIT — was sich
+   wochentlich aendert steht oben, was einmal gesetzt wird unten:
+
+     1 GERADE OFFEN      Episoden. Kurzlebig, staendig in Bewegung.
+     2 AUS GESPRAECHEN   felie_lernt je archiviertem Gespraech. Waechst
+                         mit jedem Gespraech, nach Thema filterbar.
+     3 UEBER DICH        Fakten. Stabil, nach Kategorie gruppiert.
+     4 MITGABE           Der Freitext der Nutzerin. Einmal gesetzt.
+
+   Der Freitext hiess vorher "Was felie zusaetzlich ueber dich wissen
+   sollte" und wurde von felie selbst befuellt (klExtract, dazu
+   captureOnboardingNote). Das ist entfallen: felie legt Erkenntnisse
+   jetzt als Fakten und Faeden ab, wo sie strukturiert, einzeln
+   loeschbar und einzeln korrigierbar sind. Der Freitext ist damit
+   ausschliesslich die Stimme der Nutzerin — deshalb die neue
+   Ueberschrift "Was ich felie mitgeben moechte".
+
+   Alles ist einzeln bearbeitbar (Stift, ueber die Snippet-Engine) und
+   einzeln loeschbar. Beim Loeschen eines Gespraechssatzes wird NUR das
+   Feld felie_lernt geleert — das Gespraech selbst bleibt im Archiv.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Wie viele Gespraechssaetze ungefragt sichtbar sind. Ohne Deckel wuerde
+   der Block nach einigen Wochen so lang, dass Fakten und Mitgabe
+   darunter praktisch unerreichbar waeren. */
+var GED_LERNT_SICHTBAR = 6;
+
+var GED_KAT_LABEL = {
+  familie:    'Familie',
+  arbeit:     'Arbeit',
+  gesundheit: 'Gesundheit',
+  beziehung:  'Beziehung',
+  wohnen:     'Wohnen',
+  allgemein:  'Allgemein'
+};
+/* Reihenfolge fest, nicht nach Anzahl: eine Gliederung, die bei jedem
+   neuen Eintrag umsortiert, ist keine Gliederung. */
+var GED_KAT_ORDER = ['familie', 'arbeit', 'gesundheit', 'beziehung', 'wohnen', 'allgemein'];
+
+/* Fristen fuer manuell ergaenzte Faeden. Bewusst grob: die Nutzerin soll
+   nicht ein Datum eintippen, sondern eine Groessenordnung antippen. */
+var GED_FRISTEN = [['7', 'diese Woche'], ['14', 'zwei Wochen'], ['30', 'diesen Monat'], ['90', 'laenger']];
+
+function gedEsc(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* IDs von Fakten und Faeden werden aus ihrem TEXT gebildet
+   (kategorie + ':' + text.slice(0,24) bzw. 'ep:' + text). Ein Apostroph
+   darin — "Kind's Schule" — wuerde ein inline onclick zerreissen. Deshalb
+   erst fuer JavaScript maskieren, dann fuer HTML: der Browser dekodiert
+   &#39; zurueck zu ', und der davor stehende Backslash macht daraus ein
+   gueltiges Stringzeichen statt eines Stringendes. */
+function gedJsAttr(s) {
+  return gedEsc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"))
+    .replace(/"/g, '&quot;');
+}
+
+/* ── Ansicht ──────────────────────────────────────────────────────── */
+
+function showGedaechtnis() {
+  var old = document.getElementById('gedaechtnis-overlay');
+  if (old) old.remove();
+
+  window._gedLerntFilter = 'all';
+  window._gedLerntAlle = false;
+  window._gedForm = null;
+  window._gedMitgabe = (klAnswers.notiz || '');
+
+  var div = document.createElement('div');
+  div.id = 'gedaechtnis-overlay';
+  div.style.cssText = 'position:absolute;inset:0;background:#E6E0EE;z-index:50;display:flex;flex-direction:column;animation:dashIn 0.3s ease both;';
+  div.innerHTML =
+    '<div style="padding:14px 20px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:var(--plum);">' +
+      '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.9);">' +
+        new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + '</span>' +
+      '<div style="font-size:12px;color:rgba(255,255,255,0.4);display:flex;gap:5px;align-items:center;"><span>●●●</span>' +
+        '<svg class="ico" style="width:13px;height:13px"><use href="#i-battery"/></svg></div>' +
+    '</div>' +
+    '<div style="background:var(--plum);padding:20px 20px 16px;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<div>' +
+        '<span class="header-word" role="img" aria-label="felie"></span>' +
+        '<div style="margin-top:14px;">' +
+          '<div style="font-size:16px;font-weight:600;color:white;">Gedächtnis</div>' +
+          '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;">Was felie über dich weiß</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;align-self:stretch;">' +
+        '<button onclick="gedSchliessen()" aria-label="Schließen" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:24px;line-height:1;padding:4px;">×</button>' +
+        '<button onclick="showGuide(GEDAECHTNIS_GUIDE_STEPS)" title="Erklärung" style="background:rgba(255,255,255,0.1);border:none;border-radius:14px;cursor:pointer;color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:6px 10px;display:flex;align-items:center;gap:4px;">' +
+          '<svg class="ico" style="width:12px;height:12px"><use href="#i-alert"/></svg>Erklärung</button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="ged-scroll" style="flex:1;overflow-y:auto;padding:16px 16px 96px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>';
+
+  document.querySelector('.phone').appendChild(div);
+  gedRender();
+  felieDialog(div, { label: 'Gedächtnis', onClose: gedSchliessen });
+}
+
+/* Beim Verlassen wird die Mitgabe still uebernommen. Ohne das waere ein
+   getippter, aber nicht bestaetigter Text mit dem Schliessen weg — und
+   genau dieses Feld tippt die Nutzerin lang und selten, also ist der
+   Verlust hier besonders teuer. Die anderen Bloecke schreiben sofort und
+   brauchen das nicht. */
+function gedSchliessen() {
+  try { gedMitgabeSpeichern(true); } catch (e) {}
+  var ov = document.getElementById('gedaechtnis-overlay');
+  if (ov) ov.remove();
+}
+
+/* Ein Render-Eingang fuer den ganzen Bereich. Jede Aktion schreibt und
+   ruft danach gedRender() — kein Teil-Nachziehen einzelner Listen, das
+   war beim Spiegel schon die Quelle stiller Inkonsistenzen. */
+function gedRender() {
+  var box = document.getElementById('ged-scroll');
+  if (!box) return;
+  /* Offene Mitgabe-Eingabe retten: sie steht nur im DOM, nicht im Store. */
+  var mg = document.getElementById('ged-mitgabe-input');
+  if (mg) window._gedMitgabe = mg.value;
+  box.innerHTML = gedFaedenHtml() + gedLerntHtml() + gedFaktenHtml() + gedMitgabeHtml();
+}
+
+/* ── Block 1: Gerade offen (Episoden) ─────────────────────────────── */
+
+function gedFaedenHtml() {
+  var offen = [];
+  try { offen = felieEpisoden({ nurAktuell: true }); } catch (e) {}
+  offen = offen.slice().sort(function (a, b) { return a.faelligBis - b.faelligBis; });
+
+  var inner;
+  if (!offen.length) {
+    inner = '<div class="ged-leer">Nichts Offenes. Wenn du mir von etwas erzählst, das gerade läuft, merke ich mir das hier — und es verfällt von allein, wenn es vorbei ist.</div>';
+  } else {
+    inner = offen.map(function (e) {
+      var tage = Math.ceil((e.faelligBis - Date.now()) / 86400000);
+      var frist = tage <= 0 ? 'läuft heute aus' : (tage === 1 ? 'noch 1 Tag' : 'noch ' + tage + ' Tage');
+      var wieder = (e.erwaehnungen || 1) > 1 ? ' · ' + e.erwaehnungen + '× erwähnt' : '';
+      return '<div class="ged-zeile snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
+        + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten">'
+        + '<div class="snip-view">'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
+        + '<span class="ged-badge' + (tage <= 2 ? ' warn' : '') + '">' + frist + wieder + '</span>'
+        + '</div>'
+        + '<div class="ged-akt">'
+        + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
+        + '<button class="ged-del" onclick="gedFadenErledigt(\'' + gedJsAttr(e.id) + '\')">Erledigt</button>'
+        + '</div></div></div>';
+    }).join('');
+  }
+
+  return '<div class="ged-karte" id="ged-card-faeden">'
+    + '<div class="ged-kopf"><div class="ged-kicker">Gerade offen</div>'
+    + (offen.length ? '<span class="ged-zahl">' + offen.length + '</span>' : '') + '</div>'
+    + '<div class="ged-sub">Zeitlich begrenzte Themen. Sie verfallen von allein — du musst nichts abhaken.</div>'
+    + inner
+    + gedFormOrButton('faden', 'Offenes Thema ergänzen')
+    + '</div>';
+}
+
+function gedFadenErledigt(id) {
+  try { felieEpisodeAbschliessen(id); felieStoreSpeichern(); felieAutosave(); } catch (e) {}
+  gedRender();
+}
+
+/* ── Block 2: Aus euren Gesprächen (felie_lernt) ──────────────────── */
+
+function gedLerntDaten() {
   var chats;
-  try { chats = getSavedChats(); } catch(e) { chats = []; }
-  var withLernt = (chats || []).filter(function(c){ return c.felie_lernt && String(c.felie_lernt).trim(); });
-  var groups = {}; var order = [];
-  withLernt.forEach(function(c) {
+  try { chats = getSavedChats(); } catch (e) { chats = []; }
+  var mit = (chats || []).filter(function (c) { return c.felie_lernt && String(c.felie_lernt).trim(); });
+  var groups = {}, order = [];
+  mit.forEach(function (c) {
     var cat = themeCategory(c.thema || '');
     if (!groups[cat.key]) { groups[cat.key] = { label: cat.label, icon: cat.icon, entries: [] }; order.push(cat.key); }
     groups[cat.key].entries.push(c);
   });
-  order.sort(function(a, b){ return groups[b].entries.length - groups[a].entries.length; });
-  window._profileInsights = { groups: groups, order: order, total: withLernt.length };
-  if (window._profileInsightsSel !== 'all' && !groups[window._profileInsightsSel]) window._profileInsightsSel = 'all';
+  order.sort(function (a, b) { return groups[b].entries.length - groups[a].entries.length; });
+  if (window._gedLerntFilter !== 'all' && !groups[window._gedLerntFilter]) window._gedLerntFilter = 'all';
+  return { groups: groups, order: order, total: mit.length };
 }
 
-function profileInsightChip(key, label, icon, count, active) {
-  return '<button onclick="profileFilterInsights(\'' + key + '\')" style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1.5px solid ' +
-    (active ? '#180430' : 'rgba(143, 91, 189,0.3)') + ';background:' + (active ? '#180430' : 'white') + ';color:' + (active ? 'white' : '#4A3A6A') +
-    ';font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;">' +
-    (icon ? '<span style="font-size:13px;">' + icon + '</span>' : '') + label +
-    '<span style="opacity:0.55;">' + count + '</span></button>';
-}
+function gedLerntHtml() {
+  var d = gedLerntDaten();
+  var kopf = '<div class="ged-kopf"><div class="ged-kicker">Aus euren Gesprächen</div>'
+    + (d.total ? '<span class="ged-zahl">' + d.total + '</span>' : '') + '</div>'
+    + '<div class="ged-sub">Was ich mir am Ende eines Gesprächs notiert habe. Löschen entfernt nur die Notiz — das Gespräch bleibt im Archiv.</div>';
 
-function renderProfileInsightsChips() {
-  var data = window._profileInsights; if (!data) return '';
-  var sel = window._profileInsightsSel;
-  var chips = profileInsightChip('all', 'Alle', '', data.total, sel === 'all');
-  chips += data.order.map(function(k) {
-    var g = data.groups[k];
-    return profileInsightChip(k, g.label, g.icon, g.entries.length, sel === k);
-  }).join('');
-  return '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;">' + chips + '</div>';
-}
+  if (!d.total) {
+    return '<div class="ged-karte" id="ged-card-lernt">' + kopf
+      + '<div class="ged-leer">Noch nichts. Je öfter wir sprechen, desto mehr sammelt sich hier.</div></div>';
+  }
 
-function renderProfileInsightsList() {
-  function esc(s){ return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  var data = window._profileInsights;
-  var sel = window._profileInsightsSel;
-  var entries = [];
+  var sel = window._gedLerntFilter;
+  var chips = '<button class="ged-chip' + (sel === 'all' ? ' aktiv' : '') + '" onclick="gedLerntFilter(\'all\')">Alle'
+    + '<span class="ged-chip-n">' + d.total + '</span></button>'
+    + d.order.map(function (k) {
+        var g = d.groups[k];
+        return '<button class="ged-chip' + (sel === k ? ' aktiv' : '') + '" onclick="gedLerntFilter(\'' + k + '\')">'
+          + g.icon + g.label + '<span class="ged-chip-n">' + g.entries.length + '</span></button>';
+      }).join('');
+
+  var eintraege = [];
   if (sel === 'all') {
-    data.order.forEach(function(k){ data.groups[k].entries.forEach(function(c){ entries.push({ c: c, icon: data.groups[k].icon }); }); });
-    entries.sort(function(a, b){ return (b.c.timestamp || 0) - (a.c.timestamp || 0); });
-  } else if (data.groups[sel]) {
-    entries = data.groups[sel].entries.slice().sort(function(a, b){ return (b.timestamp || 0) - (a.timestamp || 0); }).map(function(c){ return { c: c, icon: data.groups[sel].icon }; });
+    d.order.forEach(function (k) {
+      d.groups[k].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[k].icon }); });
+    });
+  } else {
+    d.groups[sel].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[sel].icon }); });
   }
-  var html = entries.slice(0, 40).map(function(e) {
-    var c = e.c; var when = relativeTime(c.timestamp);
-    return '<div style="display:flex;gap:10px;align-items:flex-start;background:#E6E0EE;border-radius:12px;padding:11px 12px;">' +
-      '<div style="width:28px;height:28px;border-radius:50%;background:#180430;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">' + e.icon + '</div>' +
-      '<div style="min-width:0;flex:1;">' +
-        '<div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(c.felie_lernt) + '</div>' +
-        '<div style="font-size:11px;color:#9B8AB5;margin-top:3px;">' + esc(c.thema || 'Gespräch') + (when ? ' · ' + when : '') + '</div>' +
-      '</div>' +
-    '</div>';
+  eintraege.sort(function (a, b) { return (b.c.timestamp || 0) - (a.c.timestamp || 0); });
+
+  var gesamt = eintraege.length;
+  var zeigen = window._gedLerntAlle ? eintraege : eintraege.slice(0, GED_LERNT_SICHTBAR);
+
+  var liste = zeigen.map(function (e) {
+    var c = e.c;
+    var id = c.id || c.timestamp;
+    var when = '';
+    try { when = relativeTime(c.timestamp) || ''; } catch (x) {}
+    return '<div class="ged-lernt snip" data-snip="chatlernt" data-snip-max="' + FELIE_SNIP_MAX.chatlernt + '"'
+      + ' data-snip-id="' + id + '" data-snip-label="Notiz zu diesem Gespräch bearbeiten">'
+      + '<div class="ged-lernt-icon">' + e.icon + '</div>'
+      + '<div class="ged-lernt-body">'
+      + '<div class="snip-view">'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div class="snip-text">' + gedEsc(c.felie_lernt) + '</div>'
+      + '<div class="ged-meta">' + gedEsc(c.thema || 'Gespräch') + (when ? ' · ' + when : '') + '</div>'
+      + '</div>'
+      + '<div class="ged-akt">'
+      + felieSnipStiftHtml('Notiz zu „' + (c.thema || 'Gespräch') + '" bearbeiten')
+      + '<button class="ged-del" onclick="gedLerntLoeschen(' + id + ')">Löschen</button>'
+      + '</div></div></div></div>';
   }).join('');
-  return '<div style="display:flex;flex-direction:column;gap:8px;">' + html + '</div>';
-}
 
-function profileFilterInsights(key) {
-  window._profileInsightsSel = key;
-  var wrap = document.getElementById('profile-insights-wrap');
-  if (wrap) wrap.innerHTML = renderProfileInsightsChips() + renderProfileInsightsList();
-}
-
-function profileInsightsHtml() {
-  window._profileInsightsSel = 'all';
-  buildProfileInsightsData();
-  if (!window._profileInsights.total) {
-    return '<div style="font-size:13px;color:#6B5A88;line-height:1.5;">Noch nichts — je öfter ihr sprecht, desto mehr lernt felie über dich. Eure Gespräche erscheinen hier nach und nach als kleine Erkenntnisse.</div>';
+  var mehr = '';
+  if (gesamt > GED_LERNT_SICHTBAR) {
+    mehr = window._gedLerntAlle
+      ? '<button class="ged-mehr" onclick="gedLerntMehr(false)">Weniger anzeigen</button>'
+      : '<button class="ged-mehr" onclick="gedLerntMehr(true)">Alle ' + gesamt + ' anzeigen</button>';
   }
-  return '<div id="profile-insights-wrap" style="display:flex;flex-direction:column;gap:10px;">' +
-    renderProfileInsightsChips() + renderProfileInsightsList() + '</div>';
+
+  return '<div class="ged-karte" id="ged-card-lernt">' + kopf
+    + '<div class="ged-chips">' + chips + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;">' + liste + '</div>'
+    + mehr + '</div>';
+}
+
+function gedLerntFilter(key) {
+  window._gedLerntFilter = key;
+  window._gedLerntAlle = false;
+  gedRender();
+}
+
+function gedLerntMehr(an) {
+  window._gedLerntAlle = !!an;
+  gedRender();
+}
+
+/* Leert nur felie_lernt. Das Gespraech bleibt im Archiv aufrufbar —
+   deshalb hier auch keine Rueckfrage: es geht ein Satz verloren, nicht
+   das Gespraech. */
+function gedLerntLoeschen(id) {
+  felieChatFeldSetzen(id, { felie_lernt: '' });
+  try { fillHomeThemen(); } catch (e) {}
+  gedRender();
+}
+
+/* ── Block 3: Über dich (Fakten) ──────────────────────────────────── */
+
+function gedFaktenHtml() {
+  var fakten = [];
+  try { fakten = felieFakten(); } catch (e) {}
+
+  var kopf = '<div class="ged-kopf"><div class="ged-kicker">Über dich</div>'
+    + (fakten.length ? '<span class="ged-zahl">' + fakten.length + '</span>' : '') + '</div>'
+    + '<div class="ged-sub">Dinge, die unabhängig vom Thema gelten. Sie gehen in jede Antwort ein.</div>';
+
+  var inner;
+  if (!fakten.length) {
+    inner = '<div class="ged-leer">Noch nichts. Was du mir über dich erzählst, zeige ich dir hier — und du kannst jederzeit etwas ändern oder löschen.</div>';
+  } else {
+    var nachKat = {};
+    fakten.forEach(function (f) {
+      var k = GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein';
+      (nachKat[k] = nachKat[k] || []).push(f);
+    });
+    inner = GED_KAT_ORDER.filter(function (k) { return nachKat[k]; }).map(function (k) {
+      var zeilen = nachKat[k].map(function (f) {
+        /* "Lange nicht erwaehnt" ist kein Fehler, sondern eine Einladung:
+           felie formuliert solche Fakten vorsichtiger, und die Nutzerin
+           sieht, warum. */
+        var alt = f.alterTage > 180 ? '<span class="ged-badge">lange nicht erwähnt</span>' : '';
+        var selbst = f.quelle === 'selbst' ? '<span class="ged-badge">von dir ergänzt</span>' : '';
+        return '<div class="ged-zeile snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
+          + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
+          + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
+          + ' data-snip-klasse="' + felieSnipAttr(f.klasse) + '"'
+          + ' data-snip-quelle="' + felieSnipAttr(f.quelle || 'gespraech') + '"'
+          + ' data-snip-label="Eintrag bearbeiten">'
+          + '<div class="snip-view">'
+          + '<div style="flex:1;min-width:0;">'
+          + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
+          + (alt || selbst)
+          + '</div>'
+          + '<div class="ged-akt">'
+          + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
+          + '<button class="ged-del" onclick="gedFaktLoeschen(\'' + gedJsAttr(f.id) + '\')">Löschen</button>'
+          + '</div></div></div>';
+      }).join('');
+      return '<div class="ged-gruppe">' + GED_KAT_LABEL[k] + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:6px;">' + zeilen + '</div>';
+    }).join('');
+  }
+
+  return '<div class="ged-karte" id="ged-card-fakten">' + kopf + inner
+    + gedFormOrButton('fakt', 'Etwas über dich ergänzen')
+    + '</div>';
+}
+
+function gedFaktLoeschen(id) {
+  try { felieFaktLoeschen(id); felieStoreSpeichern(); felieAutosave(); } catch (e) {}
+  gedRender();
+}
+
+/* ── Ergänzen ─────────────────────────────────────────────────────────
+   Kein Pflegeauftrag, sondern der Notausgang: falls felie etwas nicht
+   mitbekommen hat, soll die Nutzerin es nachtragen koennen, ohne dafuer
+   ein Gespraech fuehren zu muessen.
+
+   Manuell ergaenzte Fakten sind IMMER klasse 'stabil'. Ein selbst
+   eingetragener Fakt darf nicht nach 365 Tagen ohne Bestaetigung
+   lautlos verfallen — das waere das Gegenteil von "sie hat es mir
+   ausdruecklich gesagt". Was sich veraendert, gehoert ohnehin in einen
+   Faden. */
+function gedFormOrButton(typ, label) {
+  if (window._gedForm !== typ) {
+    return '<button class="ged-add" onclick="gedFormOeffnen(\'' + typ + '\')">'
+      + '<span aria-hidden="true">+</span>' + label + '</button>';
+  }
+  if (typ === 'fakt') {
+    var kats = GED_KAT_ORDER.map(function (k) {
+      return '<button class="ged-opt' + (window._gedFormKat === k ? ' aktiv' : '')
+        + '" onclick="gedFormKat(\'' + k + '\')">' + GED_KAT_LABEL[k] + '</button>';
+    }).join('');
+    return '<div class="ged-form">'
+      + '<div class="ged-form-label">Etwas über dich</div>'
+      + '<textarea id="ged-form-text" rows="2" maxlength="' + FELIE_SNIP_MAX.fakt + '" placeholder="Kurz und als Stichpunkt, z.B. „Arbeitet in Wechselschicht“" aria-label="Neuer Eintrag"></textarea>'
+      + '<div class="ged-form-label">Kategorie</div>'
+      + '<div class="ged-optionen">' + kats + '</div>'
+      + '<div class="ged-form-aktionen">'
+      + '<button class="snip-ab" onclick="gedFormAbbrechen()">Abbrechen</button>'
+      + '<button class="snip-ok" onclick="gedFaktAnlegen()">Hinzufügen</button>'
+      + '</div></div>';
+  }
+  var fristen = GED_FRISTEN.map(function (f) {
+    return '<button class="ged-opt' + (String(window._gedFormFrist) === f[0] ? ' aktiv' : '')
+      + '" onclick="gedFormFrist(\'' + f[0] + '\')">' + f[1] + '</button>';
+  }).join('');
+  return '<div class="ged-form">'
+    + '<div class="ged-form-label">Was gerade läuft</div>'
+    + '<textarea id="ged-form-text" rows="2" maxlength="' + FELIE_SNIP_MAX.faden + '" placeholder="Kurz und als Stichpunkt, z.B. „Abgabe nächste Woche“" aria-label="Neues offenes Thema"></textarea>'
+    + '<div class="ged-form-label">Vermutlich vorbei</div>'
+    + '<div class="ged-optionen">' + fristen + '</div>'
+    + '<div class="ged-form-aktionen">'
+    + '<button class="snip-ab" onclick="gedFormAbbrechen()">Abbrechen</button>'
+    + '<button class="snip-ok" onclick="gedFadenAnlegen()">Hinzufügen</button>'
+    + '</div></div>';
+}
+
+function gedFormOeffnen(typ) {
+  window._gedForm = typ;
+  window._gedFormKat = 'allgemein';
+  window._gedFormFrist = '14';
+  gedRender();
+  var ta = document.getElementById('ged-form-text');
+  if (ta) { try { ta.focus({ preventScroll: true }); } catch (e) {} }
+}
+
+function gedFormAbbrechen() {
+  window._gedForm = null;
+  gedRender();
+}
+
+/* Auswahl aendern, ohne den schon getippten Text zu verlieren. */
+function gedFormKat(k) {
+  var ta = document.getElementById('ged-form-text');
+  var t = ta ? ta.value : '';
+  window._gedFormKat = k;
+  gedRender();
+  var neu = document.getElementById('ged-form-text');
+  if (neu) { neu.value = t; try { neu.focus({ preventScroll: true }); } catch (e) {} }
+}
+
+function gedFormFrist(v) {
+  var ta = document.getElementById('ged-form-text');
+  var t = ta ? ta.value : '';
+  window._gedFormFrist = v;
+  gedRender();
+  var neu = document.getElementById('ged-form-text');
+  if (neu) { neu.value = t; try { neu.focus({ preventScroll: true }); } catch (e) {} }
+}
+
+function gedFormText() {
+  var ta = document.getElementById('ged-form-text');
+  if (!ta) return '';
+  return ta.value.replace(/\s+/g, ' ').trim();
+}
+
+function gedFaktAnlegen() {
+  var t = gedFormText();
+  if (!t) return;
+  try {
+    felieFaktSetzen({
+      text: t.slice(0, FELIE_SNIP_MAX.fakt),
+      kategorie: window._gedFormKat || 'allgemein',
+      klasse: 'stabil',
+      quelle: 'selbst'
+    });
+    felieStoreSpeichern();
+    felieAutosave();
+  } catch (e) {}
+  window._gedForm = null;
+  gedRender();
+}
+
+function gedFadenAnlegen() {
+  var t = gedFormText();
+  if (!t) return;
+  var tage = parseInt(window._gedFormFrist, 10) || 14;
+  try {
+    felieEpisode({ text: t.slice(0, FELIE_SNIP_MAX.faden), faelligBis: Date.now() + tage * 86400000 });
+    felieStoreSpeichern();
+    felieAutosave();
+  } catch (e) {}
+  window._gedForm = null;
+  gedRender();
+}
+
+/* ── Block 4: Was ich felie mitgeben möchte ───────────────────────────
+   Der einzige Block, den felie nicht selbst befuellt. Vorher hiess das
+   Feld "Was felie zusaetzlich ueber dich wissen sollte" und wurde von
+   klExtract() und captureOnboardingNote() automatisch beschrieben — die
+   Nutzerin fand dort also Text, den sie nie getippt hatte, und
+   korrigierte in Wahrheit eine Modellzusammenfassung. Beides ist
+   entfallen: felie legt Erkenntnisse als Fakten und Faeden ab. */
+function gedMitgabeHtml() {
+  var wert = window._gedMitgabe != null ? window._gedMitgabe : (klAnswers.notiz || '');
+  return '<div class="ged-karte ged-mitgabe" id="ged-card-mitgabe">'
+    + '<div class="ged-kopf"><div class="ged-kicker">Was ich felie mitgeben möchte</div></div>'
+    + '<div class="ged-sub">Deine Worte, nicht meine. Etwas, das in unseren Gesprächen bisher nicht vorkam und das ich über dich wissen sollte — eine Diagnose, eine Schwangerschaft, eine besondere Situation.</div>'
+    + '<textarea id="ged-mitgabe-input" rows="4" placeholder="Optional — was ich sonst noch über dich wissen sollte…" aria-label="Was ich felie mitgeben möchte">'
+    + gedEsc(wert) + '</textarea>'
+    + '<button id="ged-mitgabe-btn" class="ged-add" style="border-style:solid;background:#e1ea7d;border-color:#e1ea7d;color:#180430;font-weight:600;" onclick="gedMitgabeSpeichern()">'
+    + '<svg class="ico" style="width:14px;height:14px;flex-shrink:0"><use href="#i-box"/></svg>Speichern</button>'
+    + '</div>';
+}
+
+/* still = true: beim Verlassen der Ansicht, ohne Rueckmeldung.
+   Die Bestaetigung laeuft bewusst am Knopf und nicht als Modal — ein
+   Dialog, den man wegtippen muss, ist fuer "Text gesichert" zu viel. */
+function gedMitgabeSpeichern(still) {
+  var ta = document.getElementById('ged-mitgabe-input');
+  if (!ta) return;
+  var t = ta.value.trim();
+  if (t.length > 1200) t = t.slice(0, 1200);
+  window._gedMitgabe = t;
+  if (t === (klAnswers.notiz || '').trim()) {
+    if (!still) gedMitgabeQuittung('Unverändert');
+    return;
+  }
+  klAnswers.notiz = t;
+  try { saveUserProfile(); } catch (e) {}
+  try { felieAutosave(); } catch (e) {}
+  if (!still) gedMitgabeQuittung('Gespeichert');
+}
+
+function gedMitgabeQuittung(text) {
+  var btn = document.getElementById('ged-mitgabe-btn');
+  if (!btn) return;
+  if (btn.dataset.orig == null) btn.dataset.orig = btn.innerHTML;
+  btn.innerHTML = '<span aria-hidden="true">✓</span>' + text;
+  clearTimeout(window._gedQuittungTimer);
+  window._gedQuittungTimer = setTimeout(function () {
+    var b = document.getElementById('ged-mitgabe-btn');
+    if (b && b.dataset.orig != null) { b.innerHTML = b.dataset.orig; delete b.dataset.orig; }
+  }, 1800);
 }
 
 var PROFILE_LABELS = {
@@ -9617,8 +10272,11 @@ function showProfile() {
     alter: klAnswers.alter || '',
     kinder: klAnswers.kinder || '',
     lifestyle: klAnswers.lifestyle || '',
-    wunsch: Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(Boolean).slice() : [],
-    notiz: klAnswers.notiz || ''
+    wunsch: Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(Boolean).slice() : []
+    /* notiz steckt nicht mehr hier: der Freitext wird im Gedaechtnis
+       bearbeitet und dort einzeln gespeichert. Waere er weiter Teil von
+       _profileEdit, wuerde "Aenderungen speichern" im Profil ihn mit einem
+       leeren Wert ueberschreiben. */
   };
   var age = window._profileEdit.alter;
   var labelStyle = 'font-size:11px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;';
@@ -9656,18 +10314,16 @@ function showProfile() {
       profileField('wunsch', 'Was du dir von felie wünschst',
         '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + profileChips('wunsch') + '</div>') +
       '</div>' +
-      '<div id="profile-card-about" style="' + cardStyle + '"><div style="' + labelStyle + '">Was felie zusätzlich über dich wissen sollte</div>' +
-        '<div style="font-size:12px;color:#6B5A88;line-height:1.45;margin-top:-4px;">Optional — etwas, das in euren Gesprächen bisher nicht vorkam und das felie über dich wissen sollte (z.B. eine Diagnose, Schwangerschaft, eine besondere Situation). felie bezieht es in ihre Antworten ein.</div>' +
-        '<textarea id="profile-notiz-input" rows="4" oninput="window._profileEdit.notiz=this.value;" placeholder="Optional — was felie sonst noch über dich wissen sollte…" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.3);font-family:inherit;font-size:14px;color:#180430;background:#FBF9FE;outline:none;resize:none;line-height:1.5;" aria-label="Über mich"></textarea></div>' +
-      '<div id="profile-card-learned" style="' + cardStyle + '"><div style="' + labelStyle + '">Was felie über dich gelernt hat</div>' +
-        '<div style="font-size:12px;color:#6B5A88;line-height:1.45;margin-top:-4px;">Aus euren bisherigen Gesprächen — was felie sich gemerkt hat. Du kannst jeden Eintrag löschen.</div>' +
-        /* Die Faktenspur muss einsehbar sein, sonst ist sie eine
-           unsichtbare Sammlung. Sie ist auch der Grund, warum
-           "Gespräch verworfen" ehrlich bleibt: ein Fakt aus einem
-           gelöschten Gespräch überlebt, aber er steht hier und ist
-           einzeln löschbar. */
-        '<div id="wissen-box" style="margin-top:10px;">' + felieWissenHtml() + '</div>' +
-        profileInsightsHtml() + '</div>' +
+      /* Freitext und Gelerntes sind ins Gedaechtnis gewandert. Hier bleibt
+         nur der Verweis: das Profil ist die Selbstauskunft, das Gedaechtnis
+         das, was felie mitbekommen hat. Beides in einer Ansicht zu mischen
+         war der Grund, warum die Faktenspur unter einer Chip-Liste
+         verschwand. */
+      '<div id="profile-card-gedaechtnis" style="' + cardStyle + '">' +
+        '<div style="' + labelStyle + '">Was felie über dich weiß</div>' +
+        '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Alles, was felie aus euren Gesprächen mitgenommen hat — offene Themen, Notizen und was dauerhaft über dich gilt. Dort kannst du jeden Eintrag ändern, ergänzen oder löschen.</div>' +
+        '<button onclick="gedAusProfil()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.35);background:white;color:#180430;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-mind"/></svg>Gedächtnis öffnen</button>' +
+      '</div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-box"/></svg>Änderungen speichern</button>' +
       '<div style="' + cardStyle + '">' +
         '<div style="' + labelStyle + '">Expert Circle</div>' +
@@ -9698,8 +10354,15 @@ function showProfile() {
   felieDialog(div, { label: 'Profil', onClose: function() { div.remove(); } });
   var ni = document.getElementById('profile-name-input');
   if (ni) ni.value = window._profileEdit.name;
-  var nt = document.getElementById('profile-notiz-input');
-  if (nt) nt.value = window._profileEdit.notiz;
+}
+
+/* Aus dem Profil ins Gedaechtnis. Das Profil wird geschlossen statt
+   ueberlagert: zwei Vollbild-Overlays auf z-index 50 uebereinander
+   koennten sonst nur in umgekehrter Reihenfolge geschlossen werden. */
+function gedAusProfil() {
+  var ov = document.getElementById('profile-overlay');
+  if (ov) ov.remove();
+  showGedaechtnis();
 }
 
 function showDatenschutz() {
@@ -11942,34 +12605,356 @@ function felieMerkVorschlaege(summary) {
   return out;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   SNIPPET-BEARBEITUNG — der Stift auf der Notizkarte
+   ──────────────────────────────────────────────────────────────────────
+   Was felie am Gespraechsende erfasst, ist ein Vorschlag eines Modells,
+   kein Befund. Bisher konnte die Nutzerin einen Vorschlag nur ganz
+   uebernehmen oder ganz weglassen. Das ist die falsche Wahl: ein Satz,
+   der zu 80 Prozent stimmt, gehoert korrigiert und nicht weggeworfen —
+   sonst verliert das Gedaechtnis genau die Eintraege, die fast richtig
+   waren. Deshalb sitzt hinter jedem erfassten Snippet ein Stift.
+
+   Eine Engine fuer alle vier Snippet-Arten (thema, erkenntnis,
+   felie_lernt, merk). Die Unterschiede stecken nur im Schreiben:
+
+     thema / erkenntnis / felie_lernt
+       gehoeren zu einem Gespraech, das beim Erzeugen der Karte SCHON
+       archiviert ist. Die Korrektur geht also sofort in den
+       Archiveintrag — sonst zeigte die Karte den neuen Satz und das
+       Archiv den alten. Wer die Karte verwirft, loescht den Eintrag
+       ohnehin komplett, die Korrektur ist dann irrelevant.
+
+     merk (Fakten und Faeden)
+       existiert noch nirgends. Hier bleibt es beim Prinzip der
+       Merknotiz: der Stift aendert nur den Vorschlag, geschrieben wird
+       erst mit "Speichern".
+
+   Erwartete Aufbaustruktur je Snippet:
+
+     <div class="snip" data-snip="ART" data-snip-max="N">
+       <div class="snip-view">  ... <span class="snip-text">Text</span> ...
+         <button class="snip-edit" onclick="felieSnipStart(this)">
+       </div>
+     </div>
+
+   Beim Bearbeiten wird .snip-view ausgeblendet und ein .snip-form
+   daneben gehaengt. Ausgeblendet statt ersetzt, damit der Abbruch nichts
+   neu aufbauen muss und die Auswahl der Merkzeile erhalten bleibt.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Obergrenzen. 90 fuer Merkzeilen ist kein Zufall, sondern derselbe Wert,
+   den felieMerkVorschlaege() beim Einlesen der Modellantwort durchlaesst —
+   ein per Hand laengerer Eintrag wuerde sonst spaeter verworfen. */
+var FELIE_SNIP_MAX = {
+  thema: 60, erkenntnis: 240, felie_lernt: 240, merk: 90,
+  /* Im Gedaechtnis bearbeitete Eintraege: dieselben Grenzen wie beim
+     Erfassen, damit eine Korrektur nicht laenger sein darf als das
+     Original je haette werden koennen. */
+  fakt: 90, faden: 90, chatlernt: 240
+};
+
+function felieSnipAttr(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* Der Stift selbst. Nur Icon, kein Text — er steht immer direkt hinter
+   dem Snippet, das er bearbeitet, und aria-label traegt die Zuordnung. */
+function felieSnipStiftHtml(label) {
+  return '<button type="button" class="snip-edit" onclick="felieSnipStart(this)"'
+    + ' aria-label="' + felieSnipAttr(label) + '" title="Bearbeiten">'
+    + '<svg class="ico" style="width:13px;height:13px" aria-hidden="true"><use href="#i-pencil"/></svg>'
+    + '</button>';
+}
+
+/* Ein beschriftetes Feld der Notizkarte (Erkenntnis, felie merkt sich). */
+function felieNotizFeldHtml(art, kicker, wert, variante) {
+  var max = FELIE_SNIP_MAX[art] || 240;
+  return '<div class="snip notiz-feld notiz-feld--' + variante + '" data-snip="' + art + '"'
+    + ' data-snip-max="' + max + '" data-snip-label="' + felieSnipAttr(kicker) + '">'
+    + '<div class="snip-view">'
+    + '<div class="notiz-kopf"><div class="notiz-kicker">' + felieSnipAttr(kicker) + '</div>'
+    + felieSnipStiftHtml(kicker + ' bearbeiten') + '</div>'
+    /* Der Gedankenstrich haelt die Hoehe, wenn das Modell ein Feld leer
+       gelassen hat; felieSnipStart() behandelt ihn als Leereingabe. */
+    + '<div class="snip-text notiz-text">' + felieSnipAttr(wert || '—') + '</div>'
+    + '</div></div>';
+}
+
+/* Kopfzeile der Karte: Thema. Auch das ist ein Modellvorschlag ("max 4
+   Woerter") und gleichzeitig der Titel, ueber den die Nutzerin das
+   Gespraech im Archiv wiederfindet — ein daneben geratenes Thema kostet
+   sie den Zugang zum Gespraech. */
+function felieNotizThemaHtml(wert) {
+  return '<div class="snip notiz-thema" data-snip="thema" data-snip-max="'
+    + FELIE_SNIP_MAX.thema + '" data-snip-label="Thema">'
+    + '<div class="snip-view">'
+    + icoSvg('i-box', 15, '#8F5BBD')
+    + '<span class="snip-text">' + felieSnipAttr(wert || 'Unser Gespräch') + '</span>'
+    + felieSnipStiftHtml('Thema bearbeiten')
+    + '</div></div>';
+}
+
+function felieSnipHost(el) {
+  return el && el.closest ? el.closest('[data-snip]') : null;
+}
+
+function felieSnipStart(btn) {
+  var host = felieSnipHost(btn);
+  if (!host || host.dataset.snipOffen === '1') return;
+  var view = host.querySelector('.snip-view');
+  var textEl = host.querySelector('.snip-text');
+  if (!view || !textEl) return;
+
+  var art = host.dataset.snip;
+  var max = parseInt(host.dataset.snipMax, 10) || FELIE_SNIP_MAX[art] || 240;
+  var alt = (textEl.textContent || '').trim();
+  /* Ein leeres Feld zeigt in der Karte einen Gedankenstrich. Der darf nicht
+     als Ausgangstext im Eingabefeld landen, sonst tippt die Nutzerin hinter
+     einem Zeichen weiter, das nie Inhalt war. */
+  if (alt === '—' || alt === '-') alt = '';
+
+  host.dataset.snipOffen = '1';
+  host.dataset.snipAlt = alt;
+  view.style.display = 'none';
+
+  var form = document.createElement('div');
+  form.className = 'snip-form';
+  form.innerHTML =
+    '<textarea class="snip-input" rows="2" maxlength="' + max + '"'
+    + ' aria-label="' + felieSnipAttr(host.dataset.snipLabel || 'Text bearbeiten') + '"></textarea>'
+    + '<div class="snip-aktionen">'
+    + '<span class="snip-zaehler" aria-hidden="true"></span>'
+    + '<button type="button" class="snip-ab" onclick="felieSnipAbbrechen(this)">Abbrechen</button>'
+    + '<button type="button" class="snip-ok" onclick="felieSnipUebernehmen(this)">Übernehmen</button>'
+    + '</div>';
+  host.appendChild(form);
+
+  var ta = form.querySelector('.snip-input');
+  var zaehler = form.querySelector('.snip-zaehler');
+  ta.value = alt;
+
+  function wachsen() {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 128) + 'px';
+    if (zaehler) zaehler.textContent = ta.value.trim().length + '/' + max;
+  }
+  ta.addEventListener('input', wachsen);
+  ta.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); felieSnipAbbrechen(ta); return; }
+    /* Enter uebernimmt. Alle vier Snippet-Arten sind Einzeiler; ein
+       Zeilenumbruch darin waere im Archiv und im Prompt nur Rauschen.
+       Shift+Enter bleibt frei, falls doch mal umgebrochen werden soll. */
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); felieSnipUebernehmen(ta); }
+  });
+  wachsen();
+  try { ta.focus({ preventScroll: true }); } catch (e) { try { ta.focus(); } catch (e2) {} }
+  try { ta.setSelectionRange(alt.length, alt.length); } catch (e) {}
+}
+
+function felieSnipUebernehmen(el) {
+  var host = felieSnipHost(el);
+  if (!host) return;
+  var ta = host.querySelector('.snip-input');
+  var textEl = host.querySelector('.snip-text');
+  if (!ta || !textEl) { felieSnipSchliessen(host); return; }
+
+  var max = parseInt(host.dataset.snipMax, 10) || 240;
+  var neu = ta.value.replace(/\s+/g, ' ').trim();
+  if (neu.length > max) neu = neu.slice(0, max).trim();
+
+  /* Leer heisst hier NICHT loeschen. Zum Weglassen gibt es bei den
+     Merkzeilen das Antippen und fuer die ganze Karte "Verwerfen"; ein
+     leeres Feld hinterliesse im Archiv nur ein Loch. Also: verwerfen
+     wir die Eingabe und behalten den alten Satz. */
+  if (!neu) { felieSnipSchliessen(host); return; }
+
+  if (neu !== (host.dataset.snipAlt || '')) {
+    textEl.textContent = neu;
+    felieSnipSchreiben(host, neu);
+  }
+  felieSnipSchliessen(host);
+}
+
+function felieSnipAbbrechen(el) {
+  var host = felieSnipHost(el);
+  if (host) felieSnipSchliessen(host);
+}
+
+function felieSnipSchliessen(host) {
+  if (!host) return;
+  var form = host.querySelector('.snip-form');
+  if (form) form.remove();
+  var view = host.querySelector('.snip-view');
+  if (view) view.style.display = '';
+  host.dataset.snipOffen = '0';
+  /* Fokus zurueck auf den Stift, sonst landet er nach dem Entfernen des
+     Formulars am Dokumentanfang und der Tab-Ring der Karte bricht. */
+  var stift = host.querySelector('.snip-edit');
+  if (stift) { try { stift.focus({ preventScroll: true }); } catch (e) {} }
+}
+
+/* Gibt es auf der Karte eine offene Bearbeitung? Das Overlay nutzt das,
+   um den ersten Tap nach draussen als "Bearbeitung beenden" zu lesen
+   statt gleich die ganze Karte zu schliessen. */
+function felieSnipOffen(wurzel) {
+  var w = wurzel || document;
+  return w.querySelector('[data-snip][data-snip-offen="1"]');
+}
+
+function felieSnipAlleSchliessen(wurzel) {
+  var w = wurzel || document;
+  Array.prototype.forEach.call(
+    w.querySelectorAll('[data-snip][data-snip-offen="1"]'),
+    function (h) { felieSnipSchliessen(h); });
+}
+
+function felieSnipSchreiben(host, wert) {
+  var art = host.dataset.snip;
+
+  if (art === 'merk') {
+    var v = window._felieMerkVorschlag;
+    if (!v) return;
+    var i = parseInt(host.dataset.i, 10);
+    var liste = host.dataset.typ === 'fakt' ? v.fakten : v.faeden;
+    if (liste && liste[i]) liste[i].text = wert;
+    /* Bewusst NICHT in den Store: fuer Fakten und Faeden gilt weiter, dass
+       erst "Speichern" schreibt. Der Stift aendert nur den Vorschlag. */
+    return;
+  }
+
+  /* ── Gedaechtnis: id-basiert, nicht index-basiert ──────────────────
+     Auf der Notizkarte sind die Eintraege Vorschlaege an Position i.
+     Im Gedaechtnis existieren sie schon und haben eine id. Korrekturen
+     gehen hier also direkt in den Store bzw. ins Archiv — es gibt keinen
+     spaeteren Bestaetigungsschritt, der sie noch schreiben koennte. */
+  if (art === 'fakt') {
+    try {
+      felieFaktSetzen({
+        id: host.dataset.snipId,
+        text: wert,
+        kategorie: host.dataset.snipKat || 'allgemein',
+        klasse: host.dataset.snipKlasse || 'volatil',
+        quelle: host.dataset.snipQuelle || 'gespraech'
+      });
+      felieStoreSpeichern();
+      felieAutosave();
+    } catch (e) {}
+    return;
+  }
+
+  if (art === 'faden') {
+    try {
+      felieEpisodeAendern(host.dataset.snipId, wert);
+      felieStoreSpeichern();
+      felieAutosave();
+    } catch (e) {}
+    return;
+  }
+
+  if (art === 'chatlernt') {
+    /* Der Satz gehoert zu einem archivierten Gespraech. Nur dieses eine
+       Feld wird gepatcht — Verlauf und Erkenntnis bleiben unberuehrt, das
+       Gespraech bleibt im Archiv aufrufbar. */
+    var cid = parseInt(host.dataset.snipId, 10);
+    felieChatFeldSetzen(cid, { felie_lernt: wert });
+    try { fillHomeThemen(); } catch (e) {}
+    return;
+  }
+
+  if (window._felieNotizSummary) window._felieNotizSummary[art] = wert;
+  var patch = {};
+  patch[art] = wert;
+  felieChatFeldSetzen(window._letzteChatId, patch);
+  /* Die Themenkarten auf der Startseite zeigen Thema und Erkenntnis. Ohne
+     das hier stuende dort nach dem Schliessen der Karte der alte Satz.
+     Nur fillHomeThemen, nicht refreshHome: die Begruessung neu aufzubauen,
+     waehrend die Notizkarte noch offen liegt, ist unnoetige Unruhe. */
+  try { fillHomeThemen(); } catch (e) {}
+}
+
+/* Einzelne Felder eines archivierten Gespraechs nachtraeglich aendern.
+   Bewusst ein Patch und kein Ueberschreiben des ganzen Datensatzes: der
+   Verlauf, der Koerper-Schnappschuss und der Zeitstempel bleiben so
+   unberuehrt, auch wenn spaeter Felder hinzukommen. */
+function felieChatFeldSetzen(id, patch) {
+  if (id == null || !patch) return false;
+  try {
+    var chats = getSavedChats();
+    var treffer = false;
+    chats.forEach(function (c) {
+      if ((c.id || c.timestamp) !== id) return;
+      Object.keys(patch).forEach(function (k) { c[k] = patch[k]; });
+      treffer = true;
+    });
+    if (!treffer) return false;
+    localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
+    /* Sicherung mitziehen — sonst kaeme bei einem Geraetewechsel der
+       unkorrigierte Satz zurueck. Im Browser ist das ein No-op. */
+    try { felieAutosave(); } catch (e) {}
+    return true;
+  } catch (e) { return false; }
+}
+
 /* Markup fuer die Bestaetigung. Standardmaessig ausgewaehlt, mit einem Tap
-   abwaehlbar: waere es umgekehrt, blieb das Gedaechtnis in der Praxis leer. */
+   abwaehlbar: waere es umgekehrt, blieb das Gedaechtnis in der Praxis leer.
+   Der Stift dahinter ergaenzt die dritte Option: nicht ganz uebernehmen,
+   nicht ganz weglassen, sondern richtigstellen. */
 function felieMerkAuswahlHtml(v) {
   if (!v || (!v.fakten.length && !v.faeden.length)) return '';
   window._felieMerkVorschlag = v;
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
+  /* data-typ und data-i bleiben unveraendert — felieMerkUebernehmen() liest
+     sie weiter von hier, das Uebernehmen musste dafuer nicht angefasst
+     werden. Neu sind nur data-snip* und der innere Aufbau. */
+  function zeile(typ, i, text, tag) {
+    return '<div class="merk-zeile aktiv snip" data-snip="merk" data-snip-max="'
+      + FELIE_SNIP_MAX.merk + '" data-snip-label="Merknotiz bearbeiten"'
+      + ' data-typ="' + typ + '" data-i="' + i + '">'
+      + '<div class="snip-view merk-inner">'
+      + '<button type="button" class="merk-toggle" aria-pressed="true" onclick="felieMerkToggle(this)">'
+      + '<span class="merk-haken" aria-hidden="true">✓</span>'
+      + '<span class="snip-text merk-text">' + esc(text) + '</span>'
+      + '<span class="merk-tag">' + esc(tag) + '</span>'
+      + '</button>'
+      + felieSnipStiftHtml('„' + text + '" bearbeiten')
+      + '</div></div>';
+  }
+
   var zeilen = [];
-  v.fakten.forEach(function (f, i) {
-    zeilen.push('<button class="merk-zeile aktiv" data-typ="fakt" data-i="' + i + '" onclick="felieMerkToggle(this)">'
-      + '<span class="merk-haken">✓</span><span class="merk-text">' + esc(f.text) + '</span>'
-      + '<span class="merk-tag">' + esc(f.kategorie) + '</span></button>');
-  });
-  v.faeden.forEach(function (e, i) {
-    zeilen.push('<button class="merk-zeile aktiv" data-typ="faden" data-i="' + i + '" onclick="felieMerkToggle(this)">'
-      + '<span class="merk-haken">✓</span><span class="merk-text">' + esc(e.text) + '</span>'
-      + '<span class="merk-tag">vorübergehend</span></button>');
-  });
+  v.fakten.forEach(function (f, i) { zeilen.push(zeile('fakt', i, f.text, f.kategorie)); });
+  v.faeden.forEach(function (e, i) { zeilen.push(zeile('faden', i, e.text, 'vorübergehend')); });
 
   return '<div class="merk-block">'
     + '<div class="merk-kicker">Das möchte ich mir merken</div>'
-    + '<div class="merk-sub">Tippe an, was ich weglassen soll.</div>'
+    + '<div class="merk-sub">Tippe an, was ich weglassen soll — mit dem Stift änderst du den Text.</div>'
     + zeilen.join('')
     + '</div>';
 }
 
 function felieMerkToggle(btn) {
-  btn.classList.toggle('aktiv');
+  /* Die Klasse "aktiv" sitzt weiter auf .merk-zeile, weil
+     felieMerkUebernehmen() sie dort erwartet. Geklickt wird jetzt aber der
+     innere Button, also von dort nach oben suchen. Der erste Zweig faengt
+     alte Aufrufe ab, die das Element selbst uebergeben. */
+  var zeile = btn.classList && btn.classList.contains('merk-zeile')
+    ? btn : (btn.closest ? btn.closest('.merk-zeile') : null);
+  if (!zeile) return;
+  /* Weglassen schliesst eine offene Bearbeitung: ein durchgestrichener
+     Eintrag mit offenem Textfeld waere ein Widerspruch. */
+  if (zeile.dataset.snipOffen === '1') felieSnipSchliessen(zeile);
+  var an = zeile.classList.toggle('aktiv');
+  var t = zeile.querySelector('.merk-toggle');
+  if (t) {
+    t.setAttribute('aria-pressed', an ? 'true' : 'false');
+    /* felieSnipSchliessen() legt den Fokus auf den Stift — der ist bei einer
+       weggelassenen Zeile aber ausgeblendet, der Fokus waere weg. Also
+       zurueck auf die Zeile selbst. */
+    if (!an) { try { t.focus({ preventScroll: true }); } catch (e) {} }
+  }
 }
 
 /* Uebernimmt die noch ausgewaehlten Vorschlaege. Wird nur aus "Speichern"
@@ -12037,53 +13022,6 @@ function felieKernNote() {
   return '\n\n' + teile.join('\n\n') + '\n';
 }
 
-/* ── Ansicht: Das weiss felie ueber dich ──────────────────────────────
-   Ohne diese Ansicht waere die Faktenspur eine unsichtbare Sammlung.
-   Sie ist auch der Grund, warum "Gespraech verworfen" ehrlich bleibt:
-   ein Fakt aus einem geloeschten Gespraech ueberlebt, aber er ist hier
-   einsehbar und einzeln loeschbar. */
-function felieWissenHtml() {
-  var fakten = [], offen = [];
-  try { fakten = felieFakten(); } catch (e) {}
-  try { offen = felieEpisoden({ nurAktuell: true }); } catch (e) {}
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-  if (!fakten.length && !offen.length) {
-    return '<div class="wissen-leer">Noch nichts. Was du mir erzählst, zeige ich dir hier — '
-      + 'und du kannst jederzeit etwas davon löschen.</div>';
-  }
-
-  var html = '';
-  if (fakten.length) {
-    html += '<div class="wissen-kicker">Über dich</div>';
-    fakten.forEach(function (f) {
-      var alt = f.alterTage > 180 ? '<span class="wissen-alt">lange nicht erwähnt</span>' : '';
-      html += '<div class="wissen-zeile"><span class="wissen-text">' + esc(f.text) + alt + '</span>'
-        + '<button class="wissen-del" onclick="felieWissenLoeschen(\'fakt\',\'' + esc(f.id).replace(/'/g, "\\'") + '\')" '
-        + 'aria-label="Löschen">Löschen</button></div>';
-    });
-  }
-  if (offen.length) {
-    html += '<div class="wissen-kicker" style="margin-top:14px;">Gerade offen</div>';
-    offen.forEach(function (e) {
-      html += '<div class="wissen-zeile"><span class="wissen-text">' + esc(e.text) + '</span>'
-        + '<button class="wissen-del" onclick="felieWissenLoeschen(\'faden\',\'' + esc(e.id).replace(/'/g, "\\'") + '\')" '
-        + 'aria-label="Erledigt">Erledigt</button></div>';
-    });
-  }
-  return html;
-}
-
-function felieWissenLoeschen(typ, id) {
-  try {
-    if (typ === 'fakt') felieFaktLoeschen(id);
-    else felieEpisodeAbschliessen(id);
-    felieStoreSpeichern();
-  } catch (e) {}
-  var box = document.getElementById('wissen-box');
-  if (box) box.innerHTML = felieWissenHtml();
-}
-
 function showChatSummaryCard(summary, messages) {
   /* Archivieren darf die Karte nicht verhindern — bei vollem localStorage
      wirft saveChat, und die Nutzerin saehe sonst nur den leerlaufenden Loader. */
@@ -12139,23 +13077,33 @@ function dismissBackupHint() {
 }
 
 function showSummaryPopup(summary) {
-  function esc(s){ return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   var existing = document.getElementById('summary-popup');
   if (existing) existing.remove();
+  /* Referenz auf das Objekt, an dem der Stift arbeitet. Ohne die zeigte die
+     Karte nach einer Korrektur den neuen Satz, das Summary-Objekt aber noch
+     den alten. */
+  window._felieNotizSummary = summary || {};
   var ov = document.createElement('div');
   ov.id = 'summary-popup';
   ov.style.cssText = 'position:absolute;inset:0;z-index:60;background:rgba(24, 4, 48,0.55);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeUp 0.25s ease both;';
-  ov.addEventListener('click', function(e){ if (e.target === ov) ov.remove(); });
+  ov.addEventListener('click', function(e){
+    if (e.target !== ov) return;
+    /* Erst die offene Bearbeitung beenden, dann beim naechsten Tap die
+       Karte. Sonst raeumt ein Fehltipp neben der Karte eine halb
+       getippte Korrektur weg — und die Karte gleich mit. */
+    if (felieSnipOffen(ov)) { felieSnipAlleSchliessen(ov); return; }
+    ov.remove();
+  });
   ov.innerHTML =
     '<div style="background:white;border-radius:22px;border:1.5px solid rgba(225, 234, 125,0.3);padding:20px;max-width:320px;width:100%;box-shadow:0 16px 48px rgba(24, 4, 48,0.32);">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
         '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#180430;">felies Notiz · gerade eben</div>' +
-        '<button onclick="document.getElementById(\'summary-popup\').remove()" style="font-size:18px;color:#6B5A88;background:none;border:none;cursor:pointer;line-height:1;">×</button>' +
+        '<button onclick="felieNotizSchliessen()" style="font-size:18px;color:#6B5A88;background:none;border:none;cursor:pointer;line-height:1;" aria-label="Schließen">×</button>' +
       '</div>' +
-      '<div style="font-size:16px;font-weight:600;color:#180430;margin-bottom:12px;">' + icoSvg('i-box', 15, '#8F5BBD') + ' ' + esc(summary.thema || 'Unser Gespräch') + '</div>' +
+      felieNotizThemaHtml(summary.thema) +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
-        '<div style="background:#E6E0EE;border-radius:10px;padding:10px 12px;"><div style="font-size:10px;font-weight:600;color:#8F5BBD;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Deine Erkenntnis</div><div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(summary.erkenntnis) + '</div></div>' +
-        '<div style="background:rgba(225, 234, 125,0.06);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">felie merkt sich</div><div style="font-size:13px;color:#4A3A6A;line-height:1.5;">' + esc(summary.felie_lernt) + '</div></div>' +
+        felieNotizFeldHtml('erkenntnis', 'Deine Erkenntnis', summary.erkenntnis, 'erkenntnis') +
+        felieNotizFeldHtml('felie_lernt', 'felie merkt sich', summary.felie_lernt, 'lernt') +
       '</div>' +
       /* Vorschlaege zur Bestaetigung. Nichts davon ist gespeichert,
          bevor die Nutzerin "Speichern" tippt. */
@@ -12170,12 +13118,40 @@ function showSummaryPopup(summary) {
   document.querySelector('.phone').appendChild(ov);
 }
 
+/* Eine offene Bearbeitung wird beim Verlassen der Karte uebernommen, nicht
+   verworfen: die Nutzerin hat den Text gerade selbst getippt, sie ist die
+   verlaesslichere Quelle als der Modellvorschlag darunter. Gilt fuer × und
+   fuer "Speichern" — nur der Overlay-Tap daneben bricht ab, weil der oft
+   ein Fehltipp ist. */
+function felieNotizEingabenUebernehmen() {
+  var pop = document.getElementById('summary-popup');
+  if (!pop) return;
+  var offen;
+  while ((offen = felieSnipOffen(pop))) {
+    var ok = offen.querySelector('.snip-ok');
+    if (!ok) { felieSnipSchliessen(offen); continue; }
+    felieSnipUebernehmen(ok);
+  }
+}
+
+function felieNotizSchliessen() {
+  felieNotizEingabenUebernehmen();
+  var pop = document.getElementById('summary-popup');
+  if (pop) pop.remove();
+}
+
 /* Uebernimmt die bestaetigten Merknotizen und schliesst die Karte. Wichtig
    ist die Trennung: das Gespraech selbst ist beim Erzeugen der Karte schon
    archiviert, Fakten und Faeden werden ERST hier geschrieben. Wer verwirft
    oder wegwischt, hinterlaesst also nichts im Gedaechtnis. */
 function felieMerkSpeichern() {
+  /* Zuerst offene Stift-Eingaben uebernehmen. Ohne das ginge die Korrektur
+     verloren, wenn die Nutzerin nach dem Tippen direkt auf "Speichern"
+     tippt statt vorher auf "Übernehmen" — und genau das ist der
+     wahrscheinlichere Weg. */
+  try { felieNotizEingabenUebernehmen(); } catch (e) {}
   try { felieMerkUebernehmen(); } catch (e) {}
+  window._felieNotizSummary = null;
   var pop = document.getElementById('summary-popup');
   if (pop) pop.remove();
 }
@@ -12185,8 +13161,11 @@ function felieMerkSpeichern() {
    Rueckfrage gibt es hier bewusst nicht: die Nutzerin sieht auf der Karte
    genau, was sie wegwirft. */
 function verwerfeLetztesGespraech() {
-  /* Vorschlaege fallen mit dem Gespraech weg — sie waren nie gespeichert. */
+  /* Vorschlaege fallen mit dem Gespraech weg — sie waren nie gespeichert.
+     Korrekturen an Thema und Erkenntnis standen zwar schon im Archiveintrag,
+     der wird hier aber gleich mit geloescht. */
   window._felieMerkVorschlag = null;
+  window._felieNotizSummary = null;
   var id = window._letzteChatId;
   if (id != null) {
     try {

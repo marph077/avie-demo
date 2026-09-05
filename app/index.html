@@ -10075,6 +10075,26 @@ var FELIE_FRAGEN = {
 
 function felieNachfragenGestellt() { return window._felieNachfragen || 0; }
 
+/* Manche Stimmungen beantworten die Anspannungsfrage bereits. Wer im
+   Ritual "gestresst" angibt, muss nicht zwei Minuten spaeter noch einmal
+   auf einer Skala einordnen, wie angespannt sie ist — das liest sich, als
+   haette felie nicht zugehoert.
+     Bewusst nur diese drei: "müde" oder "traurig" sagen nichts ueber
+   Anspannung, dort bleibt die Frage sinnvoll. */
+var FELIE_DECKT_AB = {
+  anspannung: ['gestresst', 'ueberfordert', 'gereizt']
+};
+
+function felieSignalAbgedeckt(key) {
+  var deckung = FELIE_DECKT_AB[key];
+  if (!deckung) return false;
+  var e = null;
+  try { e = felieAktuell('stimmung', { quelle: 'selbst' }); } catch (err) { return false; }
+  if (!e) return false;
+  var liste = felieStimmungListe(e.wert);
+  return liste.some(function (k) { return deckung.indexOf(k) >= 0; });
+}
+
 /* Welches Signal fehlt fuer dieses Thema? Gibt null zurueck, wenn schon
    eine frische Selbstauskunft vorliegt, das Budget aufgebraucht ist oder
    zu diesem Signal in dieser Session schon gefragt wurde. */
@@ -10098,6 +10118,8 @@ function felieNachfrageBedarf(text, moodKey) {
     var key = kandidaten[i];
     if (!FELIE_FRAGEN[key]) continue;
     if (window._felieGefragt[key]) continue;
+    /* Schon durch die Stimmung beantwortet — nicht doppelt fragen. */
+    if (felieSignalAbgedeckt(key)) continue;
     var vorhanden = null;
     try { vorhanden = felieAktuell(key, { quelle: 'selbst' }); } catch (e) {}
     if (vorhanden) continue;

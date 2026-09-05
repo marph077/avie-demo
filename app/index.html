@@ -3480,8 +3480,21 @@ function personalizeApp() {
       parts.push('Du bist in der <strong>' + cd.phase + '</strong>' + cycleDayPart(cd, ', ') + '. ' + (phaseDesc[cd.phase] || ''));
     }
 
-    // 2. Schlaf
-    if (mb && mb.sleepMins) {
+    /* 2. Nacht — Selbstauskunft zuerst. Die gemessene Dauer kommt nur
+       zum Zug, wenn sie NICHTS berichtet hat: "6h 48m" sagt nichts
+       darueber, ob die Nacht erholsam war. */
+    var eNacht = null;
+    try { eNacht = felieAktuell('schlafqualitaet', { quelle: 'selbst' }); } catch (e) {}
+    if (eNacht) {
+      var wNacht = felieStufenWort('schlafqualitaet', eNacht.wert);
+      var bNacht = felieBand('schlafqualitaet', eNacht.wert, 'selbst');
+      if (bNacht === 'niedrig') {
+        parts.push('Deine Nacht hast du als <strong>' + wNacht + '</strong> beschrieben — das trägt in den Tag hinein.'
+          + (phase === 'Lutealphase' ? ' In der Lutealphase erholt sich das Nervensystem ohnehin langsamer.' : ''));
+      } else if (bNacht === 'hoch') {
+        parts.push('Deine Nacht war <strong>' + wNacht + '</strong> — eine gute Basis für heute.');
+      }
+    } else if (mb && mb.sleepMins) {
       if (mb.sleepMins < 300) {
         parts.push('Dein Schlaf war mit <strong>' + mb.sleepStr + '</strong> sehr kurz — das belastet Konzentration, Stimmung und Stresstoleranz direkt.' + (phase === 'Lutealphase' ? ' In der Lutealphase ist der Schlafbedarf ohnehin höher, das verstärkt sich.' : ''));
       } else if (mb.sleepMins < 360) {
@@ -3626,6 +3639,21 @@ function felieSkalaWert(key, i) {
   var a = FELIE_SKALEN[key];
   if (!a) return null;
   return Math.round(((i + 1) / a.length) * 100);
+}
+
+/* Wie war die Nacht? Selbstauskunft zuerst, gemessene Dauer nur ersatzweise.
+   Ohne diesen Helfer rechneten Tipps, Stimmungsableitung und Tageskarte
+   weiter mit mb.sleepMins — das ist seit der Umstellung ein reiner
+   Geraetewert und bei Nutzerinnen ohne Wearable immer leer. Die berichtete
+   Schlafqualitaet wurde dort also stillschweigend ignoriert. */
+function felieNachtBand() {
+  try {
+    var e = felieAktuell('schlafqualitaet', { quelle: 'selbst' });
+    if (e) return felieBand('schlafqualitaet', e.wert, 'selbst');
+    var m = felieAktuell('schlaf', { quelle: 'oura' });
+    if (m) return felieBand('schlaf', m.wert, 'oura');
+  } catch (err) {}
+  return null;
 }
 
 function felieStufenWort(key, score) {
@@ -5078,121 +5106,109 @@ function startApp() {
 
 // ── Dashboard Analyse — felie erklärt die Werte im Guide-Stil ──
 function buildAnalysisSteps() {
-  const cd = (function(){ try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
-  const mb = window.manualBodyData;
+  /* Frueher las diese Funktion das alte Modell: mb.sleepMins, mb.energyScore
+     und mb.stressScore als Rohschwellen. Seit Schlaf selbst als QUALITAET
+     erfasst wird und die Dauer ein reiner Geraetewert ist, war sleepMins
+     bei Nutzerinnen ohne Wearable schlicht leer — felie sprach dann von
+     einem Schlafwert "null", als haette die Nutzerin nicht geschlafen.
+     Ausserdem wurde nicht geprueft, ob die Werte von heute stammen.
+       Jetzt: dieselbe Systematik wie ueberall — Selbstauskunft in Worten,
+     mit Alter und Quelle, Messwerte nur bestaetigend, und die
+     Kombinationsmuster als eigene Einordnung. */
+  var cd = (function () { try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
+  var z = null;
+  try { z = felieZyklusAttribut(Date.now()); } catch (e) {}
+  var phase = z ? z.phase : null;
+  var derPhase = phase ? 'die ' + phase : 'manche Zyklusphase';
 
-  /* Ohne hinterlegte Zyklusdaten wird KEINE Phase behauptet. Frueher standen
-     hier feste Rueckfallwerte (Lutealphase, Tag 19 von 28, noch 9 Tage) — die
-     App hat damit einen Zyklusstand bei Nutzerinnen behauptet, von denen sie
-     nichts wusste. Eine Phasenbestimmung ohne Grundlage ist eine Aussage ueber
-     einen physiologischen Zustand (MDR Art. 2 Nr. 1). */
-  const phase    = cd ? cd.phase : null;
-  const cycleDay = (cd && cd.cycleDay != null) ? cd.cycleDay : null;
-  const cycleLen = cd ? cd.selectedLen : null;
-  /* Formulierungshilfen, damit die Texte auch ohne Phase lesbar bleiben. */
-  const inPhase  = phase ? 'in der ' + phase : 'gerade';
-  const derPhase = phase ? 'die ' + phase : 'manche Zyklusphase';
-
-  const energyScore = mb ? mb.energyScore : null;
-  const sleepStr    = (mb && mb.sleepStr) ? mb.sleepStr : null;
-  const sleepMins   = mb ? mb.sleepMins   : null;
-  const stressScore = mb ? mb.stressScore : null;
-  const hrv         = mb ? mb.hrv         : null;
-  const recovery    = mb ? mb.recovery    : null;
-
-  // Phase descriptions in felie's voice
-  const phaseVoice = {
-    'Menstruation':  {
-      hormone: 'In dieser Phase liegen Östrogen und Progesteron bei den meisten Frauen am niedrigsten.',
-      energy:  'Die meisten Frauen merken in dieser Phase: der Körper will Ruhe, keine Leistung.',
-      tip:     'Wärme, leichte Bewegung, keine großen Entscheidungen — der Körper weiß was er braucht.'
-    },
-    'Follikelphase': {
-      hormone: 'In dieser Phase steigt bei den meisten Frauen das Östrogen.',
-      energy:  'Konzentration, Motivation, Belastbarkeit steigen. Die Phase zum Anpacken.',
-      tip:     'Guter Moment für neue Projekte, schwierige Gespräche, Sport mit mehr Intensität.'
-    },
-    'Lutealphase': {
-      hormone: 'In dieser Phase ist Progesteron bei den meisten Frauen höher und Östrogen niedriger.',
-      energy:  'Viele Frauen erleben die Stresstoleranz dann als niedriger — dasselbe kann sich mehr anfühlen als sonst.',
-      tip:     'Erholung priorisieren. Nicht weniger leisten — anders leisten.'
-    }
-  };
-  const pv = phase ? phaseVoice[phase] : null;
-
-  // ── STEP 1: Das Gesamtbild ──
-  let signals = [];
-  if (sleepMins !== null) {
-    if (sleepMins >= 420)      signals.push('Schlaf war gut (' + sleepStr + ')');
-    else if (sleepMins >= 360) signals.push('Schlaf war etwas knapp (' + sleepStr + ')');
-    else                       signals.push('Schlaf zu kurz (' + sleepStr + ')');
+  function holen(key) { try { return felieAktuell(key, { quelle: 'selbst' }); } catch (e) { return null; } }
+  function letzter(key) {
+    try { var v = felieVerlauf(key, { quelle: 'selbst' }); return v.length ? v[v.length - 1] : null; }
+    catch (e) { return null; }
   }
-  if (energyScore !== null) {
-    if (energyScore >= 70)      signals.push('Energie hoch');
-    else if (energyScore >= 50) signals.push('Energie mittel');
-    else                        signals.push('Energie niedrig');
-  }
-  if (stressScore !== null && stressScore > 60) signals.push('Stresslevel erhöht');
-  /* != null statt !== null: fehlende Felder sind undefined, nicht null —
-     sonst stand im Text "HRV undefined ms". */
-  if (hrv != null && hrv !== '') signals.push('HRV ' + hrv + ' ms');
-  if (recovery != null && recovery !== '') signals.push(recoveryKurz(mb) + ' ' + recovery + '/100');
 
-  let gesamtText = '';
-  if (signals.length > 0) {
-    gesamtText = signals.join(' · ') + '.<br><br>';
-  }
+  var eSt = holen('stimmung'), eNa = holen('schlafqualitaet'),
+      eEn = holen('energie'),  eAn = holen('anspannung');
+
+  /* ── Schritt 1: Was felie heute weiss ── */
+  var zeilen = [];
+  if (eSt) zeilen.push('Stimmung: <strong>' + (felieStimmungLabel(eSt.wert) || '—') + '</strong>');
+  if (eNa) zeilen.push('Nacht: <strong>' + (felieStufenWort('schlafqualitaet', eNa.wert) || '—') + '</strong>');
+  if (eEn) zeilen.push('Energie: <strong>' + (felieStufenWort('energie', eEn.wert) || '—') + '</strong>');
+  if (eAn) zeilen.push('Anspannung: <strong>' + (felieStufenWort('anspannung', eAn.wert) || '—') + '</strong>');
+
+  /* Wearable nur als Zusatz, klar als Messung benannt. */
+  var mess = [];
+  try {
+    var mSchlaf = felieAktuell('schlaf', { quelle: 'oura' });
+    if (mSchlaf) mess.push('Schlafdauer ' + ((mSchlaf.meta && mSchlaf.meta.str) || ouraFmtSleep(mSchlaf.wert)));
+    var mb2 = window.manualBodyData;
+    if (mb2 && mb2.recovery != null && mb2.quelle_energie !== 'selbst') mess.push('Readiness ' + mb2.recovery);
+  } catch (e) {}
+
+  var gesamtText = '';
   if (phase) {
-    /* "Rechnerisch" statt "du bist": die Phase folgt aus der eigenen Angabe zur
-       letzten Periode, sie ist keine Messung und kein Befund. */
-    gesamtText += 'Rechnerisch liegst du gerade in der <strong>' + phase + '</strong>';
-    if (cycleDay != null && cycleLen) gesamtText += ', Tag ' + cycleDay + ' von ' + cycleLen;
-    gesamtText += ' — das ergibt sich aus deiner Angabe zur letzten Periode. ' + pv.hormone + ' ' + pv.energy;
+    gesamtText += 'Du bist <strong>Tag ' + z.zyklusTag + '</strong> ' +
+      (phase === 'Menstruation' ? 'deines Zyklus' : 'in der <strong>' + phase + '</strong>') + '.<br><br>';
+  }
+  if (zeilen.length) {
+    gesamtText += 'Das hast du mir heute erzählt:<br>' + zeilen.join('<br>');
+    if (mess.length) gesamtText += '<br><br>Dazu von deinem Wearable: ' + mess.join(', ') + '.';
   } else {
-    gesamtText += 'Zu deinem Zyklus liegt mir gerade nichts vor — die Einordnung stützt sich nur auf die Werte oben.';
+    /* Alte Angaben werden mit Alter genannt statt als heutige ausgegeben —
+       und "nicht erfasst" wird nicht als Wert null dargestellt. */
+    var alt = [];
+    [['stimmung', 'Stimmung'], ['schlafqualitaet', 'Nacht'], ['energie', 'Energie']].forEach(function (p) {
+      var e = letzter(p[0]);
+      if (!e) return;
+      var w = (p[0] === 'stimmung') ? felieStimmungLabel(e.wert) : felieStufenWort(p[0], e.wert);
+      if (w) alt.push(p[1] + ': ' + w + ' (' + felieAlterText(e.ts) + ')');
+    });
+    gesamtText += alt.length
+      ? 'Von heute habe ich noch nichts. Zuletzt hast du mir das erzählt:<br>' + alt.join('<br>')
+      : 'Von dir habe ich bisher noch nichts — erzähl mir einfach, wie es dir geht.';
+    if (mess.length) gesamtText += '<br><br>Von deinem Wearable: ' + mess.join(', ') + '.';
   }
 
-  if (sleepMins !== null && sleepMins < 360 && stressScore !== null && stressScore > 60) {
-    gesamtText += '<br><br>Kurzer Schlaf und erhöhter Stress gleichzeitig — eine Kombination, die viele Frauen als doppelt belastend erleben. Kein Wunder, wenn heute alles etwas schwerer wirkt.';
-  } else if (sleepMins !== null && sleepMins < 360) {
-    gesamtText += '<br><br>Dazu kommt der Schlaf: ' + sleepStr + ' ist wenig. Schlafmangel verstärkt alles — Stressempfinden, Heißhunger, Reizbarkeit. Das ist Biologie, kein Charakter.';
-  } else if (stressScore !== null && stressScore > 60) {
-    gesamtText += '<br><br>Dein Stresslevel ist erhöht.' + (phase ? ' Viele Frauen erleben ihre Stresstoleranz in der ' + phase + ' ohnehin als niedriger — dasselbe kann sich gerade mehr anfühlen als sonst.' : '');
+  /* ── Schritt 2: Was das bedeuten kann ── */
+  var teile = [];
+
+  /* Erst die Muster, weil sie auf ihrer eigenen Historie beruhen und
+     damit mehr wiegen als eine Phasenaussage. */
+  var km = null;
+  try { km = felieKombiMuster(); } catch (e) {}
+  if (km && km.muster.length) {
+    teile.push('Was sich bei dir über die Zeit zeigt: ' + km.muster[0].text);
   }
 
-  // ── STEP 2: Was das bedeutet ──
-  let bedeutungText = '';
-  const problems = [];
-  if (sleepMins !== null && sleepMins < 360) problems.push('schlaf');
-  if (energyScore !== null && energyScore < 50) problems.push('energie');
-  if (stressScore !== null && stressScore > 70) problems.push('stress');
+  /* Dann die Phase — als Vermutung, nie als Feststellung. */
+  if (phase === 'Lutealphase' || phase === 'Menstruation') {
+    teile.push('In ' + derPhase + ' erleben viele Frauen ihre Belastungsgrenze als niedriger. '
+      + 'Dasselbe kann sich dann mehr anfühlen als sonst — das sagt nichts über dich aus.');
+  } else if (phase === 'Follikelphase') {
+    teile.push('In ' + derPhase + ' steigt bei vielen Frauen das Östrogen. '
+      + 'Antrieb und Konzentration sind dann oft eher auf deiner Seite.');
+  }
 
-  if (problems.length === 0) {
-    /* Der Zusatz passt nur zu den kraftzehrenden Phasen — in der Follikelphase
-       waere "kostet mehr Kraft als andere" schlicht falsch. */
-    var fordernd = (phase === 'Lutealphase' || phase === 'Menstruation');
-    bedeutungText = (signals.length ? 'Deine Werte sehen heute ordentlich aus.' : 'Zu deinen Körperwerten liegt mir heute nichts vor.')
-      + (fordernd ? ' Trotzdem: ' + derPhase + ' kostet bei vielen Frauen mehr Kraft als andere — auch wenn die Zahlen das nicht direkt zeigen.' : '')
-      + '<br><br>Was heute helfen kann: bewusst wählen, wo du Energie investierst. Nicht alles gleichzeitig — fokussierte Arbeit fällt vielen dann leichter als Multitasking.';
-  } else {
-    if (problems.includes('schlaf') && problems.includes('stress')) {
-      bedeutungText = 'Kurzer Schlaf und hoher Stress zusammen können bedeuten, dass dein Nervensystem heute wenig Puffer hat. Entscheidungen fallen dann oft schwerer, Kleinigkeiten kosten mehr. Das ist keine schlechte Phase — das ist ein Körper, der gerade viel trägt.<br><br>Was heute helfen kann: eine Sache nach der anderen. Kein Multitasking. Große Entscheidungen möglichst verschieben.';
-    } else if (problems.includes('schlaf')) {
-      bedeutungText = 'Bei ' + sleepStr + ' Schlaf können Konzentration, Gedächtnis und emotionale Regulation heute eingeschränkt sein. Nicht weil du nicht willst — sondern weil das Gehirn Schlaf zum Konsolidieren braucht.<br><br>Was helfen kann: wichtige Gespräche oder Entscheidungen möglichst verschieben. Pausen aktiv einplanen statt durchziehen.';
-    } else if (problems.includes('energie')) {
-      bedeutungText = 'Niedrige Energie ist selten ein Motivationsproblem.' + (phase ? ' ' + derPhase + ' spielt oft mit hinein — bei vielen Frauen erhöht Progesteron den Schlafbedarf und senkt den Antrieb.' : '') + ' Dazu kommt, was gerade sonst noch läuft.<br><br>Was helfen kann: realistisch planen, was wirklich heute sein muss — und was warten kann. Weniger ist gerade oft mehr.';
-    } else if (problems.includes('stress')) {
-      bedeutungText = 'Ein erhöhter Stresslevel kann darauf hindeuten, dass dein Nervensystem gerade wenig Spielraum hat.' + (phase ? ' In ' + derPhase + ' erleben viele Frauen ihre Stresstoleranz ohnehin als niedriger — beides kann sich gegenseitig verstärken.' : '') + '<br><br>Auch kleine Reize kosten dann mehr. Das liegt nicht an dir. Eine kurze Pause — auch 10 Minuten ohne Input — kann dem Nervensystem spürbar helfen.';
+  /* Dann offene Faeden — was gerade sonst noch traegt. */
+  try {
+    var offen = felieEpisoden({ nurAktuell: true });
+    if (offen.length) {
+      teile.push('Dazu kommt, was gerade sowieso läuft: ' + offen.map(function (e) { return e.text; }).join(', ') + '.');
     }
+  } catch (e) {}
+
+  if (!teile.length) {
+    teile.push('Für eine Einordnung habe ich noch zu wenig von dir. '
+      + 'Je öfter du mir erzählst, wie es dir geht, desto genauer sehe ich, was bei dir zusammenhängt.');
   }
 
-  /* Schlusssatz als Überleitung ins Gespräch: eine offene Rückfrage, keine
-     weitere Deutung. Die Nutzerin ist die Einzige, die weiß, ob es stimmt. */
-  bedeutungText += '<br><br>Kannst du dich darin wiedererkennen — oder fühlt es sich für dich ganz anders an?';
+  var bedeutungText = teile.join('<br><br>')
+    + '<br><br>Kannst du dich darin wiedererkennen — oder fühlt es sich für dich ganz anders an?';
 
   return [
-    { label: 'Das Gesamtbild',   icon: 'i-eye',  title: 'Dein Körper heute', text: gesamtText },
-    { label: 'Was das bedeutet', icon: 'i-mind', title: 'Für deinen Tag',    text: bedeutungText }
+    { label: 'Das Gesamtbild',   icon: 'i-eye',  title: 'Was ich heute weiß', text: gesamtText },
+    { label: 'Was das bedeutet', icon: 'i-mind', title: 'Für deinen Tag',     text: bedeutungText }
   ];
 }
 
@@ -5214,7 +5230,7 @@ function buildDashEmpfehlungen(container) {
   // Pick 3 contextual tips based on data
   const allTips = [];
 
-  if (sleepMins && sleepMins < 360) {
+  if (felieNachtBand() === 'niedrig') {
     allTips.push({ type:'tip-rest', icon:'<svg class="ico" style="width:18px;height:18px"><use href="#i-moon"/></svg>', cat:'SCHLAF', title:'Heute Abend früher schlafen gehen', body:'Mit ' + ((mb && mb.sleepStr) ? mb.sleepStr : '—') + ' warst du heute unter dem Bedarf' + (phase === 'Lutealphase' ? ' — in der Lutealphase braucht dein Körper 30–60 Minuten mehr Schlaf als sonst.' : '.') + ' Das Einzige was das wirklich auffüllt: früher ins Bett.' });
   }
 
@@ -5278,11 +5294,15 @@ function dashMoodKey() {
   if (!mb) return 'nachdenklich';
   const energy = mb.energyScore || 50;
   const stress = mb.stressScore || 50;
-  const sleepMins = mb.sleepMins || 420;
+  /* Nacht ueber das Band, nicht ueber Minuten — sonst zaehlt die
+     Selbstauskunft hier nicht mit. */
+  const nachtBand = felieNachtBand();
+  const nachtSchlecht = nachtBand === 'niedrig';
+  const nachtGut = nachtBand === 'hoch';
   const phase = cd ? cd.phase : '';
-  if (energy >= 70 && stress < 50 && sleepMins >= 400) return 'gut drauf';
-  if (stress > 65 || (sleepMins < 360 && stress > 50)) return 'gestresst';
-  if (energy < 45 || sleepMins < 330) return 'müde';
+  if (energy >= 70 && stress < 50 && nachtGut) return 'gut drauf';
+  if (stress > 65 || (nachtSchlecht && stress > 50)) return 'gestresst';
+  if (energy < 45 || nachtSchlecht) return 'müde';
   if (phase === 'Lutealphase' || phase === 'Menstruation') return 'nachdenklich';
   return 'gut drauf';
 }
@@ -5303,8 +5323,9 @@ function buildDashTipp() {
   let emoji = '💜';
   let tipp = '';
 
-  const schlechtSchlaf = sleepMins && sleepMins < 360;
-  const sehrWenigSchlaf = sleepMins && sleepMins < 300;
+  const nachtBand2 = felieNachtBand();
+  const schlechtSchlaf = nachtBand2 === 'niedrig';
+  const sehrWenigSchlaf = (nachtBand2 === 'niedrig' && sleepMins != null && sleepMins < 300);
   const vielAufgewacht = wachphasen && wachphasen >= 3;
   const niedrigeEnergie = energyScore && energyScore < 45;
   const hoherStress = stressScore && stressScore > 65;
@@ -5740,21 +5761,56 @@ function openDashInsight() {
   var mb = window.manualBodyData;
   var cd = null;
   try { cd = cycleRefresh(); } catch (e) { cd = window.cycleData; }
-  var leer = (!mb || (mb.energyScore == null && mb.sleepMins == null && mb.stressScore == null)) && !cd;
-  if (leer) dashStartChat('Ich möchte über meine Körperdaten sprechen.');
+  /* Leer heisst: weder Zyklus noch irgendeine Selbstauskunft. Die alte
+     Pruefung sah nur auf energyScore/sleepMins/stressScore und uebersah
+     damit Stimmung und Schlafqualitaet komplett. */
+  var hatSelbst = false;
+  try {
+    hatSelbst = ['stimmung', 'schlafqualitaet', 'energie', 'anspannung'].some(function (k) {
+      return felieVerlauf(k, { quelle: 'selbst' }).length > 0;
+    });
+  } catch (e) {}
+  var leer = !hatSelbst && !cd && !mb;
+  if (leer) dashStartChat('Magst du mich fragen, wie es mir gerade geht?');
   else startDashAnalysis();
 }
 
-function dashChatAusAnalyse() {
-  var txt = '';
+/* Uebergabe ins Gespraech. Der Opener wird als NUTZERNACHRICHT gesendet,
+   deshalb ist er in ihrer Stimme formuliert. Frueher wurde der komplette
+   Analysetext mitgeschickt, inklusive fehlender Werte — felie fing dann
+   an, ueber "null" und Daten von vorgestern zu reden. Jetzt geht nur
+   mit, was tatsaechlich vorliegt, mit Alter und Quelle. */
+function felieStandText() {
+  var teile = [];
   try {
-    txt = buildAnalysisSteps().map(function(s) {
-      return s.text.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
-    }).join(' ');
+    var z = felieZyklusAttribut(Date.now());
+    if (z && z.phase) teile.push(z.phase + ', Tag ' + z.zyklusTag);
   } catch (e) {}
-  var opener = 'Ich habe mir gerade meine Körperdaten im Dashboard angesehen.';
-  if (txt) opener += ' Das stand dort: ' + txt;
-  opener += ' Wie fühlt sich das für dich an — magst du mit mir darüber sprechen?';
+  [['stimmung', 'Stimmung'], ['schlafqualitaet', 'Nacht'],
+   ['energie', 'Energie'], ['anspannung', 'Anspannung']].forEach(function (p) {
+    var e = null;
+    try { e = felieAktuell(p[0], { quelle: 'selbst' }); } catch (err) {}
+    var frisch = !!e;
+    if (!e) {
+      try { var v = felieVerlauf(p[0], { quelle: 'selbst' }); e = v.length ? v[v.length - 1] : null; }
+      catch (err) {}
+    }
+    if (!e) return;
+    var w = (p[0] === 'stimmung') ? felieStimmungLabel(e.wert) : felieStufenWort(p[0], e.wert);
+    if (!w) return;
+    teile.push(p[1] + ': ' + w + (frisch ? '' : ' (' + felieAlterText(e.ts) + ')'));
+  });
+  return teile.join(' · ');
+}
+
+function dashChatAusAnalyse() {
+  var stand = '';
+  try { stand = felieStandText(); } catch (e) {}
+  var opener = stand
+    ? 'Ich habe mir gerade mein Dashboard angesehen. Stand: ' + stand
+      + '. Magst du mir helfen, das einzuordnen?'
+    : 'Ich habe mir gerade mein Dashboard angesehen, da steht aber noch nicht viel. '
+      + 'Magst du mich fragen, wie es mir gerade geht?';
   dashStartChat(opener);
 }
 
@@ -6769,9 +6825,22 @@ function felieRitualStarten() {
         + '<div class="ritual-zaehler">' + schritte.length + ' von ' + schritte.length + '</div>'
       + '</div>'
       + '<div class="ritual-mitte"><div class="ritual-abschluss">' + satz + '</div></div>'
-      + '<div class="ritual-fuss"><button class="ritual-fertig">Fertig</button></div>'
+      + '<div class="ritual-fuss">'
+        /* Uebergang ins Gespraech direkt aus dem Abschluss — derselbe Weg
+           wie "Körperdaten einordnen" im Dashboard, damit felie in beiden
+           Faellen denselben Stand bekommt. Nur anbieten, wenn ueberhaupt
+           etwas erfasst wurde. */
+        + (erfasst > 0 ? '<button class="ritual-fertig">Mit felie besprechen</button>' : '')
+        + '<button class="' + (erfasst > 0 ? 'ritual-zurueck' : 'ritual-fertig') + '" id="ritual-ende">Fertig</button>'
+      + '</div>'
       + '</div>';
-    bd.querySelector('.ritual-fertig').addEventListener('click', function () {
+    if (erfasst > 0) {
+      bd.querySelector('.ritual-fertig').addEventListener('click', function () {
+        felieRitualSchliessen(erfasst);
+        setTimeout(function () { try { dashChatAusAnalyse(); } catch (e) {} }, 260);
+      });
+    }
+    bd.querySelector('#ritual-ende').addEventListener('click', function () {
       felieRitualSchliessen(erfasst);
     });
   }
@@ -8438,10 +8507,16 @@ function hedgeNote() {
 function bodySnapshotText() {
   var cd = window.cycleData, mb = window.manualBodyData;
   var parts = [];
+  /* Selbstauskunft zuerst und in Worten, danach erst Geraetewerte —
+     dieselbe Reihenfolge wie ueberall sonst. */
+  try {
+    var eSt = felieAktuell('stimmung', { quelle: 'selbst' });
+    if (eSt) parts.push('Stimmung ' + felieStimmungLabel(eSt.wert));
+    var eNa = felieAktuell('schlafqualitaet', { quelle: 'selbst' });
+    if (eNa) parts.push('Nacht ' + felieStufenWort('schlafqualitaet', eNa.wert));
+  } catch (e) {}
   if (mb) {
-    if (mb.sleepStr) parts.push('Schlaf ' + mb.sleepStr + (mb.wachphasen != null ? ' (' + (mb.wachphasen === 0 ? 'durchgeschlafen' : mb.wachphasen + (mb.wachphasen >= 5 ? '+' : '') + 'x aufgewacht') + ')' : ''));
-    /* Energie und Anspannung sind angetippte Stufen, kein Score aus 100.
-       Als "/100" gelesen wirken sie wie gemessen. */
+    if (mb.sleepStr && mb.quelle_schlaf === 'oura') parts.push('Schlafdauer ' + mb.sleepStr + ' (Wearable)');
     if (mb.energyScore != null) parts.push('Energie ' + (felieStufenWort('energie', mb.energyScore) || mb.energyScore));
     if (mb.stressScore != null) parts.push('Anspannung ' + (felieStufenWort('anspannung', mb.stressScore) || mb.stressScore));
     if (mb.hrv) parts.push('HRV ' + mb.hrv + 'ms (Wearable)');

@@ -2264,11 +2264,27 @@ var FELIE_FELD_MAP = {
   wachphasen:  { key: 'wachphasen', einheit: 'anzahl' }
 };
 
-/* Felder aus manualBodyData, die kein Signal sind, sondern Beiwerk
-   (Quellenkennung, Vergleichszeile, Geraet). Gehen unveraendert
-   durch, damit vorhandene Anzeigen nicht brechen. */
-var FELIE_BEIWERK = ['source', 'ouraDay', 'geraet', 'compareLine', 'sleepScore',
-                     'readinessScore', 'hrvBalance', 'sleepStr'];
+/* Alles, was kein Signal ist, geht unveraendert durch — Quellenkennung,
+   Geraet, Verlaufs- und Vergleichszeilen.
+     Frueher stand hier eine POSITIVLISTE. Die war unvollstaendig: das
+   Oura-Ergebnis enthaelt trend7, ouraHistory und ouraHistory30, die
+   darauf fehlten und beim Rundlauf durch den Store lautlos verloren
+   gingen. mb.trend7 liefert an vier Promptstellen die Durchschnitts- und
+   Vergleichszahlen — ohne sie fand felie "keine Zahlen", obwohl der
+   Abruf erfolgreich war.
+     Eine Positivliste ist hier der falsche Ansatz: sie muss bei jedem
+   neuen Feld nachgezogen werden und scheitert still. Umgekehrt gilt
+   jetzt: nur Signalfelder und Abgeleitetes werden herausgefiltert, der
+   Rest geht durch. */
+var FELIE_ABGELEITET = ['updatedAt', 'tsEnergy', 'tsSleep', 'tsStress'];
+
+function felieIstBeiwerk(feld) {
+  if (feld === 'sleepStr') return false;          /* kommt aus dem Signal selbst */
+  if (FELIE_FELD_MAP[feld]) return false;         /* ist ein Signal */
+  if (FELIE_ABGELEITET.indexOf(feld) >= 0) return false;
+  if (feld.indexOf('quelle_') === 0) return false;
+  return true;
+}
 
 function felieStore() {
   if (!window._felieStore) {
@@ -2448,9 +2464,12 @@ function felieUebernehmeAltObjekt(obj, quelleHint) {
     if (!vorhanden) felieSchreibeSignal(def.key, wert, quelle, meta, feldTs);
   });
 
-  /* Beiwerk sammeln, damit vorhandene Anzeigen weiterlaufen */
-  FELIE_BEIWERK.forEach(function(f) {
-    if (f in obj && obj[f] !== null && obj[f] !== undefined) felieStore().zusatz[f] = obj[f];
+  /* Beiwerk sammeln, damit vorhandene Anzeigen und Promptbloecke
+     weiterlaufen. Alles ausser Signalen und Abgeleitetem. */
+  Object.keys(obj).forEach(function(f) {
+    if (!felieIstBeiwerk(f)) return;
+    if (obj[f] === null || obj[f] === undefined) return;
+    felieStore().zusatz[f] = obj[f];
   });
   felieStore().zusatz.updatedAt = ts;
   window._bodyUpdatedAt = ts;
@@ -2849,9 +2868,9 @@ function felieBaueAltSicht() {
   if (!hatWert) return null;
 
   var z = felieStore().zusatz || {};
-  FELIE_BEIWERK.forEach(function(f) {
-    if (f === 'sleepStr') return;                 /* kommt aus dem Signal selbst */
-    if (z[f] !== undefined) out[f] = z[f];
+  Object.keys(z).forEach(function(f) {
+    if (f === 'updatedAt') return;
+    if (out[f] === undefined) out[f] = z[f];
   });
   out.updatedAt = z.updatedAt || null;
   return out;
@@ -7246,7 +7265,9 @@ function renderSpiegelWearable() {
     zeile('Ruhepuls', mb.rhr ? mb.rhr + ' bpm' : null);
     zeile('Tiefschlaf', mb.deep ? mb.deep + ' min' : null);
     zeile('REM', mb.rem ? mb.rem + ' min' : null);
-    zeile('Temperatur', mb.temp ? ((mb.temp > 0 ? '+' : '') + mb.temp + ' \u00b0C') : null);
+    /* temp bringt das Vorzeichen schon mit ("+0.3") — ein zweites davor
+       ergab "++0.3 \u00b0C". */
+    zeile('Temperatur', (mb.temp != null && mb.temp !== '') ? (mb.temp + ' \u00b0C') : null);
   }
   var stand = '';
   if (mb && mb.ouraDay) {
@@ -7489,9 +7510,35 @@ function fetchOuraData(onDone) {
     var readyArr = (o.daily_readiness && o.daily_readiness.data) || [];
     var stressArr = (o.daily_stress && o.daily_stress.data) || [];
 
-    // Hauptschlaf = letzter Eintrag mit type === 'long_sleep'
-    var longs = sleepArr.filter(function(s) { return s.type === 'long_sleep' && s.total_sleep_duration > 0; });
-    if (!longs.length) throw new Error('Kein Hauptschlaf (long_sleep) gefunden');
+    /* Hauptschlaf gestuft auswaehlen statt starr. Frueher wurde nur
+       type === 'long_sleep' akzeptiert und sonst der ganze Abruf
+       verworfen ("Kein Hauptschlaf (long_sleep) gefunden"), obwohl
+       Schlafdaten vorlagen. Oura kennt mehrere Typwerte ('long_sleep',
+       'sleep', 'late_nap', 'rest'), und Demo- oder Sandbox-Daten
+       liefern nicht zwingend denselben. */
+    var mitDauer = sleepArr.filter(function(s) { return s.total_sleep_duration > 0; });
+    var longs = mitDauer.filter(function(s) { return s.type === 'long_sleep'; });
+    if (!longs.length) {
+      /* Zweite Stufe: alles ab drei Stunden gilt als Hauptschlaf. */
+      longs = mitDauer.filter(function(s) { return s.total_sleep_duration >= 3 * 3600; });
+    }
+    if (!longs.length && mitDauer.length) {
+      /* Dritte Stufe: die laengste vorhandene Schlafphase. */
+      longs = [mitDauer.reduce(function(a, b) {
+        return (b.total_sleep_duration > a.total_sleep_duration) ? b : a;
+      })];
+    }
+    if (!longs.length) {
+      /* Jetzt ist wirklich nichts da. Die Meldung sagt, WAS ankam, statt
+         nur was fehlte — sonst ist die Ursache nicht zu finden. */
+      var typen = sleepArr.map(function(s) { return s.type; })
+        .filter(function(v, i, a) { return v && a.indexOf(v) === i; });
+      throw new Error('Keine verwertbaren Schlafdaten. Erhalten: '
+        + sleepArr.length + ' Schlafeintraege'
+        + (typen.length ? ' (Typen: ' + typen.join(', ') + ')' : '')
+        + ', ' + dailySleep.length + ' daily_sleep, '
+        + readyArr.length + ' daily_readiness.');
+    }
     var ls = longs[longs.length - 1];
     var day = ls.day;
 
@@ -8010,7 +8057,8 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
     const sleepTag = sleep.mins >= 420 ? 'okay' : sleep.mins >= 360 ? 'etwas wenig' : 'zu wenig';
     const hrvVal   = mb.hrv  ? mb.hrv  + ' ms'  : '—';
     const rhrVal   = mb.rhr  ? mb.rhr  + ' bpm' : '—';
-    const tempVal  = mb.temp ? (mb.temp > 0 ? '+' : '') + mb.temp + '°C' : '—';
+    /* temp ist bereits vorzeichenbehaftet ("+0.3") */
+    const tempVal  = (mb.temp != null && mb.temp !== '') ? (mb.temp + '°C') : '—';
     const hrvTag   = mb.hrv  ? (mb.hrv < 35 ? 'niedrig' : mb.hrv < 55 ? 'normal' : 'gut') : '';
     const rhrTag   = mb.rhr  ? (mb.rhr < 50 ? 'niedrig' : mb.rhr <= 70 ? 'normal' : 'erhöht') : '';
 
@@ -8035,7 +8083,7 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
       (mb.recovery ? row('i-battery', recoveryKurz(mb), mb.recovery + '/100', '', mb.recovery >= 70 ? 'gut' : mb.recovery >= 50 ? 'okay' : 'niedrig', mb.recovery >= 70 ? '#8F5BBD' : mb.recovery >= 50 ? '#8F5BBD' : '#C0392B') : '') +
       (mb.hrv  ? row('i-pulse', 'HRV', mb.hrv + ' ms', '', mb.hrv < 35 ? 'niedrig' : mb.hrv < 55 ? 'normal' : 'gut', mb.hrv < 35 ? '#C0392B' : mb.hrv < 55 ? '#8F5BBD' : '#8F5BBD') : '') +
       (mb.rhr  ? row('i-heart', 'Ruhepuls', mb.rhr + ' bpm', '', mb.rhr <= 60 ? 'gut' : mb.rhr <= 70 ? 'normal' : 'erhöht', mb.rhr <= 60 ? '#8F5BBD' : mb.rhr <= 70 ? '#8F5BBD' : '#C0392B') : '') +
-      (mb.temp ? row('i-temp', 'Körpertemperatur', (mb.temp > 0 ? '+' : '') + mb.temp + '°C', 'Abweichung vom Schnitt', '', '') : '');
+      (mb.temp ? row('i-temp', 'Körpertemperatur', mb.temp + '°C', 'Abweichung vom Schnitt', '', '') : '');
 
     if (koerperLocked) {
       koerperLocked.style.animation = 'dashOut 0.3s ease both';
@@ -10487,7 +10535,7 @@ function feliePromptContext() {
     if (mb.rhr)      koerperContext += '- Ruhepuls: ' + mb.rhr + ' bpm\n';
     if (mb.deep)     koerperContext += '- Tiefschlaf: ' + mb.deep + ' min\n';
     if (mb.rem)      koerperContext += '- REM-Schlaf: ' + mb.rem + ' min\n';
-    if (mb.temp)     koerperContext += '- Körpertemperatur: ' + (mb.temp > 0 ? '+' : '') + mb.temp + '\u00b0C\n';
+    if (mb.temp)     koerperContext += '- Körpertemperatur: ' + mb.temp + '\u00b0C\n';
     if (mb.hrvBalance) koerperContext += '- HRV-Balance: ' + mb.hrvBalance + '/100\n';
     if (mb.sleepScore) koerperContext += '- Schlaf-Score: ' + mb.sleepScore + '/100\n';
     if (mb.trend7)   koerperContext += mb.trend7.split('\n').filter(function(l){ return l.trim(); }).map(function(l){ return '- ' + l; }).join('\n') + '\n';

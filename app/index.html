@@ -10298,7 +10298,9 @@ function addMsg(text, who) {
   row.className = 'msg-row ' + who;
   if (who === 'felie') {
     var needCycle = /\[\[NEED:cycle\]\]/i.test(text);
-    var needBody  = /\[\[NEED:body\]\]/i.test(text);
+    /* [[NEED:body]] steht nicht mehr im Prompt. Der Marker wird nur noch
+       herausgefiltert, falls das Modell ihn aus Gewohnheit setzt — sonst
+       stuende die Zeichenfolge sichtbar im Chat. */
     text = text.replace(/\[\[NEED:(cycle|body)\]\]/gi, '').replace(/\n{3,}/g, '\n\n').trim();
   var cycleMissing = !window.cycleData;
     var mb = window.manualBodyData;
@@ -10312,10 +10314,22 @@ function addMsg(text, who) {
        fragt felie genau das eine fehlende Signal nach — Chips, ein Tap,
        im Gesprächsfluss. Das Formular bleibt als Sekundaerpfad im
        Dashboard erreichbar. */
+    /* Zwei Fehler steckten hier drin.
+       Erstens hing die Rueckfrage am Marker [[NEED:body]], den das Modell
+       laut Prompt nur setzt, wenn GAR KEINE Koerperdaten vorliegen. Nach
+       der Selbstreflexion sind Stimmung, Nacht und Energie da — also kein
+       Marker, also nie Chips. Ausgerechnet Anspannung, das einzige Signal,
+       das nur ueber die Rueckfrage erfasst wird, war damit unerreichbar.
+       Zweitens bekam felieNachfrageBedarf den Text von FELIES Antwort statt
+       die Nachricht der Nutzerin — das Thema setzt aber sie.
+       Die Rueckfrage laeuft jetzt deterministisch: Thema aus ihrer
+       Nachricht, Bedarf aus dem Store. Das Budget begrenzt es ohnehin auf
+       zwei pro Sitzung und ein Signal genau einmal. */
     var nfKey = null;
-    if (needBody) {
-      try { nfKey = felieNachfrageBedarf(text, (typeof dashMoodKey === 'function' ? dashMoodKey() : null)); } catch (e) {}
-    }
+    try {
+      nfKey = felieNachfrageBedarf(window._felieThemaInput || '',
+        (typeof dashMoodKey === 'function' ? dashMoodKey() : null));
+    } catch (e) {}
     /* Antwort wurde vom Token-Limit gekappt -> Knopf zum Fortsetzen */
     if (window._lastCut) {
       ctaBtns.push('<button onclick="continueFelie(this)" class="data-cta">' +
@@ -10687,14 +10701,12 @@ function feliePromptContext() {
   var fehlendeDaten = phaseNote
     ? 'FEHLENDE DATEN (Kennenlern-Phase):\n' +
       '- Erfinde keine Körperwerte. Sprich jetzt aber auch NICHT von dir aus an, dass Daten fehlen, und setze KEINE Marker.\n' +
-      '- Nur wenn die Nutzerin ausdrücklich nach ihren EIGENEN Körperwerten fragt: sag ehrlich, dass du sie noch nicht kennst, und hänge dann [[NEED:body]] bzw. [[NEED:cycle]] ans Ende. Sonst bleib beim Kennenlernen.\n\n'
+      '- Nur wenn die Nutzerin ausdrücklich nach ihren EIGENEN Körperwerten fragt: sag ehrlich, dass du sie noch nicht kennst, und hänge dann [[NEED:cycle]] ans Ende. Sonst bleib beim Kennenlernen.\n\n'
     : 'FEHLENDE DATEN — Marker setzen:\n' +
       '- Wenn KEINE Körperdaten vorhanden sind, behaupte NIEMALS, der Körper zeige "keine auffälligen Signale" oder Ähnliches — das wäre erfunden, denn du hast gar keine Werte. Sag stattdessen ehrlich, dass du ihre Körperwerte noch nicht kennst, ordne trotzdem inhaltlich ein was sie erzählt, und lade sie ein, ihre Werte zu verbinden oder einzutragen.\n' +
       '- Wenn du für eine fundierte Antwort die Zyklusphase brauchst, im Kontext aber steht "Keine Zyklus-Daten eingetragen", hänge GANZ AM ENDE deiner Nachricht [[NEED:cycle]] an.\n' +
-      '- Wenn du Körperdaten (Schlaf, HRV, Energie, Stress) brauchst und keine vorliegen — oder die vorhandenen ' +
-    'nicht von heute sind und für deine Antwort die heutigen Werte zählen — hänge GANZ AM ENDE [[NEED:body]] an. ' +
-    'Sag im Text kurz, warum die heutigen Werte helfen würden. Setze die Marke nicht, wenn die Frage ohne sie beantwortbar ist.\n' +
-      '- Die App wandelt den Marker in einen kleinen Button zum Eintragen um. Erwähne oder erkläre den Marker NIEMALS im Text, schreib ihn nur als exakt diese Zeichenfolge ans Ende. Höchstens einen Marker pro Nachricht, und nur wenn die Daten wirklich fehlen und du sie für deine Antwort brauchst.\n\n';
+      '- Frag NICHT selbst nach Schlaf, Energie oder Anspannung. Die App hängt bei Bedarf eine kurze Rückfrage mit Antwortmöglichkeiten unter deine Nachricht — höchstens zwei pro Gespräch. Du deutest, die App fragt.\n' +
+      '- Die App wandelt [[NEED:cycle]] in einen kleinen Button um. Erwähne oder erkläre den Marker NIEMALS im Text, schreib ihn nur als exakt diese Zeichenfolge ans Ende. Höchstens einen Marker pro Nachricht.\n\n';
   let koerperContext = '';
   if (cd) {
     koerperContext += '- Zyklusphase: ' + cd.phase + (cd.estimated ? ' (aus Körperwerten geschätzt, nicht aus Perioden-Logging)' : '') + cycleDayPart(cd, ', ') + (cd.estimated || cd.unknown ? '' : ' (nächste Periode in ~' + cd.daysLeft + ' Tagen)') + '\n';

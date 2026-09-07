@@ -947,7 +947,20 @@ html.native-app .phone {
   border: 1.5px solid rgba(24, 4, 48,0.10); border-radius: 24px; padding: 8px; transition: border-color 0.2s;
 }
 .input-row:focus-within { border-color: var(--plum); }
-.chat-input { flex: 1; border: none; background: transparent; font-family: var(--font-body); font-size: 14px; color: var(--text-primary); resize: none; outline: none; line-height: 1.5; max-height: 80px; overflow-y: auto; }
+/* Vertikale Zentrierung der Texteingabe.
+   Die Zeilenhoehe von .input-row wird von den Knoepfen bestimmt (send 36px),
+   das Textfeld ist bei einer Zeile nur 21px hoch. Mit align-items:flex-end
+   klebte der Text damit 15px zu tief am unteren Rand.
+   Loesung: 7.5px Polsterung oben und unten fuellen das Feld auf die 36px
+   der Knoepfe auf — der Text sitzt mittig, und beim Wachsen auf mehrere
+   Zeilen bleibt die Polsterung als sauberer Innenabstand stehen.
+   box-sizing:border-box ist Pflicht, weil autoH()/klGrow() die Hoehe auf
+   scrollHeight setzen und der Wert die Polsterung schon enthaelt — ohne
+   border-box waere das Feld je Wachstumsschritt 15px zu hoch.
+   Verworfen: align-items:center auf .input-row. Das zentriert bei einer
+   Zeile korrekt, laesst bei mehrzeiliger Eingabe aber Senden- und
+   Mikrofonknopf in die Mitte des Feldes rutschen statt unten zu bleiben. */
+.chat-input { flex: 1; box-sizing: border-box; padding: 7.5px 2px; border: none; background: transparent; font-family: var(--font-body); font-size: 14px; color: var(--text-primary); resize: none; outline: none; line-height: 1.5; max-height: 80px; overflow-y: auto; }
 .chat-input::placeholder { color: var(--text-secondary); }
 /* Knoepfe in der Eingabezeile. Der Zeilenhintergrund ist hell, deshalb Plum
    als Symbolfarbe — die frueher verwendete weisse Variante war darauf
@@ -2190,12 +2203,26 @@ body.is-native .status-bar { display: none !important; }
           </div>
         </div>
 
-        <!-- Nutzer Eingabefeld -->
+        <!-- Nutzer Eingabefeld
+             Lag vorher als festes 2-Zeilen-Feld (rows="2") ohne Wachstum vor.
+             Der Text stand damit in der oberen Zeile und die untere blieb
+             leer — vertikal also gerade nicht mittig. Jetzt eine Zeile mit
+             Polsterung, die den Text zentriert, plus autoH() zum Mitwachsen,
+             damit laengere Eingaben nicht abgeschnitten werden.
+             ABWEICHUNG, bitte pruefen: das Feld ist im Ruhezustand rund
+             25px flacher als vorher (44px statt 69px) und liegt damit auf
+             der Hoehe des Sendeknopfs. Eine Zentrierung bei gleichbleibender
+             Hoehe waere nur mit rund 22px Polsterung je Seite gegangen —
+             dann bliebe beim Tippen kaum Platz fuer die zweite Zeile,
+             bevor das Feld scrollt. Die Eingabe hier ist ohnehin nur der
+             Einstieg: homeUserReply() uebergibt sofort ans Chatfenster,
+             lange Texte entstehen dort. -->
         <div id="home-input-wrap" style="padding-left:42px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;">
           <textarea id="home-user-input"
             placeholder="Was liegt dir auf dem Herzen…"
-            rows="2"
-            style="flex:1;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:#180430;outline:none;resize:none;line-height:1.5;box-shadow:0 2px 8px rgba(24, 4, 48,0.06);"
+            rows="1"
+            oninput="autoH(this)"
+            style="flex:1;box-sizing:border-box;padding:10px 14px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:#180430;outline:none;resize:none;line-height:1.5;overflow-y:auto;box-shadow:0 2px 8px rgba(24, 4, 48,0.06);"
             onfocus="this.style.borderColor='#8F5BBD'"
             onblur="this.style.borderColor='rgba(143, 91, 189,0.25)'"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();homeUserReply();}" aria-label="Deine Nachricht an felie"></textarea>
@@ -2210,11 +2237,11 @@ body.is-native .status-bar { display: none !important; }
 
       </div>
 
-      <!-- Trennstreifen zum Chatbereich + Deine Themen -->
+      <!-- Trennstreifen zum Chatbereich + Deine letzten Gespraeche -->
       <div style="flex-shrink:0;">
         <div style="height:1px;background:rgba(24, 4, 48,0.12);margin:2px 2px 16px;"></div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 10px;">
-          <span style="font-size:15px;font-weight:600;color:#180430;">Deine letzten Themen</span>
+          <span style="font-size:15px;font-weight:600;color:#180430;">Deine letzten Gespräche</span>
           <span onclick="showVerlauf()" style="font-size:12px;color:#8F5BBD;cursor:pointer;font-weight:500;">Alle ansehen</span>
         </div>
         <div id="home-themen" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -2430,6 +2457,37 @@ var BLOOM = '<svg width="22" height="22" aria-label="felie"><use href="#felie-ma
 var FELIE_FRISCHE_MS   = 24 * 60 * 60 * 1000;   /* 24 h, generell */
 var FELIE_AUFBEWAHRUNG = 365 * 24 * 60 * 60 * 1000;
 var FELIE_STORE_KEY    = 'felie_store_v1';
+
+/* ── Alle localStorage-Schluessel an EINER Stelle ─────────────────────
+   Vorher hielten felieBackupData() und doResetUserData() je eine eigene
+   handgepflegte Liste. Die liefen auseinander: felie_store_v1 fehlte im
+   Backup (behoben) und fehlte zusaetzlich im Loeschpfad — dort bis jetzt.
+   Folge: "Nutzerdaten loeschen" und "Einwilligung widerrufen" entfernten
+   Profil und Gespraeche, liessen aber Signale, Fakten und Episoden
+   stehen. Nach einem neuen Onboarding standen deshalb Eintraege aus
+   frueheren Sitzungen im Gedaechtnis, die wie fest eingebaute
+   Beispieldaten wirken.
+   Beide Funktionen lesen jetzt diese Liste. Wer einen Schluessel
+   hinzufuegt, traegt ihn genau hier ein. */
+var FELIE_LS_KEYS = [
+  'felie_profile', 'felie_saved_chats', 'felie_body_data', FELIE_STORE_KEY,
+  'felie_personality', 'felie_checkins', 'felie_body_reminder_date',
+  'felie_wearable',
+  'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
+  'felie_guide_gedaechtnis', 'felie_guide_home',
+  'felie_guide_home_deferred', 'felie_backup_hint_off'
+];
+
+/* Nur loeschen, nicht sichern:
+   - felie_body_history: stillgelegter Parallelspeicher.
+   - felie_store_migrated: Merker der avie_-Umbenennung. Bleibt er liegen,
+     laeuft die Migration nach einem Loeschen nicht erneut — sie soll auf
+     einem geleerten Speicher aber wieder greifen duerfen.
+   - felie_session_id: pseudonyme Kennung, die am Feedback haengt. Sie
+     gehoert bei einem vollstaendigen Loeschen weg. Bewusst NICHT ins
+     Backup: eine auf ein anderes Geraet zurueckgeholte Kennung wuerde
+     zwei Nutzungen zu einer verschmelzen. */
+var FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id'];
 
 /* Selbstauskunft: die drei Signale, die die Nutzerin selbst angibt.
    Nur diese duerfen die Deutung tragen. */
@@ -4473,7 +4531,9 @@ function homeUserReply() {
     window._awaitingOnboardingNote = false;
     captureOnboardingNote(userMsg);
   }
-  input.value = '';
+  /* Hoehe mit zuruecksetzen: das Feld waechst jetzt mit (autoH), ohne Reset
+     bliebe es nach dem Senden auf der Hoehe der letzten Eingabe stehen. */
+  input.value = ''; input.style.height = 'auto';
 
   // Willkommensnachricht (Begrüßung + offene Frage) als felie-Bubble übernehmen
   /* Frueher wurden hier zwei Elemente zusammengesetzt (statische Begruessung
@@ -8550,17 +8610,10 @@ function felieConfirmYes() {
 }
 
 function felieBackupData() {
-  /* felie_store_v1 haelt Signale, Fakten und Episoden — also praktisch
-     alles, was felie ueber die Nutzerin gelernt hat. Es fehlte hier und
-     fiel damit lautlos aus jedem Backup. felie_body_history ist der
-     stillgelegte Parallelspeicher und dafuer entfallen. */
-  var keys = ['felie_profile', 'felie_saved_chats', 'felie_body_data', 'felie_store_v1',
-              'felie_personality', 'felie_checkins', 'felie_body_reminder_date',
-              'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
-              'felie_guide_gedaechtnis', 'felie_guide_home',
-              'felie_guide_home_deferred', 'felie_backup_hint_off'];
+  /* Schluesselliste kommt aus FELIE_LS_KEYS (Definition dort kommentiert).
+     Frueher stand hier eine eigene Kopie, die vom Loeschpfad abwich. */
   var store = {};
-  keys.forEach(function(k) { var v = localStorage.getItem(k); if (v !== null) store[k] = v; });
+  FELIE_LS_KEYS.forEach(function(k) { var v = localStorage.getItem(k); if (v !== null) store[k] = v; });
   return { app: 'felie', version: 1, exportedAt: new Date().toISOString(), store: store };
 }
 
@@ -8771,21 +8824,19 @@ function resetUserDataConfirm(title, message) {
 
 function doResetUserData() {
   try {
-    localStorage.removeItem('felie_profile');
-    localStorage.removeItem('felie_saved_chats');
-    localStorage.removeItem('felie_body_data'); localStorage.removeItem('felie_body_history');
-    localStorage.removeItem('felie_checkins');
-    localStorage.removeItem('felie_personality');
-    localStorage.removeItem('felie_guide_archiv');
-    localStorage.removeItem('felie_guide_profil');
-    localStorage.removeItem('felie_guide_gedaechtnis');
-    localStorage.removeItem('felie_guide_dashboard');
-    localStorage.removeItem('felie_guide_home');
-    localStorage.removeItem('felie_guide_home_deferred');
-    /* Auch den Sicherungs-Hinweis zuruecksetzen: nach einem vollstaendigen
-       Loeschen beginnt ein neues Profil, das eine Sicherung erst recht braucht. */
-    localStorage.removeItem('felie_backup_hint_off');
+    /* Dieselbe Liste wie das Backup, plus die Altlasten. Vorher stand hier
+       eine handgepflegte Aufzaehlung, in der felie_store_v1 und
+       felie_body_reminder_date fehlten — Fakten und Episoden ueberlebten
+       damit jedes Loeschen und jeden Widerruf. */
+    FELIE_LS_KEYS.concat(FELIE_LS_KEYS_ALTLAST).forEach(function(k) {
+      localStorage.removeItem(k);
+    });
   } catch(e) {}
+  /* Auch den Speicher im Arbeitsgedaechtnis leeren. Normalerweise erledigt
+     das der Reload; scheitert der (siehe catch unten), wuerde der naechste
+     felieStoreSpeichern()-Aufruf sonst die geloeschten Fakten sofort
+     zurueckschreiben. */
+  try { window._felieStore = { version: 1, signale: [], fakten: [], episoden: [] }; } catch(e) {}
   try { location.reload(); } catch(e) {
     var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
   }

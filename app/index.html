@@ -3064,7 +3064,11 @@ function felieEpisodeAendern(id, text) {
   if (!id || !text) return false;
   var liste = felieStore().episoden;
   for (var i = 0; i < liste.length; i++) {
-    if (liste[i].id === id) { liste[i].text = text; felieRevision(true); return true; }
+    if (liste[i].id === id) {
+      liste[i].text = text; liste[i].bearbeitetAm = Date.now();
+      liste[i].quelle = 'selbst'; liste[i].belege = [];
+      felieRevision(true); return true;
+    }
   }
   return false;
 }
@@ -3182,7 +3186,7 @@ Object.defineProperty(window, 'manualBodyData', {
 /* ── Persistenz ───────────────────────────────────────────────────── */
 
 function felieStoreSpeichern() {
-  try { localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore())); } catch (e) {}
+  try { localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore())); return true; } catch (e) { return false; }
 }
 
 function felieStoreLaden() {
@@ -4417,88 +4421,223 @@ function refreshHome() {
   fillHomeThemen();
 }
 
-function homeInit(fromOnboarding) {
-  var hour = new Date().getHours();
-  /* greet/name werden nur noch als Fallback gebraucht: wenn der
-     willkommen-Request scheitert, steht sonst eine nackte Frage ohne
-     jede Anrede auf der Startseite. */
-  var greet = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
-  var greetPrefix = greet + (userName ? ', ' + userName : '') + ' 👋';
-
-  /* Der Riegel hing an der statischen Begruessungsbubble; die ist weg.
-     Ohne Bubble 2 hat homeInit nichts zu bespielen. */
-  if (!document.getElementById('home-question-bubble-wrap')) return;
-
-  // Körperdaten & Themen bei jedem Betreten des Homescreens aktualisieren
-  fillHomeData();
-  fillHomeThemen();
-
-  updateHomeGuideUI(!!fromOnboarding);
-  /* Kein Popup mehr auf der Startseite — felie fragt im Chat, wenn die Werte für ihre Antwort zählen. */
-  // Eingabefeld sicher sichtbar und aktiv
-  var iw = document.getElementById('home-input-wrap');
-  if (iw) iw.style.display = 'flex';
-  var ui = document.getElementById('home-user-input');
-  if (ui) ui.disabled = false;
-
-  // Körperdaten-Hinweis erscheint jetzt als Popup, nicht mehr im Begrüßungstext
-  var bHint = document.getElementById('home-body-hint');
-  if (bHint) { bHint.style.display = 'none'; bHint.innerHTML = ''; }
-
-  // 2. Show second bubble with typing indicator
-  var qWrap = document.getElementById('home-question-bubble-wrap');
-  var oq = document.getElementById('home-open-question');
-  if (qWrap) { qWrap.style.display = 'flex'; qWrap.style.flexDirection = 'column'; }
-  if (oq) oq.innerHTML = '<span style="color:#6B5A88;">…</span>';
-
-  /* Riegel: homeInit laeuft bei JEDEM Betreten der Startseite und baut
-     Bubble 2 neu. Die Quittung darunter haengt an der Sitzung, nicht am
-     Aufruf — sie muss den Rerender ueberleben. */
-  try { renderRitualEcho(false); } catch (e) {}
-
-  // Direkt nach dem Onboarding: felie stellt die "über mich"-Frage als Willkommen
-  if (window._onboardingNoteAsk) {
-    window._onboardingNoteAsk = false;
-    window._awaitingOnboardingNote = true;
-    var offen = (klAnswers.offen || '').trim();
-    if (oq) oq.innerHTML = offen
-      ? ('Danke für vorhin — das nehme ich mit.<br><br>' + htmlEsc(offen))
-      : 'Bevor wir loslegen — magst du mir erst ein bisschen über dich erzählen? Dann bekomme ich einen besseren Eindruck davon, wie ich dich wirklich unterstützen kann.<br><br>Erzähl einfach los: wie dein Alltag gerade aussieht, was dich beschäftigt und was dir gerade wichtig ist.';
-    return;
+/* Der Startscreen hat einen eigenen, kleinen Kontext und einen Besuchszustand.
+   Ansichtswechsel erzeugen keinen neuen Gruß. Aktuelle Handlungen ersetzen
+   ihn sofort; verspätete Modellantworten dürfen diese Rückmeldung nicht überholen. */
+function felieHomeZustand() {
+  if (!window._felieHome) {
+    var zuletzt = 0;
+    try { zuletzt = Number(localStorage.getItem('felie_home_zuletzt')) || 0; } catch (e) {}
+    window._felieHome = { text: '', anlass: '', revision: 0, pending: null,
+      zuletzt: zuletzt, imHintergrund: false, erneuern: false };
   }
+  return window._felieHome;
+}
 
-  // Varying questions pool
-  var questions = hour >= 18
-    ? ['Wie war dein Tag?', 'Was hat dich heute am meisten beschäftigt?', 'Womit gehst du heute ins Bett?']
-    : ['Was bringt dich heute zu mir?', 'Welches Thema beschäftigt dich gerade besonders?', 'Gibt es noch etwas, das ich über dich wissen sollte?', 'Was bewegt dich heute?', 'Wie ist dein Gefühl gerade — was liegt an?'];
-  var question = questions[Math.floor(Math.random() * questions.length)];
+function felieHomeBesuch(zuletzt, jetzt) {
+  if (!Number.isFinite(zuletzt) || zuletzt <= 0 || zuletzt > jetzt) return 'erster_besuch';
+  if (new Date(zuletzt).toLocaleDateString('de-DE') !== new Date(jetzt).toLocaleDateString('de-DE')) return 'neuer_tag';
+  return jetzt - zuletzt >= 30 * 60000 ? 'nach_pause' : 'kurze_rueckkehr';
+}
 
-  if (userName) {
-    // 3. Fetch personalized question from API
-    var kinderCtx = { 'keine': 'keine Kinder', 'ja-klein': 'Kinder unter 6 Jahren', 'ja-gross': 'ältere Kinder' };
-    var lifeCtx = { 'job-intensiv': 'sehr intensiver Job', 'ausgewogen': 'ausgewogener Alltag', 'zuhause': 'viel zuhause', 'unberechenbar': 'sehr unberechenbarer Alltag' };
-    var wunschCtx = { 'verstanden': 'verstanden werden', 'orientierung': 'Orientierung finden', 'gesundheit': 'Körpersignale besser verstehen', 'stress': 'Stress reduzieren', 'energie': 'Energie und Balance finden',
-      'alles': 'herausfinden, ob es überhaupt ein Muster gibt' };
-    var wunschList = (Array.isArray(klAnswers.zielText) && klAnswers.zielText.length) ? klAnswers.zielText.join(', ') : (Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(Boolean).map(function(w){ return wunschCtx[w] || w; }).join(', ') : '');
-    var lebenssituation = [kinderCtx[klAnswers.kinder], lifeCtx[klAnswers.lifestyle]].filter(Boolean).join(', ');
+function felieHomeZeitMerken(jetzt) {
+  var s = felieHomeZustand();
+  s.zuletzt = jetzt || Date.now();
+  try { localStorage.setItem('felie_home_zuletzt', String(s.zuletzt)); } catch (e) {}
+}
 
-    felieRequest('willkommen', [{ role: 'user', content: felieDatenBlock('app_ereignis', { anlass: 'Startseite geöffnet' }) }], { maxTokens: 350 })
-    .then(function(data) {
-      var text = felieReplyText(data) || '';
-      /* Fallback traegt den Gruss selbst: seit die statische Bubble weg ist,
-         kommt die Anrede aus felies Text — bleibt der leer, muss sie hier
-         entstehen. */
-      if (oq) oq.innerHTML = text ? mdToHtml(text) : (htmlEsc(greetPrefix) + '<br><br>' + htmlEsc(question));
-    })
-    .catch(function() {
-      if (oq) oq.innerHTML = htmlEsc(greetPrefix) + '<br><br>' + htmlEsc(question);
+function felieHomeKontext(besuch) {
+  var jetzt = Date.now(), d = new Date(jetzt), chat = null;
+  var chats = getSavedChats().filter(function(c) { return Number.isFinite(c.timestamp) && c.timestamp <= jetzt; });
+  chats.sort(function(a, b) { return b.timestamp - a.timestamp; });
+  // Ausschließlich das letzte Gespräch. Nicht auf ein älteres ausweichen,
+  // nur weil dessen Notizen leichter nutzbar wären. Keine Rohverläufe übergeben.
+  if (chats.length) {
+    var c = chats[0], gesperrt = c.begruessungAuslassen || [];
+    var notizen = felieNotizenLesen(c).filter(function(n) {
+      return gesperrt.indexOf(n.id) < 0 && felieArchivNotizQuelle(c, n);
+    }).map(function(n) {
+      return { text: n.text, quelle: n.nachweis && n.nachweis.quelle === 'selbst'
+        ? 'von der Nutzerin bearbeitet; ersetzt die frühere Fassung' : 'belegte Gesprächsnotiz' };
     });
-
-  } else {
-    /* Ohne Namen kein API-Aufruf. Auch hier gilt: die Anrede kam vorher aus
-       der statischen Bubble, jetzt muss sie im Bubble-2-Text stehen. */
-    if (oq) oq.innerHTML = htmlEsc(greetPrefix) + '<br><br>' + htmlEsc(question);
+    chat = { datum: new Date(c.timestamp).toLocaleDateString('de-DE'), notizen: notizen,
+      zeitbezug: 'damaliges Gespräch; kein Beleg für Fortdauer' };
   }
+  var offen = felieEpisoden({ nurAktuell: true }).filter(function(e) {
+    return e.text && Number.isFinite(e.faelligBis) && e.faelligBis > jetzt;
+  }).map(function(e) {
+    var ts = Math.max.apply(Math, [e.bearbeitetAm, e.zuletztAm, e.erfasstAm].filter(function(t) {
+      return Number.isFinite(t) && t <= jetzt;
+    }).concat([0]));
+    return { text: e.text, aktualisiertAm: ts, status: 'offen' };
+  }).sort(function(a, b) { return b.aktualisiertAm - a.aktualisiertAm; });
+  var gesehen = {};
+  offen = offen.filter(function(e) {
+    var key = felieNotizSchluessel(e.text);
+    if (Object.prototype.hasOwnProperty.call(gesehen, key)) return false;
+    gesehen[key] = true; return true;
+  }).slice(0, 2);
+  return { anlass: 'Startseite geöffnet', besuch: besuch || 'erster_besuch',
+    datum: d.toLocaleDateString('de-DE'), uhrzeit: d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+    tageszeit: d.getHours() < 12 ? 'Morgen' : d.getHours() < 18 ? 'Tag' : 'Abend',
+    name: userName || null, letztesGespraech: chat, offeneEpisoden: offen };
+}
+
+function felieHomeFallback(ctx) {
+  var gruss = ctx.besuch === 'kurze_rueckkehr' ? 'Schön, dass du wieder da bist'
+    : ctx.tageszeit === 'Morgen' ? 'Guten Morgen' : ctx.tageszeit === 'Abend' ? 'Guten Abend' : 'Hallo';
+  gruss += (ctx.name ? ', ' + ctx.name : '') + '.';
+  // Ohne Modell keine semantische Umformulierung erraten. Der generische
+  // Rückbezug bleibt wahr, auch wenn sensible oder korrigierte Details fehlen.
+  return gruss + (ctx.letztesGespraech && ctx.letztesGespraech.notizen.length
+    ? ' Wenn du magst, knüpfen wir an unser letztes Gespräch an – oder du erzählst, was dir heute wichtig ist.'
+    : ' Hier ist Raum für das, was dir gerade wichtig ist.');
+}
+
+function felieHomeTextZeigen(text) {
+  var s = felieHomeZustand();
+  s.text = text;
+  var el = document.getElementById('home-open-question');
+  if (el) el.innerHTML = mdToHtml(text);
+  var wrap = document.getElementById('home-question-bubble-wrap');
+  if (wrap) wrap.style.display = 'flex';
+}
+
+function felieHomeBegruessen() {
+  var s = felieHomeZustand();
+  if (!document.getElementById('home-open-question')) return Promise.resolve();
+  if (s.text && felieHomeBesuch(s.zuletzt, Date.now()) === 'neuer_tag') s.erneuern = true;
+  if (!s.erneuern && (s.text || s.pending)) {
+    if (s.text) felieHomeTextZeigen(s.text);
+    return s.pending || Promise.resolve();
+  }
+  var besuch = felieHomeBesuch(s.zuletzt, Date.now()), ctx = felieHomeKontext(besuch);
+  s.erneuern = false; s.anlass = 'oeffnen';
+  var revision = ++s.revision;
+  felieHomeZeitMerken();
+  window._felieRitualEchoText = null;
+  window._felieRitualFrisch = null;
+  renderRitualEcho(false);
+  // Sofort einen vollständigen Einstieg anbieten, auch offline oder bei leerem Namen.
+  felieHomeTextZeigen(felieHomeFallback(ctx));
+  var pending = felieRequest('willkommen', [{ role: 'user', content: felieDatenBlock('startscreen', ctx) }],
+    { context: false, maxTokens: 450 }).then(function(data) {
+      if (s.revision !== revision) return;
+      var text = felieReplyText(data).trim();
+      if (!text || data.stop_reason === 'max_tokens') return;
+      felieHomeTextZeigen(text);
+    }).catch(function() {
+      // Der bereits sichtbare Fallback bleibt bestehen.
+    }).finally(function() { if (s.revision === revision) s.pending = null; });
+  s.pending = pending;
+  return pending;
+}
+
+function felieHomeEreignis(art) {
+  var s = felieHomeZustand();
+  var texte = {
+    gespraech_beendet: 'Danke für unser Gespräch. Lass es in Ruhe nachklingen.',
+    gespraech_verlassen: 'Du kannst hier in Ruhe weitermachen, wenn du möchtest.',
+    gedaechtnis_geaendert: 'Deine Änderungen im Gedächtnis sind gespeichert.',
+    gedaechtnis_geloescht: 'Die ausgewählte Erinnerung ist aus deinem Gedächtnis entfernt.',
+    thema_erledigt: 'Das offene Thema ist jetzt als erledigt markiert.'
+  };
+  if (art !== 'selbstreflexion' && !texte[art]) return;
+  ++s.revision; s.pending = null; s.erneuern = false;
+  felieHomeZeitMerken();
+  if (art === 'selbstreflexion') {
+    // Die vorhandene zweite Bubble übernimmt die Rückmeldung zur Reflexion.
+    if (!s.text || s.anlass !== 'oeffnen') felieHomeTextZeigen('Hier ist Raum für das, was dir gerade wichtig ist.');
+  } else {
+    window._felieRitualEchoText = null;
+    renderRitualEcho(false);
+    felieHomeTextZeigen(texte[art]);
+  }
+  s.anlass = art;
+}
+
+function felieHomeErinnerungGeaendert(vorher) {
+  if (!vorher || !vorher.text) return;
+  // Zugehörige alte Zusammenfassungen bleiben im Archiv, werden aber nicht
+  // ungefragt zur Begrüßung verwendet. Keine Wiederbelebung gelöschter Fakten.
+  var chats = getSavedChats(), changed = false;
+  chats.forEach(function(c) {
+    felieNotizenLesen(c).forEach(function(n) {
+      var gleich = felieNotizSchluessel(n.text) === felieNotizSchluessel(vorher.text);
+      var belege = n.nachweis && n.nachweis.belege || [];
+      var verwandt = (vorher.belege || []).some(function(b) {
+        return b && b.beleg && belege.some(function(q) { return q.beleg === b.beleg; });
+      });
+      if (!gleich && !verwandt) return;
+      c.begruessungAuslassen = c.begruessungAuslassen || [];
+      if (c.begruessungAuslassen.indexOf(n.id) < 0) { c.begruessungAuslassen.push(n.id); changed = true; }
+    });
+  });
+  if (changed) { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); felieAutosave(); }
+}
+
+function felieHomeSichtbarkeit(aktiv) {
+  var s = felieHomeZustand(), jetzt = Date.now();
+  if (!aktiv) {
+    if (!s.imHintergrund) felieHomeZeitMerken(jetzt);
+    s.imHintergrund = true; return;
+  }
+  if (!s.imHintergrund) return;
+  s.imHintergrund = false;
+  var besuch = felieHomeBesuch(s.zuletzt, jetzt);
+  if (besuch !== 'kurze_rueckkehr') s.erneuern = true;
+  // Während eines Chats oder einer Bearbeitung nichts austauschen.
+  if (felieHomeIstSichtbar()) homeInit(false);
+}
+
+function felieHomeIstSichtbar() {
+  var app = document.getElementById('app'), cw = document.getElementById('chat-window');
+  return !!(app && app.classList.contains('visible') && !(cw && cw.classList.contains('open'))
+    && !document.getElementById('dashboard') && !document.getElementById('gedaechtnis-overlay')
+    && !document.getElementById('verlauf-overlay') && !document.getElementById('summary-popup')
+    && !document.getElementById('personality-overlay') && !document.getElementById('ritual-overlay'));
+}
+
+function felieHomeBeobachten() {
+  if (window._felieHomeBeobachtet) return;
+  window._felieHomeBeobachtet = true;
+  document.addEventListener('visibilitychange', function() { felieHomeSichtbarkeit(document.visibilityState !== 'hidden'); });
+  window.addEventListener('pagehide', function() { felieHomeSichtbarkeit(false); });
+  window.addEventListener('pageshow', function() { felieHomeSichtbarkeit(true); });
+  document.addEventListener('click', function() {
+    setTimeout(function() {
+      if (felieHomeZustand().erneuern && felieHomeIstSichtbar()) homeInit(false);
+    }, 0);
+  });
+  var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (App && App.addListener) {
+    try {
+      var listener = App.addListener('appStateChange', function(e) {
+        if (e && typeof e.isActive === 'boolean') felieHomeSichtbarkeit(e.isActive);
+      });
+      if (listener && listener.catch) listener.catch(function() {});
+    } catch (e) {}
+  }
+}
+
+function homeInit(fromOnboarding) {
+  if (!document.getElementById('home-question-bubble-wrap')) return;
+  felieHomeBeobachten();
+  fillHomeData(); fillHomeThemen();
+  updateHomeGuideUI(!!fromOnboarding);
+  var iw = document.getElementById('home-input-wrap'); if (iw) iw.style.display = 'flex';
+  var ui = document.getElementById('home-user-input'); if (ui) ui.disabled = false;
+  var hint = document.getElementById('home-body-hint'); if (hint) { hint.style.display = 'none'; hint.innerHTML = ''; }
+  if (window._onboardingNoteAsk) {
+    window._onboardingNoteAsk = false; window._awaitingOnboardingNote = true;
+    var s = felieHomeZustand(); ++s.revision; s.pending = null; s.erneuern = false; s.anlass = 'kennenlernen';
+    felieHomeZeitMerken();
+    felieHomeTextZeigen('Schön, dass du da bist' + (userName ? ', ' + userName : '') +
+      '. Erzähl gern, was dir in deinem Alltag gerade wichtig ist und wie ich dich unterstützen kann.');
+    return Promise.resolve();
+  }
+  renderRitualEcho(false);
+  return felieHomeBegruessen();
 }
 
 
@@ -6183,7 +6322,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-07-unlimited-notes-v5';
+var FELIE_BUILD = '2026-09-07-startscreen-v6';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -6897,6 +7036,7 @@ function felieRitualEchoSetzen() {
   /* Marker fuer den Prompt: die naechste Nachricht der Nutzerin faellt
      unmittelbar hinter die Reflexion. */
   window._felieRitualFrisch = Date.now();
+  felieHomeEreignis('selbstreflexion');
   try { renderRitualEcho(true); } catch (e) {}
 }
 
@@ -9029,7 +9169,12 @@ function gedFaedenHtml() {
 }
 
 function gedFadenErledigt(id) {
-  try { felieEpisodeAbschliessen(id); felieStoreSpeichern(); felieAutosave(); } catch (e) {}
+  try {
+    var vorher = felieStore().episoden.find(function(e) { return e.id === id; });
+    if (felieEpisodeAbschliessen(id) && felieStoreSpeichern() !== false) {
+      felieHomeErinnerungGeaendert(vorher); felieAutosave(); felieHomeEreignis('thema_erledigt');
+    }
+  } catch (e) {}
   gedRender();
 }
 
@@ -9195,7 +9340,12 @@ function gedFaktenHtml() {
 }
 
 function gedFaktLoeschen(id) {
-  try { felieFaktLoeschen(id); felieStoreSpeichern(); felieAutosave(); } catch (e) {}
+  try {
+    var vorher = felieStore().fakten.find(function(f) { return f.id === id; });
+    if (felieFaktLoeschen(id) && felieStoreSpeichern() !== false) {
+      felieHomeErinnerungGeaendert(vorher); felieAutosave(); felieHomeEreignis('gedaechtnis_geloescht');
+    }
+  } catch (e) {}
   gedRender();
 }
 
@@ -9293,8 +9443,7 @@ function gedFaktAnlegen() {
       klasse: 'stabil',
       quelle: 'selbst'
     });
-    felieStoreSpeichern();
-    felieAutosave();
+    if (felieStoreSpeichern() !== false) { felieAutosave(); felieHomeEreignis('gedaechtnis_geaendert'); }
   } catch (e) {}
   window._gedForm = null;
   gedRender();
@@ -9306,8 +9455,7 @@ function gedFadenAnlegen() {
   var tage = parseInt(window._gedFormFrist, 10) || 14;
   try {
     felieEpisode({ text: t.slice(0, FELIE_SNIP_MAX.faden), faelligBis: Date.now() + tage * 86400000 });
-    felieStoreSpeichern();
-    felieAutosave();
+    if (felieStoreSpeichern() !== false) { felieAutosave(); felieHomeEreignis('gedaechtnis_geaendert'); }
   } catch (e) {}
   window._gedForm = null;
   gedRender();
@@ -10461,7 +10609,7 @@ function feliePromptRegeln() {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'Schreibe ein bis zwei Sätze und höchstens eine offene Frage. Beginne mit einer kurzen Begrüßung, bei bekanntem Namen mit Namen, und begrüße genau einmal. Keine Datenauswertung oder Annahme, dass alte Probleme fortbestehen. Ein belegtes früheres Thema darf optional erwähnt werden. Ohne passende Erinnerung offen einladen.',
+    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. LETZTES GESPRÄCH: Wenn letztesGespraech.notizen verwendbare Angaben enthält, baue IMMER einen dezenten, konkreten Bezug zu einem passenden Aspekt genau dieses Gesprächs ein. Keine Zusammenfassung oder Liste; der damalige Stand ist keine Aussage über heute. Sensible Details zurückhaltend, ohne ungefragte Diagnosen oder intime Einzelheiten auszubreiten. Sind keine verwendbaren Notizen vorhanden, offen einladen, keine Erinnerung erfinden und nicht auf ältere Gespräche ausweichen. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',
@@ -10616,7 +10764,8 @@ function felieRequest(mode, messages, opts) {
   if (mode === 'kennenlernen') dynamic += '\n' + buildKlPrompt();
   var msgs = (messages || []).map(function(m) { return { role: m.role, content: m.content }; });
   if (opts.context !== false) {
-    var ctx = opts.context || (mode === 'kennenlernen' ? felieProfilDaten() : felieKontextDaten());
+    var ctx = opts.context || (mode === 'kennenlernen' ? felieProfilDaten()
+      : mode === 'willkommen' ? felieHomeKontext() : felieKontextDaten());
     var prefix = { type: 'text', text: felieDatenBlock('kontext', ctx) };
     if (msgs.length && msgs[0].role === 'user') {
       msgs[0].content = [prefix].concat(typeof msgs[0].content === 'string'
@@ -10627,7 +10776,7 @@ function felieRequest(mode, messages, opts) {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'claude-sonnet-5', thinking: { type: 'disabled' },
       max_tokens: opts.maxTokens || 1000,
-      system: [{ type: 'text', text: feliePromptStable(), cache_control: { type: 'ephemeral' } },
+      system: [{ type: 'text', text: mode === 'willkommen' ? feliePromptRegeln() : feliePromptStable(), cache_control: { type: 'ephemeral' } },
         { type: 'text', text: dynamic }], messages: msgs })
   }, opts.timeout || 30000).then(function(r) {
     if (!r.ok) throw new Error('felie HTTP ' + r.status);
@@ -10849,9 +10998,14 @@ function felieChatNotizSetzen(id, notizId, text) {
   if (!n.ursprungstext) n.ursprungstext = n.text;
   n.text = felieNotizText(text).slice(0, 240);
   n.nachweis = { quelle: 'selbst', bearbeitetAm: Date.now() };
+  chat.begruessungAuslassen = (chat.begruessungAuslassen || []).filter(function(id) { return id !== notizId; });
   // Leere Einträge bleiben als Löschmarkierung erhalten, nicht im Chatkontext.
   felieNotizVorschau(chat);
-  try { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); felieAutosave(); return true; }
+  try {
+    localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); felieAutosave();
+    felieHomeEreignis(n.text ? 'gedaechtnis_geaendert' : 'gedaechtnis_geloescht');
+    return true;
+  }
   catch (e) { return false; }
 }
 
@@ -11737,6 +11891,7 @@ function discardChatAndClose() {
   window._hasNewUserMsg = false;
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
   chatHistory.length = 0;
+  felieHomeEreignis('gespraech_verlassen');
   showFelieLoader(1500);
   refreshHome();
 }
@@ -11746,6 +11901,7 @@ function closeChat() {
 }
 
 function generateChatSummary(historySnapshot) {
+  felieHomeEreignis('gespraech_beendet');
   var history = felieSichererVerlauf(historySnapshot || chatHistory);
   if (!history.some(function(m) { return m.role === 'user'; })) {
     window._letzteChatId = null; hideFelieLoader();
@@ -12114,24 +12270,27 @@ function felieSnipSchreiben(host, wert) {
      spaeteren Bestaetigungsschritt, der sie noch schreiben koennte. */
   if (art === 'fakt') {
     try {
+      var vorher = Object.assign({}, felieStore().fakten.find(function(f) { return f.id === host.dataset.snipId; }));
       felieFaktSetzen({
         id: host.dataset.snipId,
         text: wert,
         kategorie: host.dataset.snipKat || 'allgemein',
         klasse: host.dataset.snipKlasse || 'volatil',
-        quelle: host.dataset.snipQuelle || 'gespraech'
+        quelle: 'selbst', belege: []
       });
-      felieStoreSpeichern();
-      felieAutosave();
+      if (felieStoreSpeichern() !== false) {
+        felieHomeErinnerungGeaendert(vorher); felieAutosave(); felieHomeEreignis('gedaechtnis_geaendert');
+      }
     } catch (e) {}
     return;
   }
 
   if (art === 'faden') {
     try {
-      felieEpisodeAendern(host.dataset.snipId, wert);
-      felieStoreSpeichern();
-      felieAutosave();
+      var vorher = Object.assign({}, felieStore().episoden.find(function(e) { return e.id === host.dataset.snipId; }));
+      if (felieEpisodeAendern(host.dataset.snipId, wert) && felieStoreSpeichern() !== false) {
+        felieHomeErinnerungGeaendert(vorher); felieAutosave(); felieHomeEreignis('gedaechtnis_geaendert');
+      }
     } catch (e) {}
     return;
   }
@@ -12174,6 +12333,7 @@ function felieChatFeldSetzen(id, patch) {
         c[k] = patch[k].replace(/\s+/g, ' ').trim().slice(0, FELIE_SNIP_MAX[k] || 240);
         if (!c.feldQuelle || typeof c.feldQuelle !== 'object') c.feldQuelle = {};
         c.feldQuelle[k] = { quelle: 'selbst', bearbeitetAm: Date.now() };
+        c.begruessungAuslassen = (c.begruessungAuslassen || []).filter(function(id) { return id !== k; });
         treffer = true;
       });
     });
@@ -12182,6 +12342,9 @@ function felieChatFeldSetzen(id, patch) {
     /* Sicherung mitziehen — sonst kaeme bei einem Geraetewechsel der
        unkorrigierte Satz zurueck. Im Browser ist das ein No-op. */
     try { felieAutosave(); } catch (e) {}
+    var notizAenderung = ['erkenntnis', 'felie_lernt'].filter(function(k) { return typeof patch[k] === 'string'; });
+    if (notizAenderung.length) felieHomeEreignis(notizAenderung.every(function(k) { return !patch[k].trim(); })
+      ? 'gedaechtnis_geloescht' : 'gedaechtnis_geaendert');
     return true;
   } catch (e) { return false; }
 }
@@ -12443,6 +12606,7 @@ function verwerfeLetztesGespraech() {
     window._letzteChatId = null;
   }
   window._letzterChatVerlauf = null;
+  felieHomeEreignis('gespraech_verlassen');
   var pop = document.getElementById('summary-popup');
   if (pop) pop.remove();
   try { refreshHome(); } catch (e) {}

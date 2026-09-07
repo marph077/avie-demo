@@ -653,8 +653,13 @@ html.native-app .phone {
   transition: background 0.15s; }
 .ritual-pill:hover { background: rgba(255,255,255,0.13); }
 .ritual-pill:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
-.ritual-pill-ico { display: inline-flex; opacity: 0.85; }
-.ritual-pill-sub { font-size: 10.5px; opacity: 0.6; font-weight: 400; }
+/* Icon in Lime: einziger Farbakzent auf der ansonsten leisen Flaeche.
+   Bewusst keine Lime-Fuellung fuer den ganzen Button — der bleibt Angebot.
+   Volle Deckkraft, weil Lime bei 0.85 auf Plum schon deutlich abfaellt. */
+.ritual-pill-ico { display: inline-flex; opacity: 1; color: var(--apricot); }
+/* .ritual-pill-sub entfernt: die Zeitangabe "ca. 1 Min." ist weg, weil sie
+   eine Aufwandserwartung setzte, die das Angebot wie eine Aufgabe wirken
+   liess. Keine weiteren Nutzungsstellen im Markup. */
 
 /* Bottom-Sheet: faehrt von unten auf etwa drei Viertel der Hoehe.
    Der geteilte .score-popup-backdrop ist dafuer schon der richtige
@@ -2146,10 +2151,20 @@ body.is-native .status-bar { display: none !important; }
       <!-- STEP 1: felie begrüßt + Dashboard-Aufforderung -->
       <div id="home-step-greet" style="display:flex;flex-direction:column;gap:14px;">
 
-        <!-- felie Begrüßung + offene Frage -->
-        <div id="home-greeting-block" style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;"><div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="26" height="26" aria-label="felie"><use href="#felie-mark"/></svg></div><div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:88%;"><div style="font-size:14px;color:#180430;line-height:1.55;"><span id="home-greeting-text">Guten Morgen 👋</span></div></div></div>
+        <!-- Hier stand bis hierher eine statische Begruessungsbubble
+             ("Guten Morgen, <Name> 👋", id="home-greeting-block").
+             Entfernt, weil die Nutzerin doppelt begruesst wurde: der
+             Modus-Prompt "willkommen" wies das Modell an, den Gruss
+             weglassen, weil er "bereits in der Oberflaeche" stehe — das
+             Modell begruesste trotzdem. Statt gegen das Modell zu
+             arbeiten liegt der Gruss jetzt vollstaendig bei felie
+             (siehe felieModusRegeln('willkommen')). Verworfen: den
+             generierten Text nachtraeglich vom Gruss befreien — das
+             haette geraten, wo eine Begruessung endet, und bei
+             Formulierungen wie "Hallo Lena! Schoen, dass du da bist"
+             den halben Satz mitgenommen. -->
 
-        <!-- Second bubble: felie's personalized question -->
+        <!-- Erste Bubble: felies generierte Begruessung + offene Frage -->
         <div id="home-question-bubble-wrap" style="display:none;flex-direction:column;gap:0;">
           <div style="display:flex;gap:10px;align-items:flex-end;flex-shrink:0;">
             <div style="width:32px;height:32px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="26" height="26" aria-label="felie"><use href="#felie-mark"/></svg></div>
@@ -2303,21 +2318,35 @@ body.is-native .status-bar { display: none !important; }
       </div>
     </div>
 
-    <!-- FAB -->
-    <div class="home-bottom-nav" style="position:absolute;left:0;right:0;bottom:0;z-index:10;background:#180430;border-top:1px solid rgba(255,255,255,0.10);box-shadow:0 -6px 24px rgba(24, 4, 48,0.35);padding:9px 16px 16px;display:flex;align-items:flex-end;justify-content:center;gap:48px;">
-      <button id="home-nav-archiv" onclick="showVerlauf()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
+    <!-- FAB
+         Die drei Nav-Elemente lagen vorher in einem zentrierten Flex mit
+         fixem Gap. Damit ist der FAB nur mittig, wenn die beiden aeusseren
+         Buttons gleich breit sind — "Gedaechtnis" ist aber rund 22px breiter
+         als "Archiv", also stand der FAB etwa 11px zu weit links.
+         Loesung: die beiden Seiten-Buttons bekommen flex:1 (Basis 0), damit
+         sie zwei exakt gleich breite Spalten bilden; der FAB bleibt auto und
+         sitzt dadurch geometrisch in der Mitte — unabhaengig von der
+         Labellaenge. Verworfen: fixe Breiten auf den Seiten-Buttons (bricht,
+         sobald sich ein Label aendert) und margin-left-Korrektur am FAB
+         (behandelt das Symptom, nicht die Ursache).
+         Gap von 48px auf 24px reduziert: da die Seiten-Buttons jetzt ihre
+         eigene Spalte zentrieren, wuerde der alte Gap die Icons nach aussen
+         schieben. Mit 24px stehen sie bei 390px Viewportbreite praktisch an
+         der bisherigen Stelle. -->
+    <div class="home-bottom-nav" style="position:absolute;left:0;right:0;bottom:0;z-index:10;background:#180430;border-top:1px solid rgba(255,255,255,0.10);box-shadow:0 -6px 24px rgba(24, 4, 48,0.35);padding:9px 16px 16px;display:flex;align-items:flex-end;justify-content:center;gap:24px;">
+      <button id="home-nav-archiv" onclick="showVerlauf()" style="flex:1 1 0;min-width:0;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
         <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="4" rx="1.5" stroke="currentColor" stroke-width="1.7"/><path d="M5 8v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" stroke="currentColor" stroke-width="1.7"/><path d="M10 12h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span style="font-size:11px;">Archiv</span>
       </button>
 
-      <button id="home-nav-newchat" onclick="homeFabTapped()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:-24px;font-family:inherit;">
+      <button id="home-nav-newchat" onclick="homeFabTapped()" style="flex:0 0 auto;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:-24px;font-family:inherit;">
         <span style="width:72px;height:72px;border-radius:50%;background:#F1F0F0;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(24, 4, 48,0.18);">
           <svg width="72" height="72" aria-hidden="true"><use href="#felie-mark"/></svg>
         </span>
         <span style="font-size:11px;font-weight:600;color:#e1ea7d;">Neuer Chat</span>
       </button>
 
-      <button id="home-nav-gedaechtnis" onclick="showGedaechtnis()" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
+      <button id="home-nav-gedaechtnis" onclick="showGedaechtnis()" style="flex:1 1 0;min-width:0;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
         <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><use href="#i-mind"/></svg>
         <span style="font-size:11px;">Gedächtnis</span>
       </button>
@@ -4321,7 +4350,10 @@ function fillHomeThemen() {
 }
 
 function refreshHome() {
-  if (!document.getElementById('home-greeting-text')) return;
+  /* Riegel haengt jetzt an home-open-question: home-greeting-text ist mit
+     der statischen Begruessungsbubble entfallen, refreshHome waere sonst
+     bei jedem Aufruf still zurueckgekehrt. */
+  if (!document.getElementById('home-open-question')) return;
   homeInit(true);
   fillHomeData();
   fillHomeThemen();
@@ -4329,12 +4361,15 @@ function refreshHome() {
 
 function homeInit(fromOnboarding) {
   var hour = new Date().getHours();
+  /* greet/name werden nur noch als Fallback gebraucht: wenn der
+     willkommen-Request scheitert, steht sonst eine nackte Frage ohne
+     jede Anrede auf der Startseite. */
   var greet = hour < 12 ? 'Guten Morgen' : hour < 18 ? 'Hallo' : 'Guten Abend';
+  var greetPrefix = greet + (userName ? ', ' + userName : '') + ' 👋';
 
-  // 1. Show greeting bubble immediately
-  var gt = document.getElementById('home-greeting-text');
-  if (!gt) return;
-  gt.innerHTML = htmlEsc(greet) + (userName ? ', ' + htmlEsc(userName) : '') + ' 👋';
+  /* Der Riegel hing an der statischen Begruessungsbubble; die ist weg.
+     Ohne Bubble 2 hat homeInit nichts zu bespielen. */
+  if (!document.getElementById('home-question-bubble-wrap')) return;
 
   // Körperdaten & Themen bei jedem Betreten des Homescreens aktualisieren
   fillHomeData();
@@ -4392,15 +4427,19 @@ function homeInit(fromOnboarding) {
     felieRequest('willkommen', [{ role: 'user', content: felieDatenBlock('app_ereignis', { anlass: 'Startseite geöffnet' }) }], { maxTokens: 350 })
     .then(function(data) {
       var text = felieReplyText(data) || '';
-      if (oq) oq.innerHTML = text ? mdToHtml(text) : question;
+      /* Fallback traegt den Gruss selbst: seit die statische Bubble weg ist,
+         kommt die Anrede aus felies Text — bleibt der leer, muss sie hier
+         entstehen. */
+      if (oq) oq.innerHTML = text ? mdToHtml(text) : (htmlEsc(greetPrefix) + '<br><br>' + htmlEsc(question));
     })
     .catch(function() {
-      if (oq) oq.textContent = question;
+      if (oq) oq.innerHTML = htmlEsc(greetPrefix) + '<br><br>' + htmlEsc(question);
     });
 
   } else {
-    // Returning user — show question directly
-    if (oq) oq.textContent = question;
+    /* Ohne Namen kein API-Aufruf. Auch hier gilt: die Anrede kam vorher aus
+       der statischen Bubble, jetzt muss sie im Bubble-2-Text stehen. */
+    if (oq) oq.innerHTML = htmlEsc(greetPrefix) + '<br><br>' + htmlEsc(question);
   }
 }
 
@@ -4437,7 +4476,9 @@ function homeUserReply() {
   input.value = '';
 
   // Willkommensnachricht (Begrüßung + offene Frage) als felie-Bubble übernehmen
-  var gtEl = document.getElementById('home-greeting-text');
+  /* Frueher wurden hier zwei Elemente zusammengesetzt (statische Begruessung
+     + generierte Frage). Die statische Bubble ist entfallen, der Gruss steht
+     jetzt im Text von Bubble 2 — also nur noch eine Quelle. */
   var oqEl = document.getElementById('home-open-question');
   function _homeElText(el){
     if (!el) return '';
@@ -4445,9 +4486,8 @@ function homeUserReply() {
     var tmp = document.createElement('div'); tmp.innerHTML = h;
     return (tmp.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
   }
-  var welcome = _homeElText(gtEl);
   var q = _homeElText(oqEl);
-  if (q && q !== '…') welcome += (welcome ? '\n\n' : '') + q;
+  var welcome = (q && q !== '…') ? q : '';
   /* Die Quittung war auf der Startseite Teil derselben felie-Nachricht und
      geht als dritter Block mit ins Gespraech. Ohne sie beginnt der Chat
      mit einem Sprung: die Nutzerin hat drei Bubbles gelesen, im Verlauf
@@ -4773,9 +4813,11 @@ function getLiveSpot(target) {
     const phoneRect = phoneEl.getBoundingClientRect();
     const selectors = {
       'score':          '#home-score-card',
-      'greeting':       ['#home-greeting-block', '#home-question-bubble-wrap'],
+      /* home-greeting-block ist entfallen (statische Begruessung), die
+         Begruessung liegt jetzt allein in home-question-bubble-wrap. */
+      'greeting':       ['#home-question-bubble-wrap'],
       'input':          '#home-input-wrap',
-      'greeting-input': ['#home-greeting-block', '#home-question-bubble-wrap', '#home-input-wrap'],
+      'greeting-input': ['#home-question-bubble-wrap', '#home-input-wrap'],
       'personality':    '#home-personality-btn',
       'profil-btn':     '#home-profile-btn',
       'nav-newchat':    '#home-nav-newchat',
@@ -6509,7 +6551,7 @@ function renderRitualAngebot() {
   if (!felieRitualFaellig()) { ci.style.display = 'none'; ci.innerHTML = ''; return; }
   ci.innerHTML = '<button onclick="event.stopPropagation();felieRitualStarten()" class="ritual-pill">'
     + '<span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>'
-    + 'Kurz bei dir einchecken<span class="ritual-pill-sub">ca. 1 Min.</span></button>';
+    + 'Selbstreflexion</button>';
   ci.style.display = 'block';
   ci.style.marginTop = '10px';
 }
@@ -10368,7 +10410,7 @@ function feliePromptRegeln() {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'Schreibe ein bis zwei Sätze und höchstens eine offene Frage. Der Gruß steht bereits in der Oberfläche. Keine Datenauswertung oder Annahme, dass alte Probleme fortbestehen. Ein belegtes früheres Thema darf optional erwähnt werden. Ohne passende Erinnerung offen einladen.',
+    willkommen: 'Schreibe ein bis zwei Sätze und höchstens eine offene Frage. Beginne mit einer kurzen Begrüßung, bei bekanntem Namen mit Namen, und begrüße genau einmal. Keine Datenauswertung oder Annahme, dass alte Probleme fortbestehen. Ein belegtes früheres Thema darf optional erwähnt werden. Ohne passende Erinnerung offen einladen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',

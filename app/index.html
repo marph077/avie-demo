@@ -2860,14 +2860,17 @@ function felieFaktSetzen(f) {
   if (!f || !f.text) return null;
   var jetzt = Date.now();
   var liste = felieStore().fakten;
-  var id = f.id || (f.kategorie ? f.kategorie + ':' + f.text.slice(0, 24) : 'fakt:' + jetzt);
+  var id = f.id || (f.kategorie || 'allgemein') + ':' + felieNotizSchluessel(f.text);
   var vorhanden = null;
   for (var i = 0; i < liste.length; i++) {
-    if (liste[i].id === id || (f.kategorie && liste[i].kategorie === f.kategorie && f.ersetzt)) {
+    if (liste[i].id === id || (!f.id && liste[i].kategorie === (f.kategorie || 'allgemein') &&
+      felieNotizSchluessel(liste[i].text) === felieNotizSchluessel(f.text)) ||
+      (f.kategorie && liste[i].kategorie === f.kategorie && f.ersetzt)) {
       vorhanden = liste[i]; break;
     }
   }
   if (vorhanden) {
+    id = vorhanden.id;
     /* Widerspruch ist Aktualisierung, nicht zweiter Eintrag. Veraltete
        Fakten sind schlimmer als fehlende. */
     vorhanden.text        = f.text;
@@ -2933,11 +2936,13 @@ function felieEpisode(ep) {
   if (!ep || !ep.text) return null;
   var jetzt = Date.now();
   var liste = felieStore().episoden;
-  var id = ep.id || 'ep:' + ep.text.slice(0, 24);
+  var id = ep.id || 'ep:' + felieNotizSchluessel(ep.text);
   var vorhanden = null;
-  for (var i = 0; i < liste.length; i++) if (liste[i].id === id) { vorhanden = liste[i]; break; }
+  for (var i = 0; i < liste.length; i++) if (liste[i].id === id ||
+    (!ep.id && felieNotizSchluessel(liste[i].text) === felieNotizSchluessel(ep.text))) { vorhanden = liste[i]; break; }
 
   if (vorhanden) {
+    id = vorhanden.id;
     /* Nicht verlaengern. Wiederkehr wird gezaehlt: wer mehrfach ueber
        lange Zeit auftaucht, ist keine Episode mehr, sondern ein Fakt.
        Befoerderung statt Fristverlaengerung. */
@@ -3245,7 +3250,7 @@ const GUIDE_STEPS = [
     label: 'Neuer Chat'
   },
   {
-    text: `Im <strong>Archiv</strong> sammelt sich jedes Gespräch, das du mit mir speicherst — mit deiner Erkenntnis und dem, was ich mir gemerkt habe. So findest du frühere Themen jederzeit wieder.`,
+    text: `Im <strong>Archiv</strong> findest du deine gespeicherten Gespräche und die Notizen zu allen wichtigen besprochenen Themen. So kannst du frühere Inhalte jederzeit wieder aufrufen.`,
     target: 'nav-archiv',
     label: 'Archiv'
   },
@@ -3279,12 +3284,12 @@ const ARCHIV_GUIDE_STEPS = [
     /* Frueher stand hier "ist mein Gedaechtnis". Das kollidiert jetzt mit
        dem eigenen Gedaechtnisbereich: das Archiv haelt die Gespraeche,
        das Gedaechtnis das Wissen darueber. */
-    text: `Dein <strong>Archiv</strong> hält jedes Gespräch fest, das du mit mir speicherst — Wort für Wort, mit deiner Erkenntnis und meiner Notiz dazu. So kann ich beim nächsten Mal daran anknüpfen, statt bei null anzufangen. Was ich daraus über dich gelernt habe, findest du in meinem <strong>Gedächtnis</strong>.`,
+    text: `Dein <strong>Archiv</strong> enthält deine gespeicherten Gesprächsverläufe und die zusammengefassten Notizen dazu. Wie viele Notizen entstehen, hängt von den wichtigen neuen Inhalten ab. Was ich mir daraus über dich gemerkt habe, findest du auch im <strong>Gedächtnis</strong>.`,
     target: null,
     label: 'Archiv'
   },
   {
-    text: `Zu jedem Thema siehst du deine <strong>Erkenntnis</strong> und was ich mir gemerkt habe. Tippe auf „Chat öffnen", um wieder einzusteigen.`,
+    text: `Jedes Gespräch zeigt seine <strong>Gesprächsnotizen</strong> mit passenden Themenüberschriften. Im Gedächtnis kannst du einzelne Notizen bearbeiten oder löschen. Tippe auf „Chat öffnen", um wieder einzusteigen.`,
     target: 'verlauf-card',
     label: 'Gespräche'
   }
@@ -4305,7 +4310,8 @@ function fillHomeThemen() {
     var id = c.id || c.timestamp;
     var d = '';
     try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
-    var sub = (d || '') + (c.erkenntnis ? ' · ' + esc(c.erkenntnis) : '');
+    var anzahl = felieNotizenLesen(c).length;
+    var sub = (d || '') + (anzahl ? ' · ' + anzahl + (anzahl === 1 ? ' Notiz' : ' Notizen') : '') + (c.erkenntnis ? ' · ' + esc(c.erkenntnis) : '');
     return '<div onclick="openThemeSheet(' + id + ')" style="background:#CFC0E6;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">' +
       '<div style="width:34px;height:34px;border-radius:50%;background:#180430;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">' + themeIcon(c.thema) + '</div>' +
       '<div style="flex:1;min-width:0;"><div style="font-size:14px;color:#180430;">' + esc(c.thema || 'Gespräch') + '</div>' +
@@ -5816,7 +5822,8 @@ function fillDashThemen() {
     var id = c.id || c.timestamp;
     var d = '';
     try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
-    var sub = (d || '') + (c.erkenntnis ? ' · ' + esc(c.erkenntnis) : '');
+    var anzahl = felieNotizenLesen(c).length;
+    var sub = (d || '') + (anzahl ? ' · ' + anzahl + (anzahl === 1 ? ' Notiz' : ' Notizen') : '') + (c.erkenntnis ? ' · ' + esc(c.erkenntnis) : '');
     return '<div onclick="dashOpenThema(' + id + ')" style="background:white;border-radius:14px;border:1px solid rgba(143, 91, 189,0.15);padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;">' +
       '<div style="width:32px;height:32px;border-radius:50%;background:#F6E7D6;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">' + icoSvg('i-chat', 15, '#8a5a22') + '</div>' +
       '<div style="flex:1;min-width:0;"><div style="font-size:14px;color:#180430;">' + esc(c.thema || 'Gespräch') + '</div>' +
@@ -6074,7 +6081,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-06-unlimited-notes-v5';
+var FELIE_BUILD = '2026-09-07-unlimited-notes-v5';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -7921,12 +7928,12 @@ function archivDummyCardHtml() {
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;">
           <div style="background:#E6E0EE;border-radius:10px;padding:10px 12px;">
-            <div style="font-size:10px;font-weight:600;color:#8F5BBD;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Aus eurem Gespräch</div>
-            <div style="font-size:13px;color:#4A3A6A;line-height:1.5;">Mit einer kurzen Abendroutine schlafe ich spürbar tiefer.</div>
+            <div style="font-size:10px;font-weight:600;color:#8F5BBD;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Abendroutine</div>
+            <div style="font-size:13px;color:#4A3A6A;line-height:1.5;">Möchte vor dem Schlafen weniger Zeit am Handy verbringen.</div>
           </div>
           <div style="background:rgba(225, 234, 125,0.06);border-radius:10px;padding:10px 12px;">
-            <div style="font-size:10px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">felie merkt sich</div>
-            <div style="font-size:13px;color:#4A3A6A;line-height:1.5;">Nach 7+ Stunden Schlaf fühlst du dich klarer — besonders in der Lutealphase.</div>
+            <div style="font-size:10px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Erholung</div>
+            <div style="font-size:13px;color:#4A3A6A;line-height:1.5;">Geht zur Entspannung gern spazieren.</div>
           </div>
         </div>
         <button style="margin-top:12px;width:100%;padding:11px;border-radius:12px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:default;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0.92;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:13px;height:13px;flex-shrink:0"><use href="#i-chat"/></svg>Chat öffnen</button>
@@ -7961,7 +7968,7 @@ function showVerlauf() {
         </div>
         ${felieNotizenHtml(chat, false)}
         ${chat.notizenStatus === 'unvollstaendig' ? '<div class="ged-sub">Noch nicht vollständig verarbeitet. Bereits erfasste Notizen bleiben erhalten.</div>' : ''}
-        ${kannErgaenzen ? '<button onclick="felieArchivNotizErstellen(' + Number(chat.id || chat.timestamp) + ',this)" style="margin-top:10px;width:100%;padding:10px;border:1px solid #CFC2E0;border-radius:12px;background:white;color:#4A3A6A;font:inherit;cursor:pointer;">Notiz ergänzen</button>' : ''}
+        ${kannErgaenzen ? '<button onclick="felieArchivNotizErstellen(' + Number(chat.id || chat.timestamp) + ',this)" style="margin-top:10px;width:100%;padding:10px;border:1px solid #CFC2E0;border-radius:12px;background:white;color:#4A3A6A;font:inherit;cursor:pointer;">Notizen ergänzen</button>' : ''}
         <button onclick="reopenSavedChat(${chat.id || chat.timestamp})" style="margin-top:12px;width:100%;padding:11px;border-radius:12px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:13px;height:13px;flex-shrink:0"><use href="#i-chat"/></svg>Chat öffnen</button>
       </div>`;
     }).join('');
@@ -8172,7 +8179,7 @@ function felieThemenAbruf(text) {
 
   var bewertet = [];
   aeltere.forEach(function (c) {
-    var heu = [c.thema, c.erkenntnis, c.felie_lernt].filter(Boolean).join(' ');
+    var heu = [c.thema].concat(felieNotizenLesen(c).map(function(n) { return n.thema + ' ' + n.text; })).filter(Boolean).join(' ');
     var eigene = felieThemenVon(heu);
     var gemeinsam = eigene.filter(function (k) { return themen.indexOf(k) >= 0; });
     if (!gemeinsam.length) return;
@@ -10598,7 +10605,9 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
   if (!source.some(function(m) { return m.rolle === 'user'; })) throw new Error('Kein archivfähiges Gespräch');
   var out = { thema: 'Unser Gespräch', notizen: [], fakten: [], faeden: [], feldQuelle: {}, version: 5, notizenStatus: 'vollstaendig' };
   var groesse = 12, fehlerOhneFortschritt = 0;
-  var bekannt = (vorhanden || []).map(function(n) { return n.ursprungstext || n.text; }).filter(Boolean);
+  var bekannt = (vorhanden || []).reduce(function(liste, n) {
+    return liste.concat([n.ursprungstext, n.text].filter(Boolean));
+  }, []);
   function unvollstaendig() {
     out.notizenStatus = 'unvollstaendig';
     out.hinweis = 'Die Notizen sind noch nicht vollständig. Du kannst sie im Archiv ergänzen; bereits erfasste Einträge bleiben erhalten.';
@@ -10607,8 +10616,10 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
     var page;
     try {
       page = await felieRequest(mode || 'zusammenfassung', [{ role: 'user', content: felieDatenBlock('gespraech', {
-        gespraech: source, bereits_erfasst: bekannt.concat(out.notizen.map(function(n) { return n.text; }),
-          out.fakten.map(function(n) { return n.text; }), out.faeden.map(function(n) { return n.text; })),
+        gespraech: source, bereits_erfasst: {
+          notizen: bekannt.concat(out.notizen.map(function(n) { return n.text; })),
+          fakten: out.fakten.map(function(n) { return n.text; }), faeden: out.faeden.map(function(n) { return n.text; })
+        },
         antwortpaket: { maximalNeueEintraege: groesse, hinweis: 'Nur die Größe dieser Antwort ist begrenzt. weitere_notizen=true, solange noch wichtige neue Informationen fehlen. Keine bereits erfassten Inhalte wiederholen.' },
         formathinweis: fehlerOhneFortschritt ? 'Prüfe text, Nutzer-ID und Originalauszug. Formuliere fehlende Notizen mit passenden Belegen. Keine ausdrückliche Selbsterkenntnis erforderlich.' : null
       }) }], { context: false, json: true, maxTokens: 8000 });
@@ -10629,7 +10640,7 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
       });
     });
     var brauchtWeiter = page.weitere_notizen || page.verworfen > 0 ||
-      (!out.notizen.length && !bekannt.length && mode !== 'profil');
+      (!out.notizen.length && !bekannt.length && mode !== 'profil' && !page.listenformat);
     if (!brauchtWeiter) break;
     if (!zuwachs) {
       if (++fehlerOhneFortschritt >= 2) { unvollstaendig(); break; }
@@ -10653,32 +10664,48 @@ function felieArchivNotizErstellen(id, btn) {
   if (!chat) return Promise.resolve(false);
   var pending = window._felieArchivPending || (window._felieArchivPending = {});
   if (pending[id]) return Promise.resolve(false);
+  var vorhanden = felieNotizenLesen(chat, true), vorher = JSON.stringify(vorhanden);
+  // Bei alten Löschungen ist der Ursprungstext unbekannt. Keine automatische
+  // Neuerzeugung, die eine ausdrücklich gelöschte Erinnerung zurückbringen könnte.
+  if (!Array.isArray(chat.notizen) && vorhanden.some(function(n) {
+    return !n.text && n.nachweis && n.nachweis.quelle === 'selbst';
+  })) { felieAlert('Eine frühere Notiz wurde bewusst gelöscht. Die automatische Ergänzung bleibt deshalb aus.'); return Promise.resolve(false); }
   pending[id] = true;
-  if (btn) { btn.disabled = true; btn.textContent = 'Notiz wird erstellt…'; }
-  return felieNotizErzeugen(chat.messages).then(function(summary) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Notizen werden ergänzt…'; }
+  return felieNotizErzeugen(chat.messages, vorhanden).then(function(summary) {
     var chats = getSavedChats(), current = chats.find(function(c) { return (c.id || c.timestamp) === id; });
     if (!current) return false;
-    var changed = false;
-    ['erkenntnis', 'felie_lernt'].forEach(function(k) {
-      // Nur fehlende Felder ergänzen; während des Abrufs bearbeitete oder
-      // bewusst gelöschte Notizen haben Vorrang. Kein neues Archivduplikat.
-      var q = current.feldQuelle && current.feldQuelle[k];
-      if (chat[k] || current[k] || (q && q.quelle === 'selbst') || !summary[k]) return;
-      current[k] = summary[k];
-      current.feldQuelle = current.feldQuelle || {};
-      current.feldQuelle[k] = summary.feldQuelle[k];
-      changed = true;
+    if (JSON.stringify(felieNotizenLesen(current, true)) !== vorher) {
+      felieAlert('Deine inzwischen bearbeiteten Notizen bleiben erhalten. Bitte starte die Ergänzung bei Bedarf erneut.');
+      return false;
+    }
+    var liste = vorhanden.filter(function(n) { return n.text || n.ursprungstext || n.nachweis; });
+    var anzahl = liste.length;
+    felieNotizenLesen(summary).forEach(function(n) {
+      var schluessel = felieNotizSchluessel(n.text);
+      if (liste.some(function(e) { return felieNotizSchluessel(e.text) === schluessel ||
+        (e.ursprungstext && felieNotizSchluessel(e.ursprungstext) === schluessel); })) return;
+      var q = felieArchivFeldQuelle(n.text, n.nachweis, current.messages);
+      if (!q) return;
+      var nummer = liste.length;
+      while (liste.some(function(e) { return e.id === 'notiz:' + nummer; })) nummer++;
+      liste.push({ id: 'notiz:' + nummer, thema: n.thema, text: n.text, merken: n.merken !== false, nachweis: q });
     });
+    var status = summary.notizenStatus || 'vollstaendig';
+    var changed = liste.length > anzahl || !Array.isArray(current.notizen) || current.notizenStatus !== status;
     if (changed) {
-      current.version = 4;
+      current.notizen = liste;
+      current.notizenStatus = status;
+      current.version = 5;
+      felieNotizVorschau(current);
       localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
       felieAutosave();
       if (document.getElementById('verlauf-overlay')) showVerlauf();
       try { fillHomeThemen(); } catch (e) {}
     } else felieAlert('Es konnte keine zusätzliche Notiz erstellt werden. Dein Gespräch bleibt erhalten.');
     return changed;
-  }).catch(function() { felieAlert('Die Notiz konnte gerade nicht erstellt werden. Bitte versuche es später erneut.'); return false; })
-    .finally(function() { delete pending[id]; if (btn) { btn.disabled = false; btn.textContent = 'Notiz ergänzen'; } });
+  }).catch(function() { felieAlert('Die Notizen konnten gerade nicht ergänzt werden. Bitte versuche es später erneut.'); return false; })
+    .finally(function() { delete pending[id]; if (btn) { btn.disabled = false; btn.textContent = 'Notizen ergänzen'; } });
 }
 
 function felieNotizenLesen(chat, auchGeloeschte) {
@@ -10753,7 +10780,8 @@ function felieBeleg(item, source, max) {
 function felieZusammenfassungPruefen(o, source) {
   var out = { thema: felieNotizText(o.thema).slice(0, 60) || 'Unser Gespräch',
     notizen: [], erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], feldQuelle: {}, version: 5,
-    weitere_notizen: o.weitere_notizen === true, verworfen: 0 };
+    weitere_notizen: o.weitere_notizen === true, listenformat: Array.isArray(o.notizen), verworfen: 0 };
+  if (out.listenformat && typeof o.weitere_notizen !== 'boolean') out.verworfen++;
   function notiz(item, thema, merken) {
     var n = felieNotizPruefen(item, source, 240);
     if (!n) { if (item != null) out.verworfen++; return; }
@@ -11635,7 +11663,7 @@ function generateChatSummary(historySnapshot) {
   return felieNotizErzeugen(history).then(function(summary) {
     showChatSummaryCard(summary, history);
   }).catch(function() {
-    showChatSummaryCard({ thema: 'Unser Gespräch', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 4,
+    showChatSummaryCard({ thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5,
       hinweis: 'Dein Gespräch wurde gespeichert. Die Notiz konnte noch nicht erstellt werden; versuche es im Archiv erneut.' }, history);
   });
 }
@@ -11702,8 +11730,8 @@ function saveChat(summary, messages) {
    der Notizkarte, was felie sich merken moechte, und kann jeden Eintrag
    einzeln herausnehmen. Erst "Speichern" schreibt.
 
-   Die Extraktion laeuft im selben Aufruf, der schon die Zusammenfassung
-   erzeugt — kein zweiter Roundtrip, keine zusaetzlichen Kosten.
+   Notizen, Fakten und Faeden werden gemeinsam extrahiert. Umfangreiche
+   Gespraeche koennen mehrere Antwortpakete und damit weitere Aufrufe brauchen.
    ══════════════════════════════════════════════════════════════════════ */
 
 /* Anweisung fuer den Zusammenfassungsaufruf. Bewusst zurueckhaltend:
@@ -11716,7 +11744,7 @@ function felieMerkPromptTeil() {
     + 'fakten: Liste von {"text":"höchstens 90 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"Originalauszug"}],"kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil"}. Nur ausdrücklich berichtete längerfristige Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. '
     + 'faeden: Liste von {"text":"höchstens 90 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"Originalauszug"}]}. Nur aktuell offene, zeitlich begrenzte Themen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. '
     + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und bereits_erfasst erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits erfasste Punkte weder umformulieren noch wiederholen. '
-    + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. Eine Aussage kann zusätzlich zu einer Gesprächsnotiz als dauerhafter Fakt oder offenes Thema vorgeschlagen werden. '
+    + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. bereits_erfasst ist nach notizen, fakten und faeden getrennt: Dopplungen innerhalb derselben Liste vermeiden. Eine Aussage kann zusätzlich zu einer Gesprächsnotiz als dauerhafter Fakt oder offenes Thema vorgeschlagen werden. Ohne relevante Angaben sind leere Listen und weitere_notizen=false richtig. '
     + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze oder verständliche Satzfragmente, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Belastung durch ein krankes Kind; fühlt sich selbst erschöpft.“ '
     + '„Ne niemand hat Zeit“ wird nur bei klarem Gesprächskontext zu „Aktuell keine verfügbare Unterstützung.“ Ohne Kontext weglassen. '
     + 'Keine neuen Tatsachen ergänzen, Verneinungen und Unsicherheit bewahren, spätere Korrekturen berücksichtigen. Symptome nicht zu Diagnosen machen. Vermutungen und selbst berichtete Diagnosen ausdrücklich als solche kennzeichnen. Angaben der Assistentin sind keine Belege für persönliche Fakten. '
@@ -12178,12 +12206,11 @@ function showChatSummaryCard(summary, messages) {
   try { saved = saveChat(summary, messages) != null; } catch (e) { saved = false; }
   if (saved) felieAutosave();
   if (!saved) {
-    summary = {
+    window._letzteChatId = null;
+    summary = Object.assign({}, summary, {
       thema: (summary && summary.thema) || 'Unser Gespräch',
-      erkenntnis: (summary && summary.erkenntnis) || '',
-      felie_lernt: '',
       hinweis: 'Die Notiz konnte auf diesem Gerät nicht gespeichert werden.'
-    };
+    });
   }
   // Homescreen aktualisieren (Begrüßung bezieht das neue Gespräch ein, Werte/Themen auffrischen)
   refreshHome();

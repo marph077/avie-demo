@@ -2540,7 +2540,12 @@ function felieModellAnzeige(info) {
   if (!info) { el.textContent = ''; return; }
   var teile = [info.label || info.model || 'unbekannt'];
   if (info.ms != null) teile.push((info.ms / 1000).toFixed(1) + ' s');
-  if (info.reasoning_tokens) teile.push(info.reasoning_tokens + ' Denk-Token');
+  /* 0 und null muessen unterscheidbar bleiben: 0 heisst "ohne Denkphase
+     gelaufen", null heisst "der Anbieter meldet die Zahl nicht". Vorher
+     pruefte diese Zeile auf Wahrheitswert und verschwieg beides
+     gleichermassen — damit war der Zeitvergleich nicht belegbar. */
+  if (info.reasoning_tokens != null) teile.push(info.reasoning_tokens + ' Denk-Token');
+  else if (info.provider === 'ionos') teile.push('Denk-Token: keine Angabe');
   el.textContent = teile.join(' · ');
 }
 
@@ -10871,7 +10876,7 @@ function felieRequest(mode, messages, opts) {
     if (FELIE_MODELLWAHL_AN) {
       var t = data.felie_test || {};
       felieModellAnzeige({ label: t.label, model: data.model, ms: Date.now() - t0,
-                           reasoning_tokens: t.reasoning_tokens });
+                           provider: t.provider, reasoning_tokens: t.reasoning_tokens });
     }
     if (data.error || !felieReplyText(data).trim()) throw new Error('Keine vollständige felie-Antwort');
     if (opts.json && data.stop_reason === 'max_tokens') throw new Error('JSON wurde abgeschnitten');

@@ -2545,6 +2545,11 @@ function felieModellAnzeige(info) {
      pruefte diese Zeile auf Wahrheitswert und verschwieg beides
      gleichermassen — damit war der Zeitvergleich nicht belegbar. */
   if (info.reasoning_tokens != null) teile.push(info.reasoning_tokens + ' Denk-Token');
+  /* Meldet der Anbieter keine Denk-Token, hilft die Gesamtzahl erzeugter
+     Token weiter: liegt sie weit ueber der Laenge der sichtbaren Antwort,
+     lief trotzdem eine Denkphase. Beim 397B waren es 1006 Token fuer einen
+     Zehn-Wort-Satz — sichtbar nur ueber diesen Umweg. */
+  else if (info.output_tokens != null) teile.push(info.output_tokens + ' Token erzeugt');
   else if (info.provider === 'ionos') teile.push('Denk-Token: keine Angabe');
   el.textContent = teile.join(' · ');
 }
@@ -10876,7 +10881,8 @@ function felieRequest(mode, messages, opts) {
     if (FELIE_MODELLWAHL_AN) {
       var t = data.felie_test || {};
       felieModellAnzeige({ label: t.label, model: data.model, ms: Date.now() - t0,
-                           provider: t.provider, reasoning_tokens: t.reasoning_tokens });
+                           provider: t.provider, reasoning_tokens: t.reasoning_tokens,
+                           output_tokens: t.output_tokens });
     }
     if (data.error || !felieReplyText(data).trim()) throw new Error('Keine vollständige felie-Antwort');
     if (opts.json && data.stop_reason === 'max_tokens') throw new Error('JSON wurde abgeschnitten');

@@ -2294,6 +2294,14 @@ body.is-native .status-bar { display: none !important; }
             <div id="chat-topic-icon-wrap" style="width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,0.16);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ico" style="width:13px;height:13px;color:#e1ea7d"><use href="#i-chat"/></svg></div>
             <div style="font-size:12.5px;color:rgba(255,255,255,0.75);" id="chat-topic-label">Deine Begleiterin</div>
           </div>
+          <!-- Modellvergleich, nur sichtbar solange FELIE_MODELLWAHL_AN gilt.
+               Bewusst im Kopf und nicht in der Eingabezeile: dort waere es
+               eine Nutzerinnen-Einstellung, hier ist es sichtbar Werkzeug. -->
+          <div id="felie-modell-wahl" style="display:none;margin-top:8px;align-items:center;gap:8px;">
+            <select onchange="felieModellSetzen(this.value)" aria-label="Modell für den Vergleich"
+              style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.22);color:#fff;font-family:inherit;font-size:11px;padding:3px 6px;border-radius:8px;"></select>
+            <span id="felie-modell-info" style="font-size:10.5px;color:rgba(255,255,255,0.55);"></span>
+          </div>
         </div>
         <button onclick="promptDiscardChat()" aria-label="Chat ohne Speichern schließen" style="background:rgba(255,255,255,0.14);border:none;cursor:pointer;color:white;font-size:20px;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
       </div>
@@ -2472,7 +2480,7 @@ var FELIE_STORE_KEY    = 'felie_store_v1';
 var FELIE_LS_KEYS = [
   'felie_profile', 'felie_saved_chats', 'felie_body_data', FELIE_STORE_KEY,
   'felie_personality', 'felie_checkins', 'felie_body_reminder_date',
-  'felie_wearable',
+  'felie_wearable', 'felie_home_zuletzt',
   'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
   'felie_guide_gedaechtnis', 'felie_guide_home',
   'felie_guide_home_deferred', 'felie_backup_hint_off'
@@ -2487,7 +2495,54 @@ var FELIE_LS_KEYS = [
      gehoert bei einem vollstaendigen Loeschen weg. Bewusst NICHT ins
      Backup: eine auf ein anderes Geraet zurueckgeholte Kennung wuerde
      zwei Nutzungen zu einer verschmelzen. */
-var FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id'];
+var FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id',
+                             'felie_modellwahl'];
+
+/* ── Modellvergleich (Entwicklungswerkzeug) ──────────────────────────
+   Schalter fuer die Modellauswahl im Chatkopf. Vor dem Release auf
+   false setzen: Endnutzerinnen sollen kein Modell waehlen, das ist eine
+   Produktentscheidung und keine Einstellung.
+   Die Schluessel muessen exakt zu FELIE_VARIANTS im Worker passen. Die
+   App kennt bewusst keine Modell-IDs — waehlbar ist nur der Schluessel,
+   die Zuordnung liegt serverseitig. */
+var FELIE_MODELLWAHL_AN = true;
+var FELIE_MODELLE = [
+  { key: 'sonnet-5',    label: 'Sonnet 5' },
+  { key: 'sonnet-4-5',  label: 'Sonnet 4.5' },
+  { key: 'qwen-27b',    label: 'Qwen3.8-27B' },
+  { key: 'qwen-397b',   label: 'Qwen3.5-397B' },
+  { key: 'mistral-24b', label: 'Mistral-S 24B' }
+];
+var FELIE_MODELL_STANDARD = 'sonnet-5';
+
+function felieModellAktiv() {
+  try {
+    var k = localStorage.getItem('felie_modellwahl');
+    /* Unbekannte Schluessel verwerfen: sonst bleibt nach dem Umbenennen
+       einer Variante eine tote Wahl haengen und der Worker faellt still
+       auf den Standard zurueck, ohne dass die Anzeige das verraet. */
+    if (k && FELIE_MODELLE.some(function(m) { return m.key === k; })) return k;
+  } catch (e) {}
+  return FELIE_MODELL_STANDARD;
+}
+
+function felieModellSetzen(k) {
+  try { localStorage.setItem('felie_modellwahl', k); } catch (e) {}
+  felieModellAnzeige(null);
+}
+
+/* Zeigt im Chatkopf, welches Modell zuletzt tatsaechlich geantwortet hat,
+   plus Dauer. Ohne das siehst du beim Umschalten nicht, ob die Wahl
+   gegriffen hat — und der Zeitvergleich bleibt Bauchgefuehl. */
+function felieModellAnzeige(info) {
+  var el = document.getElementById('felie-modell-info');
+  if (!el) return;
+  if (!info) { el.textContent = ''; return; }
+  var teile = [info.label || info.model || 'unbekannt'];
+  if (info.ms != null) teile.push((info.ms / 1000).toFixed(1) + ' s');
+  if (info.reasoning_tokens) teile.push(info.reasoning_tokens + ' Denk-Token');
+  el.textContent = teile.join(' · ');
+}
 
 /* Selbstauskunft: die drei Signale, die die Nutzerin selbst angibt.
    Nur diese duerfen die Deutung tragen. */
@@ -10798,9 +10853,14 @@ function felieRequest(mode, messages, opts) {
         ? [{ type: 'text', text: msgs[0].content }] : msgs[0].content);
     } else msgs.unshift({ role: 'user', content: [prefix] });
   }
+  /* felie_variant statt model: der Worker loest den Schluessel auf. Das
+     model-Feld bleibt als Rueckfall stehen, falls ein aelterer Worker
+     laeuft, der felie_variant noch nicht kennt. */
+  var t0 = Date.now();
   return felieFetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-sonnet-5', thinking: { type: 'disabled' },
+    body: JSON.stringify({ model: 'claude-sonnet-5', felie_variant: felieModellAktiv(),
+      thinking: { type: 'disabled' },
       max_tokens: opts.maxTokens || 1000,
       system: [{ type: 'text', text: mode === 'willkommen' ? feliePromptRegeln() : feliePromptStable(mode), cache_control: { type: 'ephemeral' } },
         { type: 'text', text: dynamic }], messages: msgs })
@@ -10808,6 +10868,11 @@ function felieRequest(mode, messages, opts) {
     if (!r.ok) throw new Error('felie HTTP ' + r.status);
     return r.json();
   }).then(function(data) {
+    if (FELIE_MODELLWAHL_AN) {
+      var t = data.felie_test || {};
+      felieModellAnzeige({ label: t.label, model: data.model, ms: Date.now() - t0,
+                           reasoning_tokens: t.reasoning_tokens });
+    }
     if (data.error || !felieReplyText(data).trim()) throw new Error('Keine vollständige felie-Antwort');
     if (opts.json && data.stop_reason === 'max_tokens') throw new Error('JSON wurde abgeschnitten');
     return data;
@@ -11403,6 +11468,23 @@ function micStop() {
     if (micVerfuegbar()) return;
     var btn = document.getElementById('mic-btn');
     if (btn) btn.style.display = 'none';
+  });
+})();
+
+/* Modellauswahl aufbauen. Der Block bleibt im Markup verborgen, bis der
+   Schalter ihn freigibt — so verschwindet er beim Release durch eine
+   einzige Zeile, ohne dass Markup zurueckgebaut werden muss. */
+(function modellwahlSetup() {
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!FELIE_MODELLWAHL_AN) return;
+    var wrap = document.getElementById('felie-modell-wahl');
+    if (!wrap) return;
+    var sel = wrap.querySelector('select');
+    var aktiv = felieModellAktiv();
+    sel.innerHTML = FELIE_MODELLE.map(function(m) {
+      return '<option value="' + m.key + '"' + (m.key === aktiv ? ' selected' : '') + '>' + m.label + '</option>';
+    }).join('');
+    wrap.style.display = 'flex';
   });
 })();
 

@@ -6322,7 +6322,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-09-chat-guidance-v1';
+var FELIE_BUILD = '2026-09-09-chat-guidance-v2';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -10637,7 +10637,18 @@ function felieModusRegeln(mode) {
     befund: 'FLÜCHTIGER DOKUMENTMODUS. Beantworte die aktuelle echte Nachricht: Angaben vorlesen oder sortieren, Fachbegriffe und gesichertes Hintergrundwissen allgemein erklären. Keine persönliche Bewertung von Laborwerten, Referenzbereichen oder Befunden, keine Diagnose, Ursache oder Behandlung, keine Verknüpfung mit persönlichen Symptomen, Körperdaten oder Zyklus. Persönliche Bedeutung klärt die zuständige Praxis. Direkt nach dem Import ohne konkrete Frage: Werte nicht erneut auflisten; einen einfachen Einstieg zum Begriffsverständnis anbieten. Eine bereits gestellte Frage dagegen sofort beantworten. Wechselt die Nutzerin zu einer gewöhnlichen Alltagsfrage, hilf konkret im Rahmen der Gesprächsregeln weiter; der Dokumentimport ist kein Grund zum Abblocken. Verwende den Befund dabei weder als Begründung für eine Empfehlung noch zur Personalisierung einer Behandlung. Auch nach einem Themenwechsel bleiben alle Folgeantworten dieser Sitzung flüchtig; keine Speicherung oder Übernahme ins Gedächtnis versprechen. Krise und unmittelbare Gefahr behalten Vorrang.'
   };
   if (!Object.prototype.hasOwnProperty.call(modes, mode)) throw new Error('Unbekannter felie-Modus');
-  return 'AUFGABENMODUS: ' + mode + '\n' + modes[mode];
+  return 'AUFGABENMODUS: ' + mode + '\n' + modes[mode]
+    + ((mode === 'chat' || mode === 'befund') ? '\n\n' + felieChatAntwortRegeln() : '');
+}
+
+function felieChatAntwortRegeln() {
+  return [
+    'FÜR DIE AKTUELLE ANTWORT: Unterscheide die konkrete Bitte, bevor du antwortest. Allgemeine Wissensfrage: verständlich erklären. Gewöhnliche Alltagshilfe: direkt einen brauchbaren Einstieg liefern. Persönliche medizinische Bewertung: begrenze nur diese Bewertung und hilf mit dem zulässigen Teil weiter. Akute Gefahr hat Vorrang.',
+    'PERSÖNLICHE LABORANGABEN: Sobald eine Nutzerin ihren eigenen Wert oder Befund nennt, bewerte ihn NICHT – auch nicht im Nebensatz oder mit „allgemein“, „typischerweise“, „spricht für“ oder „deutet auf“. Vergleiche ihren Wert nicht mit Grenz-, Ziel- oder Referenzwerten. Keine Einstufung als niedrig, hoch, normal, auffällig oder unbedenklich. Keine Schlussfolgerung über Speicher, Organe, Hormone, Mangel oder Behandlungsbedarf. Ein fehlender Kontext, eine Einheit oder ein Referenzbereich ist kein Anlass, diese Angaben für eine eigene Bewertung nachzufordern. Auch mit vollständigen Angaben übernimmst du diese Bewertung nicht. Allgemeine Begriffserklärungen bleiben möglich, aber nicht als indirekte Interpretation der genannten Zahl. Beispiel: „Mein Laborzettel zeigt einen Eisenwert. Erklärt das meine Müdigkeit?“ – „Ob der Wert deine Müdigkeit erklärt, kann ich nicht beurteilen. Für die Praxis kannst du deine Frage so formulieren: Wie ist dieser Wert im Zusammenhang mit meiner Müdigkeit einzuordnen?“ Keine persönliche Einstufung davor oder danach ergänzen.',
+    'ARZTGESPRÄCH: Wenn sie eine Beschreibung vorbereiten möchte, formuliere zuerst einen kurzen Text aus ihren tatsächlich berichteten Angaben. Erfrage höchstens eine wichtige Ergänzung. Keine breite Anamnese, keine Symptomlisten, keine zu erwartenden Bluttests und kein Untersuchungsprogramm. Wenn sie eine vermutete Ursache bestätigt haben möchte, leite keine persönliche Ursache oder erforderliche Untersuchung ab.',
+    'KLEINER NÄCHSTER SCHRITT: Bei unsicherem Anliegen oder einer neuen Alltagsrichtung empfehle einen Anfang. Liefere nur dann mehrere Ideen, wenn sie ausdrücklich mehrere möchte oder ein echter Vergleich ihre Entscheidung erleichtert. Frage Bekanntes nicht noch einmal ab. Höchstens eine Frage insgesamt – auch Fragen in Aufzählungen zählen. Nach einer beantworteten konkreten Bitte darf die Antwort ohne Schlussfrage enden.',
+    'SPRACHE UND KONTEXT: Schreibe natürliches, verständliches Deutsch mit kurzen vollständigen Sätzen. Wähle einfache Wörter statt ungewöhnlicher Wortkombinationen. Auch deine Fragen dürfen keine ungenannten Lebensumstände voraussetzen, etwa Büroarbeit, Kinder, Zuhause-Arbeit oder verfügbare Geräte. Beispielumstände sind keine Nutzerdaten. Begründe Alltagstipps praktisch, etwa mit weniger Suchaufwand oder einfacher Vorbereitung, ohne erfundene Erklärungen über Gehirn, Nervensystem oder körperliche Wirkung.'
+  ].join('\n\n');
 }
 
 function felieProfilDaten() {

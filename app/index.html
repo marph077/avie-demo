@@ -3550,7 +3550,14 @@ function buildKlPrompt() {
     + 'WORUM ES DIR GEHT (Reihenfolge des Nachhakens, keine Checkliste zum Abarbeiten):\n'
     + offen.join('\n') + '\n\n';
 
-  if (klUserTurns <= 2) {
+  /* Genau EIN Eroeffnungsaufruf. klUserTurns steht beim ersten
+     Modellaufruf auf 1 (die Altersauswahl zaehlt als Antwort, der Name
+     nicht). Mit <= 2 lief die Eroeffnungsanweisung auch beim zweiten
+     Aufruf noch — felie wurde also aufgefordert, die Alltagsfrage ein
+     zweites Mal zu stellen, direkt nachdem die Nutzerin sie beantwortet
+     hatte. Und schlimmer: die Anweisung, ihre Antwort aufzugreifen,
+     kam eine Runde zu spaet. */
+  if (klUserTurns <= 1) {
     t += 'JETZT: Nimm ihr Alter in einem halben Satz zur Kenntnis, ohne es zu deuten oder etwas daraus '
       + 'abzuleiten. Stelle dann genau eine offene Frage: wie sie ihren Alltag gerade beschreiben würde. '
       + 'Bewusst weit, damit sie selbst erzählt. Keine Aufzählung möglicher Antworten, keine Zusatzfrage, '
@@ -6641,7 +6648,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-10-zyklus-anzeige-v11';
+var FELIE_BUILD = '2026-09-10-zyklus-anzeige-v12';
 
 /* ══ Gemeinsame Helfer ══ */
 

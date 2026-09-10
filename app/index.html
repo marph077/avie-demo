@@ -6641,7 +6641,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-10-onboarding-hinweis-v10';
+var FELIE_BUILD = '2026-09-10-zyklus-anzeige-v11';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -6958,6 +6958,11 @@ function showCycleInput(onDone) {
        Wochenbett oder einer Pause. */
     window.cycleData = c;
     try { felieZyklusPlanZuruecksetzen(); } catch (e) {}
+    /* Sofort schreiben. Der Rest der Verarbeitung haengt an einem
+       Zeitgeber von 1,2 Sekunden, der nur die Bestaetigung am Knopf
+       stehen laesst — wer die App in diesem Fenster schliesst oder
+       neu laedt, verlor bisher die gerade gemachte Eingabe. */
+    try { saveBodyData(); } catch (e) {}
 
     this.textContent = 'Gespeichert';
     this.style.background = '#e1ea7d';
@@ -8342,7 +8347,11 @@ function populateZyklusCard(data) {
   if (!dash) return;
   const locked = dash.querySelector('#zyklus-locked');
   const real   = dash.querySelector('#zyklus-real');
-  if (!locked || !real) return;
+  /* Nur die echte Karte ist Pflicht. Der Platzhalter wird beim ersten
+     Aufdecken entfernt — an ihm auszusteigen hiesse, dass jede weitere
+     Aktualisierung im selben Dashboard wirkungslos bliebe und der
+     Zyklustag stehen bliebe. */
+  if (!real) return;
 
   // Fill in data
   const t  = dash.querySelector('#zy-title');
@@ -8388,18 +8397,48 @@ function populateZyklusCard(data) {
     if (hs) hs.textContent = data.hormoneSub;
   }
 
-  // Animate swap
-  locked.style.animation = 'dashOut 0.3s ease both';
-  locked.addEventListener('animationend', () => {
-    locked.remove();
+  /* Platzhalter gegen die echte Karte tauschen.
+     ────────────────────────────────────────────────────────────────
+     Der Wechsel haing frueher AUSSCHLIESSLICH an animationend. Bleibt
+     das Ereignis aus, blieb die Karte fuer immer im gesperrten
+     Zustand — mit fertig befuellten Werten dahinter, nur unsichtbar.
+     Genau das trat auf: der Zyklus war gespeichert und die Felder
+     standen richtig, angezeigt wurde trotzdem "noch nicht erfasst".
+     Ausbleiben kann das Ereignis aus mehreren Gruenden, und keiner
+     davon ist selten: CSS-Animationen laufen in einem Teilbaum mit
+     display:none gar nicht erst an (das Dashboard ist beim Aufbau oft
+     noch das inaktive Tab), reduzierte Bewegung kann sie abschalten,
+     und eine bereits abgespielte Animation feuert kein zweites Mal.
+     Deshalb ist der Wechsel jetzt eine gewoehnliche Zustandsaenderung
+     mit Zeitgeber als Notbremse; die Animation ist nur noch Zierde. */
+  var getauscht = false;
+  function zyklusKarteAufdecken() {
+    if (getauscht) return;
+    getauscht = true;
+    if (locked && locked.parentNode) locked.remove();
     real.style.display = 'block';
-    real.style.animation = 'dashIn 0.35s ease both';
     real.style.cursor = 'pointer';
-    real.addEventListener('click', function(e) {
-      if (e.target.closest('button')) return;
-      showBodyInfo('zyklus');
+    /* Nur einmal binden: populateZyklusCard() laeuft bei jedem
+       Dashboard-Aufbau erneut, und mehrfach gebundene Klicks oeffnen
+       das Infofenster mehrfach. */
+    if (!real.dataset.klickGebunden) {
+      real.dataset.klickGebunden = '1';
+      real.addEventListener('click', function(e) {
+        if (e.target.closest('button')) return;
+        showBodyInfo('zyklus');
+      });
+    }
+  }
+  if (locked) {
+    locked.style.animation = 'dashOut 0.3s ease both';
+    locked.addEventListener('animationend', function() {
+      real.style.animation = 'dashIn 0.35s ease both';
+      zyklusKarteAufdecken();
     });
-  });
+    setTimeout(zyklusKarteAufdecken, 400);
+  } else {
+    zyklusKarteAufdecken();
+  }
 }
 
 function removeDashWearableBanner() {

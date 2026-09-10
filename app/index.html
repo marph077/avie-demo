@@ -207,20 +207,9 @@ body {
 
 
 
-.ob-header {
-  background: var(--plum);
-  padding: 64px 32px 40px;
-  position: relative;
-  overflow: hidden;
-}
-.ob-header::after {
-  content: '';
-  position: absolute;
-  bottom: -30px; right: -30px;
-  width: 140px; height: 140px;
-  border-radius: 50%;
-  background: rgba(143, 91, 189,0.15);
-}
+/* .ob-header, .ob-header::after und .ob-header-title sind mit der
+   gesammelten Einwilligungsseite entfallen. .ob-header-label lebt
+   weiter: die Kopfzeile des Kennenlern-Gespraechs benutzt sie. */
 .ob-header-label {
   font-size: 13px;
   font-weight: 600;
@@ -229,23 +218,6 @@ body {
   text-transform: uppercase;
   margin-bottom: 10px;
 }
-.ob-header-title {
-  font-family: var(--font-display);
-  font-size: 28px;
-  color: white;
-  line-height: 1.15;
-  letter-spacing: -0.3px;
-}
-
-.ob-body {
-  flex: 1;
-  padding: 30px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  overflow-y: auto;
-}
-
 .ob-card {
   background: #FFFFFF;
   border-radius: 16px;
@@ -375,11 +347,6 @@ body {
   color: white;
   border-color: #180430;
 }
-.slide-5 { background: #E6E0EE; }
-.slide-5 .ob-header { background: #180430; padding-top: 60px; }
-.slide-5 .ob-body { background: transparent; }
-.slide-5 .ob-header-title { color: white; }
-
 .consent-item {
   background: #FFFFFF;
   border: 1px solid rgba(143, 91, 189,0.2);
@@ -426,56 +393,10 @@ body {
 /* ═══════════════════════════════
    ONBOARDING NAV (bottom)
 ═══════════════════════════════ */
-.ob-nav {
-  padding: 16px 28px 32px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-
-
-.slide-5 .ob-nav { background: var(--plum); }
-
-
-.ob-back {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.32);
-  background: transparent;
-  color: rgba(255,255,255,0.65);
-  font-size: 18px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.18s;
-  flex-shrink: 0;
-}
-
-.ob-back:hover { opacity: 0.7; }
-
-.ob-next {
-  padding: 12px 28px;
-  border-radius: 24px;
-  border: none;
-  background: var(--apricot);
-  color: var(--plum);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.18s;
-  flex: 1;
-  max-width: 200px;
-}
-.ob-next:hover { background: var(--apricot-light); transform: translateY(-1px); }
-.ob-next:disabled {
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.55);
-  cursor: not-allowed;
-  transform: none;
-}
+/* .ob-nav, .ob-back und .ob-next sind mit der gesammelten
+   Einwilligungsseite entfallen. Die Ramp-up-Seiten benutzen .ru-nav,
+   .ru-back und .ru-next — inklusive :disabled-Zustand, den die
+   Weiter-Knoepfe jetzt tatsaechlich brauchen. */
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
@@ -1810,30 +1731,29 @@ body.is-native .status-bar { display: none !important; }
 .ru-row.sel .ru-tick { background: var(--plum); border-color: var(--plum); color: #e1ea7d; }
 .ru-note { font-size: 11px; color: var(--text-muted); text-align: center; margin: 16px 0 4px; line-height: 1.45; }
 
-/* Datenschutz-Karte ueber den drei Bestaetigungen. Steht bewusst OBEN und
-   nicht als Fussnote darunter: sie erklaert den Vorteil, bevor gehakt wird.
-   Die Zeilen kommen aus felieHostingVorteile(), damit Onboarding und
-   Datenschutzerklaerung nicht auseinanderlaufen koennen. */
-.ru-privacy { background: var(--plum); border-radius: 18px; padding: 17px 18px 15px; margin-bottom: 16px;
-  position: relative; overflow: hidden; box-shadow: 0 6px 20px rgba(24, 4, 48,0.18); }
-.ru-privacy::after { content: ''; position: absolute; bottom: -46px; right: -34px; width: 128px; height: 128px;
-  border-radius: 50%; background: rgba(143, 91, 189,0.22); pointer-events: none; }
-.ru-privacy h4 { font-family: var(--font-display); font-size: 17px; font-weight: 400; color: #FFFFFF;
-  margin: 0 0 3px; position: relative; }
-.ru-privacy .ru-privacy-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,0.6);
-  line-height: 1.5; margin-bottom: 13px; position: relative; }
-.ru-privacy ul { list-style: none; margin: 0; padding: 0; position: relative; }
-.ru-privacy li { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; }
-.ru-privacy li + li { border-top: 1px solid rgba(255,255,255,0.09); }
-.ru-privacy li .ru-privacy-ico { width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center; background: rgba(225, 234, 125,0.16);
-  color: #e1ea7d; margin-top: 1px; }
-.ru-privacy li .ru-privacy-ico .ico { width: 12px; height: 12px; }
-.ru-privacy li b { display: block; font-size: 13px; font-weight: 500; color: #FFFFFF; margin-bottom: 1px; }
-.ru-privacy li span { font-size: 12px; font-weight: 300; color: rgba(255,255,255,0.66); line-height: 1.5; }
-.ru-privacy-foot { position: relative; font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5;
-  margin-top: 11px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.09); }
-.ru-privacy-foot u { cursor: pointer; text-underline-offset: 2px; color: rgba(255,255,255,0.72); }
+/* Krisenhinweis am Fuss von "Was felie nicht ist".
+   Bewusst in Plum statt Weiss und bewusst als letztes Element: er ist
+   keine weitere Zeile auf einer Liste, sondern der eine Satz, der
+   zaehlt, wenn es ernst ist. Steht genau dort, wo gerade erklaert
+   wurde, was felie NICHT leisten kann — sonst bliebe die Aussage
+   ohne Ausweg stehen.
+   Die Nummer ist waehlbar (tel:), damit auf dem Telefon ein Tippen
+   reicht. */
+.ru-krise { display: flex; gap: 12px; align-items: flex-start; background: var(--plum);
+  border-radius: 16px; padding: 13px 15px; margin-top: 12px; position: relative; overflow: hidden;
+  box-shadow: 0 4px 14px rgba(24, 4, 48,0.16); }
+.ru-krise-ico { width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; background: rgba(225, 234, 125,0.16); color: #e1ea7d; }
+.ru-krise b { display: block; font-size: 13px; font-weight: 600; color: #FFFFFF; margin-bottom: 2px; }
+.ru-krise p { margin: 0; font-size: 12px; font-weight: 300; line-height: 1.5; color: rgba(255,255,255,0.72); }
+.ru-krise a { color: #e1ea7d; font-weight: 500; text-decoration: none; white-space: nowrap; }
+
+/* Die Bestaetigung sitzt jetzt am Fuss der jeweiligen Informationsseite
+   und braucht Abstand zu den Bubbles darueber — sie ist eine Handlung,
+   keine weitere Information. */
+.ru-body .consent-item { margin-top: 14px; }
+.ru-rechtslinks { text-align: center; font-size: 11px; color: #8F5BBD; padding-top: 12px; }
+.ru-rechtslinks span { text-decoration: underline; cursor: pointer; }
 
 /* Auswahlchips INNERHALB des Kennenlern-Chats (Altersband, Verhuetung).
    Bewusst kein eigenes Sheet: die Frage kommt im Gespraech, also gehoert
@@ -1846,13 +1766,28 @@ body.is-native .status-bar { display: none !important; }
 .kl-chip:hover { background: var(--plum); border-color: var(--plum); color: #FFFFFF; }
 .kl-chip:disabled { opacity: 0.45; cursor: default; }
 .kl-chip:disabled:hover { background: #FFFFFF; color: var(--plum); border-color: rgba(143, 91, 189,0.32); }
-.ru-bub { display: flex; gap: 13px; align-items: flex-start; background: #FFFFFF; border-radius: 16px; border: 1px solid rgba(143, 91, 189,0.2); padding: 15px 16px; box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); }
+/* Eine Dichte fuer alle Ramp-up-Bubbles. Es gab kurzzeitig eine
+   kompakte Zweitvariante nur fuer die Datenseite; mit drei Bubbles auf
+   Seite 1 und dem Krisenhinweis auf Seite 2 braucht es die Dichte
+   ueberall, sonst scrollt genau das wieder, was die Aufteilung auf
+   drei Seiten verhindern sollte. Zwei Varianten waeren ausserdem eine
+   Einladung, die falsche zu erwischen. */
+.ru-bub { display: flex; gap: 12px; align-items: flex-start; background: #FFFFFF; border-radius: 16px; border: 1px solid rgba(143, 91, 189,0.2); padding: 12px 14px; box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); }
 .ru-bub + .ru-bub { margin-top: 8px; }
-.ru-bub-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 19px; color: var(--plum); }
-.ru-bub-ico.is { background: rgba(225, 234, 125,0.42); }
-.ru-bub-ico.not { background: rgba(24, 4, 48,0.07); }
-.ru-bub h4 { font-size: 14px; font-weight: 600; color: var(--plum); margin: 0 0 3px; }
-.ru-bub p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin: 0; font-weight: 300; }
+/* Ein Iconstil fuer alle Bubbles im Onboarding: Plum als Flaeche, Lime
+   als Zeichen. Vorher gab es zwei Varianten — .is in hellem Lime fuer
+   das, was felie kann, .not in blassem Grau fuer das, was sie nicht
+   kann. Die Unterscheidung war noetig, solange beides auf derselben
+   Seite untereinander stand. Seit "Wichtig zu wissen" eine eigene
+   Seite mit eigener Ueberschrift ist, traegt die Seite diese Bedeutung
+   selbst; die Icons doppelten sie nur noch und liessen die Reihe
+   uneinheitlich wirken. Die Modifier sind deshalb ersatzlos weg und
+   nicht bloss auf denselben Wert gesetzt — zwei Klassen ohne
+   Unterschied laden dazu ein, spaeter wieder auseinanderzulaufen. */
+.ru-bub-ico { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; font-size: 17px; background: var(--plum); color: #e1ea7d; }
+.ru-bub h4 { font-size: 13.5px; font-weight: 600; color: var(--plum); margin: 0 0 2px; }
+.ru-bub p { font-size: 12px; color: var(--text-secondary); line-height: 1.48; margin: 0; font-weight: 300; }
 .ru-card { background: #FFFFFF; border-radius: 18px; border: 1px solid rgba(143, 91, 189,0.2); padding: 18px; box-shadow: 0 2px 10px rgba(24, 4, 48,0.06); }
 .ru-sig { display: flex; gap: 11px; align-items: flex-start; padding: 12px 0; border-top: 1px solid rgba(143, 91, 189,0.14); }
 .ru-sig:first-child { border-top: none; padding-top: 0; }
@@ -2008,22 +1943,86 @@ body.is-native .status-bar { display: none !important; }
     </div>
 
     <!-- RU 1: Was ist felie -->
+    <!-- RU 1: Was ist felie — mit Altersbestaetigung
+         Jede der drei Informationsseiten traegt genau die Bestaetigung,
+         die inhaltlich zu ihr gehoert. Vorher standen alle drei
+         gesammelt auf einer eigenen Seite hinter einer langen
+         Datenschutzkarte — die passte auf kein Telefon ohne Scrollen,
+         und die unterste Bestaetigung, ohne die es nicht weiterging,
+         stand unsichtbar unter dem Rand. -->
     <div class="ru" id="ru-1">
       <div class="ru-head">
         <div class="ru-eyebrow">Was ist felie?</div>
-        <div class="ru-q">Dein Körper sendet ständig Signale.</div>
-        <div class="ru-qsub">felie hilft dir, sie zu verstehen.</div>
+        <div class="ru-q">Dein Körper. Dein Alltag. Endlich im Einklang.</div>
       </div>
       <div class="ru-body">
-        <div class="ru-bub"><div class="ru-bub-ico is"><svg class="ico"><use href="#i-chat"/></svg></div><div><h4>Echte Gespräche</h4><p>felie unterstützt dich dabei, deinen Körper und deine Bedürfnisse besser zu verstehen – als Begleiterin, die nicht nur deinen Körper sieht, sondern auch das Leben dahinter.</p></div></div>
-        <div class="ru-bub"><div class="ru-bub-ico is"><svg class="ico"><use href="#i-wind"/></svg></div><div><h4>Belastung erkennen</h4><p>felie hilft dir, Stress, Energie und Erschöpfung einzuordnen – damit du Warnsignale früh erkennst, bevor Überforderung zur Normalität wird.</p></div></div>
-        <div class="ru-bub" style="margin-top:18px;"><div class="ru-bub-ico not"><svg class="ico"><use href="#i-pulse"/></svg></div><div><h4>Keine Ärztin</h4><p>felie stellt keine Diagnosen und ersetzt keine medizinische Beratung. Bei gesundheitlichen Fragen wende dich an Fachpersonen.</p></div></div>
-        <div class="ru-bub"><div class="ru-bub-ico not"><svg class="ico"><use href="#i-mind"/></svg></div><div><h4>Keine Therapeutin</h4><p>felie begleitet dich — aber behandelt nicht. Psychologische Unterstützung bekommst du bei ausgebildeten Fachleuten.</p></div></div>
+        <div class="ru-bub"><div class="ru-bub-ico"><svg class="ico"><use href="#i-chat"/></svg></div><div><h4>Echte Gespräche</h4><p>felie hört zu und unterstützt dich dabei, deinen Körper und deine Bedürfnisse besser zu verstehen.</p></div></div>
+        <div class="ru-bub"><div class="ru-bub-ico"><svg class="ico"><use href="#i-wind"/></svg></div><div><h4>Belastung erkennen</h4><p>felie hilft dir, Stress, Energie und Erschöpfung einzuordnen – damit du Warnsignale früh erkennst, bevor Überforderung zur Normalität wird.</p></div></div>
+        <div class="ru-bub"><div class="ru-bub-ico"><svg class="ico"><use href="#i-heart"/></svg></div><div><h4>Dich verstanden fühlen</h4><p>Kein Tool, kein Tracker. Eine Begleiterin, die nicht nur deinen Körper sieht, sondern auch das Leben dahinter.</p></div></div>
+        <div class="consent-item" id="c3" onclick="toggleConsent('c3')">
+          <div class="consent-check" id="c3-check"></div>
+          <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den <span onclick="event.stopPropagation();showAGB();" style="text-decoration:underline;cursor:pointer;">Nutzungsbedingungen</span> von felie Lab zu.</div>
+        </div>
       </div>
       <div class="ru-nav">
         <div class="ru-prog"><i id="ru-prog-1"></i></div>
         <button class="ru-back" onclick="ruGo(0)" aria-label="Zurück">←</button>
-        <button class="ru-next" onclick="ruZurEinwilligung()">Weiter →</button>
+        <button class="ru-next" id="ru-next-1" onclick="ruGo(2)" disabled>Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 2: Was felie nicht ist -->
+    <div class="ru" id="ru-2">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Was felie nicht ist</div>
+        <div class="ru-q">Wichtig zu wissen.</div>
+        <div class="ru-qsub">Das sagen wir dir lieber vorher als hinterher.</div>
+      </div>
+      <div class="ru-body">
+        <div class="ru-bub"><div class="ru-bub-ico"><svg class="ico"><use href="#i-pulse"/></svg></div><div><h4>Keine Ärztin</h4><p>felie stellt keine Diagnosen und ersetzt keine medizinische Beratung. Bei gesundheitlichen Fragen wende dich an Fachpersonen.</p></div></div>
+        <div class="ru-bub"><div class="ru-bub-ico"><svg class="ico"><use href="#i-mind"/></svg></div><div><h4>Keine Therapeutin</h4><p>felie begleitet dich — aber behandelt nicht. Psychologische Unterstützung bekommst du bei ausgebildeten Fachleuten.</p></div></div>
+        <div class="ru-krise">
+          <span class="ru-krise-ico"><svg class="ico" style="width:14px;height:14px"><use href="#i-help"/></svg></span>
+          <div><b>In einer ernsten Krise?</b><p>Bitte wende dich an die Telefonseelsorge: <a href="tel:08001110111">0800 111 0 111</a> (kostenlos, 24/7).</p></div>
+        </div>
+        <div class="consent-item" id="c1" onclick="toggleConsent('c1')">
+          <div class="consent-check" id="c1-check"></div>
+          <div class="consent-text">Ich verstehe, dass <strong>felie keine Ärztin oder Therapeutin</strong> ist und keinen Ersatz für professionelle Beratung darstellt.</div>
+        </div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-2"></i></div>
+        <button class="ru-back" onclick="ruGo(1)" aria-label="Zurück">←</button>
+        <button class="ru-next" id="ru-next-2" onclick="ruGo(3)" disabled>Weiter →</button>
+      </div>
+    </div>
+
+    <!-- RU 3: Deine Daten
+         #ob-privacy wird von felieHostingKarteZeigen() gefuellt, damit
+         Onboarding und Datenschutzerklaerung dieselbe Quelle lesen
+         (FELIE_HOSTING). Die Ueberschrift der frueheren dunklen Karte
+         ist in den Seitenkopf gewandert — dadurch sehen die Punkte aus
+         wie die Bubbles der beiden Seiten davor. -->
+    <div class="ru" id="ru-3">
+      <div class="ru-head">
+        <div class="ru-eyebrow">Datenschutz</div>
+        <div class="ru-q">Deine Daten gehören dir.</div>
+        <div class="ru-qsub">Privacy by Design. Dein Vertrauen ist alles.</div>
+      </div>
+      <div class="ru-body">
+        <div id="ob-privacy"></div>
+        <div class="consent-item" id="c2" onclick="toggleConsent('c2')">
+          <div class="consent-check" id="c2-check"></div>
+          <div class="consent-text">Ich stimme der <strong>Verarbeitung meiner Daten</strong> gemäß der <span onclick="event.stopPropagation();showDatenschutz();" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span> zu — nur was nötig ist, nichts mehr.</div>
+        </div>
+        <div class="ru-rechtslinks">
+          <span onclick="showDatenschutz()">Datenschutzerklärung</span>&nbsp;·&nbsp;<span onclick="showImpressum()">Impressum</span>&nbsp;·&nbsp;<span onclick="showAGB()">AGB</span>
+        </div>
+      </div>
+      <div class="ru-nav">
+        <div class="ru-prog"><i id="ru-prog-3"></i></div>
+        <button class="ru-back" onclick="ruGo(2)" aria-label="Zurück">←</button>
+        <button class="ru-next" id="ru-next-3" onclick="ruZumGespraech()" disabled>Weiter ✦</button>
       </div>
     </div>
 
@@ -2034,40 +2033,6 @@ body.is-native .status-bar { display: none !important; }
 
     <!-- Slides wrapper -->
     <div class="slides-wrap" id="slidesWrap">
-
-      <!-- SLIDE 1: Splash -->
-      <div class="slide slide-5" id="slide-4">
-        <div class="ob-header">
-          <div class="ob-header-label">Fast geschafft</div>
-          <div class="ob-header-title">Drei kurze Bestätigungen.</div>
-        </div>
-        <div class="ob-body" style="gap:14px;">
-          <!-- Uebergeordnete Datenschutzkarte. Der Inhalt kommt aus
-               felieHostingVorteile(), damit diese Karte und die
-               Datenschutzerklaerung nie unterschiedliche Aussagen machen. -->
-          <div class="ru-privacy" id="ob-privacy"></div>
-          <div class="consent-item" id="c1" onclick="toggleConsent('c1')">
-            <div class="consent-check" id="c1-check"></div>
-            <div class="consent-text">Ich verstehe, dass <strong>felie keine Ärztin oder Therapeutin</strong> ist und keinen Ersatz für professionelle Beratung darstellt.</div>
-          </div>
-          <div class="consent-item" id="c2" onclick="toggleConsent('c2')">
-            <div class="consent-check" id="c2-check"></div>
-            <div class="consent-text">Ich stimme der <strong>Verarbeitung meiner Daten</strong> gemäß der <span onclick="event.stopPropagation();showDatenschutz();" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span> zu — nur was nötig ist, nichts mehr.</div>
-          </div>
-          <div class="consent-item" id="c3" onclick="toggleConsent('c3')">
-            <div class="consent-check" id="c3-check"></div>
-            <div class="consent-text">Ich bin <strong>mindestens 18 Jahre alt</strong> und stimme den <span onclick="event.stopPropagation();showAGB();" style="text-decoration:underline;cursor:pointer;">Nutzungsbedingungen</span> von felie Lab zu.</div>
-          </div>
-          <div style="text-align:center;font-size:11px;color:#8F5BBD;padding-top:2px;">
-            <span onclick="showDatenschutz()" style="text-decoration:underline;cursor:pointer;">Datenschutzerklärung</span>&nbsp;·&nbsp;<span onclick="showImpressum()" style="text-decoration:underline;cursor:pointer;">Impressum</span>&nbsp;·&nbsp;<span onclick="showAGB()" style="text-decoration:underline;cursor:pointer;">AGB</span>
-          </div>
-        </div>
-        <div class="ob-nav" style="position:relative;">
-          <div class="ru-prog"><i style="width:50%"></i></div>
-          <button class="ob-back" onclick="ruBackToRampup()">←</button>
-          <button class="ob-next" id="startBtn" onclick="nextSlide()" style="margin-left:auto;" disabled>Weiter ✦</button>
-        </div>
-      </div>
 
       <!-- SLIDE: Name + Kennenlernen -->
       <div class="slide" id="slide-name" style="background:#E6E0EE;display:none;flex-direction:column;">
@@ -2089,13 +2054,20 @@ body.is-native .status-bar { display: none !important; }
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <button class="ru-back" onclick="prevSlide()" aria-label="Zurück">←</button>
+            <button class="ru-back" onclick="ruBackToRampup()" aria-label="Zurück">←</button>
             <button class="ru-next" id="klStartBtn" onclick="startApp()" disabled>Los geht&#39;s ✦</button>
           </div>
         </div>
-        <div style="margin:0;padding:2px 22px 28px;background:#180430;font-size:10.5px;line-height:1.5;color:rgba(255,255,255,0.55);text-align:center;">
-          <div style="color:rgba(255,255,255,0.72);font-weight:500;margin-bottom:4px;">Deine KI-gestützte Begleiterin — Antworten können Fehler enthalten.</div>
-          felie ersetzt keine ärztliche oder psychologische Beratung, Diagnose oder Behandlung. Bei gesundheitlichen Beschwerden wende dich bitte an eine Ärztin oder einen Arzt.
+        <!-- Der medizinische Hinweis stand hier frueher als zweiter Absatz.
+             Er ist entfallen: die Nutzerin hat ihn auf der Seite "Wichtig zu
+             wissen" gelesen UND per Haekchen bestaetigt (Einwilligung c1),
+             er steht weiterhin in den Nutzungsbedingungen, und im Gespraech
+             nahm er Platz weg, der dem Verlauf fehlt.
+             Die KI-Kennzeichnung bleibt: sie ist keine Wiederholung einer
+             Bestaetigung, sondern eine laufende Transparenzangabe, die dort
+             stehen soll, wo die Antworten entstehen. -->
+        <div style="margin:0;padding:2px 22px 28px;background:#180430;font-size:10.5px;line-height:1.5;color:rgba(255,255,255,0.72);text-align:center;font-weight:500;">
+          Deine KI-gestützte Begleiterin — Antworten können Fehler enthalten.
         </div>
 
       </div>
@@ -3273,42 +3245,49 @@ function felieKenntnisstand() {
 
 // ── Onboarding state ──
 let currentSlide = 0;
-const totalSlides = 2;   /* Einwilligung + Kennenlern-Chat */
+/* #onboarding traegt nur noch das Kennenlern-Gespraech. Die drei
+   Bestaetigungen sitzen seit dem Umbau bei den Informationsseiten im
+   Ramp-up, jede bei dem Thema, zu dem sie gehoert. nextSlide() und
+   prevSlide() sind damit entfallen — es gibt nichts mehr zu blaettern.
+   updateSlides() bleibt, weil es das Gespraech anstoesst. */
 const consents = { c1: false, c2: false, c3: false };
 
 const slideEls = document.querySelectorAll('.slide');
 
+/* Schaltet nur die Sichtbarkeit. Startet ausdruecklich NICHT das
+   Gespraech — das macht ruZumGespraech().
+   ──────────────────────────────────────────────────────────────────
+   Diese Funktion laeuft einmal beim Laden der Datei. Solange
+   slideEls[0] die Einwilligungsseite war, fiel das nicht auf. Seit die
+   Einwilligungen bei den Infoseiten sitzen, ist slideEls[0] der Chat —
+   und der Startaufruf lief damit beim Laden, also bevor die
+   var-Zuweisung von klHistory durchgelaufen war. Ergebnis: klHistory
+   war hoisted, aber undefined, und klSagen() lief in
+   "Cannot read properties of undefined (reading 'push')".
+   Zweiter Schaden derselben Ursache: _klInited stand danach auf true,
+   die Begruessung war in einen unsichtbaren Chat geschrieben und wurde
+   beim echten Betreten nicht noch einmal aufgebaut. */
 function updateSlides() {
   slideEls.forEach((s, i) => {
     s.style.display = i === currentSlide ? 'flex' : 'none';
   });
-  var cur = slideEls[currentSlide];
-  /* Datenschutzkarte bei jedem Betreten neu aufbauen, statt sie fest ins
-     Markup zu schreiben: so wirkt ein umgelegter FELIE_HOSTING-Schalter
-     sofort, ohne dass jemand zwei Stellen anfassen muss. */
-  if (cur && cur.id === 'slide-4' && typeof felieHostingKarteZeigen === 'function') felieHostingKarteZeigen();
-  if (cur && cur.id === 'slide-name' && typeof klInitFromRampup === 'function') klInitFromRampup();
 }
 
 // Init: show only first slide
 updateSlides();
 
-function nextSlide() {
-  if (currentSlide < totalSlides - 1) { currentSlide++; updateSlides(); }
-}
-function prevSlide() {
-  if (currentSlide > 0) { currentSlide--; updateSlides(); }
-}
-
 function toggleConsent(id) {
   consents[id] = !consents[id];
   const item = document.getElementById(id);
   const check = document.getElementById(id + '-check');
-  item.classList.toggle('checked', consents[id]);
-  check.textContent = consents[id] ? '✓' : '';
-  const allChecked = consents.c1 && consents.c2 && consents.c3;
-  if (allChecked && !window._consentTs) window._consentTs = Date.now();
-  document.getElementById('startBtn').disabled = !allChecked;
+  if (item) item.classList.toggle('checked', consents[id]);
+  if (check) check.textContent = consents[id] ? '✓' : '';
+  /* Zeitstempel weiterhin erst, wenn alle drei stehen — er belegt die
+     vollstaendige Einwilligung, nicht die erste Teilzustimmung. */
+  if (consents.c1 && consents.c2 && consents.c3 && !window._consentTs) window._consentTs = Date.now();
+  /* Es gibt keinen gemeinsamen Startknopf mehr: jede Seite gibt ihren
+     eigenen Weiter-Knopf frei, sobald ihre Bestaetigung gesetzt ist. */
+  if (typeof ruWeiterAktualisieren === 'function') ruWeiterAktualisieren();
 }
 // ── App Guide ──
 const GUIDE_STEPS = [
@@ -3586,10 +3565,22 @@ function buildKlPrompt() {
       + 'Danach ist Schluss.';
   }
 
-  t += '\n\nMARKER\n'
-    + 'Fragst du nach hormoneller Verhütung, schreibe [[VERHUETUNG]] als letzte Zeile deiner Nachricht. '
-    + 'Die App zeigt dann Antwortmöglichkeiten zum Antippen. Stelle in derselben Nachricht keine weitere '
-    + 'Frage und zähle die Möglichkeiten nicht selbst auf.\n'
+  /* Den Verhuetungsmarker nur anbieten, solange die Frage offen ist.
+     Stand er auch danach noch im Prompt, setzte ihn das Modell
+     gelegentlich erneut — und weil die App ihn dann zu Recht ignoriert
+     (die Antwort liegt ja vor), blieb von der Nachricht nach dem
+     Entfernen der Steuerzeichen nichts uebrig. Die Runde war stumm.
+     Ein Marker, den es nicht mehr zu setzen gibt, wird deshalb gar
+     nicht erst erwaehnt. */
+  t += '\n\nMARKER\n';
+  t += klAnswers.verhuetung
+    ? 'Die Frage nach hormoneller Verhütung ist bereits beantwortet. Frage NICHT erneut danach und '
+      + 'verwende [[VERHUETUNG]] nicht mehr.\n'
+    : 'Fragst du nach hormoneller Verhütung, schreibe [[VERHUETUNG]] als letzte Zeile deiner Nachricht. '
+      + 'Die App zeigt dann Antwortmöglichkeiten zum Antippen. Stelle in derselben Nachricht keine weitere '
+      + 'Frage und zähle die Möglichkeiten nicht selbst auf.\n';
+  t += 'Jede Nachricht braucht Text für die Nutzerin. Schicke niemals eine Nachricht, die nur aus einem '
+    + 'Marker besteht.\n'
     + 'Zum Abschluss: zwei bis drei Sätze ohne Frage. Sage ihr, dass du das Besprochene in ihrem Bereich '
     + '„Gedächtnis" ablegst, dass ihr dort gemeinsam draufschauen könnt und dass sie dort alles einsehen, '
     + 'ändern und löschen kann. Schreibe danach [[FERTIG]] als letzte Zeile.';
@@ -3628,7 +3619,15 @@ function klBubble(text, who) {
 
 function klScroll() {
   var chat = document.getElementById('kl-chat');
-  if (chat) chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+  if (!chat) return;
+  /* Ein misslungener Bildlauf darf den Gespraechsaufbau nicht
+     abbrechen. klScroll() laeuft mitten in klSagen(), und eine
+     Ausnahme hier riss frueher den ganzen Aufruf mit — inklusive der
+     Schritte danach. Element.scrollTo(options) fehlt in aelteren
+     WebViews; scrollTop kann jeder. Sanftes Scrollen ist Komfort,
+     nicht Funktion. */
+  try { chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' }); }
+  catch (e) { chat.scrollTop = chat.scrollHeight; }
 }
 
 /* Eine Nachricht in Verlauf UND Anzeige. Immer beides zusammen: dass
@@ -3703,7 +3702,9 @@ function klTyping(on) {
    vorher ueber klSagen() eingetragen — deshalb schiebt diese Funktion
    selbst nichts mehr ein und kann nie zwei Nutzernachrichten
    hintereinander erzeugen. */
-function klAntwortHolen() {
+/* versuch: interner Wiederholungszaehler, siehe unten. */
+function klAntwortHolen(versuch) {
+  versuch = versuch || 1;
   window._klRequestPending = true;
   klEingabe(false, 'Einen Moment…');
   klTyping(true);
@@ -3719,6 +3720,21 @@ function klAntwortHolen() {
     if (text) klSagen('assistant', text);
     if (fertig) { klFinish(); return; }
     if (verhuetung) { klVerhuetungFragen(); return; }
+    if (!text) {
+      /* Nach dem Entfernen der Steuerzeichen ist nichts uebrig, und
+         kein Marker hat etwas ausgeloest. Ohne diesen Zweig endete die
+         Runde vollstaendig stumm: kein Text, keine Chips, kein Hinweis
+         — die Nutzerin sitzt vor einem Gespraech, das einfach nicht
+         mehr antwortet. felieRequest() faengt das nicht ab, weil die
+         ROHE Antwort ja nicht leer war.
+         Einmal wiederholen ist hier richtig: es ist ein Ausrutscher
+         des Modells, kein Zustandsfehler, und derselbe Verlauf fuehrt
+         beim zweiten Anlauf meist zu einer normalen Antwort. Erst wenn
+         auch das nichts bringt, uebernimmt der geordnete Abschluss
+         ueber den catch des Aufrufers. */
+      if (versuch < 2) return klAntwortHolen(versuch + 1);
+      throw new Error('felie-Antwort ohne Inhalt');
+    }
     klEingabe(true);
   }).catch(function(e) {
     klTyping(false);
@@ -6625,7 +6641,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-09-onboarding-gespraech-v2';
+var FELIE_BUILD = '2026-09-10-onboarding-hinweis-v10';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -10046,65 +10062,32 @@ function felieServerInDeutschland() {
 function felieHostingVorteile() {
   var v = [
     { ico: 'i-lock', titel: 'Alles bleibt auf deinem Gerät',
-      text: 'Profil, Gespräche und Selbstreflexionen liegen im Speicher deines Geräts. Kein Konto, keine Anmeldung, keine Nutzerverwaltung bei uns.' },
-    { ico: 'i-trash', titel: 'Du löschst mit einem Tipp',
-      text: 'Im Profil entfernst du jederzeit vollständig alles, was felie über dich weiß. Eine Sicherung schreibst du dir selbst heraus — sie gehört dir.' },
+      text: 'Profil, Gespräche, Selbstreflexionen. Kein Konto, keine Anmeldung.' },
     { ico: 'i-eye', titel: 'Du siehst, was felie sich merkt',
-      text: 'Jede Erinnerung steht offen im Bereich Gedächtnis. Du kannst sie dort ändern oder einzeln löschen.' }
+      text: 'Jede Erinnerung steht offen im Gedächtnis — änderbar und löschbar.' }
   ];
   v.push(felieServerInDeutschland()
     ? { ico: 'i-chat', titel: 'Gespräche über deutsche Server',
-        text: 'Damit felie antworten kann, geht deine Nachricht verschlüsselt an unseren Dienst — verarbeitet in Deutschland, nach DSGVO. Nichts davon wird verkauft oder für Werbung ausgewertet.' }
+        text: 'Verschlüsselt, verarbeitet in Deutschland, nach DSGVO. Nichts wird verkauft oder für Werbung ausgewertet.' }
     : { ico: 'i-chat', titel: 'Nur für die Antwort unterwegs',
-        text: 'Damit felie antworten kann, geht deine Nachricht verschlüsselt an unseren KI-Dienstleister — mit Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln. Nichts davon wird verkauft oder für Werbung ausgewertet.' });
+        text: 'Verschlüsselt an unseren KI-Dienstleister, mit Auftragsverarbeitungsvertrag und EU-Standardvertragsklauseln. Nichts wird verkauft oder für Werbung ausgewertet.' });
   return v;
 }
 
-/* Karte in die Einwilligungsseite schreiben. Wird bei jedem Betreten der
-   Seite neu gerendert, damit ein umgelegter Schalter sofort wirkt. */
+/* Die Datenschutzpunkte in die Datenseite schreiben.
+   Frueher eine dunkle Karte mit eigener Ueberschrift; die Ueberschrift
+   sitzt jetzt im Seitenkopf, die Punkte tragen dieselbe Bubble-Optik
+   wie die beiden Seiten davor. Wird bei jedem Betreten neu gebaut,
+   damit ein umgelegter FELIE_HOSTING-Schalter sofort wirkt. */
 function felieHostingKarteZeigen() {
   var el = document.getElementById('ob-privacy');
-  /* updateSlides() laeuft einmal beim Laden der Datei, also bevor die
-     var-Zuweisung von FELIE_HOSTING durchgelaufen ist. Zu dem Zeitpunkt
-     liegt die Einwilligungsseite ohnehin hinter dem Ramp-up. */
+  /* ruGo() laeuft beim Laden einmal durch, da ist die var-Zuweisung von
+     FELIE_HOSTING noch nicht gelaufen. */
   if (!el || typeof FELIE_HOSTING === 'undefined') return;
-  el.innerHTML =
-    '<h4>Deine Daten bleiben bei dir.</h4>' +
-    '<div class="ru-privacy-sub">Bevor du zustimmst, sollst du wissen, worauf du dich einlässt.</div>' +
-    '<ul>' + felieHostingVorteile().map(function(o) {
-      return '<li><span class="ru-privacy-ico">' + icoSvg(o.ico, 12) + '</span>' +
-             '<div><b>' + o.titel + '</b><span>' + o.text + '</span></div></li>';
-    }).join('') + '</ul>' +
-    '<div class="ru-privacy-foot">Alles im Detail steht in der ' +
-    '<u onclick="showDatenschutz()">Datenschutzerklärung</u>.</div>';
-}
-
-/* Punkt 3 der Datenschutzerklaerung, Absatz zum Betriebsort. */
-function felieDatenschutzHosting() {
-  return FELIE_HOSTING.appLand === 'DE'
-    ? 'Die Anwendung selbst wird bei ' + FELIE_HOSTING.appBetreiberDe + ' betrieben.'
-    : 'Die Anwendung wird derzeit über ' + FELIE_HOSTING.appBetreiber + ' ausgeliefert; ein bestimmter '
-      + 'Serverstandort ist dabei nicht zugesichert.';
-}
-
-/* Punkt 5 der Datenschutzerklaerung. Der Hinweis auf den ungeprueften
-   Vertragsstand bleibt stehen, bis er anwaltlich bestaetigt ist — er ist
-   kein Platzhalter, sondern eine offene Aufgabe. */
-function felieDatenschutzEmpfaenger() {
-  if (FELIE_HOSTING.kiLand === 'EU') {
-    return 'Zur Erzeugung der Antworten setzen wir ' + FELIE_HOSTING.kiAnbieterEu + ' ein. Die Verarbeitung '
-      + 'findet innerhalb der EU statt; eine Übermittlung in ein Drittland ist dafür nicht erforderlich. '
-      + 'Mit dem Anbieter besteht ein Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO. '
-      + '<em>Vertragsstand und Verarbeitungsregion bitte für den eigenen Account belegen lassen.</em>';
-  }
-  return 'Zur Erzeugung der Antworten setzen wir ' + FELIE_HOSTING.kiAnbieter + ' als KI-Anbieter ein, '
-    + 'angebunden über einen eigenen ' + FELIE_HOSTING.appBetreiber.split(' (')[0] + '. Dabei erfolgt eine '
-    + 'Übermittlung in die USA; Grundlage hierfür sind die EU-Standardvertragsklauseln nach Art. 46 Abs. 2 '
-    + 'lit. c DSGVO, die Anthropic für gewerbliche API-Kunden in seine Geschäftsbedingungen einbindet. Mit '
-    + 'Anthropic besteht ein Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO. Nach den gewerblichen '
-    + 'Bedingungen des Anbieters werden Eingaben und Ausgaben nicht zum Training seiner Modelle verwendet. '
-    + '<em>Bitte den konkreten Vertragsstand für den eigenen Account bestätigen — diese Angaben beruhen auf '
-    + 'den allgemeinen Handelsbedingungen des Anbieters, nicht auf einer individuell geprüften Unterlage.</em>';
+  el.innerHTML = felieHostingVorteile().map(function(o) {
+    return '<div class="ru-bub"><div class="ru-bub-ico">' + icoSvg(o.ico, 15) + '</div>'
+      + '<div><h4>' + o.titel + '</h4><p>' + o.text + '</p></div></div>';
+  }).join('');
 }
 
 function showDatenschutz() {
@@ -10929,8 +10912,11 @@ function showOnboarding() {
     var ch = document.getElementById(id+'-check');
     if (ch) ch.textContent = '';
   });
-  var sb = document.getElementById('startBtn');
-  if (sb) sb.disabled = true;
+  /* Der frueher gemeinsame #startBtn ist entfallen. Stattdessen sperrt
+     ruWeiterAktualisieren() die Weiter-Knoepfe der drei
+     Informationsseiten wieder zu, weil oben alle Haekchen fielen. */
+  window._consentTs = null;
+  if (typeof ruWeiterAktualisieren === 'function') ruWeiterAktualisieren();
   updateSlides();
   var ru0 = document.getElementById('rampup');
   if (ru0) { ru0.style.display = 'flex'; if (typeof ruGo === 'function') ruGo(0); }
@@ -13308,42 +13294,67 @@ var RU_BANDS = [
 ];
 
 /* Der Splash zaehlt nicht mit: er ist Eingang, kein Schritt. Bleiben
-   zwei Fuellstaende vor dem Gespraech. */
-var RU_PROG = { 0: 0, 1: 50 };
+   drei Fuellstaende vor dem Gespraech, das selbst auf 100% steht. */
+var RU_PROG = { 0: 0, 1: 25, 2: 50, 3: 75 };
+var RU_LETZTER = 3;
+
+/* Welche Bestaetigung welche Seite freischaltet. Eine Seite gibt ihren
+   Weiter-Knopf erst frei, wenn ihr eigenes Haekchen gesetzt ist —
+   dadurch kann niemand am Gespraech ankommen, ohne alle drei gesehen
+   und bestaetigt zu haben. Die Zuordnung ist inhaltlich, nicht
+   numerisch: c1 ist die aelteste Bestaetigung (keine Aerztin) und
+   gehoert deshalb auf Seite 2. */
+var RU_CONSENT = { 1: 'c3', 2: 'c1', 3: 'c2' };
+
+function ruWeiterAktualisieren() {
+  Object.keys(RU_CONSENT).forEach(function(step) {
+    var btn = document.getElementById('ru-next-' + step);
+    if (btn) btn.disabled = !consents[RU_CONSENT[step]];
+  });
+}
 
 function ruGo(step) {
   RU.step = step;
-  for (var i = 0; i <= 1; i++) {
+  for (var i = 0; i <= RU_LETZTER; i++) {
     var el = document.getElementById('ru-' + i);
     if (el) el.classList.toggle('active', i === step);
   }
   var pr = document.getElementById('ru-prog-' + step);
   if (pr) pr.style.width = (RU_PROG[step] || 0) + '%';
+  /* Die Datenpunkte kommen aus FELIE_HOSTING und werden bei jedem
+     Betreten neu gebaut. */
+  if (step === 3 && typeof felieHostingKarteZeigen === 'function') felieHostingKarteZeigen();
+  ruWeiterAktualisieren();
   var b = document.getElementById('ru-' + step);
   var body = b ? b.querySelector('.ru-body') : null;
   if (body) body.scrollTop = 0;
   setTimeout(markScrollables, 30);
 }
 
-/* Zurück von der Einwilligung in das Ramp-up */
+/* Zurück aus dem Gespräch auf die Datenseite */
 function ruBackToRampup() {
   var ob = document.getElementById('onboarding');
   if (ob) ob.style.display = 'none';
   var ru = document.getElementById('rampup');
   if (ru) ru.style.display = 'flex';
-  ruGo(1);
+  ruGo(RU_LETZTER);
 }
 
-/* Übergabe von "Was ist felie" an die Einwilligung. Hiess frueher
-   ruFinish() und stand am Ende von sechs Ramp-up-Seiten; jetzt ist es
-   ein simpler Sichtwechsel, und der Name sagt das auch. */
-function ruZurEinwilligung() {
+/* Übergabe an das Kennenlern-Gespräch. Hiess frueher ruFinish() und
+   stand am Ende von sechs Ramp-up-Seiten, danach kurz
+   ruZurEinwilligung(); jetzt fuehrt es wirklich ins Gespraech.
+   Der Riegel prueft alle drei Bestaetigungen noch einmal — der
+   Knopf allein ist eine Anzeige, keine Absicherung. */
+function ruZumGespraech() {
+  if (!consents.c1 || !consents.c2 || !consents.c3) { ruWeiterAktualisieren(); return; }
   var ru = document.getElementById('rampup');
   if (ru) ru.style.display = 'none';
   var ob = document.getElementById('onboarding');
   if (ob) ob.style.display = 'flex';
-  currentSlide = 0;   /* Index 0 = Einwilligung; updateSlides baut die Datenschutzkarte */
+  currentSlide = 0;
   updateSlides();
+  /* Das Gespraech beginnt hier und nirgends sonst. */
+  if (typeof klInitFromRampup === 'function') klInitFromRampup();
   setTimeout(markScrollables, 30);
 }
 

@@ -1912,9 +1912,30 @@ body.is-native .status-bar { display: none !important; }
 .kl-v2-input:focus-visible,.kl-v2-card button:focus-visible,.kl-v2-review summary:focus-visible { outline:3px solid #8f5bbd; outline-offset:2px; }
 .kl-v2-skip { flex-shrink:0; color:#d3c7de; background:#180430; border:0; font:inherit; font-size:12px; padding:0 16px 12px; cursor:pointer; }
 .kl-v2-demo { background:#FFFFFF; border:1px solid rgba(143,91,189,0.18); border-radius:14px; padding:14px; margin-top:14px; font-size:13px; color:var(--plum); }
+/* Geraeteliste: eine Zeile je Wearable, damit "bald" neben dem Namen
+   steht und nicht als eigener Absatz darunter. Die noch nicht
+   verfuegbaren Geraete bleiben sichtbar — verstecken wuerde offen
+   lassen, ob sie spaeter kommen oder gar nicht vorgesehen sind. */
+.kl-wear-list { margin:10px 0 4px; }
+.kl-wear-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid rgba(143,91,189,0.12); font-size:13px; }
+.kl-wear-row:first-child { border-top:0; }
+.kl-wear-bald { color:#8b7aa5; }
+.kl-wear-tag { font-size:11px; color:#6b5a88; border:1px solid rgba(143,91,189,0.28); border-radius:999px; padding:4px 9px; }
+.kl-wear-on { color:var(--plum); background:#e1ea7d; border-color:#e1ea7d; }
+.kl-wear-row .kl-chip { font-size:12px; padding:7px 13px; border-radius:999px; }
 .kl-v2-demo p,.kl-v2-demo li { font-size:12px; line-height:1.5; }
 .kl-v2-demo ul { padding-left:18px; }
 .kl-v2-link { display:inline-block; color:#6e4193; font:inherit; font-size:13px; text-decoration:underline; border:0; background:none; padding:8px 0; cursor:pointer; }
+/* Drei gleichwertige Angebote statt einer Lime-Karte plus Kleinlink.
+   Alle drei tragen dieselbe Flaeche, damit keins allein durch sein
+   Gewicht gewinnt. Ausgewaehlt wird nicht nur die Farbe kraeftiger: der
+   Rand wird plum und die Schrift halbfett, sonst ist der Unterschied auf
+   zwei Lime-Toenen bei hellem Umgebungslicht kaum zu sehen. */
+.kl-einstiege { display:flex; flex-direction:column; gap:9px; margin:14px 0 4px; }
+.kl-einstieg { font:inherit; font-size:13.5px; line-height:1.5; text-align:left; cursor:pointer;
+  background:#f4f7dd; border:1.5px solid rgba(143,91,189,0.18); border-radius:16px 16px 4px 16px; padding:13px 15px; color:var(--plum); }
+.kl-einstieg.selected { background:#e1ea7d; border-color:var(--plum); font-weight:600; }
+.kl-einstieg:focus-visible { outline:3px solid #8f5bbd; outline-offset:2px; }
 .kl-v2-proposal { background:#f0f3ce; border-radius:14px; padding:14px; }
 .kl-v2-review { font-size:13px; margin:16px 0; }
 .kl-v2-review summary { cursor:pointer; color:#6e4193; padding:10px 0; }
@@ -4271,8 +4292,8 @@ function klV2Definition(key) {
     zyklus: { title: 'Möchtest du ungefähr sagen, wo du gerade stehst?', hint: 'Wo du in deinem Zyklus ungefähr stehst, kann mir dabei helfen zu verstehen, welche Körpersignale du gerade fühlst. Deine eigene Einschätzung genügt, genau muss es nicht sein.', group: 'Dein Körper',
       options: ['Periode', 'kurz danach', 'Zyklusmitte', 'kurz vor der Periode', 'weiß ich nicht'] },
     beschwerden: { title: 'Seit wann beschäftigt dich das?', hint: 'Ob dich das erst seit Kurzem begleitet oder schon länger, macht für mich einen Unterschied. Ein ungefährer Zeitraum reicht völlig.', group: 'Dein Körper' },
-    daten: { title: 'Möchtest du Körperdaten einbeziehen?', hint: 'Wenn du magst, kannst du Daten aus deinem Wearable ins Gespräch holen. Nötig ist das nicht, ich komme auch ohne aus. Es gibt uns eventuell zusätzlich Aufschluss über deine Körper- und Gefühlslage.', group: 'Deine Daten',
-      options: ['Oura-Demo ausprobieren', 'Ohne Körperdaten weiter'] },
+    daten: { title: 'Möchtest du ein Wearable verknüpfen?', hint: 'Wenn du magst, kannst du Daten aus deinem Wearable ins Gespräch holen. Nötig ist das nicht, ich komme auch ohne aus. Es gibt uns eventuell zusätzlich Aufschluss über deine Körper- und Gefühlslage.', group: 'Deine Daten',
+      options: ['Wearable verknüpfen', 'Ohne Wearable weiter'] },
     schlafqualitaet: { title: 'Wie hat sich deine letzte Nacht angefühlt?', hint: 'Wie du deine Nacht selbst erlebt hast, sagt mir oft mehr als jede Zahl. Erzähl mir, wie sich die letzte angefühlt hat.', group: 'Deine Daten',
       options: ['kaum geschlafen', 'oft wach', 'unruhig', 'okay', 'ruhig', 'erholsam'] },
     schlafroutine: { title: 'Wie sieht deine Schlafroutine meist aus?', hint: 'Wann dein Tag endet und wann er beginnt, sagt mir viel über deinen Rhythmus. Damit kann ich Ideen für deinen Abend besser an deinen Tagesablauf anpassen.', group: 'Deine Daten' },
@@ -4282,9 +4303,14 @@ function klV2Definition(key) {
        der Schlaffrage und unterbrach sie; als Ausblick gehoert er hierher.
        Die beiden Ortsangaben tragen die echten Bedienlabels ("Gedächtnis"
        in der Navigation, "Selbstreflexion" als Pille auf der Startseite) —
-       ein erfundener Name waere schlimmer als gar kein Hinweis. */
-    zusammenfassung: { title: 'Hier können wir anfangen.', group: 'Dein Einstieg',
-      hint: 'Das war\u2019s mit dem Kennenlernen, danke für deine Zeit. Ich habe mir das Wichtigste gemerkt — ändern kannst du das jederzeit im Abschnitt **Gedächtnis**. Wie es dir gerade geht, kannst du später auf der Startseite unter **Selbstreflexion** festhalten.' }
+       ein erfundener Name waere schlimmer als gar kein Hinweis.
+       Zweigeteilt, weil die Ruecksicht auf ihre Angaben dazwischen
+       gehoert: erst verabschieden, dann wiedergeben, was angekommen ist,
+       dann sagen, wo es liegt. Am Stueck stand der Verweis aufs
+       Gedaechtnis vor dem, worauf er sich bezieht. */
+    zusammenfassung: { title: 'So können wir anfangen:', group: 'Dein Einstieg',
+      hint: 'Das war\u2019s mit dem Kennenlernen, danke für deine Zeit.',
+      hintDanach: 'Das Wichtigste habe ich mir gemerkt — ändern kannst du das jederzeit im Abschnitt **Gedächtnis**. Wie es dir gerade geht, kannst du später auf der Startseite unter **Selbstreflexion** festhalten.' }
   };
   return d[key];
 }
@@ -4374,7 +4400,6 @@ function klV2Waehlen(index) {
   f.selected = selected;
   if ((klPhase === 'leben' && selected.indexOf('anderes') < 0) || (klPhase === 'koerper' && selected.indexOf('bekannte körperliche Themen') < 0)) f.text = '';
   klZustand().formError = ''; klEntwurfSpeichern(); klV2Render(true);
-  if (klPhase === 'daten' && value === 'Oura-Demo ausprobieren' && selected.indexOf(value) >= 0 && !window._klOuraDemo) klV2OuraLaden();
 }
 
 function klV2Unregelmaessig() {
@@ -4404,6 +4429,11 @@ function klV2Erklaerung(key) {
      Erklaerung geklebt ist. felie quittiert den Namen jetzt erst und
      erklaert dann — zwei Saetze, wie im Gespraech. */
   if (key === 'alter' && userName) return 'Danke, ' + userName + '. ' + hint;
+  /* Die Ruecksicht auf ihre Angaben stand frueher als grauer Fliesstext
+     in der Antwortkarte, direkt unter der Ueberschrift. Dort las sie sich
+     wie ein Protokoll. Gesagt hat es ohnehin felie — also gehoert es in
+     ihre Blase, und die Karte darunter traegt nur noch die Auswahl. */
+  if (key === 'zusammenfassung') return hint + ' ' + klV2Zusammenfassung() + ' ' + klV2Definition(key).hintDanach;
   /* Die Lebenssituation wird bewusst NICHT mehr vorgelesen ("Du hast
      Kinder und arbeitest in Teilzeit"). Das las sich wie eine
      Datenbestaetigung, nicht wie eine Gespraechspartnerin, und jede
@@ -4450,22 +4480,31 @@ function klV2Render(keepPosition) {
     if (f.selected.indexOf('bekannte körperliche Themen') >= 0) h += klV2Text('Was möchtest du mir dazu mitgeben? (optional)');
   }
   if (klPhase === 'beschwerden') h += klV2Text('Ungefährer Zeitraum (optional)');
-  if (klPhase === 'daten') h += '<div class="kl-v2-demo"><strong>Oura-Demo · Testdaten</strong><p>Keine Verbindung mit deinem persönlichen Konto. Die Werte werden nicht als deine Körperdaten übernommen.</p>'
-    + '<button type="button" class="kl-v2-link" onclick="klV2OuraLaden()"' + (window._klOuraPending ? ' disabled' : '') + '>'
-    + (window._klOuraPending ? 'Demo wird geladen…' : 'Demo ansehen') + '</button><div id="kl-v2-demo-result">' + klV2OuraHtml() + '</div></div>';
+  /* Die Geraeteliste erscheint erst nach der Wahl "Wearable verknuepfen".
+     Vorher stand der Kasten immer da und zeigte einen Demo-Knopf, auch
+     wenn sie gerade "ohne" gewaehlt hatte. */
+  if (klPhase === 'daten' && f.selected.indexOf('Wearable verknüpfen') >= 0) h += klV2WearableHtml();
   if (klPhase === 'schlafroutine') {
     h += '<button id="kl-v2-irregular" type="button" class="kl-chip' + (f.irregular ? ' selected' : '') + '" aria-pressed="' + !!f.irregular + '" onclick="klV2Unregelmaessig()">Kein fester Rhythmus</button>';
     if (!f.irregular) h += klV2Input('bed', 'Meist ins Bett gegen (optional)', 'time') + klV2Input('wake', 'Meist aufstehen gegen (optional)', 'time');
   }
   if (klPhase === 'zusammenfassung') {
-    h += '<p class="kl-v2-summary">' + klV2Esc(klV2Zusammenfassung()) + '</p><p class="kl-v2-proposal">' + klV2Esc(klV2Vorschlag().text) + '</p>'
-      + '<details class="kl-v2-review"><summary>Deine Angaben prüfen oder ändern</summary>';
+    /* Die Zusammenfassung ist in felies Blase gewandert — sie ist ihre
+       Ruecksicht auf das Gespraech, nicht die Ueberschrift einer
+       Auswahl. Was hier bleibt, ist die Auswahl selbst. */
+    h += '<div class="kl-einstiege" role="radiogroup" aria-label="So können wir anfangen">';
+    klV2Einstiege().forEach(function(e, i) {
+      var an = s.einstieg === e.key;
+      h += '<button type="button" id="kl-einstieg-' + i + '" class="kl-einstieg' + (an ? ' selected' : '') + '"'
+        + ' role="radio" aria-checked="' + an + '" onclick="klV2EinstiegWaehlen(\'' + e.key + '\')">' + klV2Esc(e.text) + '</button>';
+    });
+    h += '</div><details class="kl-v2-review"><summary>Deine Angaben prüfen oder ändern</summary>';
     klV2Schritte().filter(function(k) { return k !== 'zusammenfassung'; }).forEach(function(k) {
       var a = (s.committed || {})[k];
       h += '<div><strong>' + klV2Definition(k).title + '</strong><p>' + klV2Esc(a && !a.skipped ? klV2Antwort(k, a) : 'Ausgelassen')
         + '</p><button type="button" class="kl-v2-link" onclick="klV2Bearbeiten(\'' + k + '\')">Ändern</button></div>';
     });
-    h += '</details><button type="button" class="kl-v2-link" onclick="klV2StartApp(false)">Mit einem anderen Thema starten</button>';
+    h += '</details>';
   }
   host.innerHTML = h + '</div>';
   var oldInput = document.getElementById('kl-legacy-input'); if (oldInput) oldInput.hidden = true;
@@ -4479,7 +4518,14 @@ function klV2Status() {
   var s = klZustand(), d = klV2Definition(klPhase);
   var progress = document.getElementById('kl-progress'); if (progress) { progress.textContent = ''; progress.hidden = true; }
   var start = document.getElementById('klStartBtn');
-  if (start) { start.disabled = !!window._klV2Saving || !!window._klStorageError; start.textContent = klPhase === 'zusammenfassung' ? 'Ja, dort anfangen' : 'Weiter'; }
+  if (start) {
+    /* Im Abschluss haengt der Knopf an der Auswahl. "Ja, dort anfangen"
+       passt nur, solange ein konkreter Einstieg gemeint ist — beim offenen
+       Thema gibt es kein "dort", deshalb die zweite Beschriftung. */
+    var abschluss = klPhase === 'zusammenfassung';
+    start.disabled = !!window._klV2Saving || !!window._klStorageError || (abschluss && !s.einstieg);
+    start.textContent = !abschluss ? 'Weiter' : s.einstieg === 'anderes' ? 'Los geht\u2019s' : 'Ja, dort anfangen';
+  }
   var back = document.getElementById('kl-v2-back'); if (back) back.disabled = !!window._klV2Saving;
   var skip = document.getElementById('kl-v2-skip'); if (skip) { skip.hidden = klPhase === 'zusammenfassung'; skip.disabled = !!window._klV2Saving; skip.textContent = 'Überspringen'; }
   var status = document.getElementById('kl-status');
@@ -4500,11 +4546,15 @@ function klV2Validieren(key, f) {
 
 function klV2Weiter(skip) {
   var s = klZustand(); if (s.flow !== 2 || window._klV2Saving) return;
-  if (klPhase === 'zusammenfassung') return klV2StartApp(true);
+  if (klPhase === 'zusammenfassung') return klV2StartApp();
   var key = klPhase, f = klV2Form(key), error = skip ? '' : klV2Validieren(key, f);
   if (error) { s.formError = error; klV2Status(); return; }
   var a = skip ? { skipped: true, selected: [], text: '', ts: Date.now() } : JSON.parse(JSON.stringify(f));
   a.ts = Date.now(); s.committed[key] = a; s.formError = '';
+  /* Jede geaenderte Angabe kann die Angebote am Ende verschieben. Eine
+     Wahl stehen zu lassen, die sich auf ein Angebot bezieht, das es nicht
+     mehr gibt, waere schlimmer als sie noch einmal treffen zu lassen. */
+  delete s.einstieg;
   if (key === 'name') { userName = skip ? '' : klNameSetzen(f.text); if (!skip) { a.text = userName; f.text = userName; } }
   if (key === 'alter') { delete klAnswers.alter; delete klAnswers.alterExact; if (!skip) { klAnswers.alterExact = Number(f.age); klAnswers.alterErfasstAm = a.ts; } }
   if (key === 'leben') {
@@ -4548,6 +4598,16 @@ function klV2Antwort(key, a) {
   if (key === 'alter') return 'Ich bin ' + a.age + ' Jahre alt.';
   if (key === 'kinder') return [a.amount ? 'Anzahl: ' + a.amount : '', a.ages ? 'Alter: ' + a.ages : ''].filter(Boolean).join('. ') || 'Keine weiteren Angaben zu meinen Kindern.';
   if (key === 'schlafroutine') return a.irregular ? 'Ich habe keinen festen Schlafrhythmus.' : [a.bed ? 'Meist gehe ich gegen ' + a.bed + ' Uhr ins Bett.' : '', a.wake ? 'Meist stehe ich gegen ' + a.wake + ' Uhr auf.' : ''].filter(Boolean).join(' ') || 'Keine Angaben zu meiner Schlafroutine.';
+  /* Fuer das Archiv zaehlt, ob die Verbindung zustande kam — nicht, was
+     sie angetippt hat. "Wearable verknuepfen" ausgewaehlt und dann nicht
+     verbunden ist sonst im Verlauf von einer echten Verbindung nicht zu
+     unterscheiden, und felie wuerde spaeter Werte erwaehnen, die es nicht
+     gibt. */
+  if (key === 'daten') {
+    var v = klZustand().wearable;
+    if (v && v.anbieter === 'oura') return 'Ich habe meinen Oura Ring verknüpft.';
+    return 'Ich nutze kein verknüpftes Wearable.';
+  }
   var prefix = { leben: 'Meine Lebenssituation: ', themen: 'Mich beschäftigt: ', gefuehl: 'Damit fühle ich mich: ', ziel: 'Ich möchte besser verstehen: ', koerper: 'Körperliche oder hormonelle Themen: ', zyklus: 'Meine ungefähre Zykluseinschätzung: ', daten: 'Körperdaten: ', schlafqualitaet: 'Meine letzte Nacht: ', beschwerden: 'Zeitraum meines körperlichen Themas: ' };
   return (prefix[key] || '') + (a.selected || []).join(', ') + (a.text ? ((a.selected || []).length ? '. ' : '') + a.text : '');
 }
@@ -4561,7 +4621,17 @@ function klV2Verlauf() {
     if (k === 'name' || k === 'alter') m.profilFeld = k;
     klHistory.push(m);
   });
-  if (klDone) klHistory.push({ role: 'assistant', content: klV2Zusammenfassung() + '\n\n' + klV2Vorschlag().text });
+  /* Der Verlauf soll zeigen, was sie gesehen und gewaehlt hat — sonst
+     steht im Archiv ein Vorschlag, den sie moeglicherweise abgelehnt hat,
+     und felie greift ihn spaeter als vereinbart auf. */
+  if (klDone) {
+    var s2 = klZustand(), angebote = klV2Einstiege();
+    klHistory.push({ role: 'assistant', content: klV2Zusammenfassung() + '\n\n' + angebote.map(function(e) { return e.text; }).join('\n') });
+    var wahl = angebote.find(function(e) { return e.key === s2.einstieg; });
+    if (wahl) klHistory.push({ role: 'user', content: wahl.key === 'anderes'
+      ? 'Ich möchte mit einem anderen Thema starten.'
+      : 'Ja, lass uns so anfangen.' });
+  }
 }
 
 function klV2Zusammenfassung() {
@@ -4584,62 +4654,237 @@ function klV2Zusammenfassung() {
     'wissen, worauf ich achten kann': 'wissen, worauf du im Alltag achten kannst'
   };
   if (goal && goal.length) parts.push('Du möchtest ' + goal.map(function(g) { return goals[g] || g; }).join(' und ') + '.');
-  return parts.length ? parts.join(' ') : 'Danke fürs Kennenlernen' + (userName ? ', ' + userName : '') + '. Wir können gemeinsam herausfinden, was dir gerade wichtig ist.';
+  /* Ohne Dank: der Abschlusstext bedankt sich bereits eine Zeile vorher,
+     seit die Zusammenfassung in felies Blase eingebettet ist. Standalone
+     im Archiv traegt der Satz trotzdem. */
+  return parts.length ? parts.join(' ') : 'Was dir gerade wichtig ist, finden wir gemeinsam heraus.';
 }
 
-function klV2Vorschlag() {
-  var a = klZustand().committed || {}, t = a.themen && !a.themen.skipped ? a.themen.selected.find(function(v) { return v !== 'Etwas anderes'; }) : null;
-  var plans = {
-    Schlaf: 'wir schauen zuerst auf deinen Abend und überlegen, was dir das Zur-Ruhe-Kommen erleichtern könnte',
-    Stress: 'wir sortieren zuerst, was dich im Alltag beansprucht, und suchen eine konkrete Möglichkeit zur Entlastung',
-    Energie: 'wir schauen zuerst auf deinen Tagesablauf und suchen eine Stelle, an der du dir etwas Druck nehmen kannst',
-    Stimmung: 'wir nehmen eine konkrete Situation aus deinem Alltag und schauen gemeinsam, wie sie sich für dich anfühlt',
-    Körper: 'wir beginnen mit dem, was du an deinem Körper wahrnimmst und was du dazu besser verstehen möchtest',
-    Zyklus: 'wir schauen zuerst auf deine eigenen Beobachtungen im Alltag und was du dabei besser verstehen möchtest',
-    Ernährung: 'wir schauen zuerst, welche einfachen Mahlzeiten zu deinem Alltag und deinen Vorlieben passen',
-    Bewegung: 'wir suchen zuerst eine Form von Bewegung, die du magst und die in deinen Alltag passt',
-    'Mental Load': 'wir sortieren zuerst, was du alles im Kopf behältst, und suchen eine Aufgabe, bei der Entlastung möglich ist',
-    Familie: 'wir beginnen mit einer konkreten Familiensituation, bei der du dir Unterstützung wünschst',
-    Arbeit: 'wir schauen zuerst auf eine konkrete Situation bei der Arbeit, die dich gerade beschäftigt'
-  };
-  var plan = plans[t] || 'wir sortieren zunächst gemeinsam, was gerade Raum in deinem Alltag einnimmt, und wählen einen kleinen nächsten Schritt';
-  return { thema: t || null, plan: plan, text: 'Ich schlage vor, ' + plan + '. Passt dieser Einstieg für dich?' };
+/* Kurzform des Themas fuer die Alternativzeile. Die Plaene unten sind
+   ganze Nebensaetze ("wir schauen zuerst auf deinen Abend und…") und
+   passen grammatisch nicht hinter "beginnen mit". */
+var KL_THEMA_DATIV = {
+  Schlaf: 'deinem Schlaf', Stress: 'dem, was dich gerade stresst', Energie: 'deiner Energie',
+  Stimmung: 'deiner Stimmung', 'Körper': 'deinem Körper', Zyklus: 'deinem Zyklus',
+  'Ernährung': 'deiner Ernährung', Bewegung: 'Bewegung', 'Mental Load': 'deinem Mental Load',
+  Familie: 'dem Thema Familie', Arbeit: 'dem Thema Arbeit'
+};
+
+var KL_PLAENE = {
+  Schlaf: 'wir schauen zuerst auf deinen Abend und überlegen, was dir das Zur-Ruhe-Kommen erleichtern könnte',
+  Stress: 'wir sortieren zuerst, was dich im Alltag beansprucht, und suchen eine konkrete Möglichkeit zur Entlastung',
+  Energie: 'wir schauen zuerst auf deinen Tagesablauf und suchen eine Stelle, an der du dir etwas Druck nehmen kannst',
+  Stimmung: 'wir nehmen eine konkrete Situation aus deinem Alltag und schauen gemeinsam, wie sie sich für dich anfühlt',
+  'Körper': 'wir beginnen mit dem, was du an deinem Körper wahrnimmst und was du dazu besser verstehen möchtest',
+  Zyklus: 'wir schauen zuerst auf deine eigenen Beobachtungen im Alltag und was du dabei besser verstehen möchtest',
+  'Ernährung': 'wir schauen zuerst, welche einfachen Mahlzeiten zu deinem Alltag und deinen Vorlieben passen',
+  Bewegung: 'wir suchen zuerst eine Form von Bewegung, die du magst und die in deinen Alltag passt',
+  'Mental Load': 'wir sortieren zuerst, was du alles im Kopf behältst, und suchen eine Aufgabe, bei der Entlastung möglich ist',
+  Familie: 'wir beginnen mit einer konkreten Familiensituation, bei der du dir Unterstützung wünschst',
+  Arbeit: 'wir schauen zuerst auf eine konkrete Situation bei der Arbeit, die dich gerade beschäftigt'
+};
+
+var KL_PLAN_OFFEN = 'wir sortieren zunächst gemeinsam, was gerade Raum in deinem Alltag einnimmt, und wählen einen kleinen nächsten Schritt';
+
+/* ══════════════════════════════════════════════════════════════════════
+   EINSTIEGSWAHL AM ENDE DES KENNENLERNENS
+   ──────────────────────────────────────────────────────────────────────
+   Vorher gab es genau einen Vorschlag und darunter einen unterstrichenen
+   Link "Mit einem anderen Thema starten". Das war eine Ja-Nein-Frage mit
+   ungleichen Gewichten: der Vorschlag stand in einer Lime-Karte, die
+   Ablehnung als kleiner Link. Und welches ihrer bis zu drei Themen zum
+   Vorschlag wurde, entschied die Reihenfolge der Optionsliste — nicht
+   ihre Auswahl. Beides ist jetzt weg.
+
+   Stattdessen bis zu drei gleichwertige Angebote: ihre ersten beiden
+   Themen und ein offenes. Dass die Reihenfolge der beiden Themen aus der
+   Optionsliste stammt, bleibt so — aber es entscheidet nicht mehr allein,
+   womit sie anfaengt, sondern nur noch, was zuerst angeboten wird. Sie
+   waehlt danach selbst.
+
+   Der Startknopf bleibt gesperrt, bis sie eines angetippt hat. Ein
+   vorausgewaehltes Angebot waere bequemer, wuerde aber genau die stille
+   Vorentscheidung zurueckholen, die wir gerade abgeschafft haben.
+   ══════════════════════════════════════════════════════════════════════ */
+function klV2Einstiege() {
+  var a = klZustand().committed || {};
+  var themen = a.themen && !a.themen.skipped
+    ? a.themen.selected.filter(function(v) { return v !== 'Etwas anderes' && KL_PLAENE[v]; }) : [];
+  var liste = [];
+  themen.slice(0, 2).forEach(function(t, i) {
+    if (i === 0) liste.push({ key: 'vorschlag', thema: t, plan: KL_PLAENE[t],
+      text: 'Ich schlage vor, ' + KL_PLAENE[t] + '. Passt dieser Einstieg für dich?' });
+    else liste.push({ key: 'alternativ', thema: t, plan: KL_PLAENE[t],
+      text: 'Alternativ können wir mit ' + (KL_THEMA_DATIV[t] || ('dem Thema ' + t)) + ' beginnen. Ist dir das lieber?' });
+  });
+  if (!liste.length) liste.push({ key: 'vorschlag', thema: null, plan: KL_PLAN_OFFEN,
+    text: 'Ich schlage vor, ' + KL_PLAN_OFFEN + '. Passt dieser Einstieg für dich?' });
+  liste.push({ key: 'anderes', thema: null, plan: null,
+    text: 'Wir können auch gerne mit einem ganz anderen Thema starten.' });
+  return liste;
 }
 
-function klV2OuraHtml() {
-  var d = window._klOuraDemo;
-  if (!d) return '<p>Die Vorschau nutzt das angebundene Testkonto.</p>';
-  if (d.limit) return '<p role="status">Die Demo wurde in diesem Kennenlernen bereits dreimal angefragt. Du kannst jetzt ohne Verbindung weitergehen.</p>';
-  if (d.error) return '<p role="status">Die Demo ist gerade nicht erreichbar. Du kannst es erneut versuchen oder ohne Verbindung weitergehen.</p>';
-  return '<p role="status">Demo geladen · ausschließlich Testdaten</p><ul>' + d.values.map(function(v) { return '<li>' + klV2Esc(v) + '</li>'; }).join('') + '</ul>';
+function klV2EinstiegWaehlen(key) {
+  if (window._klV2Saving || klPhase !== 'zusammenfassung') return;
+  if (!klV2Einstiege().some(function(e) { return e.key === key; })) return;
+  var s = klZustand();
+  s.einstieg = s.einstieg === key ? null : key;
+  klEntwurfSpeichern(); klV2Render(true);
 }
 
-function klV2OuraDaten(data) {
-  if (!data || !data.ok || !data.oura) throw new Error('Keine Demo-Daten');
-  function latest(key) { var block = data.oura[key]; if (!block || block.status !== 200 || !Array.isArray(block.data)) return null; return block.data.slice().sort(function(a,b) { return String(b.day || '').localeCompare(String(a.day || '')); })[0]; }
-  var sleep = latest('sleep'), score = latest('daily_sleep'), readiness = latest('daily_readiness'), values = [];
-  if (sleep && Number.isFinite(sleep.total_sleep_duration) && sleep.total_sleep_duration > 0 && sleep.total_sleep_duration <= 86400) values.push('Schlafdauer: ' + Math.round(sleep.total_sleep_duration / 60) + ' Minuten · ' + String(sleep.day || 'Messtag unbekannt'));
-  if (score && Number.isFinite(score.score) && score.score >= 0 && score.score <= 100) values.push('Oura Sleep Score: ' + score.score + '/100 · ' + String(score.day || 'Messtag unbekannt'));
-  if (readiness && Number.isFinite(readiness.score) && readiness.score >= 0 && readiness.score <= 100) values.push('Oura Readiness: ' + readiness.score + '/100 · ' + String(readiness.day || 'Messtag unbekannt'));
-  if (!values.length) throw new Error('Keine Demo-Werte verfügbar');
-  return { demo: true, values: values };
+/* ══════════════════════════════════════════════════════════════════════
+   WEARABLE VERKNUEPFEN
+   ──────────────────────────────────────────────────────────────────────
+   Vorher stand hier eine Demo: ein Knopf "Demo ansehen", drei Zahlen aus
+   einem Testkonto, und danach waren sie weg. Genau das war der
+   Rueckschritt — nicht das Wort Demo, sondern die Sackgasse. Sie sah
+   Werte, die nirgendwo ankamen, und stand danach wieder bei null.
+
+   Jetzt ist es ein Verbindungsvorgang mit drei Stufen: Geraet waehlen,
+   verbinden, Werte werden uebernommen. Was angezeigt wird, ist exakt
+   das, was in die Koerperdaten geht — deshalb faellt der frueher
+   angezeigte Oura Sleep Score weg: fuer ihn gibt es kein Feld in
+   FELIE_FELD_MAP, und etwas zu zeigen, das nicht ankommt, waere wieder
+   die alte Sackgasse.
+
+   Apple Watch, Garmin und Fitbit stehen sichtbar in der Liste, aber
+   ausgegraut. Sie zu verstecken waere die andere Moeglichkeit gewesen;
+   dagegen spricht, dass eine Garmin-Traegerin dann nicht erkennt, ob das
+   Geraet spaeter kommt oder gar nicht vorgesehen ist.
+
+   Die Begrenzung auf drei Abrufe pro Kennenlernen bleibt: hinter dem
+   Endpunkt steht ein einzelner echter Zugang, kein Konto pro Nutzerin.
+   VOR DEM LIVEGANG: der Worker braucht einen OAuth-Ablauf je Nutzerin,
+   sonst zeigt die App jeder Frau dieselben Werte.
+   ══════════════════════════════════════════════════════════════════════ */
+
+var KL_WEARABLES = [
+  { v: 'oura',   t: 'Oura Ring',   bald: false },
+  { v: 'apple',  t: 'Apple Watch', bald: true },
+  { v: 'garmin', t: 'Garmin',      bald: true },
+  { v: 'fitbit', t: 'Fitbit',      bald: true }
+];
+
+function klV2WearableHtml() {
+  var w = window._klWearable || {}, s = klZustand();
+  var verbunden = !!(s.wearable && s.wearable.anbieter === 'oura');
+  var h = '<div class="kl-v2-demo"><strong>' + (verbunden ? 'Oura verbunden' : 'Wearable auswählen') + '</strong>';
+  h += '<div class="kl-wear-list">';
+  KL_WEARABLES.forEach(function(g) {
+    var aktiv = g.v === 'oura' && verbunden;
+    h += '<div class="kl-wear-row' + (g.bald ? ' kl-wear-bald' : '') + '">'
+      + '<span>' + g.t + '</span>'
+      + (g.bald ? '<span class="kl-wear-tag">bald</span>'
+        : aktiv ? '<span class="kl-wear-tag kl-wear-on">verbunden</span>'
+        : '<button type="button" class="kl-chip" onclick="klV2WearableVerbinden()"' + (window._klWearablePending ? ' disabled' : '') + '>'
+          + (window._klWearablePending ? 'Verbinde…' : 'Verbinden') + '</button>')
+      + '</div>';
+  });
+  h += '</div><div id="kl-v2-demo-result">';
+  if (w.limit) h += '<p role="status">Die Verbindung wurde in diesem Kennenlernen schon dreimal abgerufen. Du kannst später in den Körperdaten weitermachen.</p>';
+  else if (w.error) h += '<p role="status">Die Verbindung ist gerade nicht erreichbar. Du kannst es erneut versuchen oder ohne Wearable weitergehen.</p>';
+  else if (verbunden && w.values && w.values.length) {
+    h += '<p role="status">Diese Werte habe ich übernommen:</p><ul>'
+      + w.values.map(function(v) { return '<li>' + klV2Esc(v) + '</li>'; }).join('')
+      + '</ul><p>Du kannst sie später in den Körperdaten ändern oder löschen.</p>';
+  } else if (verbunden) h += '<p role="status">Verbunden. Es lagen keine auswertbaren Werte der letzten Tage vor.</p>';
+  else h += '<p>Nach dem Verbinden lese ich deine letzten Nächte aus.</p>';
+  return h + '</div></div>';
 }
 
-function klV2OuraLaden() {
-  if (window._klOuraPending) return Promise.resolve(false);
+/* Liefert Anzeigezeilen UND Importfelder aus derselben Quelle, damit
+   beides nicht auseinanderlaufen kann. Jeder Wert bringt seinen eigenen
+   Messtag mit: Oura misst nachts, abgerufen wird irgendwann tagsueber —
+   der Abrufzeitpunkt waere das falsche Datum. */
+function klV2WearableDaten(data) {
+  if (!data || !data.ok || !data.oura) throw new Error('Keine Werte erhalten');
+  function latest(key) {
+    var block = data.oura[key];
+    if (!block || block.status !== 200 || !Array.isArray(block.data)) return null;
+    return block.data.slice().sort(function(a, b) { return String(b.day || '').localeCompare(String(a.day || '')); })[0];
+  }
+  var sleep = latest('sleep'), readiness = latest('daily_readiness');
+  var values = [], felder = {}, stempel = {}, meta = {};
+
+  function tagStempel(tag) {
+    var d = cycleMidnight(tag);
+    if (!d || d > cycleMidnight(new Date())) return null;
+    return d.getTime();
+  }
+  function uebernehmen(feld, wert, tag, zeile) {
+    var ts = tagStempel(tag);
+    if (ts === null) return;
+    felder[feld] = wert; stempel[feld] = ts;
+    meta[feld] = { datumsquelle: 'Messtag aus Oura', importiertAm: Date.now(), geraet: 'Oura Ring' };
+    values.push(zeile + ' · ' + new Date(ts).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }));
+  }
+
+  if (sleep) {
+    var dauer = sleep.total_sleep_duration;
+    if (Number.isFinite(dauer) && dauer > 0 && dauer <= 86400)
+      uebernehmen('sleepMins', Math.round(dauer / 60), sleep.day, 'Schlafdauer: ' + ouraFmtSleep(Math.round(dauer / 60)));
+    if (Number.isFinite(sleep.average_hrv) && sleep.average_hrv > 0 && sleep.average_hrv < 300)
+      uebernehmen('hrv', Math.round(sleep.average_hrv), sleep.day, 'HRV: ' + Math.round(sleep.average_hrv) + ' ms');
+    var puls = Number.isFinite(sleep.lowest_heart_rate) ? sleep.lowest_heart_rate : sleep.average_heart_rate;
+    if (Number.isFinite(puls) && puls > 25 && puls < 150)
+      uebernehmen('rhr', Math.round(puls), sleep.day, 'Ruhepuls: ' + Math.round(puls) + ' bpm');
+  }
+  if (readiness && Number.isFinite(readiness.score) && readiness.score >= 0 && readiness.score <= 100) {
+    // Readiness ist in dieser App die Wearable-Quelle fuer "energie" —
+    // siehe FELIE_BAENDER, wo der Oura-Bereich an Readiness kalibriert ist.
+    uebernehmen('energyScore', readiness.score, readiness.day, 'Erholung: ' + readiness.score + ' von 100');
+  }
+  if (!values.length) throw new Error('Keine verwertbaren Werte');
+  return { anbieter: 'oura', values: values, felder: felder, stempel: stempel, meta: meta };
+}
+
+/* Schreibt ueber denselben Pfad wie der Screenshot-Import. Ein eigener
+   Schreibweg waere die Stelle gewesen, an der Herkunft, Messtag und
+   Dublettenpruefung spaeter auseinanderlaufen. */
+function klV2WearableUebernehmen(w) {
+  var neu = { source: 'oura', geraet: 'Oura Ring', signalTs: w.stempel, signalMeta: w.meta, updatedAt: Date.now() };
+  Object.keys(w.felder).forEach(function(f) { neu[f] = w.felder[f]; });
+  var vorher = JSON.stringify(felieStore());
+  try {
+    felieUebernehmeAltObjekt(neu, 'oura');
+    window.ouraConnected = true;
+    saveBodyData();
+    return true;
+  } catch (e) {
+    window._felieStore = JSON.parse(vorher);
+    return false;
+  }
+}
+
+function klV2WearableVerbinden() {
+  if (window._klWearablePending) return Promise.resolve(false);
   var s = klZustand(), id = s.id, generation = window._klGeneration || 0;
-  if ((s.demoRequests || 0) >= 3) { window._klOuraDemo = { limit: true }; klV2Render(true); return Promise.resolve(false); }
-  s.demoRequests = (s.demoRequests || 0) + 1;
-  if (!klEntwurfSpeichern()) { s.demoRequests--; klV2Status(); return Promise.resolve(false); }
-  window._klOuraPending = true; klV2Render(true);
+  // Alter Entwurfsschluessel wird weitergelesen, damit ein angefangenes
+  // Kennenlernen seinen Zaehler nicht verliert.
+  var abrufe = s.wearableAbrufe != null ? s.wearableAbrufe : (s.demoRequests || 0);
+  if (abrufe >= 3) { window._klWearable = { limit: true }; klV2Render(true); return Promise.resolve(false); }
+  s.wearableAbrufe = abrufe + 1;
+  if (!klEntwurfSpeichern()) { s.wearableAbrufe = abrufe; klV2Status(); return Promise.resolve(false); }
+  window._klWearablePending = true; klV2Render(true);
   return felieFetch('https://avie-proxy.hoyer2707.workers.dev/oura', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ days: 7 }) }).then(function(r) {
-    if (!r.ok) throw new Error('Demo nicht erreichbar'); return r.json();
+    if (!r.ok) throw new Error('Nicht erreichbar'); return r.json();
   }).then(function(data) {
     if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return false;
-    // Display only: never persist demo values, pass them to AI, or mark an account connected.
-    window._klOuraDemo = klV2OuraDaten(data); return true;
-  }).catch(function() { if (generation === (window._klGeneration || 0) && id === klZustand().id) window._klOuraDemo = { error: true }; return false; })
-    .finally(function() { if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return; window._klOuraPending = false; if (klPhase === 'daten') klV2Render(true); });
+    var w = klV2WearableDaten(data);
+    // Erst speichern, dann als verbunden markieren: eine Verbindung ohne
+    // uebernommene Werte waere genau die Sackgasse von vorher.
+    if (!klV2WearableUebernehmen(w)) throw new Error('Übernahme fehlgeschlagen');
+    window._klWearable = w;
+    s.wearable = { anbieter: 'oura', verbundenAm: Date.now(), felder: Object.keys(w.felder) };
+    klEntwurfSpeichern();
+    return true;
+  }).catch(function() {
+    if (generation === (window._klGeneration || 0) && id === klZustand().id) window._klWearable = { error: true };
+    return false;
+  }).finally(function() {
+    if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return;
+    window._klWearablePending = false; if (klPhase === 'daten') klV2Render(true);
+  });
 }
 
 function klV2Sichern() {
@@ -4699,10 +4944,14 @@ function klV2Sichern() {
   felieAutosave(); return true;
 }
 
-function klV2StartApp(accept) {
+function klV2StartApp() {
   if (window._klV2Saving || window._felieRequestPending) return;
   var s = klZustand();
-  s.landing = { choice: accept ? 'vorschlag' : 'anderes', plan: accept ? klV2Vorschlag().plan : null, active: true, ts: Date.now() };
+  /* Ohne Auswahl wird nicht gestartet. Der Knopf ist bis dahin gesperrt;
+     diese Zeile faengt den Aufruf ueber die Tastatur oder aus dem Code ab. */
+  var wahl = klV2Einstiege().find(function(e) { return e.key === s.einstieg; });
+  if (!wahl) { s.formError = 'Wähle bitte aus, womit wir anfangen.'; klV2Status(); return; }
+  s.landing = { choice: wahl.key, thema: wahl.thema, plan: wahl.plan, active: true, ts: Date.now() };
   window._klV2Saving = true;
   var ok = false;
   try { ok = klV2Sichern(); } catch(e) { window._klStorageError = true; }
@@ -4718,7 +4967,10 @@ function klV2StartApp(accept) {
 
 function klV2StartseitenText() {
   var s = klZustand(), landing = s.landing;
-  if (landing && landing.choice === 'vorschlag' && landing.plan && !s.contextChanged) {
+  /* Greift jetzt fuer jeden angenommenen Themenvorschlag, nicht nur fuer
+     den erstgenannten. Beim offenen Thema gibt es keinen Plan — dann
+     bleibt der neutrale Text unten. */
+  if (landing && landing.plan && !s.contextChanged) {
     var plan = landing.plan.charAt(0).toUpperCase() + landing.plan.slice(1);
     return 'Diesen Gedanken nehmen wir mit: ' + plan + '.\n\nDu kannst dich erst einmal umschauen oder hier direkt weitersprechen – so, wie es für dich passt.';
   }
@@ -8698,7 +8950,7 @@ function showWearableSync() {
   bd.innerHTML = '<div class="score-popup">'
     + '<div style="font-size:18px;font-weight:600;margin-bottom:12px;">Werte aus deinem Wearable</div>'
     + '<p style="font-size:13px;line-height:1.6;color:#4A3A6A;">Du kannst einen Screenshot deiner Werte übernehmen. Prüfe danach die erkannten Zahlen und den Messtag.</p>'
-    + '<p style="font-size:12px;line-height:1.6;color:#6B5A88;">Die direkte Verbindung mit deinem persönlichen Oura-, Apple-Watch-, Garmin- oder Fitbit-Konto ist in dieser Version noch nicht verfügbar.</p>'
+    + '<p style="font-size:12px;line-height:1.6;color:#6B5A88;">Der Oura Ring lässt sich im Kennenlernen direkt verknüpfen. Apple Watch, Garmin und Fitbit folgen — bis dahin geht der Screenshot.</p>'
     + '<button id="ws-screenshot-row" style="width:100%;padding:14px;border:0;border-radius:14px;background:#e1ea7d;color:#180430;font:inherit;cursor:pointer;">Screenshot übernehmen</button>'
     + '<button onclick="this.closest(\'.score-popup-backdrop\').remove()" style="width:100%;padding:12px;border:0;background:none;color:#6B5A88;font:inherit;cursor:pointer;">Schließen</button></div>';
   document.querySelector('.phone').appendChild(bd);
@@ -10082,7 +10334,7 @@ function resetUserDataConfirm(title, message) {
 
 function doResetUserData() {
   window._klGeneration = (window._klGeneration || 0) + 1;
-  window._klOuraDemo = null; window._klOuraPending = false; window._klV2Saving = false;
+  window._klWearable = null; window._klWearablePending = false; window._klV2Saving = false;
   window._klState = null; window._klExtractPromise = null; window._klRequestPending = false; window._felieOnboardingChatId = null;
   try {
     /* Dieselbe Liste wie das Backup, plus die Altlasten. Vorher stand hier
@@ -11672,7 +11924,7 @@ function handleKey(e) {
 
 function showOnboarding() {
   window._klGeneration = (window._klGeneration || 0) + 1;
-  window._klState = null; window._klExtractPromise = null; window._klOuraDemo = null; window._klOuraPending = false; window._klV2Saving = false;
+  window._klState = null; window._klExtractPromise = null; window._klWearable = null; window._klWearablePending = false; window._klV2Saving = false;
   localStorage.removeItem('felie_onboarding_v1');
   var slideEls2 = document.querySelectorAll('.slide');
   currentSlide = 0;

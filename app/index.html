@@ -38,6 +38,14 @@
   --surface:        #F1F0F0;
   --surface-card:   #E6E0EE;
   --border:         rgba(143, 91, 189, 0.18);
+  /* Chatblasen als eigene Variablen. Vorher standen die Farben direkt in
+     den beiden Regeln, und das Kennenlernen setzte seine Blasen per
+     Inline-Stil auf Weiss — dieselbe Absicht an zwei Orten. */
+  --bubble-felie:   #FFFFFF;
+  --bubble-user:    #E2D8F0;   /* Light Lilac aus der Markenpalette */
+  /* Die Flaeche, auf der beide liegen. Sie muss heller als die
+     Nutzerinnenblase sein, sonst verschwindet das Lilac darin. */
+  --chat-bg:        #F6F3FA;
   --font-display: 'Alice', Georgia, serif;
   --font-body:    'DM Sans', sans-serif;
 }
@@ -556,7 +564,11 @@ html.native-app .phone {
   display: flex; flex-direction: column; gap: 14px;
   scrollbar-width: thin; scrollbar-color: var(--lav-light) transparent;
   position: relative; z-index: 1;
-  background: linear-gradient(to bottom, var(--lav-light) 0%, var(--lav-pale) 100px);
+  /* Frueher ein Lavendelverlauf (#E6E0EE). Auf ihm waere die neue
+     Nutzerinnenblase in #E2D8F0 praktisch unsichtbar gewesen — vier
+     Prozent Helligkeitsunterschied. Flach und hell, damit beide Blasen
+     als Formen lesbar bleiben. */
+  background: var(--chat-bg);
 }
 .date-label { text-align: center; font-size: 11px; color: var(--text-muted); font-weight: 300; letter-spacing: 0.05em; padding: 2px 0 4px; }
 
@@ -567,8 +579,12 @@ html.native-app .phone {
 .msg-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; overflow: visible; }
 .msg-row > div:not(.msg-avatar) { max-width: 88%; min-width: 0; }
 .bubble { max-width: 100%; width: fit-content; word-break: break-word; padding: 11px 15px; border-radius: 18px; font-size: 14px; line-height: 1.58; position: relative; }
-.bubble.felie { background: var(--lav-pale); color: var(--text-primary); border-bottom-left-radius: 4px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); }
-.bubble.user { background: var(--plum); color: white; border-bottom-right-radius: 4px; box-shadow: 0 3px 12px rgba(24, 4, 48,0.22); }
+.bubble.felie { background: var(--bubble-felie); color: var(--text-primary); border-bottom-left-radius: 4px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(24, 4, 48,0.05); }
+/* Die Nutzerinnenblase traegt jetzt Text in Plum statt Weiss — auf dem
+   hellen Lilac waere Weiss nicht lesbar. Der Schatten ist deutlich
+   zurueckgenommen: die schwere Tiefe stammte von der dunklen Flaeche und
+   wirkte unter einer hellen Blase wie ein Fehldruck. */
+.bubble.user { background: var(--bubble-user); color: var(--text-primary); border-bottom-right-radius: 4px; border: 1px solid rgba(143, 91, 189,0.22); box-shadow: 0 2px 8px rgba(24, 4, 48,0.06); }
 .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; padding: 0 4px; }
 .data-cta-wrap { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
 .data-cta { font-family: inherit; font-size: 12px; font-weight: 500; color: #180430; background: #F3EFFA; border: 1px solid rgba(143, 91, 189,0.3); border-radius: 12px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: background 0.15s; }
@@ -896,7 +912,7 @@ html.native-app .phone {
 .qr-btn:hover { background: var(--lav-light); border-color: var(--plum-soft); transform: translateY(-1px); }
 
 .typing-row { display: flex; align-items: flex-end; gap: 8px; }
-.typing-bubble { background: var(--lav-pale); border: 1px solid var(--border); border-bottom-left-radius: 4px; border-radius: 18px; padding: 12px 16px; display: flex; gap: 4px; }
+.typing-bubble { background: var(--bubble-felie); border: 1px solid var(--border); border-bottom-left-radius: 4px; border-radius: 18px; padding: 12px 16px; display: flex; gap: 4px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lila); animation: bounce 1.1s infinite ease-in-out; }
 .dot:nth-child(2) { animation-delay: 0.18s; }
 .dot:nth-child(3) { animation-delay: 0.36s; }
@@ -1928,13 +1944,16 @@ body.is-native .status-bar { display: none !important; }
 .kl-v2-link { display:inline-block; color:#6e4193; font:inherit; font-size:13px; text-decoration:underline; border:0; background:none; padding:8px 0; cursor:pointer; }
 /* Drei gleichwertige Angebote statt einer Lime-Karte plus Kleinlink.
    Alle drei tragen dieselbe Flaeche, damit keins allein durch sein
-   Gewicht gewinnt. Ausgewaehlt wird nicht nur die Farbe kraeftiger: der
-   Rand wird plum und die Schrift halbfett, sonst ist der Unterschied auf
-   zwei Lime-Toenen bei hellem Umgebungslicht kaum zu sehen. */
+   Gewicht gewinnt. Light Lilac als Ruhezustand, Plum mit Lime als
+   Auswahl — dasselbe Paar wie bei den Chips im uebrigen Onboarding.
+   Lime bleibt damit durchgehend das Zeichen fuer "ausgewaehlt" und wird
+   nicht zusaetzlich als Flaechenfarbe verbraucht. Kein Fettdruck beim
+   Auswaehlen: der Farbwechsel traegt den Unterschied bereits, und eine
+   springende Schriftstaerke laesst die Zeile umbrechen. */
 .kl-einstiege { display:flex; flex-direction:column; gap:9px; margin:14px 0 4px; }
 .kl-einstieg { font:inherit; font-size:13.5px; line-height:1.5; text-align:left; cursor:pointer;
-  background:#f4f7dd; border:1.5px solid rgba(143,91,189,0.18); border-radius:16px 16px 4px 16px; padding:13px 15px; color:var(--plum); }
-.kl-einstieg.selected { background:#e1ea7d; border-color:var(--plum); font-weight:600; }
+  background:#e2d8f0; border:1.5px solid rgba(143,91,189,0.18); border-radius:16px 16px 4px 16px; padding:13px 15px; color:var(--plum); }
+.kl-einstieg.selected { background:var(--plum); border-color:var(--plum); color:#e1ea7d; }
 .kl-einstieg:focus-visible { outline:3px solid #8f5bbd; outline-offset:2px; }
 .kl-v2-proposal { background:#f0f3ce; border-radius:14px; padding:14px; }
 .kl-v2-review { font-size:13px; margin:16px 0; }
@@ -2629,7 +2648,7 @@ function felieZyklusAttribut(ts) {
      war unbemerkt falsch und verschob auch die rueckwirkende Zuordnung
      aller Eintraege in diesem Zeitraum. Jenseits der Grenze gibt es
      schlicht keine Phase. Die Kombinationsmuster brauchen sie nicht. */
-  if (!Number.isInteger(L) || L < 15 || L > 60 || tage >= L) return null;
+  if (!Number.isInteger(L) || L < 15 || L > 60 || tage >= L + FELIE_ZYKLUS_UNBEKANNT) return null;
   /* Beginnt eine Lebensphase, gilt sie ab ihrem Startzeitpunkt. Aeltere
      Eintraege behalten ihre Zuordnung — sonst waere der aufgebaute
      Phasen-Kenntnisstand nicht eingefroren, sondern weg. */
@@ -2638,9 +2657,15 @@ function felieZyklusAttribut(ts) {
     if (d.getTime() >= ab.getTime()) return null;
   }
 
-  /* Modulo, das auch fuer negative Tage sauber laeuft */
-  var restTag = ((tage % L) + L) % L;
-  var index   = Math.floor(tage / L);
+  /* Modulo, das auch fuer negative Tage sauber laeuft.
+     Im Kulanzfenster (tage zwischen L und L+FELIE_ZYKLUS_UNBEKANNT) darf
+     das Modulo NICHT greifen: es wuerde aus Tag 30 eines verspaeteten
+     Zyklus den "Tag 3 von Zyklus 2" machen und damit eine Periode
+     behaupten, die niemand bestaetigt hat. Dort laeuft derselbe Zyklus
+     einfach weiter. */
+  var imKulanzfenster = tage >= L;
+  var restTag = imKulanzfenster ? tage : ((tage % L) + L) % L;
+  var index   = imKulanzfenster ? 0 : Math.floor(tage / L);
   var zyklusTag = restTag + 1;
 
   var phase = null;
@@ -3659,7 +3684,7 @@ function klBubble(text, who) {
   var b = document.createElement('div');
   b.style.cssText = who === 'user'
     ? 'background:#180430;color:#fff;border-radius:16px;border-bottom-right-radius:4px;padding:12px 15px;max-width:85%;font-size:14px;line-height:1.55;'
-    : 'background:white;border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;font-size:14px;color:#180430;line-height:1.55;';
+    : 'background:var(--bubble-felie);border-radius:16px;border-bottom-left-radius:4px;padding:12px 15px;border:1px solid rgba(143, 91, 189,0.15);box-shadow:0 2px 8px rgba(24, 4, 48,0.06);max-width:85%;font-size:14px;color:#180430;line-height:1.55;';
   b.innerHTML = text;
   row.appendChild(b);
   chat.appendChild(row);
@@ -3744,7 +3769,7 @@ function klTyping(on) {
   row.style.cssText = 'display:flex;gap:10px;align-items:flex-end;';
   row.innerHTML = '<div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
     '<svg width="26" height="26" aria-hidden="true"><use href="#felie-mark"/></svg></div>' +
-    '<div style="background:white;border-radius:16px;border-bottom-left-radius:4px;padding:14px 16px;border:1px solid rgba(143, 91, 189,0.15);">' +
+    '<div style="background:var(--bubble-felie);border-radius:16px;border-bottom-left-radius:4px;padding:14px 16px;border:1px solid rgba(143, 91, 189,0.15);">' +
     '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#8F5BBD;opacity:0.5;"></span>' +
     '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#8F5BBD;opacity:0.5;margin-left:4px;"></span>' +
     '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#8F5BBD;opacity:0.5;margin-left:4px;"></span></div>';
@@ -4887,6 +4912,58 @@ function klV2WearableVerbinden() {
   });
 }
 
+/* Welche Lebensphase folgt aus dem Kennenlernen?
+   ────────────────────────────────────────────────────────────────────
+   Bewusst NUR die drei eindeutigen Angaben. Nicht uebernommen werden:
+   - 'hormonelle Verhuetung': viele haben darunter eine Abbruchblutung und
+     fuehren ihren Zyklus normal weiter. Daraus "keine Periode" zu machen,
+     waere eine Unterstellung.
+   - 'natuerlicher Zyklus' und die Frage "wo stehst du gerade": daraus
+     liesse sich nur ein erfundenes Startdatum ableiten. Die Angabe bleibt
+     Fakt im Gedaechtnis; die Karte bleibt leer, bis sie einen Tag eintraegt.
+   Reihenfolge ist Rangfolge: Schwangerschaft schlaegt Stillzeit schlaegt
+   Wechseljahre, falls mehrere angetippt wurden. */
+function klV2ZyklusLebensphase(a) {
+  if (!a) return null;
+  var koerper = a.koerper && !a.koerper.skipped ? (a.koerper.selected || []) : [];
+  var gewaehlt = klV2Hat('leben', 'schwanger') ? koerper.concat(['Schwangerschaft']) : koerper;
+  var karte = [['Schwangerschaft', 'schwangerschaft'], ['Stillzeit', 'stillzeit'],
+               ['Perimenopause / Wechseljahre', 'wechseljahre']];
+  var treffer = karte.find(function(p) { return gewaehlt.indexOf(p[0]) >= 0; });
+  return treffer ? treffer[1] : null;
+}
+
+/* Die Angabe stand bisher nur als Fakt im Gedaechtnis. Im Dashboard traf
+   die Nutzerin trotzdem auf die gesperrte Zykluskarte und musste ihre
+   Schwangerschaft ein zweites Mal angeben — das liest sich, als haette
+   felie nicht zugehoert.
+     quelle: 'kennenlernen' markiert die Voreinstellung als aenderbar.
+   Sobald sie im Sheet selbst etwas waehlt, steht dort 'selbst', und ein
+   erneuter Durchlauf fasst den Eintrag nicht mehr an. */
+function klV2ZyklusVoreinstellen(a) {
+  var val = klV2ZyklusLebensphase(a);
+  if (!val || typeof felieLebensphase !== 'function') return false;
+  var cd = window.cycleData;
+  if (cd && cd.quelle !== 'kennenlernen') return false;
+  if (cd && cd.unknownType === val) return false;
+  var p = felieLebensphase(val);
+  if (!p) return false;
+  window.cycleData = {
+    phase: p.phase,
+    /* Ein frueherer Periodenstart bleibt erhalten: er ordnet die bereits
+       vorhandenen Eintraege weiter zu. phaseAb markiert, ab wann die
+       Lebensphase gilt. */
+    lastPeriod:  cd && cd.lastPeriod  || null,
+    selectedLen: cd && cd.selectedLen || null,
+    phaseAb: Date.now(),
+    cycleDay: null, daysLeft: null,
+    hormoneVal: p.hormoneVal,
+    unknown: true, unknownType: val, quelle: 'kennenlernen'
+  };
+  try { saveBodyData(); } catch (e) {}
+  return true;
+}
+
 function klV2Sichern() {
   var s = klZustand(); if (s.stage !== 'aufnahme') return true;
   klV2Verlauf(); var chat = klArchivSichern(); if (!chat) return false;
@@ -4934,6 +5011,11 @@ function klV2Sichern() {
     imported[s.id] = fingerprint;
   }
   if (!felieStoreSpeichern()) { window._felieStore = JSON.parse(before); window._klStorageError = true; return false; }
+  /* Erst NACH dem Store schreiben: die Zyklusangabe liegt unter einem
+     eigenen Speicherschluessel, ein Ruecksetzen des Stores wuerde sie
+     nicht mit zuruecknehmen. Die Voreinstellung ist idempotent und darf
+     bei jedem Durchlauf erneut aufgerufen werden. */
+  try { klV2ZyklusVoreinstellen(s.committed); } catch (e) {}
   var chats = getSavedChats(), current = chats.find(function(c) { return c.onboardingId === s.id; });
   if (!current) return false;
   current.notizenStatus = 'vollstaendig'; current.onboardingFlow = 2;
@@ -5029,7 +5111,12 @@ function personalizeApp() {
         'Follikelphase': 'Östrogen steigt — du bist hormonell im Aufschwung. Konzentration und Belastbarkeit sind gerade auf deiner Seite.',
         'Menstruation':  'Östrogen und Progesteron sind niedrig — der Körper regeneriert sich. Weniger verlangen ist heute Stärke.'
       };
-      parts.push('Du bist in der <strong>' + cd.phase + '</strong>' + cycleDayPart(cd, ', ') + '. ' + (phaseDesc[cd.phase] || ''));
+      /* Ohne diese Pruefung stand hier "Du bist in der Aktuelle Phase
+         unbekannt." beziehungsweise "Du bist in der Schwangerschaft." mit
+         leerer Erklaerung dahinter. Die Zeile gehoert nur den drei echten
+         Zyklusphasen; fuer alles andere faellt sie ersatzlos weg. */
+      if (!cd.unknown && !cd.stale && phaseDesc[cd.phase])
+        parts.push('Du bist in der <strong>' + cd.phase + '</strong>' + cycleDayPart(cd, ', ') + '. ' + phaseDesc[cd.phase]);
     }
 
     /* 2. Nacht — Selbstauskunft zuerst. Die gemessene Dauer kommt nur
@@ -7573,7 +7660,39 @@ function connectOuraSuccess(btn) {
 
 function showOuraConnect() { showWearableSync(); }
 
-function selectCycleUnknown(btn) {
+/* Lebensphasen an EINER Stelle. Die Liste stand frueher nur im
+   Sheet-Renderer, die Hormonbeschriftung nur in einer zweiten Tabelle
+   daneben — das Onboarding kann jetzt dieselbe Phase voreinstellen, und
+   zwei Listen waeren die Stelle gewesen, an der Label und Beschriftung
+   spaeter auseinanderlaufen.
+     'stillzeit' ist neu: die Koerperfrage im Kennenlernen bietet sie an,
+   das Zyklus-Sheet kannte sie nicht — eine uebernommene Angabe haette
+   sonst keinen passenden Eintrag gehabt. */
+var FELIE_LEBENSPHASEN = [
+  { val: 'schwangerschaft', label: 'Schwangerschaft',              sub: 'Hormone verändern sich stark',
+    phase: 'Schwangerschaft',        hormoneVal: 'hCG + Progesteron hoch' },
+  { val: 'stillzeit',       label: 'Stillzeit',                    sub: 'Zyklus setzt oft noch aus',
+    phase: 'Stillzeit',              hormoneVal: 'Prolaktin hoch' },
+  { val: 'wechseljahre',    label: 'Wechseljahre / Perimenopause', sub: 'Östrogen und Progesteron sinken',
+    phase: 'Wechseljahre',           hormoneVal: 'Östrogen + Progesteron sinken' },
+  { val: 'postmenopause',   label: 'Postmenopause',                sub: 'Nach den Wechseljahren',
+    phase: 'Postmenopause',          hormoneVal: 'Östrogen dauerhaft niedrig' },
+  { val: 'unregelmaessig',  label: 'Unregelmäßiger Zyklus',        sub: 'Keine klare Periode',
+    phase: 'Unregelmäßiger Zyklus',  hormoneVal: 'Keine klare Phase' },
+  { val: 'keine-periode',   label: 'Keine Periode aktuell',        sub: 'Z.B. durch Pille, Stress oder anderes',
+    phase: 'Keine Periode',          hormoneVal: 'Hormonstatus unbekannt' }
+];
+
+function felieLebensphase(val) {
+  return FELIE_LEBENSPHASEN.find(function(p) { return p.val === val; }) || null;
+}
+
+/* vorauswahl: markiert eine bereits gespeicherte Lebensphase, OHNE sie
+   erneut zu schreiben und ohne das Sheet zu schliessen. Ohne diesen Weg
+   sah eine Nutzerin, die ihre Schwangerschaft laengst angegeben hatte,
+   beim Oeffnen ein leeres Formular und musste raten, ob die Angabe noch
+   da ist. */
+function selectCycleUnknown(btn, vorauswahl) {
   // Toggle selected state
   const bd = btn.closest('.score-popup-backdrop');
   btn.style.background = '#180430';
@@ -7590,13 +7709,7 @@ function selectCycleUnknown(btn) {
     subDiv.style.cssText = 'margin-bottom:16px;display:flex;flex-direction:column;gap:8px;';
     subDiv.innerHTML = `
       <div style="font-size:11px;font-weight:600;color:#8F5BBD;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Welche Lebensphase?</div>
-      ${[
-        { val: 'schwangerschaft', label: 'Schwangerschaft', sub: 'Hormone verändern sich stark' },
-        { val: 'wechseljahre', label: 'Wechseljahre / Perimenopause', sub: 'Östrogen und Progesteron sinken' },
-        { val: 'postmenopause', label: 'Postmenopause', sub: 'Nach den Wechseljahren' },
-        { val: 'unregelmaessig', label: 'Unregelmäßiger Zyklus', sub: 'Keine klare Periode' },
-        { val: 'keine-periode', label: 'Keine Periode aktuell', sub: 'Z.B. durch Pille, Stress oder anderes' },
-      ].map(o => `<button class="cycle-unknown-opt" data-val="${o.val}"
+      ${FELIE_LEBENSPHASEN.map(o => `<button class="cycle-unknown-opt" data-val="${o.val}"
         style="padding:10px 14px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.2);background:#E6E0EE;font-family:inherit;font-size:13px;cursor:pointer;text-align:left;width:100%;">
         <div style="font-weight:500;color:#4A3A6A;">${o.label}</div>
         <div style="font-size:11px;color:#6B5A88;margin-top:2px;">${o.sub}</div>
@@ -7615,14 +7728,7 @@ function selectCycleUnknown(btn) {
 
         // Save and close
         const val = this.dataset.val;
-        const phaseMap = {
-          'schwangerschaft': { phase: 'Schwangerschaft', hormoneVal: 'hCG + Progesteron hoch', cycleDay: null },
-          'wechseljahre': { phase: 'Wechseljahre', hormoneVal: 'Östrogen + Progesteron sinken', cycleDay: null },
-          'postmenopause': { phase: 'Postmenopause', hormoneVal: 'Östrogen dauerhaft niedrig', cycleDay: null },
-          'unregelmaessig': { phase: 'Unregelmäßiger Zyklus', hormoneVal: 'Keine klare Phase', cycleDay: null },
-          'keine-periode': { phase: 'Keine Periode', hormoneVal: 'Hormonstatus unbekannt', cycleDay: null }
-        };
-        const data = phaseMap[val] || phaseMap['unregelmaessig'];
+        const data = felieLebensphase(val) || felieLebensphase('unregelmaessig');
         /* Der frueher hier gesetzte lastPeriod: null hat die Historie
            gekappt: felieZyklusAttribut gab danach fuer JEDEN Zeitpunkt
            null zurueck, auch fuer Eintraege von vorher. Der aufgebaute
@@ -7642,7 +7748,11 @@ function selectCycleUnknown(btn) {
           daysLeft: null,
           hormoneVal: data.hormoneVal,
           unknown: true,
-          unknownType: val
+          unknownType: val,
+          /* 'selbst' heisst: hier im Sheet angetippt. Nur so kann die
+             Voreinstellung aus dem Kennenlernen erkennen, dass sie eine
+             ausdrueckliche Entscheidung NICHT ueberschreiben darf. */
+          quelle: 'selbst'
         };
         // Update UI
         populateZyklusCard(window.cycleData);
@@ -7656,6 +7766,13 @@ function selectCycleUnknown(btn) {
       });
     });
   }
+  if (vorauswahl) {
+    var vor = subDiv.querySelector('.cycle-unknown-opt[data-val="' + String(vorauswahl).replace(/"/g, '') + '"]');
+    if (vor) {
+      vor.style.background = '#180430'; vor.style.borderColor = '#180430';
+      vor.querySelector('div').style.color = 'white';
+    }
+  }
 }
 
 // ── Zyklus manuell eingeben ──
@@ -7666,7 +7783,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-11-onboarding-v3';
+var FELIE_BUILD = '2026-09-11-zyklus-kulanz';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -7796,8 +7913,11 @@ function felieFetch(url, opts, ms) {
 
 function cycleDayPart(cd, pre, post) {
   if (!cd || cd.unknown || cd.stale || cd.cycleDay == null) return '';
+  /* Im Kulanzfenster liegt der Zyklustag ueber der Laenge. "Tag 31 von 28"
+     liest sich wie ein Rechenfehler, deshalb faellt der Bezugswert dort weg. */
+  var spaet = cd.ueberfaellig != null;
   return (pre || '') + 'Tag ' + cd.cycleDay +
-         (cd.selectedLen ? ' von ' + cd.selectedLen : '') + (post || '');
+         (cd.selectedLen && !spaet ? ' von ' + cd.selectedLen : '') + (post || '');
 }
 
 function cycleMidnight(v) {
@@ -7830,18 +7950,39 @@ function cycleCompute(lastPeriod, len, refDate) {
   if (!lp || !ref || !Number.isInteger(L) || L < 15 || L > 60) return null;
   var daysSince = cycleDaysBetween(lp, ref);
   if (daysSince < 0) return null;
-  // Ein neuer Zyklus braucht einen bestätigten Start: niemals endlos Modulo.
-  var stale = daysSince >= L;
+  /* Ein neuer Zyklus braucht einen bestaetigten Start: niemals endlos Modulo.
+     ABER: Zyklen schwanken um mehrere Tage. Frueher stand hier
+     "stale = daysSince >= L", also fiel die Phase am Tag NACH der
+     erwarteten Periode weg — bei woechentlicher Nutzung traf die Nutzerin
+     dadurch fast immer auf "Aktuelle Phase unbekannt", obwohl sie ihren
+     Zyklus gerade erst eingetragen hatte. Die Kulanz war als
+     FELIE_ZYKLUS_UNBEKANNT bereits definiert, wurde aber nirgends
+     verwendet. Innerhalb des Fensters laeuft der Zyklustag weiter und die
+     Verspaetung wird benannt, statt die Zuordnung wortlos zu verwerfen. */
+  var ueber = daysSince - L;                       /* Tage ueber der erwarteten Periode */
+  var stale = ueber >= FELIE_ZYKLUS_UNBEKANNT;
+  var spaet = !stale && ueber >= 0;
   var day = daysSince + 1;
   var ph = CYCLE_PHASES.find(function(p) { return day <= p.max; }) || CYCLE_PHASES[2];
   var next = new Date(lp.getTime()); next.setDate(lp.getDate() + L);
+  var lpStr = lp.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
   return { lastPeriod: lp.getFullYear() + '-' + ('0' + (lp.getMonth()+1)).slice(-2) + '-' + ('0' + lp.getDate()).slice(-2),
     selectedLen: L, daysSince: daysSince, cycleDay: stale ? null : day, daysLeft: stale ? null : L - daysSince,
     phase: stale ? 'Aktuelle Phase unbekannt' : ph.phase, stale: stale,
+    /* null ausserhalb des Kulanzfensters, sonst Zahl >= 0. Die Anzeige
+       unterscheidet daran, ob sie "ueberfaellig" texten darf. */
+    ueberfaellig: spaet ? ueber : null,
+    letzterStartStr: lpStr,
     hormoneVal: 'Nicht gemessen', hormoneSub: 'Kalenderangaben bestimmen keine Hormonwerte',
-    fillPct: stale ? 0 : Math.round(day / L * 100),
-    nextStr: stale ? 'Kein neuer Start bestätigt' : next.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }),
-    daysLeftStr: stale ? 'Unbekannt' : 'geschätzt in ~' + (L - daysSince) + ' Tagen' };
+    /* Im Kulanzfenster steht der Balken voll, statt ueber 100 Prozent
+       hinauszuwachsen — er zeigt dann "Zyklus rechnerisch abgelaufen". */
+    fillPct: stale ? 0 : Math.min(100, Math.round(day / L * 100)),
+    nextStr: stale ? ('Zuletzt eingetragen: ' + lpStr)
+      : spaet ? ('Erwartet war ' + next.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }))
+      : next.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }),
+    daysLeftStr: stale ? 'Unbekannt'
+      : spaet ? (ueber === 0 ? 'heute erwartet' : 'seit ' + ueber + (ueber === 1 ? ' Tag' : ' Tagen') + ' überfällig')
+      : 'geschätzt in ~' + (L - daysSince) + ' Tagen' };
 }
 
 /* Frischt window.cycleData aus den gespeicherten Rohwerten auf.
@@ -7850,7 +7991,7 @@ function cycleRefresh() {
   var cd = window.cycleData;
   if (!cd || cd.unknown || !cd.lastPeriod) return cd;
   var fresh = cycleCompute(cd.lastPeriod, cd.selectedLen);
-  if (!fresh) fresh = { stale: true, cycleDay: null, daysLeft: null, phase: 'Aktuelle Phase unbekannt',
+  if (!fresh) fresh = { stale: true, ueberfaellig: null, cycleDay: null, daysLeft: null, phase: 'Aktuelle Phase unbekannt',
     hormoneVal: 'Nicht gemessen', hormoneSub: '', fillPct: 0, nextStr: '', daysLeftStr: 'Unbekannt' };
   Object.keys(fresh).forEach(function(k) { cd[k] = fresh[k]; });
   return cd;
@@ -7947,15 +8088,43 @@ function showCycleInput(onDone) {
   var cancelBtn = bd.querySelector('#cycle-cancel-btn');
   if (cancelBtn) cancelBtn.addEventListener('click', abbruch);
   felieDialog(bd, { label: 'Zyklus eingeben', onClose: abbruch });
+  /* Lief bei ihr bereits eine Lebensphase — egal ob selbst angetippt oder
+     aus dem Kennenlernen uebernommen — wird sie hier aufgeklappt und
+     markiert. Vorher oeffnete das Sheet immer im Rohzustand und wirkte,
+     als waere nichts gespeichert. */
+  if (_cd && _cd.unknown) {
+    var lpBtn = bd.querySelector('#cycle-unknown-btn');
+    if (lpBtn) try { selectCycleUnknown(lpBtn, _cd.unknownType); } catch (e) {}
+  }
   let selectedLen = defaultLen;
 
   function updatePreview() {
     const lastPeriodVal = bd.querySelector('#cycle-last-period').value;
     if (!lastPeriodVal) return;
     const c = cycleCompute(lastPeriodVal, selectedLen);
-    if (!c) return;
-    bd.querySelector('#cycle-preview').innerHTML =
-      c.stale ? 'Aktuelle Phase unbekannt — kein neuer Periodenstart bestätigt.' : `<svg class="ico" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-cycle"/></svg> <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}<br><svg class="ico" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-bloom"/></svg> Nächste Periode: <strong>${c.nextStr}</strong> (${c.daysLeftStr})`;
+    const box = bd.querySelector('#cycle-preview');
+    if (!c || !box) return;
+    const ico = n => `<svg class="ico" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-${n}"/></svg>`;
+    /* Die Vorschau meldete den Sackgassenzustand nur ("Aktuelle Phase
+       unbekannt") und liess die Nutzerin damit stehen: derselbe Satz
+       erschien beim Oeffnen, beim Tippen und nach dem Speichern, ohne zu
+       sagen, was daran zu tun ist. Jetzt gibt es drei Faelle, und der
+       kritische nennt die Handlung. Bewusst KEIN Angebot, daraus eine
+       Lebensphase zu machen: ein zu altes Datum heisst nicht, dass der
+       Zyklus ausgesetzt hat — das entscheidet sie oben selbst. */
+    if (c.stale) {
+      box.style.background = 'rgba(225,234,125,0.22)';
+      box.innerHTML = `${ico('help')} Der <strong>${c.letzterStartStr}</strong> liegt ${c.daysSince} Tage zurück — mehr als ein Zyklus von ~${c.selectedLen} Tagen.<br>`
+        + `Trag bitte den Tag ein, an dem deine Periode <strong>zuletzt</strong> begonnen hat. Bis dahin zeige ich dir keine Phase an.`;
+    } else if (c.ueberfaellig != null) {
+      box.style.background = '#E6E0EE';
+      box.innerHTML = `${ico('cycle')} <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}<br>`
+        + `${ico('bloom')} ${c.nextStr} — <strong>${c.daysLeftStr}</strong>`;
+    } else {
+      box.style.background = '#E6E0EE';
+      box.innerHTML = `${ico('cycle')} <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}<br>`
+        + `${ico('bloom')} Nächste Periode: <strong>${c.nextStr}</strong> (${c.daysLeftStr})`;
+    }
   }
 
   bd.querySelectorAll('.cycle-len-btn').forEach(btn => {
@@ -9386,7 +9555,10 @@ function populateZyklusCard(data) {
     if (fi) fi.style.width = '0%';
     // Hide next period countdown
     if (nv) nv.textContent = '—';
-    if (ns) ns.textContent = data.stale ? 'Kein neuer Start bestätigt' : 'Kein Zyklus-Tracking';
+    /* Bei stale traegt nextStr jetzt den letzten eingetragenen Start. Das
+       ist die einzige Angabe, die hier noch stimmt — und die einzige, mit
+       der die Nutzerin erkennt, WARUM keine Phase mehr steht. */
+    if (ns) ns.textContent = data.stale ? (data.nextStr || 'Kein neuer Start bestätigt') : 'Kein Zyklus-Tracking';
     if (hv) hv.textContent = data.hormoneVal || '—';
     if (hs) hs.textContent = data.hormoneSub || '';
   } else if (data.estimated) {
@@ -9400,11 +9572,15 @@ function populateZyklusCard(data) {
     if (hv) hv.textContent = data.hormoneVal;
     if (hs) hs.textContent = data.hormoneSub;
   } else {
-    if (t)  t.textContent  = `Tag ${data.cycleDay} von ~${data.selectedLen}`;
-    if (ph) { ph.textContent = data.phase; ph.style.display = ''; }
+    /* Im Kulanzfenster waere "Tag 30 von ~28" eine stille Ungereimtheit:
+       die Zahl steht ueber der Laenge, und die Karte sagt nicht warum.
+       Deshalb wird dort die Verspaetung ausgeschrieben. */
+    const spaet = data.ueberfaellig != null;
+    if (t)  t.textContent  = spaet ? `Tag ${data.cycleDay}` : `Tag ${data.cycleDay} von ~${data.selectedLen}`;
+    if (ph) { ph.textContent = spaet ? data.phase + ' · Periode überfällig' : data.phase; ph.style.display = ''; }
     if (fi) { fi.style.width = (data.fillPct || 0) + '%'; }
     const barWrap = fi ? fi.parentElement : null;
-    if (barWrap) barWrap.style.opacity = '1';
+    if (barWrap) barWrap.style.opacity = spaet ? '0.6' : '1';
     if (nv) nv.textContent = data.daysLeftStr;
     if (ns) ns.textContent = data.nextStr;
     if (hv) hv.textContent = data.hormoneVal;
@@ -11267,7 +11443,7 @@ function openTopicSheetNew() {
     { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-chat"/></svg>', bg:'rgba(255,255,255,0.16)', name:'Mein Thema', hint:'Ich möchte etwas besprechen', msg:'Ich möchte etwas mit dir besprechen. Was liegt mir auf dem Herzen?' },
     { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-run"/></svg>', bg:'rgba(225, 234, 125,0.16)', name:'Bewegung & Energie', hint: 'Training & Zyklusphase', msg:'Ich möchte über Bewegung und Energie sprechen' },
     { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-calm"/></svg>', bg:'rgba(123,168,224,0.34)', name:'Stress & Mental Load', hint:'Nervensystem & Erholung', msg:'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-bloom"/></svg>', bg:'rgba(143, 91, 189,0.48)', name:'Zyklus & Hormone', hint: cd ? (phase + cycleDayPart(cd, ' · ')) : 'Zyklus verstehen', msg:'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
+    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-bloom"/></svg>', bg:'rgba(143, 91, 189,0.48)', name:'Zyklus & Hormone', hint: (cd && !cd.stale) ? (phase + cycleDayPart(cd, ' · ')) : 'Zyklus verstehen', msg:'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
     { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-moon"/></svg>', bg:'rgba(107,143,212,0.34)', name:'Schlaf & Erholung', hint: (mb && mb.sleepStr) ? mb.sleepStr + ' letzte Nacht' : 'Schlafqualität verbessern', msg:'Ich möchte über meinen Schlaf sprechen' },
     { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-bowl"/></svg>', bg:'rgba(225, 234, 125,0.16)', name:'Ernährung & Körper', hint:'Zyklusbasiert essen', msg:'Ich möchte über Ernährung und meinen Körper sprechen' },
   ];
@@ -12171,9 +12347,21 @@ function felieZyklusDaten() {
   var cd = cycleRefresh();
   if (!cd) return { status: 'unbekannt', grund: 'Kein bestätigter Periodenstart' };
   if (cd.unknown || cd.estimated || cd.stale || !cd.lastPeriod || cd.cycleDay == null)
-    return { status: 'unbekannt', grund: cd.unknown ? 'Lebensphase oder Zyklus bewusst unbekannt' : 'Keine belastbare aktuelle Kalenderzuordnung', letzterBestaetigterStart: cd.lastPeriod || null };
+    return { status: 'unbekannt', grund: cd.unknown ? 'Lebensphase oder Zyklus bewusst unbekannt' : 'Keine belastbare aktuelle Kalenderzuordnung',
+      /* Die Lebensphase gehoert in den Kontext: sonst fragt felie nach dem
+         Zyklus einer Nutzerin, die ihre Schwangerschaft gerade angegeben
+         hat. Herkunft mitgeben, damit eine Voreinstellung aus dem
+         Kennenlernen nicht wie eine bestaetigte Angabe behandelt wird. */
+      lebensphase: cd.unknown ? (cd.phase || null) : null,
+      lebensphaseHerkunft: cd.unknown ? (cd.quelle === 'kennenlernen' ? 'aus dem Kennenlernen übernommen, nicht erneut bestätigt' : 'selbst im Zyklusbereich gewählt') : null,
+      letzterBestaetigterStart: cd.lastPeriod || null };
   return { status: 'grobe Kalenderschätzung', letzterBestaetigterStart: cd.lastPeriod,
     angenommeneLaenge: cd.selectedLen, tagSeitBestaetigtemStart: cd.cycleDay,
+    /* Innerhalb der Kulanz laeuft der Zyklustag weiter, obwohl die
+       erwartete Periode vorbei ist. Ohne diese Angabe wuerde das Modell
+       einen Tag 31 als gewoehnlichen Zyklustag lesen. Ausdruecklich ohne
+       Deutung: eine ausgebliebene Periode hat viele Gruende. */
+    periodeUeberfaelligTage: cd.ueberfaellig != null ? cd.ueberfaellig : null,
     phase: cd.phase, hormoneGemessen: false };
 }
 
@@ -12350,6 +12538,20 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
   var bekannt = (vorhanden || []).reduce(function(liste, n) {
     return liste.concat([n.ursprungstext, n.text].filter(Boolean));
   }, []);
+  /* Bis hierher kannte die Extraktion nur, was sie im SELBEN Lauf schon
+     vorgeschlagen hatte — der Aufruf laeuft mit context:false, also ohne
+     Gedaechtnis. Eine im Kennenlernen erfasste Schwangerschaft war fuer
+     dieses Modell schlicht nicht vorhanden, und sobald das Gespraech sie
+     streifte, kam sie als "neuer" Fakt zurueck. Das betraf jeden
+     dauerhaften Fakt, nicht nur die Lebensphase.
+       Deshalb kommt das Gemerkte hier als Ausgangsbestand mit. Nur die
+   Texte, keine Kennungen und keine Belege: die Extraktion soll damit
+   vergleichen, nicht darauf verweisen. */
+  var gemerkt = { fakten: [], faeden: [] };
+  try {
+    gemerkt.fakten = felieFakten().map(function(f) { return f.text; });
+    gemerkt.faeden = felieEpisoden({ nurAktuell: true }).map(function(e) { return e.text; });
+  } catch (e) {}
   function unvollstaendig() {
     out.notizenStatus = 'unvollstaendig';
     out.hinweis = 'Die Notizen sind noch nicht vollständig. Du kannst sie im Archiv ergänzen; bereits erfasste Einträge bleiben erhalten.';
@@ -12360,7 +12562,8 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
       page = await felieRequest(mode || 'zusammenfassung', [{ role: 'user', content: felieDatenBlock('gespraech', {
         gespraech: source, bereits_erfasst: {
           notizen: bekannt.concat(out.notizen.map(function(n) { return n.text; })),
-          fakten: out.fakten.map(function(n) { return n.text; }), faeden: out.faeden.map(function(n) { return n.text; })
+          fakten: gemerkt.fakten.concat(out.fakten.map(function(n) { return n.text; })),
+          faeden: gemerkt.faeden.concat(out.faeden.map(function(n) { return n.text; }))
         },
         antwortpaket: { maximalNeueEintraege: groesse, hinweis: 'Nur die Größe dieser Antwort ist begrenzt. weitere_notizen=true, solange noch wichtige neue Informationen fehlen. Keine bereits erfassten Inhalte wiederholen.' },
         formathinweis: fehlerOhneFortschritt ? 'Prüfe text, Nutzer-ID und Originalauszug. Formuliere fehlende Notizen mit passenden Belegen. Keine ausdrückliche Selbsterkenntnis erforderlich.' : null
@@ -13507,11 +13710,69 @@ function felieMerkPromptTeil() {
     + 'fakten: Liste von {"text":"höchstens 90 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"Originalauszug"}],"kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil"}. Nur ausdrücklich berichtete längerfristige Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. '
     + 'faeden: Liste von {"text":"höchstens 90 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"Originalauszug"}]}. Nur aktuell offene, zeitlich begrenzte Themen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. '
     + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und bereits_erfasst erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits erfasste Punkte weder umformulieren noch wiederholen. '
-    + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. bereits_erfasst ist nach notizen, fakten und faeden getrennt: Dopplungen innerhalb derselben Liste vermeiden. Eine Aussage kann zusätzlich zu einer Gesprächsnotiz als dauerhafter Fakt oder offenes Thema vorgeschlagen werden. Ohne relevante Angaben sind leere Listen und weitere_notizen=false richtig. '
+    + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. bereits_erfasst ist nach notizen, fakten und faeden getrennt und enthält bei fakten und faeden auch das, was bereits dauerhaft gemerkt ist — etwa aus dem Kennenlernen oder früheren Gesprächen. Nichts davon erneut vorschlagen, auch nicht umformuliert, gekürzt oder als Stichwort. Ein neuer Eintrag ist nur richtig, wenn er eine Angabe ergänzt, verändert oder ihr widerspricht; dann muss der Unterschied im text stehen. Dopplungen innerhalb derselben Liste vermeiden. Eine Aussage kann zusätzlich zu einer Gesprächsnotiz als dauerhafter Fakt oder offenes Thema vorgeschlagen werden. Ohne relevante Angaben sind leere Listen und weitere_notizen=false richtig. '
     + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze oder verständliche Satzfragmente, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Belastung durch ein krankes Kind; fühlt sich selbst erschöpft.“ '
     + '„Ne niemand hat Zeit“ wird nur bei klarem Gesprächskontext zu „Aktuell keine verfügbare Unterstützung.“ Ohne Kontext weglassen. '
     + 'Keine neuen Tatsachen ergänzen, Verneinungen und Unsicherheit bewahren, spätere Korrekturen berücksichtigen. Symptome nicht zu Diagnosen machen. Vermutungen und selbst berichtete Diagnosen ausdrücklich als solche kennzeichnen. Angaben der Assistentin sind keine Belege für persönliche Fakten. '
     + 'BELEGE: Ein bis sechs Nutzerbelege je Eintrag; IDs aus den gelieferten Daten unverändert übernehmen. Der Originalauszug darf länger als der Anzeigetext sein, auch umgangssprachlich und ohne Satzzeichen. Belege dienen nur der Zuordnung und werden nicht als sichtbarer Snippettext verwendet. Führe einen abschließenden Abgleich durch: Jede Aussage in text muss aus den Belegen und ihrem Gesprächskontext folgen. Keine Mindestzahl an Fakten oder Fäden.';
+}
+
+/* ── Abgleich mit dem, was schon gemerkt ist ──────────────────────────
+   Der Fall aus der Praxis: das Kennenlernen legt "Koerperlicher /
+   hormoneller Kontext (Selbstauskunft): Schwangerschaft." ab, ein
+   spaeteres Gespraech streift das Thema, und die Extraktion schlaegt
+   "Schwanger" vor. Beide Texte sind verschieden, also greift weder der
+   Schluesselvergleich in felieFaktSetzen noch irgendeine andere Huerde —
+   es entstehen zwei Eintraege fuer dieselbe Angabe.
+     Das ist kein Sonderfall der Schwangerschaft, sondern gilt fuer jeden
+   Fakt, dessen Formulierung sich zwischen zwei Quellen unterscheidet.
+
+   Regel: ein Vorschlag gilt als inhaltsgleich, wenn JEDES seiner
+   Inhaltswoerter in einem vorhandenen Eintrag steckt. Er bringt dann
+   nichts Neues. Sobald ein Wort fehlt ("Vollzeit seit Januar" gegen
+   "Arbeit und Alltag: Vollzeit."), bleibt er ein eigener Vorschlag.
+   Verneinungen trennen: "keine Kinder" und "Kinder" sind nie dasselbe. */
+var FELIE_MERK_STOPP = ['aber','auch','beim','dabei','damit','dann','dass','dein','deine','denn','dies','diese','durch','eine','einem','einen','einer','eines','etwa','fuer','ganz','gegen','ihre','ihrem','ihren','ihrer','immer','jetzt','mehr','nach','noch','oder','schon','sehr','sein','seine','sich','sind','ueber','viel','vom','wenn','werden','wieder','wird','wurde','zwischen'];
+var FELIE_MERK_VERNEINUNG = /(^|[^a-zäöü])(kein|keine|keinen|keiner|keines|nicht|nichts|nie|niemand|ohne|weder)([^a-zäöü]|$)/i;
+
+function felieMerkWorte(text) {
+  return String(text || '').toLowerCase()
+    .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, ' ').trim().split(' ')
+    .filter(function(w) { return w.length >= 4 && FELIE_MERK_STOPP.indexOf(w) < 0; });
+}
+
+/* Wortvergleich mit Praefix: "schwanger" steckt in "schwangerschaft",
+   "kind" in "kinder". Absichtlich keine Stammformenerkennung — die waere
+   raterei und wuerde still falsch zusammenlegen. */
+function felieMerkWortDrin(wort, liste) {
+  return liste.some(function(w) { return w === wort || w.indexOf(wort) === 0 || wort.indexOf(w) === 0; });
+}
+
+/* Liefert den vorhandenen Text, wenn der Vorschlag nichts Neues bringt,
+   sonst null. */
+function felieMerkBekannt(text, bestand) {
+  var neu = felieMerkWorte(text);
+  if (!neu.length) return null;
+  var verneintNeu = FELIE_MERK_VERNEINUNG.test(String(text));
+  for (var i = 0; i < bestand.length; i++) {
+    var alt = bestand[i];
+    if (!alt) continue;
+    if (FELIE_MERK_VERNEINUNG.test(String(alt)) !== verneintNeu) continue;
+    var altWorte = felieMerkWorte(alt);
+    if (!altWorte.length) continue;
+    if (neu.every(function(w) { return felieMerkWortDrin(w, altWorte); })) return alt;
+  }
+  return null;
+}
+
+function felieMerkBestand() {
+  var b = { fakten: [], faeden: [] };
+  try {
+    b.fakten = felieFakten().map(function(f) { return f.text; });
+    b.faeden = felieEpisoden({ nurAktuell: true }).map(function(e) { return e.text; });
+  } catch (e) {}
+  return b;
 }
 
 /* Vorschlaege aus der Modellantwort saeubern. Alles, was nicht der Form
@@ -13520,16 +13781,31 @@ function felieMerkVorschlaege(summary) {
   var out = { fakten: [], faeden: [] };
   if (!summary) return out;
   var kat = ['familie', 'arbeit', 'gesundheit', 'beziehung', 'wohnen', 'allgemein'];
+  var bestand = felieMerkBestand();
+
+  /* Zwei Stufen mit Absicht. Wortgleich heisst: felieFaktSetzen wuerde
+     den Eintrag ohnehin nur ueberschreiben — der Vorschlag verschwindet
+     still. Nur inhaltsgleich heisst: die Zuordnung ist eine Einschaetzung,
+     und die gehoert ihr vorgelegt statt heimlich getroffen. Die Zeile
+     erscheint dann abgewaehlt, ein Tipp holt sie zurueck. */
+  function pruefen(text, liste) {
+    var schluessel = felieNotizSchluessel(text);
+    if (liste.some(function(t) { return felieNotizSchluessel(t) === schluessel; })) return 'gleich';
+    return felieMerkBekannt(text, liste) ? 'bekannt' : null;
+  }
 
   (Array.isArray(summary.fakten) ? summary.fakten : []).forEach(function (f) {
     if (!f || f.belegt !== true || typeof f.text !== 'string') return;
     var text = f.text.trim();
     if (!text || text.length > 90) return;
+    var stand = pruefen(text, bestand.fakten);
+    if (stand === 'gleich') return;
     out.fakten.push({
       text: text,
       belege: f.belege || [],
       kategorie: kat.indexOf(f.kategorie) >= 0 ? f.kategorie : 'allgemein',
-      klasse: f.klasse === 'stabil' ? 'stabil' : 'volatil'
+      klasse: f.klasse === 'stabil' ? 'stabil' : 'volatil',
+      bekannt: stand === 'bekannt'
     });
   });
 
@@ -13539,7 +13815,9 @@ function felieMerkVorschlaege(summary) {
     if (!text || text.length > 90) return;
     var tage = parseInt(e.tage, 10);
     if (!(tage > 0) || tage > 120) tage = 21;
-    out.faeden.push({ text: text, tage: tage, belege: e.belege || [] });
+    var stand = pruefen(text, bestand.faeden);
+    if (stand === 'gleich') return;
+    out.faeden.push({ text: text, tage: tage, belege: e.belege || [], bekannt: stand === 'bekannt' });
   });
 
   return out;
@@ -13877,27 +14155,33 @@ function felieMerkAuswahlHtml(v) {
   /* data-typ und data-i bleiben unveraendert — felieMerkUebernehmen() liest
      sie weiter von hier, das Uebernehmen musste dafuer nicht angefasst
      werden. Neu sind nur data-snip* und der innere Aufbau. */
-  function zeile(typ, i, text, tag) {
-    return '<div class="merk-zeile aktiv snip" data-snip="merk" data-snip-max="'
+  function zeile(typ, i, text, tag, bekannt) {
+    return '<div class="merk-zeile ' + (bekannt ? '' : 'aktiv ') + 'snip" data-snip="merk" data-snip-max="'
       + FELIE_SNIP_MAX.merk + '" data-snip-label="Merknotiz bearbeiten"'
       + ' data-typ="' + typ + '" data-i="' + i + '">'
       + '<div class="snip-view merk-inner">'
-      + '<button type="button" class="merk-toggle" aria-pressed="true" onclick="felieMerkToggle(this)">'
+      + '<button type="button" class="merk-toggle" aria-pressed="' + (bekannt ? 'false' : 'true') + '" onclick="felieMerkToggle(this)">'
       + '<span class="merk-haken" aria-hidden="true">✓</span>'
       + '<span class="snip-text merk-text">' + esc(text) + '</span>'
-      + '<span class="merk-tag">' + esc(tag) + '</span>'
+      + '<span class="merk-tag">' + esc(bekannt ? 'schon gemerkt' : tag) + '</span>'
       + '</button>'
       + felieSnipStiftHtml('„' + text + '" bearbeiten')
       + '</div></div>';
   }
 
   var zeilen = [];
-  v.fakten.forEach(function (f, i) { zeilen.push(zeile('fakt', i, f.text, f.kategorie)); });
-  v.faeden.forEach(function (e, i) { zeilen.push(zeile('faden', i, e.text, 'vorübergehend')); });
+  v.fakten.forEach(function (f, i) { zeilen.push(zeile('fakt', i, f.text, f.kategorie, f.bekannt)); });
+  v.faeden.forEach(function (e, i) { zeilen.push(zeile('faden', i, e.text, 'vorübergehend', e.bekannt)); });
+
+  /* Der Hinweistext sagte "tippe an, was ich weglassen soll" — bei einer
+     von vornherein abgewaehlten Zeile ist das die halbe Wahrheit. */
+  var hatBekannte = v.fakten.some(function (f) { return f.bekannt; }) || v.faeden.some(function (e) { return e.bekannt; });
 
   return '<div class="merk-block">'
     + '<div class="merk-kicker">Das möchte ich mir merken</div>'
-    + '<div class="merk-sub">Tippe an, was ich weglassen soll — mit dem Stift änderst du den Text.</div>'
+    + '<div class="merk-sub">Tippe an, was ich weglassen soll — mit dem Stift änderst du den Text.'
+    + (hatBekannte ? ' Durchgestrichene kenne ich schon; tippe sie an, wenn ich sie trotzdem neu ablegen soll.' : '')
+    + '</div>'
     + zeilen.join('')
     + '</div>';
 }

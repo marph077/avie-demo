@@ -1874,28 +1874,44 @@ body.is-native .status-bar { display: none !important; }
 /* Guided onboarding: felie's explanation followed by the user's answer bubble. */
 #kl-legacy-input[hidden],#kl-v2-skip[hidden] { display:none; }
 #kl-progress { display:none; }
-.kl-v2-card { padding:20px; background:white; border-radius:22px; color:#180430; box-shadow:0 3px 16px #1804300a; flex-shrink:0; }
-.kl-v2-card h2 { font-family:Alice,Georgia,serif; font-size:23px; line-height:1.25; font-weight:400; margin:12px 0; }
+/* Eine Flaechenlogik fuer das ganze Onboarding. Vorher liefen hier drei
+   Sprachen nebeneinander: die Informationsseiten mit weissen .ru-bub auf
+   Lilac, felies Blase in einem eigenen Weiss mit eigenem Rand, und die
+   Antwortkarte in vollem Plum mit invertierten Chips. Drei Systeme auf
+   drei aufeinanderfolgenden Schritten — das ist die Unruhe, nicht die
+   einzelne Farbe. Jetzt gilt ueberall dasselbe: weisse Flaeche, Rand
+   rgba(143,91,189,.2), Radius 16, derselbe weiche Schatten. Die
+   Antwortkarte setzt sich nur noch durch einen Hauch Lilac, den Einzug
+   und die Ecke unten rechts ab. */
+.kl-v2-card { padding:18px; background:#FFFFFF; border-radius:16px; border:1px solid rgba(143,91,189,0.2); color:var(--plum); box-shadow:0 2px 8px rgba(24,4,48,0.05); flex-shrink:0; }
+/* Die Frage war 23px Alice und damit das lauteste Element des Schritts —
+   lauter als felie selbst, obwohl felie sie stellt. Sie traegt jetzt den
+   Stil der Bubble-Ueberschriften der Seiten davor (.ru-bub h4): DM Sans,
+   halbfett, Plum. Serifen bleiben den Seitentiteln vorbehalten, damit die
+   Hierarchie ueber das Onboarding hinweg eine Bedeutung behaelt. */
+.kl-v2-card h2 { font-family:var(--font-body); font-size:15px; font-weight:600; line-height:1.4; color:var(--plum); margin:0 0 2px; }
 .kl-v2-card p { font-size:14px; line-height:1.55; margin:10px 0 16px; overflow-wrap:anywhere; }
 .kl-v2-guide { display:flex; align-items:flex-end; gap:8px; flex-shrink:0; }
 .kl-v2-guide > svg { flex-shrink:0; }
-.kl-v2-guide-bubble { min-width:0; flex:1; padding:15px 17px; border-radius:18px 18px 18px 4px; background:white; color:#180430; border:1px solid #d6c9e3; box-shadow:0 2px 8px #1804300a; }
+.kl-v2-guide-bubble { min-width:0; flex:1; padding:14px 16px; border-radius:16px 16px 16px 4px; background:#FFFFFF; color:var(--plum); border:1px solid rgba(143,91,189,0.2); box-shadow:0 2px 8px rgba(24,4,48,0.05); }
 .kl-v2-guide-bubble p { font-size:14px; line-height:1.55; margin:0; overflow-wrap:anywhere; }
-.kl-v2-card.kl-v2-user { background:#180430; color:white; margin-left:28px; border-bottom-right-radius:4px; }
-.kl-v2-user .kl-v2-label,.kl-v2-user .kl-v2-group,.kl-v2-user .kl-v2-hint { color:#d8cce6; }
-.kl-v2-user .kl-v2-options .kl-chip,.kl-v2-user > .kl-chip { background:#ffffff14; border-color:#9f88b6; color:white; }
-.kl-v2-user .kl-v2-options .kl-chip.selected,.kl-v2-user > .kl-chip.selected { background:#e1ea7d; color:#180430; border-color:#e1ea7d; }
-.kl-v2-user .kl-v2-demo { color:#180430; }
+.kl-v2-guide-bubble strong { font-weight:600; }
+.kl-v2-card.kl-v2-user { background:#F7F3FB; margin-left:28px; border-bottom-right-radius:4px; }
 .kl-v2-hint { color:#6b5a88; }
 .kl-v2-options { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
-.kl-v2-options .kl-chip,.kl-v2-card > .kl-chip { font:inherit; font-size:13px; line-height:1.4; border:1px solid #d6c9e3; color:#4a3a6a; background:#f5f0fa; border-radius:18px; padding:10px 13px; cursor:pointer; text-align:left; }
-.kl-v2-card .kl-chip.selected { background:#180430; border-color:#180430; color:#e1ea7d; }
+/* Chips wie im uebrigen Onboarding (.kl-chip): weiss auf der getoenten
+   Karte, Plum-Rand. Sie brauchen die weisse Fuellung, seit die Karte
+   selbst hell ist — das vorherige #f5f0fa waere auf #F7F3FB unsichtbar
+   geworden. Ausgewaehlt bleibt Plum mit Lime: der einzige harte Kontrast
+   im Schritt, und damit eindeutig eine Zustandsaussage. */
+.kl-v2-options .kl-chip,.kl-v2-card > .kl-chip { font:inherit; font-size:13px; line-height:1.4; border:1px solid rgba(143,91,189,0.32); color:#4a3a6a; background:#FFFFFF; border-radius:18px; padding:10px 13px; cursor:pointer; text-align:left; }
+.kl-v2-card .kl-chip.selected { background:var(--plum); border-color:var(--plum); color:#e1ea7d; }
 .kl-v2-group { width:100%; font-size:11px; color:#775193; margin-top:8px; }
 .kl-v2-label { display:block; color:#4a3a6a; font-size:13px; margin:16px 0 6px; }
-.kl-v2-input { display:block; width:100%; box-sizing:border-box; border:1.5px solid #d6c9e3; border-radius:12px; background:#fbf9fe; color:#180430; font:inherit; font-size:16px; padding:12px; resize:vertical; }
+.kl-v2-input { display:block; width:100%; box-sizing:border-box; border:1.5px solid #d6c9e3; border-radius:12px; background:#FFFFFF; color:#180430; font:inherit; font-size:16px; padding:12px; resize:vertical; }
 .kl-v2-input:focus-visible,.kl-v2-card button:focus-visible,.kl-v2-review summary:focus-visible { outline:3px solid #8f5bbd; outline-offset:2px; }
 .kl-v2-skip { flex-shrink:0; color:#d3c7de; background:#180430; border:0; font:inherit; font-size:12px; padding:0 16px 12px; cursor:pointer; }
-.kl-v2-demo { background:#f4f0f8; border-radius:14px; padding:14px; margin-top:14px; font-size:13px; }
+.kl-v2-demo { background:#FFFFFF; border:1px solid rgba(143,91,189,0.18); border-radius:14px; padding:14px; margin-top:14px; font-size:13px; color:var(--plum); }
 .kl-v2-demo p,.kl-v2-demo li { font-size:12px; line-height:1.5; }
 .kl-v2-demo ul { padding-left:18px; }
 .kl-v2-link { display:inline-block; color:#6e4193; font:inherit; font-size:13px; text-decoration:underline; border:0; background:none; padding:8px 0; cursor:pointer; }
@@ -4228,27 +4244,47 @@ function klProfilAltbestand() {
 function klV2Definition(key) {
   var d = {
     name: { title: 'Wie darf ich dich nennen?', hint: '', group: 'Über dich' },
-    alter: { title: 'Wie alt bist du?', hint: 'Dein Alter hilft mir, allgemeine Informationen altersgerecht zu erklären. Trage es in Jahren ein.', group: 'Über dich' },
-    leben: { title: 'Wie sieht deine aktuelle Lebenssituation aus?', hint: 'So kann ich Vorschläge besser an deinen Alltag anpassen. Wähle alles, was auf dich zutrifft.', group: 'Über dich', multi: true,
-      options: ['alleinlebend', 'Partnerschaft', 'Kinder', 'schwanger', 'Elternzeit', 'Vollzeit', 'Teilzeit', 'selbstständig', 'anderes'] },
-    kinder: { title: 'Magst du etwas zu deinen Kindern ergänzen?', hint: 'Das hilft mir, deine familiären Aufgaben bei Alltagsideen zu berücksichtigen. Anzahl und Alter sind freiwillig; du kannst auch nur eines angeben.', group: 'Über dich' },
-    themen: { title: 'Was beschäftigt dich gerade am meisten?', hint: 'Damit finden wir einen passenden Einstieg. Du musst es nicht perfekt formulieren. Erzähl einfach, was gerade bei dir los ist.', group: 'Dein Anliegen', multi: true, max: 3,
+    alter: { title: 'Wie alt bist du?', hint: 'Dein Alter hilft mir, Dinge passend für deine Lebensphase zu erklären.', group: 'Über dich' },
+    leben: { title: 'Wie sieht deine aktuelle Lebenssituation aus?', hint: 'Wie du gerade lebst, hilft mir Vorschläge besser an deinen Alltag anzupassen. Wähl alles aus, was auf dich zutrifft — gern auch mehreres.', group: 'Über dich', multi: true,
+      /* Die Gruppentrenner standen frueher als feste Indizes im Renderer
+         (i===0, 2, 4). Beim Einschieben zweier Familienoptionen waeren sie
+         still verrutscht und haetten "Arbeit & Alltag" mitten in die
+         Familie gesetzt — ein Fehler, der nur visuell auffaellt. Sie
+         stehen jetzt neben den Optionen, die sie betreffen. */
+      groups: { 0: 'Zusammenleben', 2: 'Familie', 6: 'Arbeit & Alltag' },
+      /* "Kinder" und "keine Kinder" duerfen nicht beide leuchten: die
+         Angabe ginge als Widerspruch ins Gedaechtnis und felie wuerde
+         danach zu Kindern nachfragen, die es nicht gibt. Bewusst nur
+         dieses eine Paar — "keine Kinder" mit "Kinderwunsch" oder mit
+         "schwanger" ist eine gueltige Lebenslage, keine Kollision. */
+      entweder: [['Kinder', 'keine Kinder']],
+      options: ['alleinlebend', 'Partnerschaft', 'Kinder', 'keine Kinder', 'Kinderwunsch', 'schwanger', 'Elternzeit', 'Vollzeit', 'Teilzeit', 'selbstständig', 'anderes'] },
+    kinder: { title: 'Magst du etwas zu deinen Kindern ergänzen?', hint: 'Du hast Kinder erwähnt. Wenn du magst, sag mir kurz, wie viele und wie alt sie sind. Das hilft mir, deine familiären Aufgaben bei Alltagsideen zu berücksichtigen.', group: 'Über dich' },
+    themen: { title: 'Was beschäftigt dich gerade am meisten?', hint: 'Lass uns jetzt einen passenden Einstieg für dich finden. Du musst es nicht perfekt formulieren. Erzähl einfach, was gerade bei dir los ist.', group: 'Dein Anliegen', multi: true, max: 3,
       options: ['Schlaf', 'Stress', 'Energie', 'Stimmung', 'Körper', 'Zyklus', 'Ernährung', 'Bewegung', 'Mental Load', 'Familie', 'Arbeit', 'Etwas anderes'] },
-    gefuehl: { title: 'Wie fühlst du dich damit?', hint: 'So kann ich darauf eingehen, was dein Anliegen bei dir auslöst. Wähle gern bis zu zwei Antworten.', group: 'Dein Anliegen', multi: true, max: 2,
+    gefuehl: { title: 'Wie fühlst du dich damit?', hint: 'Gleiche Themen fühlen sich oft bei jedem anders an. Sag mir, wie es sich für dich anfühlt — dann kann ich darauf eingehen, was dein Anliegen bei dir auslöst.', group: 'Dein Anliegen', multi: true, max: 2,
       options: ['erschöpft', 'gestresst', 'angespannt', 'überfordert', 'unsicher', 'gereizt', 'traurig', 'neugierig', 'ausgeglichen', 'eigentlich ganz gut', 'schwer zu sagen'] },
-    ziel: { title: 'Was möchtest du besser verstehen?', hint: 'So weiß ich, welche Erklärungen dir helfen könnten. Du musst dein Ziel noch nicht kennen.', group: 'Dein Anliegen', multi: true, max: 3,
+    ziel: { title: 'Was möchtest du besser verstehen?', hint: 'Manche möchten sich selbst besser verstehen, andere einfach wissen, worauf sie achten können. Das hilft mir einzuschätzen, welche Erklärungen dir helfen könnten. Es ist aber auch in Ordnung, wenn du es noch nicht weißt.', group: 'Dein Anliegen', multi: true, max: 3,
       options: ['warum ich mich so fühle', 'was mich beeinflusst', 'was mir guttut', 'meinen Körper besser verstehen', 'meine Stimmung besser einordnen', 'Zusammenhänge erkennen', 'Veränderungen bei mir verstehen', 'wissen, worauf ich achten kann', 'weiß ich noch nicht'] },
-    koerper: { title: 'Gibt es körperliche oder hormonelle Themen, die ich berücksichtigen sollte?', hint: 'So kann ich von dir genannte Umstände im Gespräch und bei Alltagsideen berücksichtigen. Die Angaben sind freiwillig.', group: 'Dein Körper', multi: true,
+    koerper: { title: 'Gibt es körperliche oder hormonelle Themen, die ich berücksichtigen sollte?', hint: 'Was in deinem Körper gerade los ist, behalte ich im Hinterkopf und kann es in unseren Gesprächen berücksichtigen. Die Angaben sind freiwillig.', group: 'Dein Körper', multi: true,
       options: ['natürlicher Zyklus', 'hormonelle Verhütung', 'Schwangerschaft', 'Stillzeit', 'Perimenopause / Wechseljahre', 'bekannte körperliche Themen', 'nichts davon', 'später'] },
-    zyklus: { title: 'Möchtest du ungefähr sagen, wo du gerade stehst?', hint: 'So weiß ich, auf welchen Abschnitt du dich bei deinen Beobachtungen beziehst. Deine eigene Einschätzung reicht.', group: 'Dein Körper',
+    zyklus: { title: 'Möchtest du ungefähr sagen, wo du gerade stehst?', hint: 'Wo du in deinem Zyklus ungefähr stehst, kann mir dabei helfen zu verstehen, welche Körpersignale du gerade fühlst. Deine eigene Einschätzung genügt, genau muss es nicht sein.', group: 'Dein Körper',
       options: ['Periode', 'kurz danach', 'Zyklusmitte', 'kurz vor der Periode', 'weiß ich nicht'] },
-    beschwerden: { title: 'Seit wann beschäftigt dich das?', hint: 'So verstehe ich, ob dich das Thema erst seit Kurzem oder schon länger begleitet. Ein ungefährer Zeitraum reicht.', group: 'Dein Körper' },
-    daten: { title: 'Möchtest du Körperdaten einbeziehen?', hint: 'Damit legst du fest, ob du zusätzliche Daten als Gesprächsgrundlage nutzen möchtest. Sie sind für felie nicht notwendig. Hier kannst du die Oura-Demo mit Testdaten ausprobieren.', group: 'Deine Daten',
+    beschwerden: { title: 'Seit wann beschäftigt dich das?', hint: 'Ob dich das erst seit Kurzem begleitet oder schon länger, macht für mich einen Unterschied. Ein ungefährer Zeitraum reicht völlig.', group: 'Dein Körper' },
+    daten: { title: 'Möchtest du Körperdaten einbeziehen?', hint: 'Wenn du magst, kannst du Daten aus deinem Wearable ins Gespräch holen. Nötig ist das nicht, ich komme auch ohne aus. Es gibt uns eventuell zusätzlich Aufschluss über deine Körper- und Gefühlslage.', group: 'Deine Daten',
       options: ['Oura-Demo ausprobieren', 'Ohne Körperdaten weiter'] },
-    schlafqualitaet: { title: 'Wie hat sich deine letzte Nacht angefühlt?', hint: 'So weiß ich, wie du deine Nacht selbst erlebt hast. Später kannst du mit der Selbstreflexion oben auf der Startseite festhalten, wie es dir gerade geht.', group: 'Deine Daten',
+    schlafqualitaet: { title: 'Wie hat sich deine letzte Nacht angefühlt?', hint: 'Wie du deine Nacht selbst erlebt hast, sagt mir oft mehr als jede Zahl. Erzähl mir, wie sich die letzte angefühlt hat.', group: 'Deine Daten',
       options: ['kaum geschlafen', 'oft wach', 'unruhig', 'okay', 'ruhig', 'erholsam'] },
-    schlafroutine: { title: 'Wie sieht deine Schlafroutine meist aus?', hint: 'Damit kann ich Ideen für deinen Abend besser an deinen Tagesablauf anpassen. Ungefähre Zeiten reichen.', group: 'Deine Daten' },
-    zusammenfassung: { title: 'Hier können wir anfangen.', group: 'Dein Einstieg' }
+    schlafroutine: { title: 'Wie sieht deine Schlafroutine meist aus?', hint: 'Wann dein Tag endet und wann er beginnt, sagt mir viel über deinen Rhythmus. Damit kann ich Ideen für deinen Abend besser an deinen Tagesablauf anpassen.', group: 'Deine Daten' },
+    /* Der Abschluss hatte als einziger Schritt keine Bubble — felie fuehrt
+       zwoelf Schritte lang das Gespraech und schweigt ausgerechnet bei der
+       Uebergabe. Der Hinweis auf die Selbstreflexion stand vorher mitten in
+       der Schlaffrage und unterbrach sie; als Ausblick gehoert er hierher.
+       Die beiden Ortsangaben tragen die echten Bedienlabels ("Gedächtnis"
+       in der Navigation, "Selbstreflexion" als Pille auf der Startseite) —
+       ein erfundener Name waere schlimmer als gar kein Hinweis. */
+    zusammenfassung: { title: 'Hier können wir anfangen.', group: 'Dein Einstieg',
+      hint: 'Das war\u2019s mit dem Kennenlernen, danke für deine Zeit. Ich habe mir das Wichtigste gemerkt — ändern kannst du das jederzeit im Abschnitt **Gedächtnis**. Wie es dir gerade geht, kannst du später auf der Startseite unter **Selbstreflexion** festhalten.' }
   };
   return d[key];
 }
@@ -4265,6 +4301,10 @@ function klV2Hat(key, value) {
 }
 
 function klV2KinderGenannt() {
+  /* Eine ausdrueckliche Verneinung schlaegt jeden Texthinweis. Ohne diese
+     Zeile koennte ein Freitext unter "anderes" den Kinderschritt trotz
+     angetippter Gegenangabe ausloesen. */
+  if (klV2Hat('leben', 'keine Kinder')) return false;
   if (klV2Hat('leben', 'Kinder')) return true;
   var f = (klZustand().committed || {}).leben, t = f && !f.skipped ? f.text || '' : '';
   return !/keine? Kinder/i.test(t) && /(?:mein(?:e|en)?|unser(?:e|en)?) (?:Kinder|Sohn|Tochter)|(?:ich habe|wir haben) (?:ein|zwei|drei|vier|fünf|\d+) (?:Kinder|Kind|Sohn|Tochter)/i.test(t);
@@ -4281,6 +4321,16 @@ function klV2Schritte() {
 }
 
 function klV2Esc(text) { return htmlEsc(String(text == null ? '' : text)).replace(/"/g, '&quot;'); }
+
+/* Fettung in felies Blase, aber ohne Loch im Escaping. Die Alternative
+   waere gewesen, <strong> direkt in den Hint zu schreiben und die Blase
+   ungeprueft auszugeben — dann haette jede spaetere dynamische Beimischung
+   (Name, Freitext) Markup einschleusen koennen. Stattdessen markiert der
+   Text mit **…**, und die Umsetzung passiert NACH dem Escapen: was aus
+   Nutzereingaben stammt, ist zu diesem Zeitpunkt bereits harmlos. */
+function klV2Betonung(text) {
+  return klV2Esc(text).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+}
 
 function klV2Input(field, label, type, extra) {
   var value = klV2Form(klPhase)[field] || '';
@@ -4312,6 +4362,12 @@ function klV2Waehlen(index) {
   else if (!def.multi || exklusiv.indexOf(value) >= 0) selected = [value];
   else {
     selected = selected.filter(function(v) { return exklusiv.indexOf(v) < 0; });
+    // Vor der Hoechstzahl, damit die abgewaehlte Gegenoption ihren Platz freigibt.
+    (def.entweder || []).forEach(function(paar) {
+      var i = paar.indexOf(value);
+      if (i < 0) return;
+      selected = selected.filter(function(v) { return v !== paar[1 - i]; });
+    });
     if (def.max && selected.length >= def.max) { klZustand().formError = 'Wähle höchstens ' + def.max + ' Antworten aus.'; klV2Status(); return; }
     selected.push(value);
   }
@@ -4333,19 +4389,33 @@ function klV2Starten() {
   klEntwurfSpeichern(); klV2Render();
 }
 
+/* Der sichtbare Text in felies Blase. Er muss allein stehen koennen: die
+   Frage selbst steht in der Karte darunter, nicht hier. Fruehere Hints
+   begannen mit "So kann ich…", "Damit…", "Das hilft mir…" — Woerter, die
+   auf die Frage darunter zeigen und als eigenstaendige Nachricht ins
+   Leere laufen. Die Texte sind deshalb durchgehend auf Saetze umgestellt,
+   die ihren eigenen Bezug mitbringen. */
 function klV2Erklaerung(key) {
-  if (key === 'name') return 'Ich bin felie – ich begleite dich. Zuerst lernen wir uns kurz kennen; danach starten wir mit deinem Anliegen.';
+  if (key === 'name') return 'Schön, dass du da bist. Ich bin felie und begleite dich. Wir lernen uns jetzt kurz kennen, danach geht es um das, was dich gerade beschäftigt.';
   var hint = klV2Definition(key).hint || '';
-  if (key === 'alter' && userName) return userName + ', ' + hint.charAt(0).toLowerCase() + hint.slice(1);
+  /* Eigener Vorspann statt Namensanrede vor kleingeschriebenem Hint.
+     Die alte Verkettung (Name + ", " + hint kleingeschrieben) erzeugte
+     zwangslaeufig "Lena, dein Alter hilft mir…": eine Anrede, die an eine
+     Erklaerung geklebt ist. felie quittiert den Namen jetzt erst und
+     erklaert dann — zwei Saetze, wie im Gespraech. */
+  if (key === 'alter' && userName) return 'Danke, ' + userName + '. ' + hint;
+  /* Die Lebenssituation wird bewusst NICHT mehr vorgelesen ("Du hast
+     Kinder und arbeitest in Teilzeit"). Das las sich wie eine
+     Datenbestaetigung, nicht wie eine Gespraechspartnerin, und jede
+     Aufzaehlung war zugleich eine Deutung ihrer Lage. Es bleibt eine
+     kurze Quittung — sie zeigt, dass die Angabe angekommen ist, ohne sie
+     zu bewerten. Verallgemeinerte Bedingung: frueher haing der Vorspann an
+     Kindern oder genau einer Arbeitsform, was bei einem generischen Dank
+     willkuerlich waere. */
   if (key === 'themen') {
-    var s = klZustand().committed || {}, life = s.leben;
-    if (life && !life.skipped) {
-      var work = life.selected.filter(function(v) { return ['Teilzeit','Vollzeit','selbstständig'].indexOf(v) >= 0; });
-      var parts = [];
-      if (life.selected.indexOf('Kinder') >= 0) parts.push('hast Kinder');
-      if (work.length === 1) parts.push(work[0] === 'selbstständig' ? 'bist selbstständig' : 'arbeitest in ' + work[0]);
-      if (parts.length) return 'Du ' + parts.join(' und ') + '. Jetzt schauen wir darauf, was dich persönlich gerade beschäftigt. Du musst es nicht perfekt formulieren. Erzähl einfach, was gerade bei dir los ist.';
-    }
+    var life = (klZustand().committed || {}).leben;
+    if (life && !life.skipped && ((life.selected || []).length || (life.text || '').trim()))
+      return 'Danke, das nehme ich mit. ' + hint;
   }
   return hint;
 }
@@ -4357,19 +4427,19 @@ function klV2Render(keepPosition) {
   var scroll = host.scrollTop, focused = document.activeElement, focusId = focused && focused.id;
   var explanation = klV2Erklaerung(klPhase);
   var h = explanation ? '<div class="kl-v2-guide"><svg width="28" height="28" aria-label="felie"><use href="#felie-mark"/></svg>'
-    + '<div class="kl-v2-guide-bubble" id="kl-v2-explanation" tabindex="-1"><p>' + klV2Esc(explanation) + '</p></div></div>' : '';
+    + '<div class="kl-v2-guide-bubble" id="kl-v2-explanation" tabindex="-1"><p>' + klV2Betonung(explanation) + '</p></div></div>' : '';
   h += '<div class="kl-v2-card' + (klPhase === 'zusammenfassung' ? '' : ' kl-v2-user') + '">';
   h += '<h2 tabindex="-1" id="kl-v2-title">' + d.title + '</h2>';
   if (d.options) {
     h += '<div class="kl-v2-options" role="group" aria-label="' + klV2Esc(d.title) + '">';
     d.options.forEach(function(v, i) {
-      if (klPhase === 'leben' && (i === 0 || i === 2 || i === 4)) h += '<span class="kl-v2-group">' + (i === 0 ? 'Zusammenleben' : i === 2 ? 'Familie' : 'Arbeit & Alltag') + '</span>';
+      if (d.groups && d.groups[i]) h += '<span class="kl-v2-group">' + d.groups[i] + '</span>';
       h += '<button id="kl-v2-option-' + i + '" type="button" class="kl-chip' + (f.selected.indexOf(v) >= 0 ? ' selected' : '') + '" aria-pressed="'
         + (f.selected.indexOf(v) >= 0) + '" onclick="klV2Waehlen(' + i + ')">' + v + '</button>';
     });
     h += '</div>';
   }
-  if (klPhase === 'name') h += klV2Input('text', 'Vorname / Wunschname', 'text', 'autocomplete="given-name" maxlength="80"');
+  if (klPhase === 'name') h += klV2Input('text', 'Vorname', 'text', 'autocomplete="given-name" maxlength="80"');
   if (klPhase === 'alter') h += klV2Input('age', 'Dein Alter in Jahren', 'number', 'inputmode="numeric" min="18" max="120" step="1"');
   if (klPhase === 'kinder') h += klV2Input('amount', 'Anzahl der Kinder (optional)', 'number', 'inputmode="numeric" min="1" max="30" step="1"')
     + klV2Input('ages', 'Alter der Kinder (optional)', 'text', 'placeholder="Zum Beispiel: 4 und 7 Jahre" maxlength="200"');
@@ -4418,7 +4488,7 @@ function klV2Status() {
 }
 
 function klV2Validieren(key, f) {
-  if (key === 'name' && (!klNameSetzen(f.text || '') || klNameAblehnung(f.text || ''))) return 'Bitte trage deinen Vornamen oder Wunschnamen ein, oder wähle „Überspringen“.';
+  if (key === 'name' && (!klNameSetzen(f.text || '') || klNameAblehnung(f.text || ''))) return 'Bitte trage deinen Vornamen ein, oder wähle „Überspringen“.';
   if (key === 'alter' && !/^(?:1[89]|[2-9]\d|1[01]\d|120)$/.test(String(f.age || ''))) return 'Bitte gib dein Alter als ganze Zahl zwischen 18 und 120 ein.';
   if (key === 'kinder' && f.amount && !/^(?:[1-9]|[12]\d|30)$/.test(f.amount)) return 'Bitte gib die Anzahl als ganze Zahl zwischen 1 und 30 ein.';
   if (key === 'schlafroutine' && !f.irregular && [f.bed, f.wake].some(function(t) { return t && !/^([01]\d|2[0-3]):[0-5]\d$/.test(t); })) return 'Bitte prüfe die Uhrzeit.';

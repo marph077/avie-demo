@@ -1870,6 +1870,32 @@ body.is-native .status-bar { display: none !important; }
 .kl-profile-facts p { margin:8px 0; line-height:1.45; white-space:normal; }
 :is(.consent-check,.kl-inline-link,.kl-chip,.ru-next,.ru-back,.kl-later):focus-visible { outline:3px solid #8F5BBD; outline-offset:3px; }
 
+
+/* Guided onboarding v2, with one current answer card. */
+#kl-legacy-input[hidden],#kl-v2-skip[hidden] { display:none; }
+.kl-v2-card { padding:20px; background:white; border-radius:22px; color:#180430; box-shadow:0 3px 16px #1804300a; }
+.kl-v2-card h2 { font-family:Alice,Georgia,serif; font-size:23px; line-height:1.25; font-weight:400; margin:12px 0; }
+.kl-v2-card p { font-size:14px; line-height:1.55; margin:10px 0 16px; overflow-wrap:anywhere; }
+.kl-v2-eyebrow { color:#775193; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; }
+.kl-v2-hint { color:#6b5a88; }
+.kl-v2-options { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.kl-v2-options .kl-chip,.kl-v2-card > .kl-chip { font:inherit; font-size:13px; line-height:1.4; border:1px solid #d6c9e3; color:#4a3a6a; background:#f5f0fa; border-radius:18px; padding:10px 13px; cursor:pointer; text-align:left; }
+.kl-v2-card .kl-chip.selected { background:#180430; border-color:#180430; color:#e1ea7d; }
+.kl-v2-group { width:100%; font-size:11px; color:#775193; margin-top:8px; }
+.kl-v2-label { display:block; color:#4a3a6a; font-size:13px; margin:16px 0 6px; }
+.kl-v2-input { display:block; width:100%; box-sizing:border-box; border:1.5px solid #d6c9e3; border-radius:12px; background:#fbf9fe; color:#180430; font:inherit; font-size:16px; padding:12px; resize:vertical; }
+.kl-v2-input:focus-visible,.kl-v2-card button:focus-visible,.kl-v2-review summary:focus-visible { outline:3px solid #8f5bbd; outline-offset:2px; }
+.kl-v2-skip { flex-shrink:0; color:#d3c7de; background:#180430; border:0; font:inherit; font-size:12px; padding:0 16px 12px; cursor:pointer; }
+.kl-v2-demo { background:#f4f0f8; border-radius:14px; padding:14px; margin-top:14px; font-size:13px; }
+.kl-v2-demo p,.kl-v2-demo li { font-size:12px; line-height:1.5; }
+.kl-v2-demo ul { padding-left:18px; }
+.kl-v2-link { display:inline-block; color:#6e4193; font:inherit; font-size:13px; text-decoration:underline; border:0; background:none; padding:8px 0; cursor:pointer; }
+.kl-v2-proposal { background:#f0f3ce; border-radius:14px; padding:14px; }
+.kl-v2-review { font-size:13px; margin:16px 0; }
+.kl-v2-review summary { cursor:pointer; color:#6e4193; padding:10px 0; }
+.kl-v2-review > div { border-top:1px solid #e6e0ee; padding:14px 0 6px; }
+.kl-v2-review p { margin:6px 0; font-size:13px; }
+
 </style>
 </head>
 <body>
@@ -2058,25 +2084,26 @@ body.is-native .status-bar { display: none !important; }
 
         <div style="background:#180430;padding:52px 28px 22px;flex-shrink:0;position:relative;overflow:hidden;">
           <div style="position:absolute;bottom:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;"></div>
-          <div class="ob-header-label">Lass uns reden</div>
-          <div style="font-family:'Alice',Georgia,serif;font-size:24px;color:white;line-height:1.2;">Unser erstes Gespräch.</div>
+          <div class="ob-header-label">Lass uns kennenlernen</div>
+          <div style="font-family:'Alice',Georgia,serif;font-size:24px;color:white;line-height:1.2;">Ein guter Anfang.</div>
         </div>
 
-        <div id="kl-chat" role="log" aria-live="polite" aria-relevant="additions" style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:#E6E0EE;"></div>
+        <div id="kl-chat" role="region" aria-label="Kennenlernen" style="flex:1;min-height:0;overflow-y:auto;padding:16px 16px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;background:#E6E0EE;"></div>
 
 <div style="padding:14px 20px 16px;background:#180430;display:flex;flex-direction:column;gap:12px;flex-shrink:0;position:relative;">
           <div id="kl-progress" class="kl-progress">Kennenlernen · persönliche Angaben</div>
-          <div class="input-row">
+          <div class="input-row" id="kl-legacy-input">
             <textarea id="kl-inp" class="chat-input" rows="1" placeholder="Antworte felie…" oninput="klGrow(this)" onkeydown="klKey(event)" aria-label="Deine Antwort an felie"></textarea>
             <button id="kl-send" class="send-btn" onclick="klSend()" aria-label="Senden" disabled>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L14 8M14 8L9 3M14 8L9 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:12px;">
-            <button class="ru-back" onclick="ruBackToRampup()" aria-label="Zurück">←</button>
-            <button class="ru-next" id="klStartBtn" onclick="startApp()" disabled>Weiter zur Selbstreflexion</button>
+            <button id="kl-v2-back" class="ru-back" onclick="klV2Zurueck()" aria-label="Zurück">←</button>
+            <button type="button" class="ru-next" id="klStartBtn" onclick="startApp()" disabled>Mit felie starten</button>
           </div>
         </div>
+        <button type="button" id="kl-v2-skip" class="kl-v2-skip" onclick="klV2Weiter(true)" hidden>Überspringen</button>
         <div class="kl-status-wrap"><p id="kl-status" role="status" hidden></p><button type="button" id="kl-retry" onclick="klWiederholen()" hidden>Erneut versuchen</button></div>
         <!-- Der medizinische Hinweis stand hier frueher als zweiter Absatz.
              Er ist entfallen: die Nutzerin hat ihn auf der Seite "Wichtig zu
@@ -3561,7 +3588,7 @@ function buildKlPrompt() {
     + '\nPrüfe den gesamten bisherigen Verlauf: eine Antwort kann mehrere Punkte klären. Kinderalter nur bei Kindern erfragen; ohne Kinder als ausgelassen markieren. Bei Ausweichen, Nichtwissen oder Ablehnung den betreffenden Punkt als ausgelassen markieren und nicht nachbohren. Bereits in der Namensantwort genannte Angaben mitzählen. Ihre Fragen zum Ablauf kurz beantworten und dann die noch offene Profilfrage stellen. Ein geschildertes Anliegen für später aufnehmen, ohne es jetzt auszuarbeiten.\n'
     + (s.requests >= KL_TURNS_NOTBREMSE ? 'Dies ist der letzte Aufruf: ohne neue Frage freundlich abschließen.\n' : '')
     + 'ANTWORTFORMAT: Nur JSON, kein Markdown und keine Steuerzeichen: {"text":"sichtbare Nachricht","erledigt":["Schlüssel"],"ausgelassen":["Schlüssel"],"naechsteFrage":"Schlüssel oder zusatz oder null","fertig":false}. Schlüssel: alltag, wohnen, kinder, kinderalter, verhuetung. In erledigt/ausgelassen nur durch Nutzerantworten gedeckte Punkte ergänzen; nichts aus Assistententexten ableiten. Bei der Verhütungsfrage setzt die App Auswahlchips; Möglichkeiten nicht aufzählen.\n'
-    + 'Abschluss: fertig=true, naechsteFrage=null, ein bis zwei Sätze OHNE Frage. Danke für ihre Angaben und kündige die anschließende Selbstreflexion an. Keine abgeschlossene Speicherung behaupten; den Speicherstatus zeigt die App. Bei Krise gelten die Sicherheitsregeln zuerst: menschliche Unterstützung nennen, keine Profilfrage; anschließend diesen Aufnahmeschritt abschließen. Eine Sicherheitsfrage nur, wenn sie für den nächsten sicheren Schritt notwendig ist.';
+    + 'Abschluss: fertig=true, naechsteFrage=null, ein bis zwei Sätze OHNE Frage. Danke für ihre Angaben und leite zum ersten Anliegen im Startseitenchat über. Keine abgeschlossene Speicherung behaupten; den Speicherstatus zeigt die App. Bei Krise gelten die Sicherheitsregeln zuerst: menschliche Unterstützung nennen, keine Profilfrage; anschließend diesen Aufnahmeschritt abschließen. Eine Sicherheitsfrage nur, wenn sie für den nächsten sicheren Schritt notwendig ist.';
 }
 
 function klApiMsgs() {
@@ -3725,6 +3752,7 @@ function klAntwortHolen() {
 
 function klInitFromRampup() {
   if (window._klInited) return;
+  klV2Starten(); return;
   window._klInited = true; klPhase = 'name';
   klSagen('assistant', 'Schön, dass du da bist. Ich bin felie — ich begleite dich. Zuerst lernen wir uns kurz kennen; danach ist Platz für dein Anliegen.\n\nWie darf ich dich nennen?');
   klEingabe(true, 'Vorname oder Spitzname…'); klEntwurfSpeichern();
@@ -3814,6 +3842,7 @@ function klFinish() {
    dabei aber alle Nachrichtenpositionen und zusaetzlichen Nutzerangaben.
    Belege bleiben dadurch gegen den Originalverlauf pruefbar. */
 function klExtract() {
+  if (klZustand().flow === 2) return Promise.resolve(klV2Sichern());
   if (window._klExtractPromise) return window._klExtractPromise;
   var s = klZustand(), id = s.id, generation = window._klGeneration || 0;
   var chat = klArchivSichern();
@@ -3893,6 +3922,7 @@ function klKey(e) {
 }
 
 function klSend() {
+  if (klZustand().flow === 2) return klV2Weiter(false);
   if (klDone || window._klRequestPending) return;
   var inp = document.getElementById('kl-inp');
   if (!inp || inp.disabled) return;
@@ -3948,6 +3978,7 @@ function klEntwurfSpeichern() {
 }
 
 function klStatusZeigen() {
+  if (window._klState && window._klState.flow === 2) { klV2Status(); return; }
   var el = document.getElementById('kl-status'), retry = document.getElementById('kl-retry');
   var s = klZustand(), msg = '';
   if (window._klStorageError) msg = 'Dein Gerät konnte den Stand nicht sichern. Bitte lasse diese Seite geöffnet und versuche das Speichern erneut.';
@@ -3970,6 +4001,7 @@ function klStatusZeigen() {
 function klWiederherstellen() {
   var s;
   try { s = JSON.parse(localStorage.getItem('felie_onboarding_v1') || 'null'); } catch (e) { return false; }
+  if (s && s.flow === 2 && s.version === 1 && typeof s.id === 'string') return klV2Wiederherstellen(s);
   if (!s || s.version !== 1 || typeof s.id !== 'string' || !Array.isArray(s.history) ||
       !s.history.every(function(m) { return m && ['user', 'assistant'].indexOf(m.role) >= 0 && typeof m.content === 'string'; })) return false;
   window._klState = s;
@@ -4033,11 +4065,12 @@ function klAntwortPruefen(d) {
 function klGrenzeAbschluss() {
   if (klDone) return;
   klZustand().responseMissing = false;
-  klSagen('assistant', 'Wir schließen das Kennenlernen hier ab. Weitere Angaben kannst du später ergänzen. Als Nächstes kannst du deine Selbstreflexion machen und danach dein Anliegen mit mir besprechen.');
+  klSagen('assistant', 'Wir schließen das Kennenlernen hier ab. Weitere Angaben kannst du später ergänzen. Als Nächstes können wir dein Anliegen besprechen.');
   klFinish();
 }
 
 function klWiederholen() {
+  if (klZustand().flow === 2) { klEntwurfSpeichern(); klV2Status(); return Promise.resolve(!window._klStorageError); }
   if (window._klRequestPending || window._klExtractPromise) return Promise.resolve(false);
   if (!klEntwurfSpeichern()) { klStatusZeigen(); return Promise.resolve(false); }
   if (klDone) return klExtract();
@@ -4076,6 +4109,7 @@ function klArchivSichern() {
       notizen: [], notizenStatus: 'unvollstaendig', onboardingErfasst: [], messages: felieSichererVerlauf(klHistory) };
     chats.push(c);
   }
+  if (s.flow === 2 && s.stage === 'aufnahme') { c.messages = felieSichererVerlauf(klHistory); c.thema = 'Unser Kennenlernen'; }
   try { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); s.archiveId = c.id; return c; }
   catch (e) { window._klStorageError = true; return false; }
 }
@@ -4097,20 +4131,15 @@ function klHomeStatusZeigen() {
 
 function klErsterEinstiegZeigen() {
   var s = window._klState;
-  if (!s || ['reflexion', 'bereit'].indexOf(s.stage) < 0) return false;
-  var home = felieHomeZustand(); ++home.revision; home.pending = null; home.erneuern = false; home.anlass = 'kennenlernen';
-  felieHomeZeitMerken();
-  var text = 'Danke fürs Kennenlernen' + (userName ? ', ' + userName : '') + '.';
-  text += s.stage === 'reflexion'
-    ? ' Ergänze jetzt in der Selbstreflexion, wie es dir heute geht, und bei Bedarf deinen Zyklus. Danach starten wir mit deinem Anliegen.'
-    : ' Jetzt ist Platz für dein Anliegen. Du kannst an etwas aus dem Kennenlernen anknüpfen oder ein neues Thema mitbringen.';
-  felieHomeTextZeigen(text);
+  if (!s || ['reflexion','bereit'].indexOf(s.stage) < 0) return false;
+  if (s.stage === 'reflexion') { s.stage = 'bereit'; klEntwurfSpeichern(); }
+  var home = felieHomeZustand(); ++home.revision; home.pending = null; home.erneuern = false; home.anlass = 'kennenlernen'; felieHomeZeitMerken();
+  felieHomeTextZeigen(s.flow === 2 && !s.contextChanged ? klV2Zusammenfassung() + '\n\n' + klV2Vorschlag().text : 'Danke fürs Kennenlernen' + (userName ? ', ' + userName : '') + '. Was möchtest du mir als Erstes erzählen?');
   var wrap = document.getElementById('kl-first-step');
   if (!wrap) { wrap = document.createElement('div'); wrap.id = 'kl-first-step'; document.getElementById('home-question-bubble-wrap').appendChild(wrap); }
-  wrap.hidden = s.stage !== 'reflexion';
-  wrap.innerHTML = s.stage === 'reflexion' ? '<button type="button" class="ru-next" onclick="felieRitualStarten()">Zur Selbstreflexion</button>'
-    + '<button type="button" class="kl-later" onclick="klReflexionDanach()">Später · direkt zum Anliegen</button>' : '';
-  var inputWrap = document.getElementById('home-input-wrap'); if (inputWrap) inputWrap.style.display = s.stage === 'reflexion' ? 'none' : 'flex';
+  wrap.hidden = s.flow !== 2 || !!s.contextChanged;
+  wrap.innerHTML = wrap.hidden ? '' : '<button type="button" class="ru-next" onclick="klV2EinstiegAnnehmen()">Ja, dort anfangen</button><button type="button" class="kl-later" onclick="klV2AnderesThema()">Anderes Thema</button>';
+  var input = document.getElementById('home-input-wrap'); if (input) input.style.display = 'flex';
   klHomeStatusZeigen(); return true;
 }
 
@@ -4133,6 +4162,8 @@ function klUebergabeKontext() {
   var c = getSavedChats().find(function(x) { return x.id === id; });
   if (!c) return null;
   return { quelle: 'vorangegangene Informationsaufnahme, keine aktuelle Zustandsmessung',
+    erfasstAm: new Date(c.timestamp).toISOString(),
+    gefuehlsbezug: 'Wie fühlst du dich damit bezieht sich auf das genannte Anliegen, nicht automatisch auf die allgemeine Tagesstimmung. Zyklusmitte ist eine ungefähre Selbstauskunft, kein bestätigter Eisprung.',
     hinweis: 'Nur für Gesprächsanschlüsse verwenden. Aktuelle Nutzerkorrekturen und bearbeitete Erinnerungen haben Vorrang. Profilfragen nicht wiederholen. Das aktuelle Anliegen steht in der letzten echten Nachricht.',
     verlauf: felieSichererVerlauf(c.messages).map(function(m) { return { rolle: m.role, text: m.content }; }) };
 }
@@ -4176,6 +4207,436 @@ function klProfilAltbestand() {
     else delete klAnswers[k];
   });
   if (!saveUserProfile()) keys.forEach(function(k) { if (old[k] !== undefined) klAnswers[k] = old[k]; });
+}
+
+function klV2Definition(key) {
+  var d = {
+    name: { title: 'Wie darf ich dich nennen?', hint: 'Dein Vorname oder Wunschname.', group: 'Über dich' },
+    alter: { title: 'Wie alt bist du?', hint: 'Dein Alter hilft mir, allgemeine Informationen altersgerecht zu erklären. Trage es in Jahren ein.', group: 'Über dich' },
+    leben: { title: 'Wie sieht deine aktuelle Lebenssituation aus?', hint: 'So kann ich Vorschläge besser an deinen Alltag anpassen. Wähle alles, was auf dich zutrifft.', group: 'Über dich', multi: true,
+      options: ['alleinlebend', 'Partnerschaft', 'Kinder', 'schwanger', 'Elternzeit', 'Vollzeit', 'Teilzeit', 'selbstständig', 'anderes'] },
+    kinder: { title: 'Magst du etwas zu deinen Kindern ergänzen?', hint: 'Das hilft mir, deine familiären Aufgaben bei Alltagsideen zu berücksichtigen. Anzahl und Alter sind freiwillig; du kannst auch nur eines angeben.', group: 'Über dich' },
+    themen: { title: 'Was beschäftigt dich gerade am meisten?', hint: 'Damit finden wir einen passenden Einstieg. Du musst es nicht perfekt formulieren. Erzähl einfach, was gerade bei dir los ist.', group: 'Dein Anliegen', multi: true, max: 3,
+      options: ['Schlaf', 'Stress', 'Energie', 'Stimmung', 'Körper', 'Zyklus', 'Ernährung', 'Bewegung', 'Mental Load', 'Familie', 'Arbeit', 'Etwas anderes'] },
+    gefuehl: { title: 'Wie fühlst du dich damit?', hint: 'So kann ich darauf eingehen, was dein Anliegen bei dir auslöst. Wähle gern bis zu zwei Antworten.', group: 'Dein Anliegen', multi: true, max: 2,
+      options: ['erschöpft', 'gestresst', 'angespannt', 'überfordert', 'unsicher', 'gereizt', 'traurig', 'neugierig', 'ausgeglichen', 'eigentlich ganz gut', 'schwer zu sagen'] },
+    ziel: { title: 'Was möchtest du besser verstehen?', hint: 'So weiß ich, welche Erklärungen dir helfen könnten. Du musst dein Ziel noch nicht kennen.', group: 'Dein Anliegen', multi: true, max: 3,
+      options: ['warum ich mich so fühle', 'was mich beeinflusst', 'was mir guttut', 'meinen Körper besser verstehen', 'meine Stimmung besser einordnen', 'Zusammenhänge erkennen', 'Veränderungen bei mir verstehen', 'wissen, worauf ich achten kann', 'weiß ich noch nicht'] },
+    koerper: { title: 'Gibt es körperliche oder hormonelle Themen, die ich berücksichtigen sollte?', hint: 'So kann ich von dir genannte Umstände im Gespräch und bei Alltagsideen berücksichtigen. Die Angaben sind freiwillig.', group: 'Dein Körper', multi: true,
+      options: ['natürlicher Zyklus', 'hormonelle Verhütung', 'Schwangerschaft', 'Stillzeit', 'Perimenopause / Wechseljahre', 'bekannte körperliche Themen', 'nichts davon', 'später'] },
+    zyklus: { title: 'Möchtest du ungefähr sagen, wo du gerade stehst?', hint: 'So weiß ich, auf welchen Abschnitt du dich bei deinen Beobachtungen beziehst. Deine eigene Einschätzung reicht.', group: 'Dein Körper',
+      options: ['Periode', 'kurz danach', 'Zyklusmitte', 'kurz vor der Periode', 'weiß ich nicht'] },
+    beschwerden: { title: 'Seit wann beschäftigt dich das?', hint: 'So verstehe ich, ob dich das Thema erst seit Kurzem oder schon länger begleitet. Ein ungefährer Zeitraum reicht.', group: 'Dein Körper' },
+    daten: { title: 'Möchtest du Körperdaten einbeziehen?', hint: 'Damit legst du fest, ob du zusätzliche Daten als Gesprächsgrundlage nutzen möchtest. Sie sind für felie nicht notwendig. Hier kannst du die Oura-Demo mit Testdaten ausprobieren.', group: 'Deine Daten',
+      options: ['Oura-Demo ausprobieren', 'Ohne Körperdaten weiter'] },
+    schlafqualitaet: { title: 'Wie hat sich deine letzte Nacht angefühlt?', hint: 'So weiß ich, wie du deine Nacht selbst erlebt hast. Das ergänzt deine Angaben – unabhängig von Gerätedaten.', group: 'Deine Daten',
+      options: ['kaum geschlafen', 'oft wach', 'unruhig', 'okay', 'ruhig', 'erholsam'] },
+    schlafroutine: { title: 'Wie sieht deine Schlafroutine meist aus?', hint: 'Damit kann ich Ideen für deinen Abend besser an deinen Tagesablauf anpassen. Ungefähre Zeiten reichen.', group: 'Deine Daten' },
+    zusammenfassung: { title: 'Hier können wir anfangen.', group: 'Dein Einstieg' }
+  };
+  return d[key];
+}
+
+function klV2Form(key) {
+  var s = klZustand(); s.form = s.form || {}; s.committed = s.committed || {};
+  if (!s.form[key]) s.form[key] = { selected: [], text: '' };
+  return s.form[key];
+}
+
+function klV2Hat(key, value) {
+  var f = (klZustand().committed || {})[key];
+  return !!(f && !f.skipped && (f.selected || []).indexOf(value) >= 0);
+}
+
+function klV2KinderGenannt() {
+  if (klV2Hat('leben', 'Kinder')) return true;
+  var f = (klZustand().committed || {}).leben, t = f && !f.skipped ? f.text || '' : '';
+  return !/keine? Kinder/i.test(t) && /(?:mein(?:e|en)?|unser(?:e|en)?) (?:Kinder|Sohn|Tochter)|(?:ich habe|wir haben) (?:ein|zwei|drei|vier|fünf|\d+) (?:Kinder|Kind|Sohn|Tochter)/i.test(t);
+}
+
+function klV2Schritte() {
+  var keys = ['name', 'alter', 'leben'];
+  if (klV2KinderGenannt()) keys.push('kinder');
+  keys.push('themen', 'gefuehl', 'ziel', 'koerper');
+  if (klV2Hat('koerper', 'natürlicher Zyklus')) keys.push('zyklus');
+  var k = (klZustand().committed || {}).koerper;
+  if (k && !k.skipped && (k.text || '').trim()) keys.push('beschwerden');
+  return keys.concat(['daten', 'schlafqualitaet', 'schlafroutine', 'zusammenfassung']);
+}
+
+function klV2Esc(text) { return htmlEsc(String(text == null ? '' : text)).replace(/"/g, '&quot;'); }
+
+function klV2Input(field, label, type, extra) {
+  var value = klV2Form(klPhase)[field] || '';
+  return '<label class="kl-v2-label" for="kl-v2-' + field + '">' + label + '</label>'
+    + '<input id="kl-v2-' + field + '" class="kl-v2-input" type="' + (type || 'text') + '" '
+    + (extra || '') + ' value="' + klV2Esc(value) + '" oninput="klV2Eingabe(\'' + field + '\',this.value)">';
+}
+
+function klV2Text(label) {
+  return '<label class="kl-v2-label" for="kl-v2-text">' + label + '</label>'
+    + '<textarea id="kl-v2-text" class="kl-v2-input" rows="3" maxlength="2000" oninput="klV2Eingabe(\'text\',this.value)">'
+    + klV2Esc(klV2Form(klPhase).text) + '</textarea>';
+}
+
+function klV2Eingabe(field, value) {
+  if (klZustand().flow !== 2 || window._klV2Saving) return;
+  if (['text', 'age', 'amount', 'ages', 'bed', 'wake'].indexOf(field) < 0) return;
+  klV2Form(klPhase)[field] = String(value).slice(0, field === 'text' ? 2000 : 200);
+  klZustand().formError = ''; klEntwurfSpeichern(); klV2Status();
+}
+
+function klV2Waehlen(index) {
+  if (window._klV2Saving) return;
+  var def = klV2Definition(klPhase), f = klV2Form(klPhase), value = def.options && def.options[index];
+  if (!value) return;
+  var selected = f.selected.slice(), pos = selected.indexOf(value);
+  var exklusiv = ['schwer zu sagen', 'weiß ich noch nicht', 'nichts davon', 'später'];
+  if (pos >= 0) selected.splice(pos, 1);
+  else if (!def.multi || exklusiv.indexOf(value) >= 0) selected = [value];
+  else {
+    selected = selected.filter(function(v) { return exklusiv.indexOf(v) < 0; });
+    if (def.max && selected.length >= def.max) { klZustand().formError = 'Wähle höchstens ' + def.max + ' Antworten aus.'; klV2Status(); return; }
+    selected.push(value);
+  }
+  f.selected = selected;
+  if ((klPhase === 'leben' && selected.indexOf('anderes') < 0) || (klPhase === 'koerper' && selected.indexOf('bekannte körperliche Themen') < 0)) f.text = '';
+  klZustand().formError = ''; klEntwurfSpeichern(); klV2Render(true);
+  if (klPhase === 'daten' && value === 'Oura-Demo ausprobieren' && selected.indexOf(value) >= 0 && !window._klOuraDemo) klV2OuraLaden();
+}
+
+function klV2Unregelmaessig() {
+  var f = klV2Form('schlafroutine'); f.irregular = !f.irregular;
+  if (f.irregular) { f.bed = ''; f.wake = ''; }
+  klEntwurfSpeichern(); klV2Render(true);
+}
+
+function klV2Starten() {
+  var s = klZustand(); s.flow = 2; s.form = s.form || {}; s.committed = s.committed || {};
+  s.stage = 'aufnahme'; window._klInited = true; klDone = false; klPhase = 'name';
+  klEntwurfSpeichern(); klV2Render();
+}
+
+function klV2Render(keepPosition) {
+  var s = klZustand(), d = klV2Definition(klPhase), f = klV2Form(klPhase);
+  if (!d) { klPhase = 'name'; d = klV2Definition(klPhase); f = klV2Form(klPhase); }
+  var host = document.getElementById('kl-chat'); if (!host) return;
+  var scroll = host.scrollTop, focused = document.activeElement, focusId = focused && focused.id;
+  var h = '<div class="kl-v2-card"><span class="kl-v2-eyebrow">' + d.group + '</span>';
+  if (klPhase === 'name') h += '<p>Ich bin felie – ich begleite dich. Zuerst lernen wir uns kurz kennen; danach starten wir mit deinem Anliegen.</p>';
+  h += '<h2 tabindex="-1" id="kl-v2-title">' + d.title + '</h2>' + (d.hint ? '<p class="kl-v2-hint">' + d.hint + '</p>' : '');
+  if (d.options) {
+    h += '<div class="kl-v2-options" role="group" aria-label="' + klV2Esc(d.title) + '">';
+    d.options.forEach(function(v, i) {
+      if (klPhase === 'leben' && (i === 0 || i === 2 || i === 4)) h += '<span class="kl-v2-group">' + (i === 0 ? 'Zusammenleben' : i === 2 ? 'Familie' : 'Arbeit & Alltag') + '</span>';
+      h += '<button id="kl-v2-option-' + i + '" type="button" class="kl-chip' + (f.selected.indexOf(v) >= 0 ? ' selected' : '') + '" aria-pressed="'
+        + (f.selected.indexOf(v) >= 0) + '" onclick="klV2Waehlen(' + i + ')">' + v + '</button>';
+    });
+    h += '</div>';
+  }
+  if (klPhase === 'name') h += klV2Input('text', 'Vorname / Wunschname', 'text', 'autocomplete="given-name" maxlength="80"');
+  if (klPhase === 'alter') h += klV2Input('age', 'Dein Alter in Jahren', 'number', 'inputmode="numeric" min="18" max="120" step="1"');
+  if (klPhase === 'kinder') h += klV2Input('amount', 'Anzahl der Kinder (optional)', 'number', 'inputmode="numeric" min="1" max="30" step="1"')
+    + klV2Input('ages', 'Alter der Kinder (optional)', 'text', 'placeholder="Zum Beispiel: 4 und 7 Jahre" maxlength="200"');
+  if (klPhase === 'leben' && f.selected.indexOf('anderes') >= 0) h += klV2Text('Was beschreibt deine Situation?');
+  if (klPhase === 'themen') h += klV2Text(f.selected.indexOf('Etwas anderes') >= 0 ? 'Was beschäftigt dich?' : 'Wenn du magst, erzähl etwas dazu');
+  if (klPhase === 'koerper') {
+    if (klV2Hat('leben', 'schwanger')) h += '<p class="kl-v2-hint">Deine Angabe zur Schwangerschaft ist bereits übernommen.</p>';
+    if (f.selected.indexOf('bekannte körperliche Themen') >= 0) h += klV2Text('Was möchtest du mir dazu mitgeben? (optional)');
+  }
+  if (klPhase === 'beschwerden') h += klV2Text('Ungefährer Zeitraum (optional)');
+  if (klPhase === 'daten') h += '<div class="kl-v2-demo"><strong>Oura-Demo · Testdaten</strong><p>Keine Verbindung mit deinem persönlichen Konto. Die Werte werden nicht als deine Körperdaten übernommen.</p>'
+    + '<button type="button" class="kl-v2-link" onclick="klV2OuraLaden()"' + (window._klOuraPending ? ' disabled' : '') + '>'
+    + (window._klOuraPending ? 'Demo wird geladen…' : 'Demo ansehen') + '</button><div id="kl-v2-demo-result">' + klV2OuraHtml() + '</div></div>';
+  if (klPhase === 'schlafroutine') {
+    h += '<button id="kl-v2-irregular" type="button" class="kl-chip' + (f.irregular ? ' selected' : '') + '" aria-pressed="' + !!f.irregular + '" onclick="klV2Unregelmaessig()">Kein fester Rhythmus</button>';
+    if (!f.irregular) h += klV2Input('bed', 'Meist ins Bett gegen (optional)', 'time') + klV2Input('wake', 'Meist aufstehen gegen (optional)', 'time');
+  }
+  if (klPhase === 'zusammenfassung') {
+    h += '<p class="kl-v2-summary">' + klV2Esc(klV2Zusammenfassung()) + '</p><p class="kl-v2-proposal">' + klV2Esc(klV2Vorschlag().text) + '</p>'
+      + '<details class="kl-v2-review"><summary>Deine Angaben prüfen oder ändern</summary>';
+    klV2Schritte().filter(function(k) { return k !== 'zusammenfassung'; }).forEach(function(k) {
+      var a = (s.committed || {})[k];
+      h += '<div><strong>' + klV2Definition(k).title + '</strong><p>' + klV2Esc(a && !a.skipped ? klV2Antwort(k, a) : 'Ausgelassen')
+        + '</p><button type="button" class="kl-v2-link" onclick="klV2Bearbeiten(\'' + k + '\')">Ändern</button></div>';
+    });
+    h += '</details><button type="button" class="kl-v2-link" onclick="klV2StartApp(false)">Mit einem anderen Thema starten</button>';
+  }
+  host.innerHTML = h + '</div>';
+  var oldInput = document.getElementById('kl-legacy-input'); if (oldInput) oldInput.hidden = true;
+  klV2Status();
+  var target = document.getElementById(keepPosition ? focusId || '' : 'kl-v2-title');
+  if (target && target.focus) target.focus({ preventScroll: true });
+  host.scrollTop = keepPosition ? scroll : 0;
+}
+
+function klV2Status() {
+  var s = klZustand(), d = klV2Definition(klPhase);
+  var progress = document.getElementById('kl-progress'); if (progress) progress.textContent = d ? d.group : 'Kennenlernen';
+  var start = document.getElementById('klStartBtn');
+  if (start) { start.disabled = !!window._klV2Saving || !!window._klStorageError; start.textContent = klPhase === 'zusammenfassung' ? 'Ja, dort anfangen' : 'Weiter'; }
+  var back = document.getElementById('kl-v2-back'); if (back) back.disabled = !!window._klV2Saving;
+  var skip = document.getElementById('kl-v2-skip'); if (skip) { skip.hidden = klPhase === 'zusammenfassung'; skip.disabled = !!window._klV2Saving; skip.textContent = 'Überspringen'; }
+  var status = document.getElementById('kl-status');
+  if (status) { status.textContent = window._klStorageError ? 'Dein Stand konnte nicht gespeichert werden. Bitte versuche es erneut.' : s.formError || ''; status.hidden = !status.textContent; }
+  var retry = document.getElementById('kl-retry'); if (retry) retry.hidden = !window._klStorageError;
+}
+
+function klV2Validieren(key, f) {
+  if (key === 'name' && (!klNameSetzen(f.text || '') || klNameAblehnung(f.text || ''))) return 'Bitte trage deinen Vornamen oder Wunschnamen ein, oder wähle „Überspringen“.';
+  if (key === 'alter' && !/^(?:1[89]|[2-9]\d|1[01]\d|120)$/.test(String(f.age || ''))) return 'Bitte gib dein Alter als ganze Zahl zwischen 18 und 120 ein.';
+  if (key === 'kinder' && f.amount && !/^(?:[1-9]|[12]\d|30)$/.test(f.amount)) return 'Bitte gib die Anzahl als ganze Zahl zwischen 1 und 30 ein.';
+  if (key === 'schlafroutine' && !f.irregular && [f.bed, f.wake].some(function(t) { return t && !/^([01]\d|2[0-3]):[0-5]\d$/.test(t); })) return 'Bitte prüfe die Uhrzeit.';
+  var d = klV2Definition(key);
+  if (d.options && !(f.selected || []).length && !(key === 'themen' && (f.text || '').trim())) return 'Wähle eine Antwort oder überspringe diesen Schritt.';
+  if (key === 'themen' && f.selected.length === 1 && f.selected[0] === 'Etwas anderes' && !(f.text || '').trim()) return 'Erzähl kurz, was dich beschäftigt, oder überspringe diesen Schritt.';
+  return '';
+}
+
+function klV2Weiter(skip) {
+  var s = klZustand(); if (s.flow !== 2 || window._klV2Saving) return;
+  if (klPhase === 'zusammenfassung') return klV2StartApp(true);
+  var key = klPhase, f = klV2Form(key), error = skip ? '' : klV2Validieren(key, f);
+  if (error) { s.formError = error; klV2Status(); return; }
+  var a = skip ? { skipped: true, selected: [], text: '', ts: Date.now() } : JSON.parse(JSON.stringify(f));
+  a.ts = Date.now(); s.committed[key] = a; s.formError = '';
+  if (key === 'name') { userName = skip ? '' : klNameSetzen(f.text); if (!skip) { a.text = userName; f.text = userName; } }
+  if (key === 'alter') { delete klAnswers.alter; delete klAnswers.alterExact; if (!skip) { klAnswers.alterExact = Number(f.age); klAnswers.alterErfasstAm = a.ts; } }
+  if (key === 'leben') {
+    if (!klV2KinderGenannt()) { delete s.committed.kinder; delete s.form.kinder; }
+    var body = klV2Form('koerper');
+    if (klV2Hat('leben', 'schwanger') && body.selected.indexOf('Schwangerschaft') < 0) { body.selected = body.selected.filter(function(v) { return ['nichts davon', 'später'].indexOf(v) < 0; }); body.selected.push('Schwangerschaft'); delete s.committed.koerper; s.pregnancyPrefill = true; }
+    else if (!klV2Hat('leben', 'schwanger') && s.pregnancyPrefill) { body.selected = body.selected.filter(function(v) { return v !== 'Schwangerschaft'; }); delete s.committed.koerper; s.pregnancyPrefill = false; }
+  }
+  if (key === 'koerper') {
+    // An explicit correction to a prefilled choice also updates its earlier source.
+    if (!skip && klV2Hat('leben', 'schwanger') && !klV2Hat('koerper', 'Schwangerschaft')) {
+      s.committed.leben.selected = s.committed.leben.selected.filter(function(v) { return v !== 'schwanger'; });
+      klV2Form('leben').selected = klV2Form('leben').selected.filter(function(v) { return v !== 'schwanger'; });
+      s.pregnancyPrefill = false;
+    }
+    if (!klV2Hat('koerper', 'natürlicher Zyklus')) { delete s.committed.zyklus; delete s.form.zyklus; }
+    if (!a.text) { delete s.committed.beschwerden; delete s.form.beschwerden; }
+  }
+  var keys = klV2Schritte(), next = keys[keys.indexOf(key) + 1];
+  if (s.editing) { next = keys.find(function(k) { return k !== 'zusammenfassung' && !s.committed[k]; }) || 'zusammenfassung'; s.editing = next !== 'zusammenfassung'; }
+  klPhase = next || 'zusammenfassung'; klDone = klPhase === 'zusammenfassung';
+  klV2Verlauf(); klEntwurfSpeichern(); klV2Render();
+}
+
+function klV2Zurueck() {
+  if (window._klV2Saving) return;
+  if (klZustand().flow !== 2) { ruBackToRampup(); return; }
+  var keys = klV2Schritte(), i = keys.indexOf(klPhase);
+  if (i <= 0) { ruBackToRampup(); return; }
+  klPhase = keys[i - 1]; klDone = false; klZustand().formError = ''; klEntwurfSpeichern(); klV2Render();
+}
+
+function klV2Bearbeiten(key) {
+  if (window._klV2Saving || klV2Schritte().indexOf(key) < 0) return;
+  klZustand().editing = true; klPhase = key; klDone = false; klEntwurfSpeichern(); klV2Render();
+}
+
+function klV2Antwort(key, a) {
+  if (!a || a.skipped) return 'Das möchte ich auslassen.';
+  if (key === 'name') return a.text;
+  if (key === 'alter') return 'Ich bin ' + a.age + ' Jahre alt.';
+  if (key === 'kinder') return [a.amount ? 'Anzahl: ' + a.amount : '', a.ages ? 'Alter: ' + a.ages : ''].filter(Boolean).join('. ') || 'Keine weiteren Angaben zu meinen Kindern.';
+  if (key === 'schlafroutine') return a.irregular ? 'Ich habe keinen festen Schlafrhythmus.' : [a.bed ? 'Meist gehe ich gegen ' + a.bed + ' Uhr ins Bett.' : '', a.wake ? 'Meist stehe ich gegen ' + a.wake + ' Uhr auf.' : ''].filter(Boolean).join(' ') || 'Keine Angaben zu meiner Schlafroutine.';
+  var prefix = { leben: 'Meine Lebenssituation: ', themen: 'Mich beschäftigt: ', gefuehl: 'Damit fühle ich mich: ', ziel: 'Ich möchte besser verstehen: ', koerper: 'Körperliche oder hormonelle Themen: ', zyklus: 'Meine ungefähre Zykluseinschätzung: ', daten: 'Körperdaten: ', schlafqualitaet: 'Meine letzte Nacht: ', beschwerden: 'Zeitraum meines körperlichen Themas: ' };
+  return (prefix[key] || '') + (a.selected || []).join(', ') + (a.text ? ((a.selected || []).length ? '. ' : '') + a.text : '');
+}
+
+function klV2Verlauf() {
+  var s = klZustand(); klHistory.length = 0;
+  klV2Schritte().forEach(function(k) {
+    var a = s.committed[k]; if (!a) return;
+    klHistory.push({ role: 'assistant', content: klV2Definition(k).title, onboardingFeld: k });
+    var m = { role: 'user', content: klV2Antwort(k, a), onboardingFeld: k };
+    if (k === 'name' || k === 'alter') m.profilFeld = k;
+    klHistory.push(m);
+  });
+  if (klDone) klHistory.push({ role: 'assistant', content: klV2Zusammenfassung() + '\n\n' + klV2Vorschlag().text });
+}
+
+function klV2Zusammenfassung() {
+  var a = klZustand().committed || {}, parts = [];
+  if (a.themen && !a.themen.skipped) {
+    var topics = a.themen.selected.filter(function(t) { return t !== 'Etwas anderes'; });
+    if (topics.length) parts.push('Gerade geht es dir vor allem um ' + topics.join(' und ') + '.');
+    if (a.themen.text) parts.push('Du hast mir mitgegeben: „' + (a.themen.text.length > 240 ? a.themen.text.slice(0, 240) + '…' : a.themen.text) + '“');
+  }
+  if (a.gefuehl && !a.gefuehl.skipped && a.gefuehl.selected.indexOf('schwer zu sagen') < 0) parts.push('Damit fühlst du dich ' + a.gefuehl.selected.join(' und ') + '.');
+  var goal = a.ziel && !a.ziel.skipped && a.ziel.selected.filter(function(t) { return t !== 'weiß ich noch nicht'; });
+  var goals = {
+    'warum ich mich so fühle': 'verstehen, warum du dich so fühlst',
+    'was mich beeinflusst': 'verstehen, was dich beeinflusst',
+    'was mir guttut': 'herausfinden, was dir guttut',
+    'meinen Körper besser verstehen': 'deinen Körper besser verstehen',
+    'meine Stimmung besser einordnen': 'deine Stimmung besser einordnen',
+    'Zusammenhänge erkennen': 'Zusammenhänge erkennen',
+    'Veränderungen bei mir verstehen': 'Veränderungen bei dir verstehen',
+    'wissen, worauf ich achten kann': 'wissen, worauf du im Alltag achten kannst'
+  };
+  if (goal && goal.length) parts.push('Du möchtest ' + goal.map(function(g) { return goals[g] || g; }).join(' und ') + '.');
+  return parts.length ? parts.join(' ') : 'Danke fürs Kennenlernen' + (userName ? ', ' + userName : '') + '. Wir können gemeinsam herausfinden, was dir gerade wichtig ist.';
+}
+
+function klV2Vorschlag() {
+  var a = klZustand().committed || {}, t = a.themen && !a.themen.skipped ? a.themen.selected.find(function(v) { return v !== 'Etwas anderes'; }) : null;
+  var plans = {
+    Schlaf: 'wir schauen zuerst auf deinen Abend und überlegen, was dir das Zur-Ruhe-Kommen erleichtern könnte',
+    Stress: 'wir sortieren zuerst, was dich im Alltag beansprucht, und suchen eine konkrete Möglichkeit zur Entlastung',
+    Energie: 'wir schauen zuerst auf deinen Tagesablauf und suchen eine Stelle, an der du dir etwas Druck nehmen kannst',
+    Stimmung: 'wir nehmen eine konkrete Situation aus deinem Alltag und schauen gemeinsam, wie sie sich für dich anfühlt',
+    Körper: 'wir beginnen mit dem, was du an deinem Körper wahrnimmst und was du dazu besser verstehen möchtest',
+    Zyklus: 'wir schauen zuerst auf deine eigenen Beobachtungen im Alltag und was du dabei besser verstehen möchtest',
+    Ernährung: 'wir schauen zuerst, welche einfachen Mahlzeiten zu deinem Alltag und deinen Vorlieben passen',
+    Bewegung: 'wir suchen zuerst eine Form von Bewegung, die du magst und die in deinen Alltag passt',
+    'Mental Load': 'wir sortieren zuerst, was du alles im Kopf behältst, und suchen eine Aufgabe, bei der Entlastung möglich ist',
+    Familie: 'wir beginnen mit einer konkreten Familiensituation, bei der du dir Unterstützung wünschst',
+    Arbeit: 'wir schauen zuerst auf eine konkrete Situation bei der Arbeit, die dich gerade beschäftigt'
+  };
+  var plan = plans[t] || 'wir sortieren zunächst gemeinsam, was gerade Raum in deinem Alltag einnimmt, und wählen einen kleinen nächsten Schritt';
+  return { thema: t || null, text: 'Ich schlage vor, ' + plan + '. Passt dieser Einstieg für dich?', zustimmung: 'Ja, lass uns so anfangen: ' + plan + '.' };
+}
+
+function klV2OuraHtml() {
+  var d = window._klOuraDemo;
+  if (!d) return '<p>Die Vorschau nutzt das angebundene Testkonto.</p>';
+  if (d.limit) return '<p role="status">Die Demo wurde in diesem Kennenlernen bereits dreimal angefragt. Du kannst jetzt ohne Verbindung weitergehen.</p>';
+  if (d.error) return '<p role="status">Die Demo ist gerade nicht erreichbar. Du kannst es erneut versuchen oder ohne Verbindung weitergehen.</p>';
+  return '<p role="status">Demo geladen · ausschließlich Testdaten</p><ul>' + d.values.map(function(v) { return '<li>' + klV2Esc(v) + '</li>'; }).join('') + '</ul>';
+}
+
+function klV2OuraDaten(data) {
+  if (!data || !data.ok || !data.oura) throw new Error('Keine Demo-Daten');
+  function latest(key) { var block = data.oura[key]; if (!block || block.status !== 200 || !Array.isArray(block.data)) return null; return block.data.slice().sort(function(a,b) { return String(b.day || '').localeCompare(String(a.day || '')); })[0]; }
+  var sleep = latest('sleep'), score = latest('daily_sleep'), readiness = latest('daily_readiness'), values = [];
+  if (sleep && Number.isFinite(sleep.total_sleep_duration) && sleep.total_sleep_duration > 0 && sleep.total_sleep_duration <= 86400) values.push('Schlafdauer: ' + Math.round(sleep.total_sleep_duration / 60) + ' Minuten · ' + String(sleep.day || 'Messtag unbekannt'));
+  if (score && Number.isFinite(score.score) && score.score >= 0 && score.score <= 100) values.push('Oura Sleep Score: ' + score.score + '/100 · ' + String(score.day || 'Messtag unbekannt'));
+  if (readiness && Number.isFinite(readiness.score) && readiness.score >= 0 && readiness.score <= 100) values.push('Oura Readiness: ' + readiness.score + '/100 · ' + String(readiness.day || 'Messtag unbekannt'));
+  if (!values.length) throw new Error('Keine Demo-Werte verfügbar');
+  return { demo: true, values: values };
+}
+
+function klV2OuraLaden() {
+  if (window._klOuraPending) return Promise.resolve(false);
+  var s = klZustand(), id = s.id, generation = window._klGeneration || 0;
+  if ((s.demoRequests || 0) >= 3) { window._klOuraDemo = { limit: true }; klV2Render(true); return Promise.resolve(false); }
+  s.demoRequests = (s.demoRequests || 0) + 1;
+  if (!klEntwurfSpeichern()) { s.demoRequests--; klV2Status(); return Promise.resolve(false); }
+  window._klOuraPending = true; klV2Render(true);
+  return felieFetch('https://avie-proxy.hoyer2707.workers.dev/oura', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ days: 7 }) }).then(function(r) {
+    if (!r.ok) throw new Error('Demo nicht erreichbar'); return r.json();
+  }).then(function(data) {
+    if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return false;
+    // Display only: never persist demo values, pass them to AI, or mark an account connected.
+    window._klOuraDemo = klV2OuraDaten(data); return true;
+  }).catch(function() { if (generation === (window._klGeneration || 0) && id === klZustand().id) window._klOuraDemo = { error: true }; return false; })
+    .finally(function() { if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return; window._klOuraPending = false; if (klPhase === 'daten') klV2Render(true); });
+}
+
+function klV2Sichern() {
+  var s = klZustand(); if (s.stage !== 'aufnahme') return true;
+  klV2Verlauf(); var chat = klArchivSichern(); if (!chat) return false;
+  var before = JSON.stringify(felieStore());
+  var imported = felieStore().zusatz.onboardingImporte || (felieStore().zusatz.onboardingImporte = {});
+  var fingerprint = JSON.stringify(s.committed);
+  if (imported[s.id] !== fingerprint) {
+    // Only reconcile this still-unfinished intake after an explicit correction.
+    var prefix = 'aufnahme:' + s.id + ':';
+    felieStore().fakten = felieStore().fakten.filter(function(f) { return String(f.id).indexOf(prefix) !== 0; });
+    felieStore().episoden = felieStore().episoden.filter(function(f) { return String(f.id).indexOf(prefix) !== 0; });
+    felieStore().signale = felieStore().signale.filter(function(f) { return !(f.meta && f.meta.onboardingId === s.id); });
+    function fact(key, text, cat, suffix) {
+      if (!text) return;
+      var i = chat.messages.findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === key; });
+      felieFaktSetzen({ id: 'aufnahme:' + s.id + ':' + key + (suffix || ''), text: text, kategorie: cat, klasse: 'volatil', quelle: 'selbst', belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
+    }
+    var a = s.committed, life = a.leben;
+    if (life && !life.skipped) {
+      var work = life.selected.filter(function(v) { return ['Elternzeit','Vollzeit','Teilzeit','selbstständig'].indexOf(v) >= 0; });
+      var family = life.selected.filter(function(v) { return ['alleinlebend','Partnerschaft','Kinder'].indexOf(v) >= 0; });
+      if (family.length) fact('leben', 'Lebenssituation: ' + family.join(', ') + '.', 'familie', ':familie');
+      if (work.length) fact('leben', 'Arbeit und Alltag: ' + work.join(', ') + '.', 'arbeit', ':arbeit');
+      if (life.text) fact('leben', 'Zur Lebenssituation selbst angegeben: ' + life.text, 'allgemein', ':text');
+    }
+    if (a.kinder && !a.kinder.skipped && (a.kinder.amount || a.kinder.ages)) fact('kinder', 'Zu den Kindern: ' + klV2Antwort('kinder', a.kinder), 'familie');
+    var body = a.koerper, hormones = body && !body.skipped ? body.selected.filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
+    if (klV2Hat('leben','schwanger') && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
+    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Körperlicher / hormoneller Kontext (Selbstauskunft): ' + hormones.join(', ') + '.', 'gesundheit', ':kontext');
+    if (body && !body.skipped && body.text) fact('koerper', 'Selbst mitgeteiltes körperliches Thema: ' + body.text, 'gesundheit', ':text');
+    if (a.schlafroutine && !a.schlafroutine.skipped && (a.schlafroutine.bed || a.schlafroutine.wake || a.schlafroutine.irregular)) fact('schlafroutine', klV2Antwort('schlafroutine', a.schlafroutine), 'allgemein');
+    ['themen','gefuehl','ziel','zyklus','beschwerden'].forEach(function(key) {
+      var f = a[key]; if (!f || f.skipped) return;
+      if (['gefuehl','ziel','zyklus'].indexOf(key) >= 0 && f.selected.some(function(v) { return ['schwer zu sagen','weiß ich noch nicht','weiß ich nicht'].indexOf(v) >= 0; })) return;
+      var days = ['gefuehl','zyklus'].indexOf(key) >= 0 ? 1 : 7;
+      var i = chat.messages.findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === key; });
+      felieEpisode({ id: 'aufnahme:' + s.id + ':' + key, text: 'Beim Kennenlernen am ' + new Date(f.ts).toLocaleDateString('de-DE') + ': ' + klV2Antwort(key, f), faelligBis: f.ts + days * 86400000,
+        belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
+    });
+    var sleep = a.schlafqualitaet;
+    if (sleep && !sleep.skipped && sleep.selected.length) {
+      var chip = FELIE_FRAGEN.schlafqualitaet.chips.find(function(c) { return c.label === sleep.selected[0]; });
+      if (chip) felieSchreibeSignal('schlafqualitaet', chip.wert, 'selbst', { quelleDetail: 'Onboarding: letzte Nacht', onboardingId: s.id }, sleep.ts);
+    }
+    imported[s.id] = fingerprint;
+  }
+  if (!felieStoreSpeichern()) { window._felieStore = JSON.parse(before); window._klStorageError = true; return false; }
+  var chats = getSavedChats(), current = chats.find(function(c) { return c.onboardingId === s.id; });
+  if (!current) return false;
+  current.notizenStatus = 'vollstaendig'; current.onboardingFlow = 2;
+  try { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); } catch(e) { window._klStorageError = true; return false; }
+  if (!saveUserProfile()) { window._klStorageError = true; return false; }
+  s.extraction = 'fertig'; s.stage = 'bereit'; s.input = ''; s.completedAt = Date.now();
+  if (!klEntwurfSpeichern()) { s.stage = 'aufnahme'; return false; }
+  felieAutosave(); return true;
+}
+
+function klV2StartApp(accept) {
+  if (window._klV2Saving || window._felieRequestPending) return;
+  window._klV2Saving = true;
+  var ok = false;
+  try { ok = klV2Sichern(); } catch(e) { window._klStorageError = true; }
+  window._klV2Saving = false;
+  if (!ok) { klV2Status(); return; }
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  updateClock(); personalizeApp();
+  try { localStorage.setItem('felie_guide_home_deferred','1'); localStorage.removeItem('felie_ritual_marker'); } catch(e) {}
+  homeInit(true);
+  if (accept) klV2EinstiegAnnehmen(); else klV2AnderesThema();
+}
+
+function klV2EinstiegAnnehmen() {
+  if (klZustand().stage !== 'bereit' || window._felieRequestPending) return;
+  var inp = document.getElementById('home-user-input'); if (!inp) return;
+  inp.value = klV2Vorschlag().zustimmung; homeUserReply();
+}
+
+function klV2AnderesThema() {
+  var wrap = document.getElementById('kl-first-step'); if (wrap) wrap.hidden = true;
+  felieHomeTextZeigen('Wir können mit einem anderen Thema anfangen. Was möchtest du mir erzählen?');
+  var inp = document.getElementById('home-user-input'); if (inp) inp.focus();
+}
+
+function klV2Wiederherstellen(s) {
+  if (!s.form || typeof s.form !== 'object' || !s.committed || typeof s.committed !== 'object' || !klV2Definition(s.phase)) return false;
+  window._klState = s;
+  if (s.stage === 'reflexion') s.stage = 'bereit';
+  if (s.stage !== 'aufnahme') return true;
+  userName = typeof s.name === 'string' ? s.name : '';
+  Object.keys(klAnswers).forEach(function(k) { delete klAnswers[k]; }); Object.assign(klAnswers, s.answers || {});
+  klPhase = s.phase; klDone = klPhase === 'zusammenfassung'; klHistory.length = 0;
+  (s.history || []).forEach(function(m) { klHistory.push(m); });
+  ['c1','c2','c3'].forEach(function(k) { consents[k] = !!(s.consents && s.consents[k]); });
+  window._consentTs = s.consents && s.consents.ts; klConsentAnzeigen();
+  if (s.inChat && consents.c1 && consents.c2 && consents.c3) {
+    document.getElementById('rampup').style.display = 'none'; document.getElementById('app').classList.remove('visible'); document.getElementById('onboarding').style.display = 'flex';
+    currentSlide = 0; updateSlides(); window._klInited = true; klV2Render();
+  } else ruGo(Math.max(0, Math.min(3, Number(s.step) || 0)));
+  return true;
 }
 
 function personalizeApp() {
@@ -5124,12 +5585,7 @@ function homeInit(fromOnboarding) {
    wird von fillHomeData()/renderRitualAngebot() gerendert, und der
    Spotlight misst ihre Position. Zu frueh gemessen sitzt das Loch im
    Leeren. Ein Frame reicht nicht — die Karte oben faehrt mit ein. */
-function felieRitualMarkerAnstossen() {
-  if (!felieRitualMarkerOffen()) return;
-  setTimeout(function() {
-    try { if (felieHomeIstSichtbar()) felieRitualMarkerZeigen(); } catch (e) {}
-  }, 650);
-}
+function felieRitualMarkerAnstossen() { /* Header access remains visible; no additional promotion. */ }
 
 
 
@@ -5767,9 +6223,7 @@ function startHomeGuide() {
         die Selbstreflexion einmal ausgefuellt wurde.
    Der Merker liegt in localStorage und nicht in einer Variable: sie
    schliesst die App nach dem Onboarding vielleicht erst mal wieder. */
-function felieRitualMarkerOffen() {
-  try { return !!localStorage.getItem('felie_ritual_marker'); } catch (e) { return false; }
-}
+function felieRitualMarkerOffen() { return false; }
 
 function felieRitualMarkerErledigt() {
   try { localStorage.removeItem('felie_ritual_marker'); } catch (e) {}
@@ -5804,9 +6258,10 @@ function felieRitualMarkerZeigen() {
 }
 
 function startApp() {
+  if (klZustand().flow === 2) return klV2Weiter(false);
   if (!klDone || !klArchivSichern()) { klStatusZeigen(); return; }
   if (!saveUserProfile()) { window._klStorageError = true; klStatusZeigen(); return; }
-  var s = klZustand(); s.stage = 'reflexion'; s.input = '';
+  var s = klZustand(); s.stage = 'bereit'; s.input = '';
   klEntwurfSpeichern();
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
@@ -6855,7 +7310,7 @@ function selectCycleUnknown(btn) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-10-onboarding-v1';
+var FELIE_BUILD = '2026-09-10-onboarding-v2';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -7283,21 +7738,9 @@ function felieRitualFaellig() {
 /* Angebot auf der Startseite. Leiser als der frühere Lime-CTA: das ist
    ein Angebot, kein Handlungsaufruf. */
 function renderRitualAngebot() {
-  var ci = document.getElementById('home-checkin');
-  if (!ci) return;
-  if (!felieRitualFaellig()) {
-    ci.style.display = 'none'; ci.innerHTML = '';
-    /* Nicht mehr faellig heisst: ausgefuellt oder nicht noetig. In beiden
-       Faellen hat die Markierung ihren Zweck erfuellt. */
-    if (felieRitualMarkerOffen()) felieRitualMarkerErledigt();
-    return;
-  }
-  var mark = felieRitualMarkerOffen() ? ' markiert' : '';
-  ci.innerHTML = '<button id="home-ritual-pill" onclick="event.stopPropagation();felieRitualStarten()" class="ritual-pill' + mark + '">'
-    + '<span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>'
-    + 'Selbstreflexion</button>';
-  ci.style.display = 'block';
-  ci.style.marginTop = '10px';
+  var ci = document.getElementById('home-checkin'); if (!ci) return;
+  ci.style.display = 'block'; ci.style.marginTop = '10px';
+  ci.innerHTML = '<button id="home-ritual-pill" onclick="event.stopPropagation();felieRitualStarten()" class="ritual-pill"><span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>Selbstreflexion</button>';
 }
 
 function felieRitualStarten() {
@@ -9036,16 +9479,9 @@ function profileChipStyle(sel) {
 /* Altersband im Profil — dieselben fuenf Baender wie im Ramp-up.
    Ersetzt den Regler von 18 bis 80, der eine dritte Altersspanne aufmachte. */
 function profileBandChips() {
-  var bands = (typeof RU_BANDS !== 'undefined' && RU_BANDS) ? RU_BANDS : [
-    { v: 'u30', l: 'unter 30' }, { v: '30-39', l: '30–39' },
-    { v: '40-47', l: '40–47' }, { v: '48-55', l: '48–55' }, { v: '56+', l: '56+' }
-  ];
-  return bands.map(function(b) {
-    var sel = window._profileEdit.alter === b.v;
-    return '<button type="button" data-group="alter" data-val="' + b.v +
-           '" aria-pressed="' + sel + '" onclick="profileToggle(this)" style="' +
-           profileChipStyle(sel) + '">' + b.l + '</button>';
-  }).join('');
+  var e = window._profileEdit || {};
+  return '<label class="kl-v2-label" for="profile-age-input">Alter in Jahren</label><input id="profile-age-input" type="number" inputmode="numeric" min="18" max="120" step="1" class="kl-v2-input" value="'
+    + klV2Esc(e.alterExact == null ? '' : e.alterExact) + '" oninput="window._profileEdit.alterExact=this.value;window._profileEdit.alterGeaendert=true;refreshProfileSummary(\'alter\');">';
 }
 
 function profileChips(group) {
@@ -9075,15 +9511,12 @@ function profileToggle(el) {
 }
 
 function saveProfile() {
-  var e = window._profileEdit || {}, old = { name: userName, alter: klAnswers.alter };
+  var e = window._profileEdit || {}, old = { name: userName, answers: JSON.stringify(klAnswers) };
+  if (e.alterGeaendert && e.alterExact !== '' && !/^(?:1[89]|[2-9]\d|1[01]\d|120)$/.test(String(e.alterExact))) { felieAlert('Bitte gib dein Alter als ganze Zahl zwischen 18 und 120 ein.'); return; }
   if (typeof e.name === 'string') userName = e.name.trim();
-  if (e.alter) { klAnswers.alter = e.alter; delete klAnswers.alterExact; }
-  if (!saveUserProfile()) {
-    userName = old.name; klAnswers.alter = old.alter;
-    felieAlert('Deine Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut.'); return;
-  }
-  klUebergabeInvalidieren();
-  var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
+  if (e.alterGeaendert) { delete klAnswers.alter; delete klAnswers.alterExact; if (e.alterExact !== '') { klAnswers.alterExact = Number(e.alterExact); klAnswers.alterErfasstAm = Date.now(); } }
+  if (!saveUserProfile()) { userName = old.name; Object.keys(klAnswers).forEach(function(k) { delete klAnswers[k]; }); Object.assign(klAnswers, JSON.parse(old.answers)); felieAlert('Deine Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut.'); return; }
+  klUebergabeInvalidieren(); var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
 }
 
 function saveUserProfile() {
@@ -9545,6 +9978,7 @@ function resetUserDataConfirm(title, message) {
 
 function doResetUserData() {
   window._klGeneration = (window._klGeneration || 0) + 1;
+  window._klOuraDemo = null; window._klOuraPending = false; window._klV2Saving = false;
   window._klState = null; window._klExtractPromise = null; window._klRequestPending = false; window._felieOnboardingChatId = null;
   try {
     /* Dieselbe Liste wie das Backup, plus die Altlasten. Vorher stand hier
@@ -10104,7 +10538,7 @@ var PROFILE_LABELS = {
 function profileSummary(key) {
   var e = window._profileEdit || {};
   if (key === 'name') return e.name ? e.name : '—';
-  if (key === 'alter') { var band = RU_BANDS.find(function(b) { return b.v === e.alter; }); return band ? band.l : e.alter || '—'; }
+  if (key === 'alter') { if (e.alterExact !== '' && e.alterExact != null) return String(e.alterExact) + ' Jahre'; var band = RU_BANDS.find(function(b) { return b.v === e.alter; }); return band ? band.l : e.alter || '—'; }
   if (key === 'kinder') return PROFILE_LABELS.kinder[e.kinder] || '—';
   if (key === 'lifestyle') return PROFILE_LABELS.lifestyle[e.lifestyle] || '—';
   if (key === 'wunsch') {
@@ -10177,6 +10611,7 @@ function showProfile() {
   window._profileEdit = {
     name: userName || '',
     alter: klAnswers.alter || '',
+    alterExact: klAnswers.alterExact == null ? '' : klAnswers.alterExact,
     kinder: klAnswers.kinder || '',
     lifestyle: klAnswers.lifestyle || '',
     wunsch: Array.isArray(klAnswers.wunsch) ? klAnswers.wunsch.filter(Boolean).slice() : []
@@ -10213,7 +10648,7 @@ function showProfile() {
       profileField('name', 'Name',
         '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;refreshProfileSummary(\'name\');" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.3);font-family:inherit;font-size:14px;color:#180430;background:#FBF9FE;outline:none;" aria-label="Dein Name">') +
       profileField('alter', 'Alter',
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;" role="group" aria-label="Altersband">' + profileBandChips() + '</div>') +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px;" role="group" aria-label="Alter">' + profileBandChips() + '</div>') +
       klProfilAngabenHtml() +
       '</div>' +
       /* Freitext und Gelerntes sind ins Gedaechtnis gewandert. Hier bleibt
@@ -11133,7 +11568,7 @@ function handleKey(e) {
 
 function showOnboarding() {
   window._klGeneration = (window._klGeneration || 0) + 1;
-  window._klState = null; window._klExtractPromise = null;
+  window._klState = null; window._klExtractPromise = null; window._klOuraDemo = null; window._klOuraPending = false; window._klV2Saving = false;
   localStorage.removeItem('felie_onboarding_v1');
   var slideEls2 = document.querySelectorAll('.slide');
   currentSlide = 0;
@@ -11336,7 +11771,7 @@ function felieChatAntwortRegeln() {
    Stelle, an der sie es auch wieder loeschen kann. */
 function felieProfilDaten() {
   var a = typeof klAnswers === 'object' ? klAnswers : {};
-  return { name: userName || null, altersband: a.alter || null,
+  return { name: userName || null, alter: Number.isInteger(a.alterExact) ? a.alterExact : null, alterErfasstAm: a.alterErfasstAm || null, altersband: a.alterExact == null ? a.alter || null : null,
     kinder: a.kinder || null, alltag: a.lifestyle || null,
     wuensche: a.zielText || a.wunsch || [],
     notiz: a.notiz ? { text: a.notiz, quelle: a.notizQuelle === 'selbst'

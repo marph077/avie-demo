@@ -1,29 +1,42 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<script>
-/* Local Qwen text test: no credentials, no Anthropic fallback, no external app API calls. */
-(function(){
-  var nativeFetch=window.fetch.bind(window);
-  var local=location.hostname==='127.0.0.1'&&location.port==='43187';
-  window.fetch=function(url,opts){
-    var target=new URL(typeof url==='string'?url:url.url,location.href);
-    if(local&&target.origin===location.origin&&target.pathname==='/api/model')return nativeFetch(url,opts);
-    return Promise.reject(new Error('Diese lokale Texttestfassung benötigt den Qwen-Testserver auf 127.0.0.1:43187. Weitere App-Dienste sind hier deaktiviert.'));
-  };
-  document.addEventListener('DOMContentLoaded',function(){
-    var banner=document.createElement('div');banner.id='felie-local-test-banner';
-    banner.textContent='Qwen3.8 · Lokaler Texttest · Nur erfundene Angaben';
-    banner.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#e1ea7d;color:#180430;text-align:center;font:12px/24px system-ui';
-    document.body.appendChild(banner);
-    var attachment=document.getElementById('befund-btn');
-    if(attachment){attachment.disabled=true;attachment.title='Dateiupload ist im lokalen Texttest nicht verfügbar.';attachment.style.opacity='0.4';}
-    if(!local){banner.textContent='Lokaler Texttest: Bitte über den Qwen-Testserver auf 127.0.0.1:43187 öffnen.';return;}
-    nativeFetch('/status').then(function(r){return r.json();}).then(function(s){
-      banner.textContent='Qwen3.8 · '+(s.live?'IONOS · Reasoning aus':'Simulierte Antworten')+' · Nur erfundene Angaben';
-    }).catch(function(){banner.textContent='Qwen3.8 · Testserver nicht erreichbar';});
-  });
-})();
+<script id="felie-qwen-upload">
+/* Shared browser storage is intentional for this user-authorized comparison. */
+var FELIE_QWEN_MODEL = "Qwen/Qwen3.8-27B";
+var FELIE_QWEN_ENDPOINT = "https://avie-proxy.hoyer2707.workers.dev";
+ var FELIE_QWEN_VARIANT = "qwen-27b";
+function felieQwenLabel(text, failed) {
+  var badge = document.getElementById('felie-model-test');
+  if (badge) { badge.textContent = text; badge.style.background = failed ? '#f8d9da' : '#e1ea7d'; }
+}
+ function felieQwenFetch(url, opts, timeout) {
+   if (url !== FELIE_QWEN_ENDPOINT) return Promise.reject(new Error('Unerwartete Qwen-Route'));
+   var request = Object.assign({}, opts || {}), body;
+   try { body = JSON.parse(request.body || '{}'); } catch (e) { return Promise.reject(new Error('Ungültige Qwen-Anfrage')); }
+   // The existing Worker selects the model from its server-side variant table.
+   body.felie_variant = FELIE_QWEN_VARIANT;
+   delete body.thinking;
+   request.body = JSON.stringify(body);
+   return felieFetch(url, request, timeout).then(function(r) {
+     if (!r.ok) return r;
+     return r.clone().json().then(function(data) {
+       var meta = data.felie_test;
+       if (data.model !== FELIE_QWEN_MODEL || !meta || meta.provider !== 'ionos' || meta.variant !== FELIE_QWEN_VARIANT || (meta.reasoning_tokens != null && meta.reasoning_tokens > 0)) {
+         felieQwenLabel('Qwen3.8 · Modellprüfung fehlgeschlagen', true);
+         throw new Error('Modell oder Reasoning entspricht nicht dieser Testfassung');
+       }
+       felieQwenLabel('Qwen3.8 · IONOS · Reasoning aus · gemeinsamer Speicher', false);
+       return r;
+     });
+   });
+ }
+document.addEventListener('DOMContentLoaded', function() {
+  var badge = document.createElement('div'); badge.id = 'felie-model-test';
+   badge.textContent = 'Qwen3.8 · IONOS · gemeinsamer Speicher';
+  badge.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#e1ea7d;color:#180430;text-align:center;font:12px/24px system-ui;pointer-events:none';
+  document.body.appendChild(badge);
+});
 </script>
 <meta charset="UTF-8">
 <script>
@@ -41,7 +54,7 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>felie — Deine Begleiterin</title>
+<title>felie · Qwen3.8 — Vergleichstest</title>
 <link href="https://fonts.googleapis.com/css2?family=Alice&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -7807,7 +7820,7 @@ function selectCycleUnknown(btn, vorauswahl) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-11-qwen3.8-local-v2';
+var FELIE_BUILD = '2026-09-11-qwen3.8-upload-v2';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -12486,7 +12499,7 @@ function felieRequest(mode, messages, opts) {
         ? [{ type: 'text', text: msgs[0].content }] : msgs[0].content);
     } else msgs.unshift({ role: 'user', content: [prefix] });
   }
-  return felieFetch('/api/model', {
+  return felieQwenFetch('https://avie-proxy.hoyer2707.workers.dev', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'Qwen/Qwen3.8-27B',
       max_tokens: opts.maxTokens || 1000,
@@ -13116,14 +13129,7 @@ function micStop() {
 })();
 
 function befundFlow() {
-  var inp = document.getElementById('befund-file');
-  if (!inp) return;
-  inp.value = '';
-  inp.onchange = function() {
-    var f = inp.files && inp.files[0];
-    if (f) befundLesen(f);
-  };
-  inp.click();
+  felieAlert('Datei- und Foto-Uploads sind in diesem Qwen-Textvergleich noch nicht verfügbar.');
 }
 
 function befundLesen(file) {

@@ -7783,7 +7783,7 @@ function selectCycleUnknown(btn, vorauswahl) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-11-qwen3.8-konsolidiert';
+var FELIE_BUILD = '2026-09-11-qwen3.8-ohne-banner';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -12495,37 +12495,19 @@ var FELIE_MODELL = {
    Pruefung wuerde ein stillschweigendes Zurueckfallen des Workers auf ein
    anderes Modell nicht auffallen — und genau das soll ein Vergleichstest
    ausschliessen. Reasoning muss aus bleiben, sonst sind die Antworten
-   nicht mit der Referenz vergleichbar. */
+   nicht mit der Referenz vergleichbar.
+     Frueher hing daran zusaetzlich ein fest eingeblendetes Kopfband
+   ("Qwen3.8 · IONOS · Vergleichstest"). Das war fuer den internen
+   Modellvergleich gedacht, ist als Nutzerinnen-Ansicht aber fehl am
+   Platz und deshalb entfernt — die Pruefung selbst (Wurf bei Abweichung)
+   bleibt unveraendert bestehen. */
 function felieModellPruefen(data) {
   var meta = data && data.felie_test;
   if (!data || data.model !== FELIE_MODELL.name || !meta
       || meta.provider !== FELIE_MODELL.anbieter || meta.variant !== FELIE_MODELL.variante
-      || (meta.reasoning_tokens != null && meta.reasoning_tokens > 0)) {
-    felieModellBanner('Qwen3.8 · Modellprüfung fehlgeschlagen', true);
+      || (meta.reasoning_tokens != null && meta.reasoning_tokens > 0))
     throw new Error('Modell oder Reasoning entspricht nicht dieser Testfassung');
-  }
-  felieModellBanner('Qwen3.8 · IONOS · Reasoning aus', false);
 }
-
-/* Sichtbarer Hinweis, dass hier eine Testfassung laeuft. Vor einer
-   Veroeffentlichung ersatzlos entfernen. */
-function felieModellBanner(text, fehler) {
-  var badge = document.getElementById('felie-model-test');
-  if (!badge) {
-    if (!document.body) return;
-    badge = document.createElement('div');
-    badge.id = 'felie-model-test';
-    badge.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;color:#180430;'
-      + 'text-align:center;font:12px/24px system-ui;pointer-events:none';
-    document.body.appendChild(badge);
-  }
-  badge.textContent = text || ('Qwen3.8 · IONOS · Vergleichstest');
-  badge.style.background = fehler ? '#f8d9da' : '#e1ea7d';
-}
-
-if (document.readyState === 'loading')
-  document.addEventListener('DOMContentLoaded', function() { felieModellBanner(null, false); });
-else felieModellBanner(null, false);
 
 function felieRequest(mode, messages, opts) {
   opts = opts || {};

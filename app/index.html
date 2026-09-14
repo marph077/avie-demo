@@ -818,6 +818,26 @@ html.native-app .phone {
 .ged-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin-top: -6px; }
 .ged-leer { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
 
+/* Register statt einer langen Rolle. Vier Karten untereinander hiessen:
+   wer eine bestimmte Angabe suchte, scrollte an allem anderen vorbei —
+   und die Erklaertexte jeder Karte summierten sich zu einer Wand.
+   Die Leiste sitzt im dunklen Kopf, damit sie beim Scrollen nicht
+   mitwandert und immer erreichbar bleibt. */
+.ged-tabs { display: flex; gap: 4px; padding: 0 20px; background: var(--plum); flex-shrink: 0; }
+.ged-tab { flex: 1 1 0; min-width: 0; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; color: rgba(255,255,255,0.58);
+  padding: 10px 4px 11px; border-bottom: 2px solid transparent;
+  display: flex; align-items: baseline; justify-content: center; gap: 5px;
+  transition: color 0.15s, border-color 0.15s; }
+.ged-tab.aktiv { color: var(--apricot); border-bottom-color: var(--apricot); font-weight: 600; }
+.ged-tab:focus-visible { outline: 2px solid var(--apricot); outline-offset: -2px; }
+.ged-tab-n { font-size: 10.5px; color: rgba(255,255,255,0.42); font-variant-numeric: tabular-nums; }
+.ged-tab.aktiv .ged-tab-n { color: rgba(225, 234, 125,0.7); }
+/* Punkt an einem Register, das neue Eintraege enthaelt — sonst muesste die
+   Nutzerin nach dem Puls auf der Startseite alle drei durchsehen. */
+.ged-tab-neu { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot);
+  align-self: center; flex-shrink: 0; }
+
 .ged-gruppe { font-size: 10px; font-weight: 600; color: var(--lila);
   text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
 .ged-gruppe:first-of-type { margin-top: 0; }
@@ -828,12 +848,59 @@ html.native-app .phone {
 .ged-zeile .snip-view { display: flex; align-items: flex-start; gap: 8px; }
 .ged-zeile .snip-text { flex: 1; min-width: 0; font-size: 12.5px; color: #4A3A6A; line-height: 1.5; }
 .ged-akt { flex-shrink: 0; display: flex; align-items: center; gap: 2px; }
-.ged-del { font-family: inherit; font-size: 10.5px; color: var(--text-muted); background: none;
-  border: none; padding: 4px 5px; cursor: pointer; text-decoration: underline; white-space: nowrap; }
-.ged-del:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; border-radius: 6px; }
+/* Loeschen und "Erledigt" waren zwei unterschiedlich benannte Textlinks
+   fuer denselben Handgriff — und "Löschen" nahm in einer schmalen Zeile
+   mehr Platz als der Text daneben. Ein × an jeder Zeile, die Bedeutung
+   steht in der Rueckfrage. 32px Trefferflaeche, damit der Daumen ihn
+   trifft, ohne den Stift daneben zu erwischen. */
+.ged-x { font-family: inherit; font-size: 15px; line-height: 1; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; width: 32px; height: 32px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background 0.15s, color 0.15s; }
+.ged-x:hover { background: rgba(143, 91, 189,0.12); color: var(--plum); }
+.ged-x:focus-visible { outline: 2px solid var(--lila); outline-offset: 1px; }
 .ged-badge { display: inline-block; margin-top: 4px; font-size: 9.5px; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--text-muted); }
+/* Nur fuer Screenreader. Der Lime-Puls am Gedaechtnis-Symbol ist rein
+   visuell; ohne diesen Text gaebe es fuer eine Vorlesefunktion keinen
+   Hinweis, dass dort etwas Neues liegt. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0; }
+
 .ged-badge.warn { color: #B8763C; }
+/* Neu aus dem zuletzt gespeicherten Gespraech. Der Rand traegt die
+   Information allein nicht — Farbsehschwaeche, und ein Rahmen ohne
+   Erklaerung bleibt raetselhaft. Deshalb steht ueber der Gruppe eine
+   Zeile, die sagt, was hervorgehoben ist. */
+.ged-zeile.ged-neu, .ged-lernt.ged-neu {
+  box-shadow: inset 0 0 0 1.5px var(--apricot);
+  background: linear-gradient(0deg, rgba(225, 234, 125,0.14), rgba(225, 234, 125,0.14)), var(--lav-pale);
+}
+.ged-neu-hinweis { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--lila); display: flex; align-items: center; gap: 6px; margin: 2px 0 8px; }
+.ged-neu-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--apricot);
+  box-shadow: 0 0 0 2px rgba(225, 234, 125,0.35); flex-shrink: 0; }
+
+/* Puls auf dem Gedaechtnis-Symbol, solange die neuen Eintraege ungesehen
+   sind. Bewusst langsam und ohne Groessensprung: der Startbildschirm soll
+   hinweisen, nicht draengen. prefers-reduced-motion schaltet die Bewegung
+   ab — die Lime-Faerbung bleibt und traegt den Hinweis dann allein. */
+@keyframes felieGedPuls {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+#home-nav-gedaechtnis.hat-neues { color: var(--apricot); }
+#home-nav-gedaechtnis.hat-neues svg { animation: felieGedPuls 2.2s ease-in-out infinite; }
+#home-nav-gedaechtnis .ged-puls-punkt { display: none; }
+#home-nav-gedaechtnis.hat-neues .ged-puls-punkt {
+  display: block; position: absolute; top: -1px; right: -4px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--apricot);
+  animation: felieGedPuls 2.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  #home-nav-gedaechtnis.hat-neues svg,
+  #home-nav-gedaechtnis.hat-neues .ged-puls-punkt { animation: none; }
+}
 
 /* Gesprächseintrag: Themen-Icon links, Satz rechts */
 .ged-lernt { display: flex; gap: 10px; align-items: flex-start;
@@ -2363,7 +2430,7 @@ body.is-native .status-bar { display: none !important; }
             <div style="font-size:12.5px;color:rgba(255,255,255,0.75);" id="chat-topic-label">Deine Begleiterin</div>
           </div>
         </div>
-        <button onclick="promptDiscardChat()" aria-label="Chat ohne Speichern schließen" style="background:rgba(255,255,255,0.14);border:none;cursor:pointer;color:white;font-size:20px;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+        <button onclick="promptCloseChat()" aria-label="Gespräch schließen" style="background:rgba(255,255,255,0.14);border:none;cursor:pointer;color:white;font-size:20px;line-height:1;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
       </div>
       <!-- Close confirmation dialog -->
       <div id="chat-close-dialog" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(24, 4, 48,0.6);z-index:10;align-items:flex-end;justify-content:center;">
@@ -2408,7 +2475,7 @@ body.is-native .status-bar { display: none !important; }
         </div>
         <div style="font-size:10.5px;color:rgba(255,255,255,0.58);text-align:center;padding:2px 0 8px;">KI-gestützt — Antworten können Fehler enthalten</div>
         <div class="input-hints" style="justify-content:center;">
-          <button onclick="endChatToCard()" style="width:100%;padding:11px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);color:#FFFFFF;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-box"/></svg>Chat beenden</button>
+          <button onclick="promptCloseChat()" style="width:100%;padding:11px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.45);background:rgba(255,255,255,0.06);color:#FFFFFF;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-box"/></svg>Chat beenden</button>
         </div>
       </div>
     </div>
@@ -2442,8 +2509,9 @@ body.is-native .status-bar { display: none !important; }
       </button>
 
       <button id="home-nav-gedaechtnis" onclick="showGedaechtnis()" style="flex:1 1 0;min-width:0;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:rgba(255,255,255,0.72);font-family:inherit;padding:2px 6px;">
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none"><use href="#i-mind"/></svg>
+        <span style="position:relative;display:flex;"><svg width="23" height="23" viewBox="0 0 24 24" fill="none"><use href="#i-mind"/></svg><span class="ged-puls-punkt" aria-hidden="true"></span></span>
         <span style="font-size:11px;">Gedächtnis</span>
+        <span id="home-nav-ged-status" class="sr-only"></span>
       </button>
     </div>
 
@@ -2544,6 +2612,11 @@ var FELIE_LS_KEYS = [
   'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
   'felie_guide_gedaechtnis', 'felie_guide_home',
   'felie_guide_home_deferred', 'felie_backup_hint_off',
+  /* Merkzettel: welche Eintraege stammen aus dem zuletzt gespeicherten
+     Gespraech und hat die Nutzerin sie schon gesehen. Gehoert in die
+     Liste, weil ein liegengebliebener Merker nach dem Loeschen einen
+     Puls fuer Eintraege zeigen wuerde, die es nicht mehr gibt. */
+  'felie_neue_snippets',
   /* Markierung der Selbstreflexion nach dem Onboarding. Gehoert in diese
      Liste, weil sie sonst ein Zuruecksetzen ueberlebt und die frisch
      geleerte App die Markierung nicht mehr zeigt. */
@@ -3151,15 +3224,21 @@ function felieEpisodeAendern(id, text) {
   return false;
 }
 
-/* Ein abgeschlossener Faden darf nicht weiter aufgegriffen werden —
-   das wirkt nicht aufmerksam, sondern als haette felie nicht
-   mitbekommen, dass es vorbei ist. */
-function felieEpisodeAbschliessen(id) {
-  var liste = felieStore().episoden;
-  for (var i = 0; i < liste.length; i++) {
-    if (liste[i].id === id) { liste[i].status = 'abgeschlossen'; liste[i].zuletztAm = Date.now(); felieRevision(true); return true; }
-  }
-  return false;
+/* Ein Faden verschwindet jetzt durch Loeschen, nicht durch einen
+   Statuswechsel. Grund ist die Zusage aus dem Onboarding: jede Erinnerung
+   ist "aenderbar und loeschbar". Ein × mit der Rueckfrage "Erinnerung
+   loeschen?" darf nicht bloss ein Kennzeichen umsetzen und den Eintrag im
+   Speicher und in der Sicherung stehen lassen.
+     Der Status 'abgeschlossen' bleibt bestehen — felieBereinigen() setzt
+   ihn weiter, wenn eine Frist ohne Zutun ablaeuft. Die frueher hier
+   stehende Funktion felieEpisodeAbschliessen() hatte danach keinen
+   Aufrufer mehr und ist entfallen. */
+function felieEpisodeLoeschen(id) {
+  var s = felieStore();
+  var n = s.episoden.length;
+  s.episoden = s.episoden.filter(function(e) { return e.id !== id; });
+  felieRevision(true);
+  return s.episoden.length < n;
 }
 
 function felieEpisoden(opts) {
@@ -3172,7 +3251,47 @@ function felieEpisoden(opts) {
   });
 }
 
-/* ── Bereinigung: pro Spur eigene Regel ───────────────────────────── */
+/* ── Neu aus dem letzten Gespraech ────────────────────────────────────
+   Seit das Gespraech beim Schliessen ohne Rueckfrage uebernommen wird,
+   sieht die Nutzerin nicht mehr, WAS felie sich gemerkt hat. Diese Liste
+   traegt die Kennungen des letzten Schwungs, damit der Startbildschirm
+   darauf hinweisen und das Gedaechtnis sie hervorheben kann.
+     Bewusst ein eigener Speicherschluessel und kein Feld an den
+   Eintraegen selbst: die Markierung ist eine Ansichtssache und soll
+   weder in Backups als Inhalt auftauchen noch von der Bereinigung
+   angefasst werden. Fehlende Eintraege (geloescht) stoeren nicht — es
+   wird nur nach Kennung verglichen. */
+var FELIE_NEU_KEY = 'felie_neue_snippets';
+
+function felieNeueSnippets() {
+  try {
+    var o = JSON.parse(localStorage.getItem(FELIE_NEU_KEY) || 'null');
+    if (o && Array.isArray(o.ids)) return { ids: o.ids, gesehen: o.gesehen === true };
+  } catch (e) {}
+  return { ids: [], gesehen: true };
+}
+
+function felieNeueSnippetsSetzen(ids) {
+  var liste = (ids || []).filter(Boolean);
+  try {
+    if (!liste.length) localStorage.removeItem(FELIE_NEU_KEY);
+    /* gesehen:false ist der Ausloeser fuer den Puls. Ein neuer Schwung
+       ersetzt den alten vollstaendig: hervorgehoben wird immer nur das
+       ZULETZT gespeicherte Gespraech, sonst waechst die Liste mit jedem
+       Gespraech und "neu" verliert seine Bedeutung. */
+    else localStorage.setItem(FELIE_NEU_KEY, JSON.stringify({ ids: liste, gesehen: false }));
+  } catch (e) {}
+  return liste.length;
+}
+
+function felieNeueSnippetsGesehen() {
+  var n = felieNeueSnippets();
+  if (!n.ids.length || n.gesehen) return false;
+  try { localStorage.setItem(FELIE_NEU_KEY, JSON.stringify({ ids: n.ids, gesehen: true })); } catch (e) {}
+  return true;
+}
+
+
 
 function felieBereinigen() {
   var jetzt = Date.now();
@@ -4958,7 +5077,7 @@ function klV2ZyklusVoreinstellen(a) {
     phaseAb: Date.now(),
     cycleDay: null, daysLeft: null,
     hormoneVal: p.hormoneVal,
-    unknown: true, unknownType: val, quelle: 'kennenlernen'
+    unknown: true, unknownType: val, lebensphase: p.phase, quelle: 'kennenlernen'
   };
   try { saveBodyData(); } catch (e) {}
   return true;
@@ -5806,6 +5925,24 @@ function refreshHome() {
   homeInit(true);
   fillHomeData();
   fillHomeThemen();
+  felieGedPulsAktualisieren();
+}
+
+/* Der einzige Hinweis darauf, dass felie sich etwas gemerkt hat — seit die
+   Notizkarte nach dem Gespraech entfallen ist. Haengt am Merkzettel, nicht
+   an einem Ereignis: so ueberlebt er einen Neustart der App und verschwindet
+   erst, wenn die Nutzerin im Gedaechtnis war. */
+function felieGedPulsAktualisieren() {
+  var btn = document.getElementById('home-nav-gedaechtnis');
+  if (!btn) return;
+  var n = felieNeueSnippets();
+  var neu = n.ids.length > 0 && !n.gesehen;
+  btn.classList.toggle('hat-neues', neu);
+  var status = document.getElementById('home-nav-ged-status');
+  if (status) status.textContent = neu
+    ? (n.ids.length === 1 ? 'Ein neuer Eintrag aus deinem letzten Gespräch'
+                          : n.ids.length + ' neue Einträge aus deinem letzten Gespräch')
+    : '';
 }
 
 /* Der Startscreen hat einen eigenen, kleinen Kontext und einen Besuchszustand.
@@ -5833,7 +5970,7 @@ function felieHomeZeitMerken(jetzt) {
   try { localStorage.setItem('felie_home_zuletzt', String(s.zuletzt)); } catch (e) {}
 }
 
-function felieHomeKontext(besuch) {
+function felieHomeKontext(besuch, anlass) {
   var jetzt = Date.now(), d = new Date(jetzt), chat = null;
   var chats = getSavedChats().filter(function(c) { return Number.isFinite(c.timestamp) && c.timestamp <= jetzt; });
   chats.sort(function(a, b) { return b.timestamp - a.timestamp; });
@@ -5864,7 +6001,12 @@ function felieHomeKontext(besuch) {
     if (Object.prototype.hasOwnProperty.call(gesehen, key)) return false;
     gesehen[key] = true; return true;
   }).slice(0, 2);
-  return { anlass: 'Startseite geöffnet', besuch: besuch || 'erster_besuch',
+  var anlassText = anlass === 'gespraech_beendet'
+      ? 'Gespräch gerade beendet und gespeichert; die Nutzerin ist eben zur Startseite zurückgekehrt'
+    : anlass === 'gespraech_verlassen'
+      ? 'Gespräch gerade ohne Speichern verlassen; es gibt dazu keine Notiz'
+      : 'Startseite geöffnet';
+  return { anlass: anlassText, besuch: besuch || 'erster_besuch',
     datum: d.toLocaleDateString('de-DE'), uhrzeit: d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
     tageszeit: d.getHours() < 12 ? 'Morgen' : d.getHours() < 18 ? 'Tag' : 'Abend',
     name: userName || null, letztesGespraech: chat, offeneEpisoden: offen };
@@ -5899,15 +6041,23 @@ function felieHomeBegruessen() {
     if (s.text) felieHomeTextZeigen(s.text);
     return s.pending || Promise.resolve();
   }
-  var besuch = felieHomeBesuch(s.zuletzt, Date.now()), ctx = felieHomeKontext(besuch);
-  s.erneuern = false; s.anlass = 'oeffnen';
+  var besuch = felieHomeBesuch(s.zuletzt, Date.now());
+  /* Der Anlass geht mit in den Kontext: nach einem Gespraech soll sich die
+     Begruessung darauf beziehen und nicht klingen, als hole die App die
+     Nutzerin frisch von der Tuer ab. */
+  var anlassOffen = s.anlassOffen; s.anlassOffen = null;
+  var ctx = felieHomeKontext(besuch, anlassOffen);
+  s.erneuern = false; s.anlass = anlassOffen || 'oeffnen';
   var revision = ++s.revision;
   felieHomeZeitMerken();
   window._felieRitualEchoText = null;
   window._felieRitualFrisch = null;
   renderRitualEcho(false);
-  // Sofort einen vollständigen Einstieg anbieten, auch offline oder bei leerem Namen.
-  felieHomeTextZeigen(felieHomeFallback(ctx));
+  /* Sofort einen vollstaendigen Einstieg anbieten, auch offline oder bei
+     leerem Namen. Nach einem Gespraech steht dort bereits der Satz aus
+     felieHomeEreignis() — der passt besser als ein allgemeiner Gruss und
+     bleibt deshalb stehen, bis das Modell antwortet. */
+  if (!anlassOffen || !s.text) felieHomeTextZeigen(felieHomeFallback(ctx));
   var pending = felieRequest('willkommen', [{ role: 'user', content: felieDatenBlock('startscreen', ctx) }],
     { context: false, maxTokens: 450 }).then(function(data) {
       if (s.revision !== revision) return;
@@ -5927,11 +6077,25 @@ function felieHomeEreignis(art) {
     gespraech_beendet: 'Danke für unser Gespräch. Lass es in Ruhe nachklingen.',
     gespraech_verlassen: 'Du kannst hier in Ruhe weitermachen, wenn du möchtest.',
     gedaechtnis_geaendert: 'Deine Änderungen im Gedächtnis sind gespeichert.',
-    gedaechtnis_geloescht: 'Die ausgewählte Erinnerung ist aus deinem Gedächtnis entfernt.',
-    thema_erledigt: 'Das offene Thema ist jetzt als erledigt markiert.'
+    /* 'thema_erledigt' ist entfallen: ein offenes Thema wird jetzt
+       geloescht statt abgehakt, und dafuer passt der Satz darueber. */
+    gedaechtnis_geloescht: 'Die ausgewählte Erinnerung ist aus deinem Gedächtnis entfernt.'
   };
   if (art !== 'selbstreflexion' && !texte[art]) return;
-  ++s.revision; s.pending = null; s.erneuern = false;
+  ++s.revision; s.pending = null;
+  /* Nach einem Gespraech braucht die Startseite eine NEUE Begruessung, die
+     das eben Gesagte kennt — der Modus 'willkommen' verlangt genau das.
+     Bisher stand hier erneuern=false, und felieHomeBegruessen() sprang
+     danach mit "Text ist schon da" heraus, ohne das Modell zu fragen. Der
+     feste Satz war als Zwischenstand hinter der Notizkarte gedacht; seit
+     die Karte weg ist, war er das Einzige, was nach einem Gespraech
+     stehenblieb — und las sich entsprechend beliebig.
+       Die beiden Gedaechtnis-Meldungen bleiben fest: sie bestaetigen einen
+     Handgriff, den die Nutzerin gerade selbst getan hat. Dafuer eine
+     Modellantwort abzuwarten waere Lauferei ohne Gewinn. */
+  var nachGespraech = art === 'gespraech_beendet' || art === 'gespraech_verlassen';
+  s.erneuern = nachGespraech;
+  s.anlassOffen = nachGespraech ? art : null;
   felieHomeZeitMerken();
   if (art === 'selbstreflexion') {
     // Die vorhandene zweite Bubble übernimmt die Rückmeldung zur Reflexion.
@@ -5983,7 +6147,7 @@ function felieHomeIstSichtbar() {
   var app = document.getElementById('app'), cw = document.getElementById('chat-window');
   return !!(app && app.classList.contains('visible') && !(cw && cw.classList.contains('open'))
     && !document.getElementById('dashboard') && !document.getElementById('gedaechtnis-overlay')
-    && !document.getElementById('verlauf-overlay') && !document.getElementById('summary-popup')
+    && !document.getElementById('verlauf-overlay')
     && !document.getElementById('personality-overlay') && !document.getElementById('ritual-overlay'));
 }
 
@@ -7667,20 +7831,31 @@ function showOuraConnect() { showWearableSync(); }
    spaeter auseinanderlaufen.
      'stillzeit' ist neu: die Koerperfrage im Kennenlernen bietet sie an,
    das Zyklus-Sheet kannte sie nicht — eine uebernommene Angabe haette
-   sonst keinen passenden Eintrag gehabt. */
+   sonst keinen passenden Eintrag gehabt.
+
+   zyklus: darf neben dieser Lebensphase ein Periodenstart mitlaufen?
+   Bei Stillzeit, Wechseljahren, Postmenopause und einem unregelmaessigen
+   Zyklus kommen Blutungen weiter vor — oft selten und unregelmaessig,
+   und genau deshalb ist das Mitschreiben dort wertvoll. Vorher schloss
+   die Wahl einer Lebensphase die Eingabe komplett aus; wer in den
+   Wechseljahren ihre Periode festhalten wollte, musste sich zwischen
+   beidem entscheiden.
+     Schwangerschaft und "Keine Periode aktuell" bleiben ausgenommen: dort
+   gibt es per Definition keinen Start einzutragen, und ein Feld dafuer
+   waere eine Einladung zu einer erfundenen Angabe. */
 var FELIE_LEBENSPHASEN = [
   { val: 'schwangerschaft', label: 'Schwangerschaft',              sub: 'Hormone verändern sich stark',
-    phase: 'Schwangerschaft',        hormoneVal: 'hCG + Progesteron hoch' },
+    phase: 'Schwangerschaft',        hormoneVal: 'hCG + Progesteron hoch',        zyklus: false },
   { val: 'stillzeit',       label: 'Stillzeit',                    sub: 'Zyklus setzt oft noch aus',
-    phase: 'Stillzeit',              hormoneVal: 'Prolaktin hoch' },
+    phase: 'Stillzeit',              hormoneVal: 'Prolaktin hoch',                zyklus: true },
   { val: 'wechseljahre',    label: 'Wechseljahre / Perimenopause', sub: 'Östrogen und Progesteron sinken',
-    phase: 'Wechseljahre',           hormoneVal: 'Östrogen + Progesteron sinken' },
+    phase: 'Wechseljahre',           hormoneVal: 'Östrogen + Progesteron sinken', zyklus: true },
   { val: 'postmenopause',   label: 'Postmenopause',                sub: 'Nach den Wechseljahren',
-    phase: 'Postmenopause',          hormoneVal: 'Östrogen dauerhaft niedrig' },
+    phase: 'Postmenopause',          hormoneVal: 'Östrogen dauerhaft niedrig',    zyklus: true },
   { val: 'unregelmaessig',  label: 'Unregelmäßiger Zyklus',        sub: 'Keine klare Periode',
-    phase: 'Unregelmäßiger Zyklus',  hormoneVal: 'Keine klare Phase' },
+    phase: 'Unregelmäßiger Zyklus',  hormoneVal: 'Keine klare Phase',             zyklus: true },
   { val: 'keine-periode',   label: 'Keine Periode aktuell',        sub: 'Z.B. durch Pille, Stress oder anderes',
-    phase: 'Keine Periode',          hormoneVal: 'Hormonstatus unbekannt' }
+    phase: 'Keine Periode',          hormoneVal: 'Hormonstatus unbekannt',        zyklus: false }
 ];
 
 function felieLebensphase(val) {
@@ -7693,7 +7868,6 @@ function felieLebensphase(val) {
    beim Oeffnen ein leeres Formular und musste raten, ob die Angabe noch
    da ist. */
 function selectCycleUnknown(btn, vorauswahl) {
-  // Toggle selected state
   const bd = btn.closest('.score-popup-backdrop');
   btn.style.background = '#180430';
   btn.style.color = 'white';
@@ -7701,7 +7875,6 @@ function selectCycleUnknown(btn, vorauswahl) {
   btn.querySelector('div div:first-child').style.color = 'white';
   btn.querySelector('div div:last-child').style.color = 'rgba(255,255,255,0.6)';
 
-  // Show sub-options for unknown cycle
   let subDiv = bd.querySelector('#cycle-unknown-sub');
   if (!subDiv) {
     subDiv = document.createElement('div');
@@ -7716,64 +7889,68 @@ function selectCycleUnknown(btn, vorauswahl) {
       </button>`).join('')}`;
     btn.parentElement.insertAdjacentElement('afterend', subDiv);
 
-    // Wire sub-option clicks
+    /* Frueher schrieb ein Tipp hier sofort window.cycleData und schloss das
+       Sheet. Das war der Grund, warum sich Lebensphase und Periodenstart
+       gegenseitig ausschlossen: die Wahl war schon gespeichert, bevor die
+       Nutzerin ueberhaupt an den Feldern darunter vorbeikam.
+         Jetzt waehlt ein Tipp nur aus. Geschrieben wird alles zusammen
+       ueber "Speichern" — ein Weg hinein, ein Weg hinaus. */
     subDiv.querySelectorAll('.cycle-unknown-opt').forEach(function(opt) {
       opt.addEventListener('click', function() {
-        subDiv.querySelectorAll('.cycle-unknown-opt').forEach(function(o) {
-          o.style.background = '#E6E0EE'; o.style.borderColor = 'rgba(143, 91, 189,0.2)';
-          o.querySelector('div').style.color = '#4A3A6A';
-        });
-        this.style.background = '#180430'; this.style.borderColor = '#180430';
-        this.querySelector('div').style.color = 'white';
-
-        // Save and close
-        const val = this.dataset.val;
-        const data = felieLebensphase(val) || felieLebensphase('unregelmaessig');
-        /* Der frueher hier gesetzte lastPeriod: null hat die Historie
-           gekappt: felieZyklusAttribut gab danach fuer JEDEN Zeitpunkt
-           null zurueck, auch fuer Eintraege von vorher. Der aufgebaute
-           Kenntnisstand war damit nicht eingefroren, sondern weg. Jetzt
-           bleibt der letzte Periodenstart erhalten und phaseAb markiert,
-           ab wann die Lebensphase gilt. */
-        var vorher = window.cycleData || {};
-        window.cycleData = {
-          phase: data.phase,
-          lastPeriod:  vorher.lastPeriod || null,
-          selectedLen: vorher.selectedLen || null,
-          phaseAb:     Date.now(),
-          /* KEIN Zyklustag — vorher machte "|| 1" aus dem bewussten null eine
-             Eins, die Karte zeigte dann "Tag 1 von 28" bei Schwangerschaft
-             oder Postmenopause. */
-          cycleDay: null,
-          daysLeft: null,
-          hormoneVal: data.hormoneVal,
-          unknown: true,
-          unknownType: val,
-          /* 'selbst' heisst: hier im Sheet angetippt. Nur so kann die
-             Voreinstellung aus dem Kennenlernen erkennen, dass sie eine
-             ausdrueckliche Entscheidung NICHT ueberschreiben darf. */
-          quelle: 'selbst'
-        };
-        // Update UI
-        populateZyklusCard(window.cycleData);
-        removeDashWearableBanner && removeDashWearableBanner();
-        refreshGreeting && refreshGreeting();
-        try { renderSpiegel(); } catch (e) {}
-        try { saveBodyData(); } catch (e) {}
-        bd.remove();
-        var cbUnk = window._felieZyklusFertig; window._felieZyklusFertig = null;
-        if (cbUnk) try { cbUnk(true); } catch (e) {}
+        var schonGewaehlt = this.classList.contains('gewaehlt');
+        felieZyklusPhaseMarkieren(bd, schonGewaehlt ? null : this.dataset.val);
       });
     });
   }
-  if (vorauswahl) {
-    var vor = subDiv.querySelector('.cycle-unknown-opt[data-val="' + String(vorauswahl).replace(/"/g, '') + '"]');
-    if (vor) {
-      vor.style.background = '#180430'; vor.style.borderColor = '#180430';
-      vor.querySelector('div').style.color = 'white';
-    }
-  }
+  if (vorauswahl) felieZyklusPhaseMarkieren(bd, vorauswahl);
+  return subDiv;
 }
+
+/* Welche Lebensphase ist im Sheet gerade angetippt? null heisst: keine. */
+function felieZyklusPhaseGewaehlt(bd) {
+  var el = bd && bd.querySelector('.cycle-unknown-opt.gewaehlt');
+  return el ? el.dataset.val : null;
+}
+
+/* Markiert eine Lebensphase (oder hebt die Markierung auf) und richtet den
+   manuellen Teil darunter danach aus. Ein zweiter Tipp auf dieselbe Zeile
+   waehlt ab — sonst gaebe es keinen Weg zurueck zum reinen Zyklus, ohne
+   das Sheet zu verlassen. */
+function felieZyklusPhaseMarkieren(bd, val) {
+  if (!bd) return;
+  var p = val ? felieLebensphase(val) : null;
+  bd.querySelectorAll('.cycle-unknown-opt').forEach(function(o) {
+    var an = !!p && o.dataset.val === val;
+    o.classList.toggle('gewaehlt', an);
+    o.setAttribute('aria-pressed', an ? 'true' : 'false');
+    o.style.background = an ? '#180430' : '#E6E0EE';
+    o.style.borderColor = an ? '#180430' : 'rgba(143, 91, 189,0.2)';
+    o.querySelector('div:first-child').style.color = an ? 'white' : '#4A3A6A';
+    o.querySelector('div:last-child').style.color = an ? 'rgba(255,255,255,0.6)' : '#6B5A88';
+  });
+
+  /* Bei Schwangerschaft und "Keine Periode aktuell" gibt es nichts
+     einzutragen. Die Felder bleiben stehen, werden aber gesperrt und
+     abgeblendet: ausblenden liesse das Sheet springen, und die Nutzerin
+     saehe nicht, warum die Eingabe verschwunden ist. */
+  var manuell = bd.querySelector('#cycle-manuell');
+  var sperren = !!p && p.zyklus === false;
+  if (manuell) {
+    manuell.style.opacity = sperren ? '0.4' : '1';
+    manuell.querySelectorAll('input, button').forEach(function(f) { f.disabled = sperren; });
+  }
+  var hinweis = bd.querySelector('#cycle-manuell-hinweis');
+  if (hinweis) {
+    hinweis.textContent = !p ? ''
+      : sperren ? 'Bei ' + p.phase + ' rechne ich keinen Zyklus mit.'
+      : 'Optional: Trag deinen letzten Periodenstart ein, dann zähle ich weiter mit.';
+    hinweis.style.display = p ? 'block' : 'none';
+  }
+  var trenner = bd.querySelector('#cycle-trenner-text');
+  if (trenner) trenner.textContent = p && !sperren ? 'und zusätzlich' : 'oder manuell eingeben';
+  if (typeof bd._felieVorschau === 'function') bd._felieVorschau();
+}
+
 
 // ── Zyklus manuell eingeben ──
 /* ══ Zyklus: eine einzige Quelle der Wahrheit ══
@@ -7783,7 +7960,7 @@ function selectCycleUnknown(btn, vorauswahl) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-11-qwen3.8-ohne-banner';
+var FELIE_BUILD = '2026-09-14-ged-register';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -8021,14 +8198,12 @@ function showCycleInput(onDone) {
   const maxDate = today.toISOString().split('T')[0];
   // Vorbelegung: gespeicherte Werte, sonst 13 Tage zurück und 28 Tage Länge
   const _cd = window.cycleData || null;
-  let defaultDateStr;
-  if (_cd && _cd.lastPeriod) {
-    defaultDateStr = _cd.lastPeriod;
-  } else {
-    const defaultDate = new Date(today);
-    defaultDate.setDate(today.getDate() - 13);
-    defaultDateStr = defaultDate.toISOString().split('T')[0];
-  }
+  /* Leer statt "heute minus 13 Tage". Die Vorbelegung sparte einen Tipp,
+     aber wer nur die Zykluslaenge aendern oder eine Lebensphase waehlen
+     wollte und auf Speichern tippte, schrieb damit einen Periodenstart
+     fest, den sie nie angegeben hat. Seit eine Lebensphase daneben stehen
+     darf, ist das Datum ohnehin nicht mehr die einzige Eingabe im Sheet. */
+  const defaultDateStr = (_cd && _cd.lastPeriod) ? _cd.lastPeriod : '';
   const defaultLen = (_cd && _cd.selectedLen) ? _cd.selectedLen : 28;
 
   bd.innerHTML = `
@@ -8056,11 +8231,13 @@ function showCycleInput(onDone) {
       
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="flex:1;height:1px;background:rgba(143, 91, 189,0.15);"></div>
-        <div style="font-size:11px;color:#6B5A88;">oder manuell eingeben</div>
+        <div id="cycle-trenner-text" style="font-size:11px;color:#6B5A88;">oder manuell eingeben</div>
         <div style="flex:1;height:1px;background:rgba(143, 91, 189,0.15);"></div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
+      <div id="cycle-manuell-hinweis" style="display:none;font-size:11.5px;color:#6B5A88;line-height:1.5;margin-bottom:10px;"></div>
+
+      <div id="cycle-manuell" style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;transition:opacity 0.2s;">
         <div>
           <div style="font-size:11px;font-weight:600;color:#8F5BBD;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Erster Tag der letzten Periode</div>
           <div style="display:flex;justify-content:center;">
@@ -8094,19 +8271,37 @@ function showCycleInput(onDone) {
      aus dem Kennenlernen uebernommen — wird sie hier aufgeklappt und
      markiert. Vorher oeffnete das Sheet immer im Rohzustand und wirkte,
      als waere nichts gespeichert. */
-  if (_cd && _cd.unknown) {
+  /* Bedingung haengt an unknownType, nicht an unknown: eine Lebensphase
+     MIT mitlaufendem Zyklus hat unknown=false und waere sonst beim
+     erneuten Oeffnen unsichtbar gewesen. */
+  if (_cd && _cd.unknownType) {
     var lpBtn = bd.querySelector('#cycle-unknown-btn');
     if (lpBtn) try { selectCycleUnknown(lpBtn, _cd.unknownType); } catch (e) {}
   }
   let selectedLen = defaultLen;
 
   function updatePreview() {
-    const lastPeriodVal = bd.querySelector('#cycle-last-period').value;
-    if (!lastPeriodVal) return;
-    const c = cycleCompute(lastPeriodVal, selectedLen);
     const box = bd.querySelector('#cycle-preview');
-    if (!c || !box) return;
+    if (!box) return;
     const ico = n => `<svg class="ico" style="width:13px;height:13px;display:inline-block;vertical-align:-2px"><use href="#i-${n}"/></svg>`;
+    const phaseVal = felieZyklusPhaseGewaehlt(bd);
+    const p = phaseVal ? felieLebensphase(phaseVal) : null;
+    const lastPeriodVal = bd.querySelector('#cycle-last-period').value;
+    /* Ohne Datum gibt es nichts zu rechnen. Die Vorschau sagt trotzdem,
+       was beim Speichern passieren wuerde — vorher stand dort in diesem
+       Fall der Text der letzten Eingabe oder gar nichts. */
+    if (!lastPeriodVal || (p && p.zyklus === false)) {
+      box.style.background = '#E6E0EE';
+      box.innerHTML = p
+        ? `${ico('help')} <strong>${p.phase}</strong><br>${p.zyklus === false
+            ? 'Für diese Phase rechne ich keinen Zyklus mit.'
+            : 'Noch kein Periodenstart eingetragen — du kannst ihn jederzeit nachtragen.'}`
+        : `${ico('help')} Trag den Tag ein, an dem deine Periode zuletzt begonnen hat — oder wähle oben eine Lebensphase.`;
+      return;
+    }
+    const c = cycleCompute(lastPeriodVal, selectedLen);
+    if (!c) return;
+    const phasenZusatz = p ? ' · ' + p.phase : '';
     /* Die Vorschau meldete den Sackgassenzustand nur ("Aktuelle Phase
        unbekannt") und liess die Nutzerin damit stehen: derselbe Satz
        erschien beim Oeffnen, beim Tippen und nach dem Speichern, ohne zu
@@ -8120,11 +8315,11 @@ function showCycleInput(onDone) {
         + `Trag bitte den Tag ein, an dem deine Periode <strong>zuletzt</strong> begonnen hat. Bis dahin zeige ich dir keine Phase an.`;
     } else if (c.ueberfaellig != null) {
       box.style.background = '#E6E0EE';
-      box.innerHTML = `${ico('cycle')} <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}<br>`
+      box.innerHTML = `${ico('cycle')} <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}${phasenZusatz}<br>`
         + `${ico('bloom')} ${c.nextStr} — <strong>${c.daysLeftStr}</strong>`;
     } else {
       box.style.background = '#E6E0EE';
-      box.innerHTML = `${ico('cycle')} <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}<br>`
+      box.innerHTML = `${ico('cycle')} <strong>Tag ${c.cycleDay}</strong> deines Zyklus · ${c.phase}${phasenZusatz}<br>`
         + `${ico('bloom')} Nächste Periode: <strong>${c.nextStr}</strong> (${c.daysLeftStr})`;
     }
   }
@@ -8141,19 +8336,49 @@ function showCycleInput(onDone) {
   });
 
   bd.querySelector('#cycle-last-period').addEventListener('input', updatePreview);
+  /* Die Phasenwahl liegt ausserhalb dieser Funktion und muss die
+     Vorschau trotzdem anstossen koennen. */
+  bd._felieVorschau = updatePreview;
   updatePreview();
 
   bd.querySelector('#cycle-save-btn').addEventListener('click', function() {
     /* Nur die Rohwerte merken — alles Abgeleitete rechnet cycleCompute()
        bei jeder Anzeige neu, damit der Zyklustag nicht einfriert. */
     const lastPeriodVal = bd.querySelector('#cycle-last-period').value;
-    const c = cycleCompute(lastPeriodVal, selectedLen);
-    if (!c) return;
-    /* Ein neuer Periodenstart beendet eine laufende Lebensphase und setzt
-       den Erinnerungsplan zurueck — das ist der Rueckweg nach Geburt,
-       Wochenbett oder einer Pause. */
-    window.cycleData = c;
-    try { felieZyklusPlanZuruecksetzen(); } catch (e) {}
+    const phaseVal = felieZyklusPhaseGewaehlt(bd);
+    const p = phaseVal ? felieLebensphase(phaseVal) : null;
+    /* Drei Faelle statt zwei sich ausschliessender Wege:
+       nur Zyklus, nur Lebensphase, oder beides zusammen. Letzteres ist
+       der eigentliche Punkt — in Stillzeit, Wechseljahren, Postmenopause
+       und bei unregelmaessigem Zyklus kommen Blutungen weiter vor, und
+       gerade dort lohnt das Mitschreiben. */
+    const mitZyklus = !!lastPeriodVal && !(p && p.zyklus === false);
+    const c = mitZyklus ? cycleCompute(lastPeriodVal, selectedLen) : null;
+    if (!c && !p) return;
+    var vorher = window.cycleData || {};
+    if (c) {
+      /* unknown bleibt false: der Zyklus IST berechenbar. Die Lebensphase
+         steht daneben, nicht an seiner Stelle — alles Nachgelagerte
+         (Karte, Kontext, Zuordnung von Eintraegen) haengt an unknown und
+         darf durch die Zusatzangabe nicht abgeschaltet werden. */
+      window.cycleData = Object.assign(c, p
+        ? { unknownType: p.val, lebensphase: p.phase, phaseAb: vorher.phaseAb || Date.now(), quelle: 'selbst' }
+        : { unknownType: null, lebensphase: null, quelle: 'selbst' });
+    } else {
+      window.cycleData = {
+        phase: p.phase,
+        /* Ein frueherer Periodenstart bleibt stehen: er ordnet vorhandene
+           Eintraege weiter zu. phaseAb markiert, ab wann die Phase gilt. */
+        lastPeriod:  vorher.lastPeriod  || null,
+        selectedLen: vorher.selectedLen || null,
+        phaseAb: Date.now(),
+        cycleDay: null, daysLeft: null,
+        hormoneVal: p.hormoneVal,
+        unknown: true, unknownType: p.val, lebensphase: p.phase, quelle: 'selbst'
+      };
+    }
+    /* Ein neuer Periodenstart setzt den Erinnerungsplan zurueck. */
+    if (c) { try { felieZyklusPlanZuruecksetzen(); } catch (e) {} }
     /* Sofort schreiben. Der Rest der Verarbeitung haengt an einem
        Zeitgeber von 1,2 Sekunden, der nur die Bestaetigung am Knopf
        stehen laesst — wer die App in diesem Fenster schliesst oder
@@ -9548,8 +9773,10 @@ function populateZyklusCard(data) {
   const hs = dash.querySelector('#zy-hormone-sub');
 
   if (data.unknown || data.stale) {
-    // Unknown cycle: hide day counter and progress bar
-    if (t)  { t.textContent = data.phase; t.style.opacity = '1'; }
+    /* Bei stale traegt data.phase nur "Aktuelle Phase unbekannt". Steht
+       daneben eine Lebensphase, ist sie die bessere Ueberschrift: sie
+       gilt weiter, auch wenn der Periodenstart zu lange her ist. */
+    if (t)  { t.textContent = (data.stale && data.lebensphase) ? data.lebensphase : data.phase; t.style.opacity = '1'; }
     if (ph) { ph.style.display = 'none'; }  // hide "phase" subtitle since title already shows it
     // Grey out / hide the progress bar
     const barWrap = fi ? fi.parentElement : null;
@@ -9579,7 +9806,16 @@ function populateZyklusCard(data) {
        Deshalb wird dort die Verspaetung ausgeschrieben. */
     const spaet = data.ueberfaellig != null;
     if (t)  t.textContent  = spaet ? `Tag ${data.cycleDay}` : `Tag ${data.cycleDay} von ~${data.selectedLen}`;
-    if (ph) { ph.textContent = spaet ? data.phase + ' · Periode überfällig' : data.phase; ph.style.display = ''; }
+    /* Laeuft der Zyklus innerhalb einer Lebensphase mit, gehoert beides in
+       die Pille: die Zyklusphase allein wuerde verschweigen, unter welchen
+       Umstaenden sie geschaetzt ist. */
+    if (ph) {
+      var teile = [data.phase];
+      if (data.lebensphase) teile.push(data.lebensphase);
+      if (spaet) teile.push('Periode überfällig');
+      ph.textContent = teile.join(' · ');
+      ph.style.display = '';
+    }
     if (fi) { fi.style.width = (data.fillPct || 0) + '%'; }
     const barWrap = fi ? fi.parentElement : null;
     if (barWrap) barWrap.style.opacity = spaet ? '0.6' : '1';
@@ -10626,6 +10862,17 @@ function showGedaechtnis() {
   window._gedLerntAlle = false;
   window._gedForm = null;
   window._gedMitgabe = (klAnswers.notiz || '');
+  /* Einmaliger Blick: beim ersten Oeffnen nach einem Gespraech werden die
+     neuen Eintraege hervorgehoben, gleichzeitig gilt der Hinweis als
+     gesehen. Die Hervorhebung bleibt fuer DIESE Ansicht stehen — sie
+     waehrend des Hinsehens verschwinden zu lassen waere die schlechteste
+     aller Varianten. Beim naechsten Oeffnen ist sie weg. */
+  var neu = felieNeueSnippets();
+  window._gedNeuIds = neu.gesehen ? [] : neu.ids.slice();
+  felieNeueSnippetsGesehen();
+  /* Erst nach _gedNeuIds bestimmen — das Startregister richtet sich
+     danach, wo das Neue liegt. */
+  window._gedTab = gedStartTab();
 
   var div = document.createElement('div');
   div.id = 'gedaechtnis-overlay';
@@ -10651,7 +10898,13 @@ function showGedaechtnis() {
           '<svg class="ico" style="width:12px;height:12px"><use href="#i-alert"/></svg>Erklärung</button>' +
       '</div>' +
     '</div>' +
-    '<div id="ged-scroll" style="flex:1;overflow-y:auto;padding:16px 16px 96px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>';
+    '<div class="ged-tabs" role="tablist" aria-label="Bereiche des Gedächtnisses">'
+      + GED_TABS.map(function (t) {
+          return '<button class="ged-tab" id="ged-tab-' + t.key + '" role="tab" onclick="gedTab(\'' + t.key + '\')">'
+            + t.label + '<span class="ged-tab-n"></span></button>';
+        }).join('')
+    + '</div>' +
+    '<div id="ged-scroll" role="tabpanel" style="flex:1;overflow-y:auto;padding:16px 16px 96px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>';
 
   document.querySelector('.phone').appendChild(div);
   gedRender();
@@ -10667,6 +10920,69 @@ function gedSchliessen() {
   try { gedMitgabeSpeichern(true); } catch (e) {}
   var ov = document.getElementById('gedaechtnis-overlay');
   if (ov) ov.remove();
+  window._gedNeuIds = [];
+  /* Der Puls haengt am Merkzettel, der oben schon auf "gesehen" steht —
+     hier wird die Startseite nur neu gezeichnet. */
+  try { felieGedPulsAktualisieren(); } catch (e) {}
+}
+
+/* Ist dieser Eintrag neu aus dem zuletzt gespeicherten Gespraech? */
+function gedIstNeu(id) {
+  var liste = window._gedNeuIds;
+  return !!(liste && liste.length && id && liste.indexOf(id) >= 0);
+}
+
+/* Zeile ueber einer Gruppe, wenn darin etwas Neues steht. Ohne sie waere
+   der Lime-Rand eine Farbe ohne Aussage. */
+function gedNeuHinweis(anzahl) {
+  if (!anzahl) return '';
+  return '<div class="ged-neu-hinweis"><span class="ged-neu-punkt"></span>'
+    + (anzahl === 1 ? 'Neu aus deinem letzten Gespräch' : anzahl + ' neu aus deinem letzten Gespräch')
+    + '</div>';
+}
+
+/* Die drei Register. Reihenfolge ist Absicht: 'aktuell' steht vorn, weil
+   zeitlich begrenzte Themen am ehesten veralten; 'ueberdich' hinten, weil
+   sich dort am seltensten etwas aendert. */
+var GED_TABS = [
+  { key: 'aktuell',   label: 'Aktuell' },
+  { key: 'gespraeche', label: 'Gespräche' },
+  { key: 'ueberdich', label: 'Über dich' }
+];
+
+function gedTabZahlen() {
+  var z = { aktuell: 0, gespraeche: 0, ueberdich: 0, neuAktuell: 0, neuUeberdich: 0 };
+  try {
+    var offen = felieEpisoden({ nurAktuell: true });
+    z.aktuell = offen.length;
+    z.neuAktuell = offen.filter(function (e) { return gedIstNeu(e.id); }).length;
+  } catch (e) {}
+  try { z.gespraeche = gedLerntDaten().total; } catch (e) {}
+  try {
+    var fakten = felieFakten();
+    z.ueberdich = fakten.length;
+    z.neuUeberdich = fakten.filter(function (f) { return gedIstNeu(f.id); }).length;
+  } catch (e) {}
+  return z;
+}
+
+/* Welches Register wird beim Oeffnen gezeigt? Kam die Nutzerin ueber den
+   Puls auf dem Startbildschirm, soll sie das Neue sofort sehen und nicht
+   erst danach suchen. Sonst 'gespraeche' — dort kommt im Alltag am
+   haeufigsten etwas dazu. */
+function gedStartTab() {
+  var z = gedTabZahlen();
+  if (z.neuAktuell) return 'aktuell';
+  if (z.neuUeberdich) return 'ueberdich';
+  return 'gespraeche';
+}
+
+function gedTab(key) {
+  if (!GED_TABS.some(function (t) { return t.key === key; })) return;
+  window._gedTab = key;
+  gedRender();
+  var box = document.getElementById('ged-scroll');
+  if (box) box.scrollTop = 0;
 }
 
 /* Ein Render-Eingang fuer den ganzen Bereich. Jede Aktion schreibt und
@@ -10675,10 +10991,36 @@ function gedSchliessen() {
 function gedRender() {
   var box = document.getElementById('ged-scroll');
   if (!box) return;
-  /* Offene Mitgabe-Eingabe retten: sie steht nur im DOM, nicht im Store. */
+  /* Offene Mitgabe-Eingabe retten: sie steht nur im DOM, nicht im Store.
+     Besonders wichtig seit den Registern — beim Wechsel verschwindet das
+     Textfeld aus dem DOM, ohne dass die Nutzerin etwas getippt haette
+     speichern wollen. */
   var mg = document.getElementById('ged-mitgabe-input');
   if (mg) window._gedMitgabe = mg.value;
-  box.innerHTML = gedFaedenHtml() + gedLerntHtml() + gedFaktenHtml() + gedMitgabeHtml();
+
+  var tab = window._gedTab || 'gespraeche';
+  var z = gedTabZahlen();
+  GED_TABS.forEach(function (t) {
+    var btn = document.getElementById('ged-tab-' + t.key);
+    if (!btn) return;
+    var an = t.key === tab;
+    btn.classList.toggle('aktiv', an);
+    btn.setAttribute('aria-selected', an ? 'true' : 'false');
+    var n = btn.querySelector('.ged-tab-n');
+    if (n) n.textContent = z[t.key] || '';
+    var neu = (t.key === 'aktuell' && z.neuAktuell) || (t.key === 'ueberdich' && z.neuUeberdich);
+    var punkt = btn.querySelector('.ged-tab-neu');
+    if (neu && !punkt) { punkt = document.createElement('span'); punkt.className = 'ged-tab-neu'; btn.appendChild(punkt); }
+    else if (!neu && punkt) punkt.remove();
+  });
+
+  /* Der Sicherungs-Hinweis sass auf der Notizkarte nach jedem Gespraech.
+     Ohne sie steht er unter "Über dich": das ist das Register mit den
+     dauerhaften Angaben, also die Stelle, an der eine Sicherung am
+     ehesten Thema ist. */
+  box.innerHTML = tab === 'aktuell'    ? gedFaedenHtml()
+                : tab === 'gespraeche' ? gedLerntHtml()
+                : gedFaktenHtml() + gedMitgabeHtml() + backupHint();
 }
 
 /* ── Block 1: Gerade offen (Episoden) ─────────────────────────────── */
@@ -10696,7 +11038,7 @@ function gedFaedenHtml() {
       var tage = Math.ceil((e.faelligBis - Date.now()) / 86400000);
       var frist = tage <= 0 ? 'läuft heute aus' : (tage === 1 ? 'noch 1 Tag' : 'noch ' + tage + ' Tage');
       var wieder = (e.erwaehnungen || 1) > 1 ? ' · ' + e.erwaehnungen + '× erwähnt' : '';
-      return '<div class="ged-zeile snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
+      return '<div class="ged-zeile' + (gedIstNeu(e.id) ? ' ged-neu' : '') + ' snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
         + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten">'
         + '<div class="snip-view">'
         + '<div style="flex:1;min-width:0;">'
@@ -10705,7 +11047,7 @@ function gedFaedenHtml() {
         + '</div>'
         + '<div class="ged-akt">'
         + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
-        + '<button class="ged-del" onclick="gedFadenErledigt(\'' + gedJsAttr(e.id) + '\')">Erledigt</button>'
+        + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'faden\',\'' + gedJsAttr(e.id) + '\')">×</button>'
         + '</div></div></div>';
     }).join('');
   }
@@ -10714,16 +11056,45 @@ function gedFaedenHtml() {
     + '<div class="ged-kopf"><div class="ged-kicker">Gerade offen</div>'
     + (offen.length ? '<span class="ged-zahl">' + offen.length + '</span>' : '') + '</div>'
     + '<div class="ged-sub">Die Frist begrenzt die Erinnerung. Sie sagt nicht voraus, wann das Thema tatsächlich vorbei ist.</div>'
+    + gedNeuHinweis(offen.filter(function (e) { return gedIstNeu(e.id); }).length)
     + inner
     + gedFormOrButton('faden', 'Offenes Thema ergänzen')
     + '</div>';
 }
 
-function gedFadenErledigt(id) {
+/* Eine Rueckfrage fuer alle drei Zeilentypen. Vorher loeschte jeder Knopf
+   sofort: bei den Fakten war das ein unwiederbringlicher Verlust ohne
+   jeden Zwischenschritt, und beim Gespraechssatz stand im Kommentar
+   ausdruecklich "hier keine Rueckfrage" — mit dem × ist die Handlung aber
+   nicht mehr beschriftet, also muss die Bedeutung in die Rueckfrage.
+     Die Meldung sagt je Typ, was genau verschwindet und was bleibt.
+   "Erinnerung loeschen" allein waere bei der Gespraechsnotiz missdeutbar:
+   dort geht ein Satz weg, nicht das Gespraech. */
+function gedLoeschenFragen(typ, id, notizId) {
+  var text = typ === 'faden'
+      ? 'Dieses offene Thema wird entfernt. felie fragt dann nicht mehr von sich aus danach.'
+    : typ === 'lernt'
+      ? 'Dieser Satz wird gelöscht. Das Gespräch selbst bleibt im Archiv aufrufbar.'
+      : 'Diese Erinnerung wird gelöscht und geht nicht mehr in felies Antworten ein.';
+  felieConfirm({
+    title: 'Erinnerung löschen?',
+    message: text,
+    confirmText: 'Ja',
+    cancelText: 'Nein',
+    danger: true,
+    onConfirm: function() {
+      if (typ === 'faden') gedFadenLoeschen(id);
+      else if (typ === 'lernt') gedLerntLoeschen(id, notizId);
+      else gedFaktLoeschen(id);
+    }
+  });
+}
+
+function gedFadenLoeschen(id) {
   try {
     var vorher = felieStore().episoden.find(function(e) { return e.id === id; });
-    if (felieEpisodeAbschliessen(id) && felieStoreSpeichern() !== false) {
-      felieHomeErinnerungGeaendert(vorher); felieAutosave(); felieHomeEreignis('thema_erledigt');
+    if (felieEpisodeLoeschen(id) && felieStoreSpeichern() !== false) {
+      felieHomeErinnerungGeaendert(vorher); felieAutosave(); felieHomeEreignis('gedaechtnis_geloescht');
     }
   } catch (e) {}
   gedRender();
@@ -10800,7 +11171,7 @@ function gedLerntHtml() {
       + '</div>'
       + '<div class="ged-akt">'
       + felieSnipStiftHtml('Notiz zu „' + (c.thema || 'Gespräch') + '" bearbeiten')
-      + '<button class="ged-del" onclick="gedLerntLoeschen(' + id + ',\'' + gedJsAttr(c.notizId) + '\')">Löschen</button>'
+      + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'lernt\',' + id + ',\'' + gedJsAttr(c.notizId) + '\')">×</button>'
       + '</div></div></div></div>';
   }).join('');
 
@@ -10828,9 +11199,10 @@ function gedLerntMehr(an) {
   gedRender();
 }
 
-/* Leert nur felie_lernt. Das Gespraech bleibt im Archiv aufrufbar —
-   deshalb hier auch keine Rueckfrage: es geht ein Satz verloren, nicht
-   das Gespraech. */
+/* Leert nur felie_lernt; das Gespraech bleibt im Archiv aufrufbar. Die
+   Rueckfrage laeuft in gedLoeschenFragen() und sagt das auch — frueher
+   stand hier bewusst keine, weil der Knopf mit "Löschen" beschriftet war
+   und die Handlung damit angekuendigt hat. Das × kuendigt nichts an. */
 function gedLerntLoeschen(id, notizId) {
   if (notizId) felieChatNotizSetzen(id, notizId, '');
   else felieChatFeldSetzen(id, { felie_lernt: '' });
@@ -10846,7 +11218,8 @@ function gedFaktenHtml() {
 
   var kopf = '<div class="ged-kopf"><div class="ged-kicker">Über dich</div>'
     + (fakten.length ? '<span class="ged-zahl">' + fakten.length + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Dinge, die unabhängig vom Thema gelten. Sie gehen in jede Antwort ein.</div>';
+    + '<div class="ged-sub">Dinge, die unabhängig vom Thema gelten. Sie gehen in jede Antwort ein.</div>'
+    + gedNeuHinweis(fakten.filter(function (f) { return gedIstNeu(f.id); }).length);
 
   var inner;
   if (!fakten.length) {
@@ -10864,7 +11237,7 @@ function gedFaktenHtml() {
            sieht, warum. */
         var alt = f.alterTage > 180 ? '<span class="ged-badge">lange nicht erwähnt</span>' : '';
         var selbst = f.quelle === 'selbst' ? '<span class="ged-badge">von dir ergänzt</span>' : '';
-        return '<div class="ged-zeile snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
+        return '<div class="ged-zeile' + (gedIstNeu(f.id) ? ' ged-neu' : '') + ' snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
           + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
           + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
           + ' data-snip-klasse="' + felieSnipAttr(f.klasse) + '"'
@@ -10877,7 +11250,7 @@ function gedFaktenHtml() {
           + '</div>'
           + '<div class="ged-akt">'
           + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
-          + '<button class="ged-del" onclick="gedFaktLoeschen(\'' + gedJsAttr(f.id) + '\')">Löschen</button>'
+          + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'fakt\',\'' + gedJsAttr(f.id) + '\')">×</button>'
           + '</div></div></div>';
       }).join('');
       return '<div class="ged-gruppe">' + GED_KAT_LABEL[k] + '</div>'
@@ -12299,7 +12672,7 @@ function feliePromptRegeln(mode) {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. LETZTES GESPRÄCH: Wenn letztesGespraech.notizen verwendbare Angaben enthält, baue IMMER einen dezenten, konkreten Bezug zu einem passenden Aspekt genau dieses Gesprächs ein. Keine Zusammenfassung oder Liste; der damalige Stand ist keine Aussage über heute. Sensible Details zurückhaltend, ohne ungefragte Diagnosen oder intime Einzelheiten auszubreiten. Sind keine verwendbaren Notizen vorhanden, offen einladen, keine Erinnerung erfinden und nicht auf ältere Gespräche ausweichen. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
+    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. LETZTES GESPRÄCH: Wenn letztesGespraech.notizen verwendbare Angaben enthält, baue IMMER einen dezenten, konkreten Bezug zu einem passenden Aspekt genau dieses Gesprächs ein. Keine Zusammenfassung oder Liste; der damalige Stand ist keine Aussage über heute. Sensible Details zurückhaltend, ohne ungefragte Diagnosen oder intime Einzelheiten auszubreiten. Sind keine verwendbaren Notizen vorhanden, offen einladen, keine Erinnerung erfinden und nicht auf ältere Gespräche ausweichen. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',
@@ -12391,6 +12764,10 @@ function felieZyklusDaten() {
       letzterBestaetigterStart: cd.lastPeriod || null };
   return { status: 'grobe Kalenderschätzung', letzterBestaetigterStart: cd.lastPeriod,
     angenommeneLaenge: cd.selectedLen, tagSeitBestaetigtemStart: cd.cycleDay,
+    /* Laeuft der Zyklus innerhalb einer angegebenen Lebensphase, muss das
+       Modell das wissen: eine Kalenderphase in den Wechseljahren oder der
+       Stillzeit ist noch weniger belastbar als sonst. */
+    lebensphase: cd.lebensphase || null,
     /* Innerhalb der Kulanz laeuft der Zyklustag weiter, obwohl die
        erwartete Periode vorbei ist. Ohne diese Angabe wuerde das Modell
        einen Tag 31 als gewoehnlichen Zyklustag lesen. Ausdruecklich ohne
@@ -13405,16 +13782,20 @@ function armFeedback(hist){
   hist = felieSichererVerlauf(hist);
   try { window._feedbackData = { transcript: _fbTranscript(hist), meta: _fbMeta(hist) }; window._feedbackArmed = true; _fbWatchSummaryClose(); } catch(e){}
 }
+/* Wartete frueher darauf, dass die Notizkarte wieder verschwindet — die
+   gibt es nicht mehr. Der Feedback-Kasten haengt sich jetzt an den
+   sichtbaren Startbildschirm: er soll die Nutzerin nicht anspringen,
+   waehrend noch der Loader laeuft. */
 function _fbWatchSummaryClose(){
-  var host = document.querySelector('.phone'); if(!host || typeof MutationObserver === 'undefined'){ setTimeout(maybeShowFeedbackBox, 2000); return; }
-  var sawPopup = false;
-  var obs = new MutationObserver(function(){
-    if (document.getElementById('summary-popup')) { sawPopup = true; }
-    else if (sawPopup) { obs.disconnect(); if(window._feedbackArmed){ window._feedbackArmed=false; setTimeout(maybeShowFeedbackBox, 300); } }
-  });
-  obs.observe(host, { childList: true });
-  // Sicherheitsnetz: falls gar kein Zusammenfassungs-Popup erscheint
-  setTimeout(function(){ if(window._feedbackArmed && !sawPopup && !document.getElementById('summary-popup')){ obs.disconnect(); window._feedbackArmed=false; maybeShowFeedbackBox(); } }, 12000);
+  var versuche = 0;
+  (function warten(){
+    if (!window._feedbackArmed) return;
+    var bereit = false;
+    try { bereit = felieHomeIstSichtbar() && !document.getElementById('felie-loader'); } catch(e){ bereit = true; }
+    if (bereit) { window._feedbackArmed = false; setTimeout(maybeShowFeedbackBox, 600); return; }
+    if (++versuche > 24) { window._feedbackArmed = false; maybeShowFeedbackBox(); return; }
+    setTimeout(warten, 500);
+  })();
 }
 function maybeShowFeedbackBox(){
   if (!window._feedbackData) return;
@@ -13616,39 +13997,12 @@ function ecSubmit(){
   try { fetch(FELIE_EXPERT_URL, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(function(){}); } catch(e){}
 }
 
-/* "Chat beenden": schliesst ohne Zwischenfrage und erzeugt die Zusammenfassung.
-   Die Entscheidung ueber Behalten oder Verwerfen faellt erst auf der Karte —
-   dort sieht die Nutzerin, worueber sie entscheidet. Wegwischen behaelt. */
-function endChatToCard() {
-  var dialog = document.getElementById('chat-close-dialog');
-  if (dialog) dialog.style.display = 'none';
-  window._hasNewUserMsg = false;
-  var historySnapshot = chatHistory.slice();
-  /* Fuer "Weiterschreiben" muss der Verlauf das Schliessen ueberleben — ohne
-     Befund, der ist mit dem Schliessen weg. */
-  window._letzterChatVerlauf = ohneBefunde(historySnapshot);
-  var _cw = document.getElementById('chat-window'); if (_cw) _cw.classList.remove('open');
-  showFelieLoader();
-  setTimeout(hideFelieLoader, 8000);
-  generateChatSummary(historySnapshot);
-  armFeedback(historySnapshot);
-}
-
-/* Das × verlaesst den Chat bewusst ohne Zusammenfassung — deshalb hier die
-   Rueckfrage: anders als auf der Karte sieht die Nutzerin nicht, was verloren
-   geht. */
-function promptDiscardChat() {
-  if (!window._hasNewUserMsg) { discardChatAndClose(); return; }
-  felieConfirm({
-    title: 'Ohne Speichern schließen?',
-    message: 'Dieses Gespräch wird nicht ins Archiv übernommen und lässt sich später nicht mehr aufrufen.',
-    confirmText: 'Verwerfen',
-    cancelText: 'Weitersprechen',
-    danger: true,
-    onConfirm: function() { discardChatAndClose(); }
-  });
-}
-
+/* Beide Wege aus dem Gespraech — das × oben und "Chat beenden" unten —
+   fuehren jetzt durch dieselbe Frage. Vorher gab es zwei Ausgaenge mit
+   unterschiedlichem Ausgang: das × verwarf (nach Rueckfrage), der Knopf
+   speicherte stillschweigend und legte die Entscheidung auf die Notizkarte
+   danach. Ohne diese Karte muss die Entscheidung hierher, und zwei Tueren
+   mit verschiedenem Ergebnis waeren eine Falle. */
 function promptCloseChat() {
   if (window._hasNewUserMsg) {
     var dialog = document.getElementById('chat-close-dialog');
@@ -13667,7 +14021,7 @@ function saveChatAndClose() {
   window._letzterChatVerlauf = ohneBefunde(historySnapshot);
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
   showFelieLoader();
-  setTimeout(hideFelieLoader, 8000); // Sicherheitsnetz, falls die Karte ausbleibt
+  setTimeout(hideFelieLoader, 8000); // Sicherheitsnetz, falls der Abschluss haengen bleibt
   // Generate summary with snapshot
   generateChatSummary(historySnapshot);
   armFeedback(historySnapshot);
@@ -13684,10 +14038,6 @@ function discardChatAndClose() {
   refreshHome();
 }
 
-function closeChat() {
-  endChatToCard();
-}
-
 function generateChatSummary(historySnapshot) {
   felieHomeEreignis('gespraech_beendet');
   var history = felieSichererVerlauf(historySnapshot || chatHistory);
@@ -13698,10 +14048,13 @@ function generateChatSummary(historySnapshot) {
     return Promise.resolve();
   }
   return felieNotizErzeugen(history).then(function(summary) {
-    showChatSummaryCard(summary, history);
+    gespraechAbschliessen(summary, history);
   }).catch(function() {
-    showChatSummaryCard({ thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5,
-      hinweis: 'Dein Gespräch wurde gespeichert. Die Notiz konnte noch nicht erstellt werden; versuche es im Archiv erneut.' }, history);
+    /* Fehlgeschlagene Notiz: das Gespraech wird trotzdem archiviert und
+       traegt notizenStatus 'unvollstaendig' — die Archivkarte zeigt das
+       an und bietet dort das erneute Erzeugen. Ohne Pop-up ist die
+       Archivkarte die einzige Stelle, an der das sichtbar wird. */
+    gespraechAbschliessen({ thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5 }, history);
   });
 }
 
@@ -14214,105 +14567,38 @@ function felieChatFeldSetzen(id, patch) {
   } catch (e) { return false; }
 }
 
-/* Markup fuer die Bestaetigung. Standardmaessig ausgewaehlt, mit einem Tap
-   abwaehlbar: waere es umgekehrt, blieb das Gedaechtnis in der Praxis leer.
-   Der Stift dahinter ergaenzt die dritte Option: nicht ganz uebernehmen,
-   nicht ganz weglassen, sondern richtigstellen. */
-function felieMerkAuswahlHtml(v) {
-  if (!v || (!v.fakten.length && !v.faeden.length)) return '';
-  window._felieMerkVorschlag = v;
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-  /* data-typ und data-i bleiben unveraendert — felieMerkUebernehmen() liest
-     sie weiter von hier, das Uebernehmen musste dafuer nicht angefasst
-     werden. Neu sind nur data-snip* und der innere Aufbau. */
-  function zeile(typ, i, text, tag, bekannt) {
-    return '<div class="merk-zeile ' + (bekannt ? '' : 'aktiv ') + 'snip" data-snip="merk" data-snip-max="'
-      + FELIE_SNIP_MAX.merk + '" data-snip-label="Merknotiz bearbeiten"'
-      + ' data-typ="' + typ + '" data-i="' + i + '">'
-      + '<div class="snip-view merk-inner">'
-      + '<button type="button" class="merk-toggle" aria-pressed="' + (bekannt ? 'false' : 'true') + '" onclick="felieMerkToggle(this)">'
-      + '<span class="merk-haken" aria-hidden="true">✓</span>'
-      + '<span class="snip-text merk-text">' + esc(text) + '</span>'
-      + '<span class="merk-tag">' + esc(bekannt ? 'schon gemerkt' : tag) + '</span>'
-      + '</button>'
-      + felieSnipStiftHtml('„' + text + '" bearbeiten')
-      + '</div></div>';
-  }
-
-  var zeilen = [];
-  v.fakten.forEach(function (f, i) { zeilen.push(zeile('fakt', i, f.text, f.kategorie, f.bekannt)); });
-  v.faeden.forEach(function (e, i) { zeilen.push(zeile('faden', i, e.text, 'vorübergehend', e.bekannt)); });
-
-  /* Der Hinweistext sagte "tippe an, was ich weglassen soll" — bei einer
-     von vornherein abgewaehlten Zeile ist das die halbe Wahrheit. */
-  var hatBekannte = v.fakten.some(function (f) { return f.bekannt; }) || v.faeden.some(function (e) { return e.bekannt; });
-
-  return '<div class="merk-block">'
-    + '<div class="merk-kicker">Das möchte ich mir merken</div>'
-    + '<div class="merk-sub">Tippe an, was ich weglassen soll — mit dem Stift änderst du den Text.'
-    + (hatBekannte ? ' Durchgestrichene kenne ich schon; tippe sie an, wenn ich sie trotzdem neu ablegen soll.' : '')
-    + '</div>'
-    + zeilen.join('')
-    + '</div>';
-}
-
-function felieMerkToggle(btn) {
-  /* Die Klasse "aktiv" sitzt weiter auf .merk-zeile, weil
-     felieMerkUebernehmen() sie dort erwartet. Geklickt wird jetzt aber der
-     innere Button, also von dort nach oben suchen. Der erste Zweig faengt
-     alte Aufrufe ab, die das Element selbst uebergeben. */
-  var zeile = btn.classList && btn.classList.contains('merk-zeile')
-    ? btn : (btn.closest ? btn.closest('.merk-zeile') : null);
-  if (!zeile) return;
-  /* Weglassen schliesst eine offene Bearbeitung: ein durchgestrichener
-     Eintrag mit offenem Textfeld waere ein Widerspruch. */
-  if (zeile.dataset.snipOffen === '1') felieSnipSchliessen(zeile);
-  var an = zeile.classList.toggle('aktiv');
-  var t = zeile.querySelector('.merk-toggle');
-  if (t) {
-    t.setAttribute('aria-pressed', an ? 'true' : 'false');
-    /* felieSnipSchliessen() legt den Fokus auf den Stift — der ist bei einer
-       weggelassenen Zeile aber ausgeblendet, der Fokus waere weg. Also
-       zurueck auf die Zeile selbst. */
-    if (!an) { try { t.focus({ preventScroll: true }); } catch (e) {} }
-  }
-}
-
-/* Uebernimmt die noch ausgewaehlten Vorschlaege. Wird nur aus "Speichern"
-   aufgerufen — Verwerfen und Wegwischen schreiben nichts. */
-function felieMerkUebernehmen() {
-  var v = window._felieMerkVorschlag;
-  if (!v) return 0;
-  var n = 0;
-  var pop = document.getElementById('summary-popup');
-  var zeilen = pop ? pop.querySelectorAll('.merk-zeile') : [];
-  Array.prototype.forEach.call(zeilen, function (z) {
-    if (!z.classList.contains('aktiv')) return;
-    var i = parseInt(z.dataset.i, 10);
+/* Schreibt die Vorschlaege ins Gedaechtnis und liefert die Kennungen der
+   geschriebenen Eintraege zurueck.
+     Frueher las diese Funktion die Haken aus der Notizkarte — die gibt es
+   nicht mehr. Uebernommen wird jetzt alles, was der Dublettenabgleich
+   NICHT als schon bekannt erkannt hat; genau dafuer war die Pruefung
+   gebaut. Ein bekannter Eintrag wuerde ohnehin nur den vorhandenen
+   ueberschreiben und dabei als "neu" markiert im Gedaechtnis aufleuchten,
+   obwohl sich nichts geaendert hat. */
+function felieMerkUebernehmen(v) {
+  v = v || window._felieMerkVorschlag;
+  window._felieMerkVorschlag = null;
+  if (!v) return [];
+  var ids = [];
+  (v.fakten || []).forEach(function (f) {
+    if (!f || f.bekannt) return;
     try {
-      if (z.dataset.typ === 'fakt' && v.fakten[i]) {
-        felieFaktSetzen({
-          text: v.fakten[i].text,
-          kategorie: v.fakten[i].kategorie,
-          klasse: v.fakten[i].klasse,
-          quelle: 'gespraech',
-          belege: v.fakten[i].belege || []
-        });
-        n++;
-      } else if (z.dataset.typ === 'faden' && v.faeden[i]) {
-        felieEpisode({
-          text: v.faeden[i].text,
-          faelligBis: Date.now() + v.faeden[i].tage * 86400000,
-          belege: v.faeden[i].belege || []
-        });
-        n++;
-      }
+      var id = felieFaktSetzen({ text: f.text, kategorie: f.kategorie, klasse: f.klasse,
+        quelle: 'gespraech', belege: f.belege || [] });
+      if (id) ids.push(id);
     } catch (e) {}
   });
-  window._felieMerkVorschlag = null;
+  (v.faeden || []).forEach(function (e) {
+    if (!e || e.bekannt) return;
+    try {
+      var id = felieEpisode({ text: e.text, faelligBis: Date.now() + e.tage * 86400000,
+        belege: e.belege || [] });
+      if (id) ids.push(id);
+    } catch (err) {}
+  });
   try { felieStoreSpeichern(); } catch (e) {}
-  return n;
+  return ids;
 }
 
 /* ── Kontext fuer den Prompt ──────────────────────────────────────────
@@ -14326,33 +14612,45 @@ function felieKernNote() {
   return felieDatenBlock('merknotizen', { fakten: felieFakten(), episoden: felieEpisoden({ nurAktuell: true }) });
 }
 
-function showChatSummaryCard(summary, messages) {
-  /* Archivieren darf die Karte nicht verhindern — bei vollem localStorage
-     wirft saveChat, und die Nutzerin saehe sonst nur den leerlaufenden Loader. */
+/* Abschluss eines gespeicherten Gespraechs. Hiess frueher
+   showChatSummaryCard() und endete in der Notizkarte, auf der die
+   Nutzerin jeden Vorschlag einzeln bestaetigen musste.
+     Der Weg ist jetzt: sie entscheidet EINMAL beim Schliessen, danach
+   passiert alles still. Sichtbar wird es im Gedaechtnis — Puls auf dem
+   Symbol, Lime-Rand an den neuen Eintraegen. Der Grund fuer den Wechsel
+   ist die Nutzungsfrequenz: eine Karte mit Auswahlliste nach jedem
+   Gespraech ist bei woechentlicher Nutzung eine Huerde, keine Kontrolle —
+   loeschen und aendern kann sie im Gedaechtnis jederzeit. */
+function gespraechAbschliessen(summary, messages) {
+  /* Archivieren darf den Rest nicht verhindern — bei vollem localStorage
+     wirft saveChat. */
   var saved = true;
   try { saved = saveChat(summary, messages) != null; } catch (e) { saved = false; }
   if (saved) felieAutosave();
-  if (!saved) {
-    window._letzteChatId = null;
-    summary = Object.assign({}, summary, {
-      thema: (summary && summary.thema) || 'Unser Gespräch',
-      hinweis: 'Die Notiz konnte auf diesem Gerät nicht gespeichert werden.'
-    });
+  if (!saved) window._letzteChatId = null;
+
+  /* Merken nur, wenn das Gespraech auch wirklich im Archiv liegt. Sonst
+     stuenden Fakten ohne den Beleg da, auf den sie sich berufen. */
+  var ids = [];
+  if (saved) {
+    try { ids = felieMerkUebernehmen(felieMerkVorschlaege(summary)); } catch (e) {}
   }
-  // Homescreen aktualisieren (Begrüßung bezieht das neue Gespräch ein, Werte/Themen auffrischen)
+  felieNeueSnippetsSetzen(ids);
+
+  window._felieNotizSummary = null;
   refreshHome();
-  // Ladescreen ausblenden, dann die Notiz als Pop-up auf dem Startscreen zeigen
+  /* Der Loader laeuft mindestens 1,5 s, damit der Wechsel nicht zuckt. */
   var elapsed = Date.now() - (window._loaderStart || 0);
-  var wait = Math.max(0, 1500 - elapsed);
-  setTimeout(function() {
-    hideFelieLoader();
-    setTimeout(function() { showSummaryPopup(summary); }, 400);
-  }, wait);
+  setTimeout(hideFelieLoader, Math.max(0, 1500 - elapsed));
 }
 
-/* Sicherungs-Hinweis nach einem archivierten Gespräch.
-   Nativ uebernimmt das der Autosave weiter unten, deshalb entfaellt der Hinweis
-   dort. Im Browser gibt es keinen Schreibzugriff — dort bleibt er stehen. */
+/* Sicherungs-Hinweis, seit dem Wegfall der Notizkarte am Ende des
+   Gedaechtnisses. Nativ uebernimmt das der Autosave weiter unten, deshalb
+   entfaellt der Hinweis dort. Im Browser gibt es keinen Schreibzugriff —
+   dort bleibt er stehen.
+     dismissBackupHint() entfernt nur den Kasten aus dem DOM; im Gedaechtnis
+   baut der naechste gedRender() die Ansicht ohnehin neu auf, und der
+   Schluessel felie_backup_hint_off haelt ihn dann draussen. */
 function backupHint() {
   try { if (felieIsNative()) return ''; } catch (e) {}
   try { if (localStorage.getItem('felie_backup_hint_off') === '1') return ''; } catch (e) {}
@@ -14380,126 +14678,8 @@ function dismissBackupHint() {
   if (box) box.remove();
 }
 
-function showSummaryPopup(summary) {
-  var existing = document.getElementById('summary-popup');
-  if (existing) existing.remove();
-  /* Referenz auf das Objekt, an dem der Stift arbeitet. Ohne die zeigte die
-     Karte nach einer Korrektur den neuen Satz, das Summary-Objekt aber noch
-     den alten. */
-  window._felieNotizSummary = summary || {};
-  var ov = document.createElement('div');
-  ov.id = 'summary-popup';
-  ov.style.cssText = 'position:absolute;inset:0;z-index:60;background:rgba(24, 4, 48,0.55);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeUp 0.25s ease both;';
-  ov.addEventListener('click', function(e){
-    if (e.target !== ov) return;
-    /* Erst die offene Bearbeitung beenden, dann beim naechsten Tap die
-       Karte. Sonst raeumt ein Fehltipp neben der Karte eine halb
-       getippte Korrektur weg — und die Karte gleich mit. */
-    if (felieSnipOffen(ov)) { felieSnipAlleSchliessen(ov); return; }
-    ov.remove();
-  });
-  ov.innerHTML =
-    '<div style="background:white;border-radius:22px;border:1.5px solid rgba(225, 234, 125,0.3);padding:20px;max-width:320px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 16px 48px rgba(24, 4, 48,0.32);">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
-        '<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#180430;">felies Notiz · gerade eben</div>' +
-        '<button onclick="felieNotizSchliessen()" style="font-size:18px;color:#6B5A88;background:none;border:none;cursor:pointer;line-height:1;" aria-label="Schließen">×</button>' +
-      '</div>' +
-      felieNotizThemaHtml(summary.thema) +
-      (summary.hinweis ? '<div class="ged-sub">' + felieSnipAttr(summary.hinweis) + '</div>' : '') +
-      felieNotizenHtml(summary, true) +
-      /* Vorschlaege zur Bestaetigung. Nichts davon ist gespeichert,
-         bevor die Nutzerin "Speichern" tippt. */
-      felieMerkAuswahlHtml(felieMerkVorschlaege(summary)) +
-      backupHint() +
-      '<button onclick="felieMerkSpeichern()" style="margin-top:12px;width:100%;padding:12px;border-radius:14px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;">Speichern</button>' +
-      '<div style="display:flex;gap:8px;margin-top:8px;">' +
-        '<button onclick="verwerfeLetztesGespraech()" style="flex:1;padding:11px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;">Verwerfen</button>' +
-        '<button onclick="weiterschreiben()" style="flex:1;padding:11px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.3);background:white;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;">Weiterschreiben</button>' +
-      '</div>' +
-    '</div>';
-  document.querySelector('.phone').appendChild(ov);
-}
 
-/* Eine offene Bearbeitung wird beim Verlassen der Karte uebernommen, nicht
-   verworfen: die Nutzerin hat den Text gerade selbst getippt, sie ist die
-   verlaesslichere Quelle als der Modellvorschlag darunter. Gilt fuer × und
-   fuer "Speichern" — nur der Overlay-Tap daneben bricht ab, weil der oft
-   ein Fehltipp ist. */
-function felieNotizEingabenUebernehmen() {
-  var pop = document.getElementById('summary-popup');
-  if (!pop) return;
-  var offen;
-  while ((offen = felieSnipOffen(pop))) {
-    var ok = offen.querySelector('.snip-ok');
-    if (!ok) { felieSnipSchliessen(offen); continue; }
-    felieSnipUebernehmen(ok);
-  }
-}
 
-function felieNotizSchliessen() {
-  felieNotizEingabenUebernehmen();
-  var pop = document.getElementById('summary-popup');
-  if (pop) pop.remove();
-}
-
-/* Uebernimmt die bestaetigten Merknotizen und schliesst die Karte. Wichtig
-   ist die Trennung: das Gespraech selbst ist beim Erzeugen der Karte schon
-   archiviert, Fakten und Faeden werden ERST hier geschrieben. Wer verwirft
-   oder wegwischt, hinterlaesst also nichts im Gedaechtnis. */
-function felieMerkSpeichern() {
-  /* Zuerst offene Stift-Eingaben uebernehmen. Ohne das ginge die Korrektur
-     verloren, wenn die Nutzerin nach dem Tippen direkt auf "Speichern"
-     tippt statt vorher auf "Übernehmen" — und genau das ist der
-     wahrscheinlichere Weg. */
-  try { felieNotizEingabenUebernehmen(); } catch (e) {}
-  try { felieMerkUebernehmen(); } catch (e) {}
-  window._felieNotizSummary = null;
-  var pop = document.getElementById('summary-popup');
-  if (pop) pop.remove();
-}
-
-/* Das Gespraech wurde beim Erzeugen der Karte bereits archiviert — Wegwischen
-   behaelt es also. "Verwerfen" nimmt den Eintrag wieder heraus. Eine zweite
-   Rueckfrage gibt es hier bewusst nicht: die Nutzerin sieht auf der Karte
-   genau, was sie wegwirft. */
-function verwerfeLetztesGespraech() {
-  /* Vorschlaege fallen mit dem Gespraech weg — sie waren nie gespeichert.
-     Korrekturen an Thema und Erkenntnis standen zwar schon im Archiveintrag,
-     der wird hier aber gleich mit geloescht. */
-  window._felieMerkVorschlag = null;
-  window._felieNotizSummary = null;
-  var id = window._letzteChatId;
-  if (id != null) {
-    try {
-      var chats = getSavedChats().filter(function(c) { return (c.id || c.timestamp) !== id; });
-      localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
-    } catch (e) {}
-    window._letzteChatId = null;
-  }
-  window._letzterChatVerlauf = null;
-  felieHomeEreignis('gespraech_verlassen');
-  var pop = document.getElementById('summary-popup');
-  if (pop) pop.remove();
-  try { refreshHome(); } catch (e) {}
-}
-
-/* Zurueck ins Gespraech: der Eintrag im Archiv wird wieder entfernt, sonst
-   entstuende beim naechsten Beenden ein zweiter Datensatz zum selben Chat. */
-function weiterschreiben() {
-  var verlauf = window._letzterChatVerlauf;
-  verwerfeLetztesGespraech();
-  if (!verlauf || !verlauf.length) return;
-  chatHistory.length = 0;
-  var msgs = document.getElementById('messages');
-  if (msgs) msgs.innerHTML = '';
-  verlauf.forEach(function(m) {
-    chatHistory.push(Object.assign({}, m));
-    if (!m.hidden) addMsg(m.content, m.role === 'user' ? 'user' : 'felie', { stumm: true });
-  });
-  window._hasNewUserMsg = true;
-  var cw = document.getElementById('chat-window');
-  if (cw) cw.classList.add('open');
-}
 
 // Dashboard "Mit felie besprechen" → just close dashboard, return to main screen
 function closeDashboard() {

@@ -734,35 +734,7 @@ html.native-app .phone {
   color: var(--lila); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; }
 .sp-link:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
 
-/* ── Merknotiz-Bestätigung ── */
-.merk-block { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
-.merk-kicker { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--lila); }
-.merk-sub { font-size: 11px; color: var(--text-muted); margin: 2px 0 8px; }
-/* Die Zeile ist jetzt ein Container, kein Button mehr: neben dem Antippen zum
-   Weglassen sitzt der Stift, und ein Button im Button ist kein gueltiges
-   Markup. Rahmen und Flaeche bleiben deshalb hier, die Reihe innen. */
-.merk-zeile { width: 100%; padding: 8px 10px; margin-bottom: 5px; border-radius: 10px;
-  border: 1px solid var(--border); background: #FBF9FE;
-  transition: opacity 0.15s, background 0.15s; }
-.merk-inner { display: flex; align-items: center; gap: 6px; }
-.merk-toggle { flex: 1; min-width: 0; display: grid; grid-template-columns: 12px minmax(0, 1fr); align-items: start; gap: 4px 8px;
-  background: none; border: none; padding: 0; margin: 0; font-family: inherit;
-  text-align: left; cursor: pointer; color: inherit; }
-.merk-toggle:focus-visible { outline: 2px solid var(--lila); outline-offset: 3px; border-radius: 6px; }
-.merk-zeile.aktiv { background: #F3EFFA; border-color: rgba(143,91,189,0.3); }
-.merk-zeile:not(.aktiv) { opacity: 0.42; }
-.merk-zeile:not(.aktiv) .merk-text { text-decoration: line-through; }
-/* Weggelassen und gleichzeitig bearbeiten waere widerspruechlich — der Stift
-   verschwindet daher mit dem Haken statt beides anzubieten. */
-.merk-zeile:not(.aktiv) .snip-edit { visibility: hidden; pointer-events: none; }
-.merk-haken { font-size: 11px; color: var(--lila); width: 12px; flex-shrink: 0; }
-.merk-zeile:not(.aktiv) .merk-haken { visibility: hidden; }
-.merk-text { font-size: 12.5px; color: var(--text-primary); flex: 1; min-width: 0; }
-.merk-tag { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase;
-  letter-spacing: 0.06em; grid-column: 2; }
-
-/* ── Snippet-Bearbeitung (Stift auf der Notizkarte) ──
+/* ── Snippet-Bearbeitung (Stift im Gedaechtnis und Archiv) ──
    Ein Stift pro erfasstem Snippet. Bewusst inline und nicht als zweites
    Sheet: die Nutzerin soll den Satz im Zusammenhang der ganzen Karte
    aendern, nicht in einem leeren Kontext. */
@@ -3622,21 +3594,28 @@ const GEDAECHTNIS_GUIDE_STEPS = [
     label: 'Gedächtnis'
   },
   {
-    text: `<strong>Gerade offen</strong> — Themen mit einem Ablaufdatum, z.B. „Abgabe nächste Woche". Sie verfallen von allein, du musst nichts abhaken. Wenn etwas früher vorbei ist, tippe auf „Erledigt".`,
+    /* gedTab: seit der Aufteilung in Register liegt immer nur EIN Block im
+       DOM. Ohne das Umschalten fand renderGuideStep() sein Ziel nicht,
+       fiel auf die statische Koordinatentabelle zurueck und leuchtete ein
+       Rechteck ueber dem gerade sichtbaren, falschen Block aus. */
+    text: `<strong>Aktuell</strong> — Themen mit einem Ablaufdatum, z.B. „Abgabe nächste Woche". Sie verfallen von allein, du musst nichts abhaken. Ist etwas früher vorbei, tippe auf das ×.`,
     target: 'ged-faeden',
     scrollSel: '#ged-card-faeden',
-    label: 'Offen'
+    gedTab: 'aktuell',
+    label: 'Aktuell'
   },
   {
-    text: `<strong>Aus euren Gesprächen</strong> — was ich mir am Ende eines Gesprächs notiert habe, nach Themen filterbar. Löschen entfernt nur die Notiz; das Gespräch bleibt im Archiv.`,
+    text: `<strong>Gespräche</strong> — was ich mir am Ende eines Gesprächs notiert habe, nach Themen filterbar. Löschen entfernt nur die Notiz; das Gespräch bleibt im Archiv.`,
     target: 'ged-lernt',
     scrollSel: '#ged-card-lernt',
+    gedTab: 'gespraeche',
     label: 'Gespräche'
   },
   {
-    text: `<strong>Über dich</strong> — was unabhängig vom Thema gilt und deshalb in jede meiner Antworten eingeht. Wenn ich etwas nicht mitbekommen habe, kannst du es hier ergänzen.`,
+    text: `<strong>Über dich</strong> — was unabhängig vom Thema gilt und deshalb in jede meiner Antworten eingeht. Oben steht, was du mir selbst erzählt hast, darunter, was ich mir aus Gesprächen gemerkt habe.`,
     target: 'ged-fakten',
     scrollSel: '#ged-card-fakten',
+    gedTab: 'ueberdich',
     label: 'Über dich'
   }
 ];
@@ -5990,7 +5969,6 @@ function refreshHome() {
   homeInit(true);
   fillHomeData();
   fillHomeThemen();
-  felieGedPulsAktualisieren();
 }
 
 /* Der einzige Hinweis darauf, dass felie sich etwas gemerkt hat — seit die
@@ -6242,6 +6220,11 @@ function homeInit(fromOnboarding) {
   if (!document.getElementById('home-question-bubble-wrap')) return;
   felieHomeBeobachten();
   fillHomeData(); fillHomeThemen();
+  /* Hier und nicht in refreshHome(): der Startpfad der App ruft homeInit()
+     direkt auf. Der Merker liegt in localStorage, damit der Hinweis einen
+     Neustart ueberlebt — genau das tat er nicht, weil der Puls nur beim
+     Auffrischen gesetzt wurde. */
+  felieGedPulsAktualisieren();
   updateHomeGuideUI();
   var iw = document.getElementById('home-input-wrap'); if (iw) iw.style.display = 'flex';
   var ui = document.getElementById('home-user-input'); if (ui) ui.disabled = false;
@@ -6713,6 +6696,12 @@ function renderGuideStep() {
       d.className = 'guide-dot' + (i === guideStep ? ' active' : '');
       dotsEl.appendChild(d);
     }
+  }
+
+  /* Register umschalten, bevor das Ziel gesucht wird — sonst steht der
+     erklaerte Block gar nicht im DOM. */
+  if (step.gedTab && document.getElementById('ged-scroll')) {
+    try { gedTab(step.gedTab); } catch (e) {}
   }
 
   // Bei scrollbaren Abschnitten erst zum Ziel scrollen, dann positionieren
@@ -8022,7 +8011,7 @@ function felieZyklusPhaseMarkieren(bd, val) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-14-faeden-formulierung';
+var FELIE_BUILD = '2026-09-14-nachpruefung';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -14083,7 +14072,6 @@ function saveChatAndClose() {
   window._hasNewUserMsg = false;
   // Save history snapshot BEFORE closing (clearing happens elsewhere)
   var historySnapshot = chatHistory.slice();
-  window._letzterChatVerlauf = ohneBefunde(historySnapshot);
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
   showFelieLoader();
   setTimeout(hideFelieLoader, 8000); // Sicherheitsnetz, falls der Abschluss haengen bleibt
@@ -14535,17 +14523,6 @@ function felieSnipSchreiben(host, wert) {
     return;
   }
 
-  if (art === 'merk') {
-    var v = window._felieMerkVorschlag;
-    if (!v) return;
-    var i = parseInt(host.dataset.i, 10);
-    var liste = host.dataset.typ === 'fakt' ? v.fakten : v.faeden;
-    if (liste && liste[i]) liste[i].text = wert;
-    /* Bewusst NICHT in den Store: fuer Fakten und Faeden gilt weiter, dass
-       erst "Speichern" schreibt. Der Stift aendert nur den Vorschlag. */
-    return;
-  }
-
   /* ── Gedaechtnis: id-basiert, nicht index-basiert ──────────────────
      Auf der Notizkarte sind die Eintraege Vorschlaege an Position i.
      Im Gedaechtnis existieren sie schon und haben eine id. Korrekturen
@@ -14642,8 +14619,6 @@ function felieChatFeldSetzen(id, patch) {
    ueberschreiben und dabei als "neu" markiert im Gedaechtnis aufleuchten,
    obwohl sich nichts geaendert hat. */
 function felieMerkUebernehmen(v) {
-  v = v || window._felieMerkVorschlag;
-  window._felieMerkVorschlag = null;
   if (!v) return [];
   var ids = [];
   (v.fakten || []).forEach(function (f) {

@@ -841,6 +841,11 @@ html.native-app .phone {
 .ged-gruppe { font-size: 10px; font-weight: 600; color: var(--lila);
   text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
 .ged-gruppe:first-of-type { margin-top: 0; }
+/* Erklaerzeile unter einer Abschnittsueberschrift. "Das hast du mir
+   erzaehlt" und "Das habe ich mir gemerkt" klingen aehnlich; der
+   Unterschied gehoert dazugeschrieben, sonst raet die Nutzerin. */
+.ged-gruppe-sub { font-size: 11px; color: var(--text-muted); line-height: 1.4;
+  margin: -4px 0 2px; }
 
 /* Zeile = Container mit .snip-view innen, damit der Stift-Editor der
    Notizkarte hier unveraendert weiterarbeitet. */
@@ -949,11 +954,6 @@ html.native-app .phone {
 .ged-opt.aktiv { background: var(--lila); border-color: var(--lila); color: #FFFFFF; }
 .ged-opt:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
 .ged-form-aktionen { display: flex; gap: 7px; justify-content: flex-end; }
-
-.ged-mitgabe textarea { width: 100%; box-sizing: border-box; resize: none; padding: 11px 14px;
-  border-radius: 12px; border: 1.5px solid rgba(143, 91, 189, 0.3); background: #FBF9FE;
-  color: var(--text-primary); font-family: inherit; font-size: 14px; line-height: 1.5; }
-.ged-mitgabe textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(143, 91, 189, 0.16); }
 
 /* ── Das weiß felie über dich ── */
 .wissen-kicker { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
@@ -3638,12 +3638,6 @@ const GEDAECHTNIS_GUIDE_STEPS = [
     target: 'ged-fakten',
     scrollSel: '#ged-card-fakten',
     label: 'Über dich'
-  },
-  {
-    text: `Und ganz unten <strong>deine Worte</strong>: etwas, das in unseren Gesprächen nie vorkam und das ich über dich wissen sollte. Das schreibst du selbst — ich fülle es nicht.`,
-    target: 'ged-mitgabe',
-    scrollSel: '#ged-card-mitgabe',
-    label: 'Deine Worte'
   }
 ];
 
@@ -5083,6 +5077,71 @@ function klV2ZyklusVoreinstellen(a) {
   return true;
 }
 
+/* ── Aus Auswahlkaesten werden Saetze ────────────────────────────────
+   Die Eintraege aus dem Kennenlernen standen als zusammengesetzte
+   Etiketten im Gedaechtnis: "Lebenssituation: Partnerschaft, Kinder.",
+   "Arbeit und Alltag: Vollzeit." Das Praefix stammte vom Zusammenbauen
+   aus Mehrfachauswahlen, nicht aus einem inhaltlichen Grund — und es las
+   sich wie ein ausgefuelltes Formular zwischen Saetzen, die felie sich
+   gemerkt hat.
+     Die Form folgt jetzt derselben Regel wie die Extraktion aus
+   Gespraechen (siehe felieMerkPromptTeil): kurze neutrale Saetze ohne
+   Ich- oder Du-Anrede. Aus "Partnerschaft, Kinder" wird "Lebt in einer
+   Partnerschaft, hat Kinder." */
+var KL_SATZ_FAMILIE = { 'alleinlebend': 'lebt allein', 'Partnerschaft': 'lebt in einer Partnerschaft', 'Kinder': 'hat Kinder' };
+var KL_SATZ_ARBEIT  = { 'Vollzeit': 'arbeitet Vollzeit', 'Teilzeit': 'arbeitet Teilzeit',
+                        'selbstständig': 'ist selbstständig', 'Elternzeit': 'ist in Elternzeit' };
+
+function klV2Satz(auswahl, karte) {
+  var teile = (auswahl || []).map(function(v) { return karte[v] || v; }).filter(Boolean);
+  if (!teile.length) return '';
+  var satz = teile.join(', ');
+  return satz.charAt(0).toUpperCase() + satz.slice(1) + '.';
+}
+
+function klV2KinderSatz(k) {
+  var teile = [];
+  if (k.amount) teile.push(k.amount + (/^\d+$/.test(String(k.amount).trim()) ? ' Kinder' : ''));
+  if (k.ages) teile.push('im Alter von ' + k.ages);
+  return teile.length ? 'Kinder: ' + teile.join(', ') + '.' : '';
+}
+
+/* klV2Antwort() bleibt in der Ich-Form: dieselbe Funktion erzeugt die
+   Antwortblase im Kennenlern-Gespraech, und dort spricht die Nutzerin. */
+function klV2SchlafSatz(sr) {
+  if (sr.irregular) return 'Hat keinen festen Schlafrhythmus.';
+  var teile = [];
+  if (sr.bed)  teile.push('geht meist gegen ' + sr.bed + ' Uhr ins Bett');
+  if (sr.wake) teile.push('steht meist gegen ' + sr.wake + ' Uhr auf');
+  if (!teile.length) return '';
+  var satz = teile.join(', ');
+  return satz.charAt(0).toUpperCase() + satz.slice(1) + '.';
+}
+
+/* Offene Faeden aus dem Kennenlernen, in derselben Form wie die Fakten.
+   Vorher stand dort "Beim Kennenlernen am 14.9.2026: Mich beschaeftigt:
+   Schlaf, Arbeit" — zwei gestapelte Praefixe und die Ich-Form aus der
+   Antwortblase. Das Datum ist ersatzlos weg: diese Faeden laufen nach
+   einem bis sieben Tagen ab, sind also per Definition frisch, und die
+   Restdauer steht ohnehin an der Zeile.
+     Der Aspekt bleibt als kurzes Praefix stehen. Anders als bei
+   "Lebenssituation:" wiederholt er nicht die Kategorie daneben, sondern
+   sagt, WORAUF sich die Angabe bezieht — ohne ihn waere eine blosse
+   Aufzaehlung nicht mehr zuzuordnen. */
+var KL_FADEN_PRAEFIX = {
+  themen:      'Beschäftigt gerade: ',
+  gefuehl:     'Fühlt sich damit: ',
+  ziel:        'Möchte besser verstehen: ',
+  zyklus:      'Ungefähre eigene Zykluseinschätzung: ',
+  beschwerden: 'Zeitraum des körperlichen Themas: '
+};
+
+function klV2FadenText(key, f) {
+  var teile = (f.selected || []).join(', ');
+  if (f.text) teile += (teile ? '. ' : '') + f.text;
+  return (KL_FADEN_PRAEFIX[key] || '') + teile;
+}
+
 function klV2Sichern() {
   var s = klZustand(); if (s.stage !== 'aufnahme') return true;
   klV2Verlauf(); var chat = klArchivSichern(); if (!chat) return false;
@@ -5104,22 +5163,28 @@ function klV2Sichern() {
     if (life && !life.skipped) {
       var work = life.selected.filter(function(v) { return ['Elternzeit','Vollzeit','Teilzeit','selbstständig'].indexOf(v) >= 0; });
       var family = life.selected.filter(function(v) { return ['alleinlebend','Partnerschaft','Kinder'].indexOf(v) >= 0; });
-      if (family.length) fact('leben', 'Lebenssituation: ' + family.join(', ') + '.', 'familie', ':familie');
-      if (work.length) fact('leben', 'Arbeit und Alltag: ' + work.join(', ') + '.', 'arbeit', ':arbeit');
-      if (life.text) fact('leben', 'Zur Lebenssituation selbst angegeben: ' + life.text, 'allgemein', ':text');
+      if (family.length) fact('leben', klV2Satz(family, KL_SATZ_FAMILIE), 'familie', ':familie');
+      if (work.length) fact('leben', klV2Satz(work, KL_SATZ_ARBEIT), 'arbeit', ':arbeit');
+      if (life.text) fact('leben', life.text, 'allgemein', ':text');
     }
-    if (a.kinder && !a.kinder.skipped && (a.kinder.amount || a.kinder.ages)) fact('kinder', 'Zu den Kindern: ' + klV2Antwort('kinder', a.kinder), 'familie');
+    if (a.kinder && !a.kinder.skipped && (a.kinder.amount || a.kinder.ages)) fact('kinder', klV2KinderSatz(a.kinder), 'familie');
     var body = a.koerper, hormones = body && !body.skipped ? body.selected.filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
     if (klV2Hat('leben','schwanger') && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
-    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Körperlicher / hormoneller Kontext (Selbstauskunft): ' + hormones.join(', ') + '.', 'gesundheit', ':kontext');
-    if (body && !body.skipped && body.text) fact('koerper', 'Selbst mitgeteiltes körperliches Thema: ' + body.text, 'gesundheit', ':text');
-    if (a.schlafroutine && !a.schlafroutine.skipped && (a.schlafroutine.bed || a.schlafroutine.wake || a.schlafroutine.irregular)) fact('schlafroutine', klV2Antwort('schlafroutine', a.schlafroutine), 'allgemein');
+    /* Die Kennzeichnung "nach eigener Angabe" bleibt bei den beiden
+       gesundheitlichen Eintraegen stehen, waehrend die uebrigen Praefixe
+       entfallen. Sie ist kein Ordnungsvermerk, sondern die Abgrenzung:
+       felie stellt nichts fest, sie gibt wieder, was die Nutzerin gesagt
+       hat. Dieser Text geht auch in den Modellkontext, wo die Herkunft
+       nicht aus der Ueberschrift daneben ablesbar ist. */
+    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Hormoneller Kontext nach eigener Angabe: ' + hormones.join(', ') + '.', 'gesundheit', ':kontext');
+    if (body && !body.skipped && body.text) fact('koerper', 'Körperliches Thema nach eigener Angabe: ' + body.text, 'gesundheit', ':text');
+    if (a.schlafroutine && !a.schlafroutine.skipped && (a.schlafroutine.bed || a.schlafroutine.wake || a.schlafroutine.irregular)) fact('schlafroutine', klV2SchlafSatz(a.schlafroutine), 'allgemein');
     ['themen','gefuehl','ziel','zyklus','beschwerden'].forEach(function(key) {
       var f = a[key]; if (!f || f.skipped) return;
       if (['gefuehl','ziel','zyklus'].indexOf(key) >= 0 && f.selected.some(function(v) { return ['schwer zu sagen','weiß ich noch nicht','weiß ich nicht'].indexOf(v) >= 0; })) return;
       var days = ['gefuehl','zyklus'].indexOf(key) >= 0 ? 1 : 7;
       var i = chat.messages.findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === key; });
-      felieEpisode({ id: 'aufnahme:' + s.id + ':' + key, text: 'Beim Kennenlernen am ' + new Date(f.ts).toLocaleDateString('de-DE') + ': ' + klV2Antwort(key, f), faelligBis: f.ts + days * 86400000,
+      felieEpisode({ id: 'aufnahme:' + s.id + ':' + key, text: klV2FadenText(key, f), faelligBis: f.ts + days * 86400000,
         belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
     });
     var sleep = a.schlafqualitaet;
@@ -6199,12 +6264,11 @@ function felieRitualMarkerAnstossen() { /* Header access remains visible; no add
 var homeQuestionText = '';
 
 /* Die erste freie Selbstbeschreibung wanderte hier bis zuletzt in
-   klAnswers.notiz. Das ist entfallen: das Feld heisst jetzt "Was ich felie
-   mitgeben moechte" und ist ausschliesslich die Stimme der Nutzerin — Text,
-   den sie nie getippt hat, darf dort nicht auftauchen. Ihre Antwort geht
-   ohnehin als normale Nachricht ins Gespraech und wird am Gespraechsende
-   zu Fakten und Faeden verarbeitet, also strukturiert, sichtbar und
-   einzeln loeschbar statt als Prosablock. */
+   klAnswers.notiz. Das ist entfallen, und inzwischen ist auch das Feld
+   selbst weg: ihre Antwort geht ohnehin als normale Nachricht ins
+   Gespraech und wird am Gespraechsende zu Fakten und Faeden verarbeitet,
+   also strukturiert, sichtbar und einzeln loeschbar statt als
+   Prosablock. */
 function captureOnboardingNote(text) { /* absichtlich leer, siehe oben */ }
 
 function homeUserReply() {
@@ -6596,7 +6660,6 @@ function getLiveSpot(target) {
       'ged-faeden':      '#ged-card-faeden',
       'ged-lernt':       '#ged-card-lernt',
       'ged-fakten':      '#ged-card-fakten',
-      'ged-mitgabe':     '#ged-card-mitgabe',
       'dash-wearable':   '#wearable-banner',
       'dash-scores':     '#score-cards',
       'dash-zyklus':     ['#zyklus-locked', '#zyklus-real'],
@@ -6696,7 +6759,6 @@ function positionGuideSpot() {
     'ged-faeden':      { t: 96,  l: 12,  w: 366, h: 220 },
     'ged-lernt':       { t: 96,  l: 12,  w: 366, h: 260 },
     'ged-fakten':      { t: 96,  l: 12,  w: 366, h: 240 },
-    'ged-mitgabe':     { t: 96,  l: 12,  w: 366, h: 230 },
     'dash-wearable':   { t: 110, l: 16,  w: 358, h: 130 },
     'dash-scores':     { t: 110, l: 16,  w: 358, h: 96  },
     'dash-zyklus':     { t: 110, l: 16,  w: 358, h: 120 },
@@ -7960,7 +8022,7 @@ function felieZyklusPhaseMarkieren(bd, val) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-14-ged-register';
+var FELIE_BUILD = '2026-09-14-faeden-formulierung';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -10861,7 +10923,13 @@ function showGedaechtnis() {
   window._gedLerntFilter = 'all';
   window._gedLerntAlle = false;
   window._gedForm = null;
-  window._gedMitgabe = (klAnswers.notiz || '');
+  /* Das Freitextfeld "Was ich felie mitgeben moechte" ist entfallen: es
+     tat dasselbe wie "Etwas ueber dich ergaenzen", nur als Prosablock
+     statt als einzeln aenderbarem und loeschbarem Eintrag — und dieselbe
+     Begruendung stand laengst in captureOnboardingNote(). Ein bereits
+     geschriebener Text darf deshalb nicht einfach verschwinden: er wird
+     beim naechsten Oeffnen zu einem ganz normalen Eintrag. */
+  try { gedMitgabeUebernehmen(); } catch (e) {}
   /* Einmaliger Blick: beim ersten Oeffnen nach einem Gespraech werden die
      neuen Eintraege hervorgehoben, gleichzeitig gilt der Hinweis als
      gesehen. Die Hervorhebung bleibt fuer DIESE Ansicht stehen — sie
@@ -10917,7 +10985,6 @@ function showGedaechtnis() {
    Verlust hier besonders teuer. Die anderen Bloecke schreiben sofort und
    brauchen das nicht. */
 function gedSchliessen() {
-  try { gedMitgabeSpeichern(true); } catch (e) {}
   var ov = document.getElementById('gedaechtnis-overlay');
   if (ov) ov.remove();
   window._gedNeuIds = [];
@@ -10988,16 +11055,25 @@ function gedTab(key) {
 /* Ein Render-Eingang fuer den ganzen Bereich. Jede Aktion schreibt und
    ruft danach gedRender() — kein Teil-Nachziehen einzelner Listen, das
    war beim Spiegel schon die Quelle stiller Inkonsistenzen. */
+/* Einmalige Uebernahme des alten Freitextfelds. Der Text ist ihre
+   Formulierung und bleibt wortgleich stehen; er wird nur zu einem
+   Eintrag, den sie einzeln aendern und loeschen kann. Das Leeren von
+   klAnswers.notiz ist zugleich die Markierung, dass die Uebernahme
+   gelaufen ist — ein zusaetzlicher Merker koennte veralten. */
+function gedMitgabeUebernehmen() {
+  var text = (klAnswers.notiz || '').trim();
+  if (!text) return false;
+  felieFaktSetzen({ text: text, kategorie: 'allgemein', klasse: 'stabil', quelle: 'selbst' });
+  klAnswers.notiz = '';
+  klAnswers.notizQuelle = null;
+  try { felieStoreSpeichern(); } catch (e) {}
+  try { saveProfile(); } catch (e) {}
+  return true;
+}
+
 function gedRender() {
   var box = document.getElementById('ged-scroll');
   if (!box) return;
-  /* Offene Mitgabe-Eingabe retten: sie steht nur im DOM, nicht im Store.
-     Besonders wichtig seit den Registern — beim Wechsel verschwindet das
-     Textfeld aus dem DOM, ohne dass die Nutzerin etwas getippt haette
-     speichern wollen. */
-  var mg = document.getElementById('ged-mitgabe-input');
-  if (mg) window._gedMitgabe = mg.value;
-
   var tab = window._gedTab || 'gespraeche';
   var z = gedTabZahlen();
   GED_TABS.forEach(function (t) {
@@ -11020,7 +11096,7 @@ function gedRender() {
      ehesten Thema ist. */
   box.innerHTML = tab === 'aktuell'    ? gedFaedenHtml()
                 : tab === 'gespraeche' ? gedLerntHtml()
-                : gedFaktenHtml() + gedMitgabeHtml() + backupHint();
+                : gedFaktenHtml() + backupHint();
 }
 
 /* ── Block 1: Gerade offen (Episoden) ─────────────────────────────── */
@@ -11212,6 +11288,52 @@ function gedLerntLoeschen(id, notizId) {
 
 /* ── Block 3: Über dich (Fakten) ──────────────────────────────────── */
 
+/* Zwei Herkuenfte, zwei Abschnitte.
+   Nach Thema zu gliedern war die falsche Achse: in einer Liste standen
+   Angaben, nach denen felie im Kennenlernen GEFRAGT hat, neben Saetzen,
+   die sie sich aus einem Gespraech GEMERKT hat. Das las sich wie ein
+   halbes Formular und wie ein halbes Notizbuch zugleich. Die Herkunft
+   steht als quelle laengst am Datensatz, war aber nur als kleines Badge
+   sichtbar.
+     Die Kategorie bleibt erhalten — sie ordnet weiter und wird beim
+   Ergaenzen gebraucht —, wandert aber als Etikett an die Zeile. Sonst
+   haette die Ansicht zwei Ebenen Ueberschriften uebereinander. */
+var GED_HERKUNFT = [
+  { key: 'erzaehlt', titel: 'Das hast du mir erzählt',
+    sub: 'Aus dem Kennenlernen und von dir ergänzt.' },
+  { key: 'gemerkt',  titel: 'Das habe ich mir gemerkt',
+    sub: 'Aus euren Gesprächen mitgenommen.' }
+];
+
+function gedHerkunft(f) {
+  return (f.quelle === 'selbst' || f.quelle === 'kennenlernen') ? 'erzaehlt' : 'gemerkt';
+}
+
+function gedFaktZeile(f) {
+  /* "Lange nicht erwaehnt" ist kein Fehler, sondern eine Einladung:
+     felie formuliert solche Fakten vorsichtiger, und die Nutzerin
+     sieht, warum. Das frueher danebenstehende "von dir ergaenzt" ist
+     entfallen — das sagt jetzt die Abschnittsueberschrift. */
+  var kat = GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein';
+  var marken = '<span class="ged-badge">' + GED_KAT_LABEL[kat] + '</span>'
+    + (f.alterTage > 180 ? '<span class="ged-badge warn"> · lange nicht erwähnt</span>' : '');
+  return '<div class="ged-zeile' + (gedIstNeu(f.id) ? ' ged-neu' : '') + ' snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
+    + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
+    + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
+    + ' data-snip-klasse="' + felieSnipAttr(f.klasse) + '"'
+    + ' data-snip-quelle="' + felieSnipAttr(f.quelle || 'gespraech') + '"'
+    + ' data-snip-label="Eintrag bearbeiten">'
+    + '<div class="snip-view">'
+    + '<div style="flex:1;min-width:0;">'
+    + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
+    + marken
+    + '</div>'
+    + '<div class="ged-akt">'
+    + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
+    + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'fakt\',\'' + gedJsAttr(f.id) + '\')">×</button>'
+    + '</div></div></div>';
+}
+
 function gedFaktenHtml() {
   var fakten = [];
   try { fakten = felieFakten(); } catch (e) {}
@@ -11225,36 +11347,20 @@ function gedFaktenHtml() {
   if (!fakten.length) {
     inner = '<div class="ged-leer">Noch nichts. Was du mir über dich erzählst, zeige ich dir hier — und du kannst jederzeit etwas ändern oder löschen.</div>';
   } else {
-    var nachKat = {};
-    fakten.forEach(function (f) {
-      var k = GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein';
-      (nachKat[k] = nachKat[k] || []).push(f);
-    });
-    inner = GED_KAT_ORDER.filter(function (k) { return nachKat[k]; }).map(function (k) {
-      var zeilen = nachKat[k].map(function (f) {
-        /* "Lange nicht erwaehnt" ist kein Fehler, sondern eine Einladung:
-           felie formuliert solche Fakten vorsichtiger, und die Nutzerin
-           sieht, warum. */
-        var alt = f.alterTage > 180 ? '<span class="ged-badge">lange nicht erwähnt</span>' : '';
-        var selbst = f.quelle === 'selbst' ? '<span class="ged-badge">von dir ergänzt</span>' : '';
-        return '<div class="ged-zeile' + (gedIstNeu(f.id) ? ' ged-neu' : '') + ' snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
-          + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
-          + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
-          + ' data-snip-klasse="' + felieSnipAttr(f.klasse) + '"'
-          + ' data-snip-quelle="' + felieSnipAttr(f.quelle || 'gespraech') + '"'
-          + ' data-snip-label="Eintrag bearbeiten">'
-          + '<div class="snip-view">'
-          + '<div style="flex:1;min-width:0;">'
-          + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
-          + (alt || selbst)
-          + '</div>'
-          + '<div class="ged-akt">'
-          + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
-          + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'fakt\',\'' + gedJsAttr(f.id) + '\')">×</button>'
-          + '</div></div></div>';
-      }).join('');
-      return '<div class="ged-gruppe">' + GED_KAT_LABEL[k] + '</div>'
-        + '<div style="display:flex;flex-direction:column;gap:6px;">' + zeilen + '</div>';
+    /* Innerhalb eines Abschnitts weiter nach der festen Kategorienfolge
+       sortieren: eine Liste, die bei jedem neuen Eintrag umspringt, waere
+       keine Ordnung. */
+    inner = GED_HERKUNFT.map(function (h) {
+      var teil = fakten.filter(function (f) { return gedHerkunft(f) === h.key; });
+      if (!teil.length) return '';
+      teil.sort(function (a, b) {
+        return GED_KAT_ORDER.indexOf(GED_KAT_LABEL[a.kategorie] ? a.kategorie : 'allgemein')
+             - GED_KAT_ORDER.indexOf(GED_KAT_LABEL[b.kategorie] ? b.kategorie : 'allgemein');
+      });
+      return '<div class="ged-gruppe">' + h.titel + '</div>'
+        + '<div class="ged-gruppe-sub">' + h.sub + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:6px;">'
+        + teil.map(gedFaktZeile).join('') + '</div>';
     }).join('');
   }
 
@@ -11392,49 +11498,8 @@ function gedFadenAnlegen() {
    Nutzerin fand dort also Text, den sie nie getippt hatte, und
    korrigierte in Wahrheit eine Modellzusammenfassung. Beides ist
    entfallen: felie legt Erkenntnisse als Fakten und Faeden ab. */
-function gedMitgabeHtml() {
-  var wert = window._gedMitgabe != null ? window._gedMitgabe : (klAnswers.notiz || '');
-  return '<div class="ged-karte ged-mitgabe" id="ged-card-mitgabe">'
-    + '<div class="ged-kopf"><div class="ged-kicker">Was ich felie mitgeben möchte</div></div>'
-    + '<div class="ged-sub">Deine Worte, nicht meine. Etwas, das in unseren Gesprächen bisher nicht vorkam und das ich über dich wissen sollte — eine Diagnose, eine Schwangerschaft, eine besondere Situation.</div>'
-    + '<textarea id="ged-mitgabe-input" rows="4" placeholder="Optional — was ich sonst noch über dich wissen sollte…" aria-label="Was ich felie mitgeben möchte">'
-    + gedEsc(wert) + '</textarea>'
-    + '<button id="ged-mitgabe-btn" class="ged-add" style="border-style:solid;background:#e1ea7d;border-color:#e1ea7d;color:#180430;font-weight:600;" onclick="gedMitgabeSpeichern()">'
-    + '<svg class="ico" style="width:14px;height:14px;flex-shrink:0"><use href="#i-box"/></svg>Speichern</button>'
-    + '</div>';
-}
 
-/* still = true: beim Verlassen der Ansicht, ohne Rueckmeldung.
-   Die Bestaetigung laeuft bewusst am Knopf und nicht als Modal — ein
-   Dialog, den man wegtippen muss, ist fuer "Text gesichert" zu viel. */
-function gedMitgabeSpeichern(still) {
-  var ta = document.getElementById('ged-mitgabe-input');
-  if (!ta) return;
-  var t = ta.value.trim();
-  if (t.length > 1200) t = t.slice(0, 1200);
-  window._gedMitgabe = t;
-  if (t === (klAnswers.notiz || '').trim() && (still || klAnswers.notizQuelle === 'selbst')) {
-    if (!still) gedMitgabeQuittung('Unverändert');
-    return;
-  }
-  klAnswers.notiz = t;
-  klAnswers.notizQuelle = 'selbst';
-  try { saveUserProfile(); } catch (e) {}
-  try { felieAutosave(); } catch (e) {}
-  if (!still) gedMitgabeQuittung('Gespeichert');
-}
 
-function gedMitgabeQuittung(text) {
-  var btn = document.getElementById('ged-mitgabe-btn');
-  if (!btn) return;
-  if (btn.dataset.orig == null) btn.dataset.orig = btn.innerHTML;
-  btn.innerHTML = '<span aria-hidden="true">✓</span>' + text;
-  clearTimeout(window._gedQuittungTimer);
-  window._gedQuittungTimer = setTimeout(function () {
-    var b = document.getElementById('ged-mitgabe-btn');
-    if (b && b.dataset.orig != null) { b.innerHTML = b.dataset.orig; delete b.dataset.orig; }
-  }, 1800);
-}
 
 var PROFILE_LABELS = {
   kinder: { 'keine':'Keine (noch nicht)', 'ja-klein':'Ja, unter 6', 'ja-gross':'Ja, älter' },
@@ -13422,7 +13487,7 @@ function felieChatBeispiele() {
    umgekehrte Fehler klingt, als haette sie alles vergessen. */
 function felieKenntNutzerin() {
   return getSavedChats().some(function(c) { return felieSichererVerlauf(c.messages).some(function(m) { return m.role === 'user'; }); })
-    || felieFakten().length > 0 || !!(klAnswers.notiz || '').trim();
+    || felieFakten().length > 0;
 }
 
 function feliePromptContext() {

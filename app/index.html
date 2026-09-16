@@ -1,128 +1,24 @@
 <!DOCTYPE html>
 <!--
 EXPO_REBUILD_CONTRACT_V6
-# felie – Expo-/React-Native-Übergabe und Supervisor-Prüfplan
+Build: 2026-09-16-datenvertrag-v6
 
-Referenz: index.html, Build 2026-09-16-datenvertrag-v6. Stand: 16.09.2026.
-Diese Datei ist eine Verhaltens- und Designreferenz, kein WebView-Gerüst für die neue App.
-Oura bleibt außerhalb des aktuellen Umbauschwerpunkts. Screenshot-/Dokumentimport ist in der Textanbindung deaktiviert.
-Promptinhalt, Qwen3.8, Temperatur 0,7, Top-p 0,8 und reasoning_effort=none unverändert übernehmen.
-Keine neuen Diagnose-, Therapie- oder Fruchtbarkeitsfunktionen beim Portieren ergänzen.
+Diese Datei ist die Verhaltens- und Designreferenz fuer den Expo-/React-Native-
+Umbau, kein WebView-Geruest fuer die neue App.
 
-## Arbeitsvertrag für den Coding-Agenten
+Uebergabeplan, Arbeitsvertrag und die Pruefpunkte Gate 0 bis 8 stehen
+ausschliesslich hier:
 
-- Vor Änderungen die aktuelle Referenz, ihren Build und die Regressionstests lesen; einen reproduzierbaren Stand/Commit festhalten.
-- Pro Meilenstein ein begrenztes, prüfbares Änderungspaket. UI, Datenmodell, Prompt und Backend nicht gleichzeitig neu erfinden.
-- Fachlogik und Auswahl des Modellkontexts von React-Komponenten und Plattformadaptern trennen.
-- Kein Zugriff auf produktive Gespräche oder echte Nutzerkonten für automatische Tests; synthetische Fixtures verwenden.
-- Speichern ist asynchron: UI erst nach erfolgreichem Commit bestätigen. Bei Fehlern bisherigen Zustand und Eingabe erhalten.
-- Nach jedem Meilenstein das unten definierte Prüfpaket an den Senior-Supervisor geben. Abhängige Folgeschritte erst nach bestandenem Gate fortsetzen.
-- Keine automatische Veröffentlichung und keine Änderung von Backend-Zugriffsregeln als Nebenwirkung des UI-Ports.
+  reports/2026-09-16-datenvertrag-v6/EXPO-SUPERVISOR.md
 
-## Gate 0 – Referenz und Verträge festschreiben
+Dort und nirgends sonst. Eine zweite Kopie an dieser Stelle war binnen einer
+halben Stunde veraltet und widersprach einer bereits getroffenen Entscheidung;
+ausserdem wird diese Datei oeffentlich ausgeliefert und ist kein Ort fuer
+interne Ablauf- und Schutzbeschreibungen.
 
-Liefern: Screeninventar, State-/Parametertypen, Featureumfang, Promptversion, synthetische Ausgangsdatensätze.
-Screens: Startseite, Kennenlernen, Chat, Profil mit Über-dich-Bubbles und Zyklus, Gedächtnis (Neu/Aktuell/Gespräche), Archiv, Persönlichkeit, Selbstreflexion, Körperansicht.
-Referenzfunktionen: felieKontextDaten, felieHomeKontext, felieRequest, klV2Sichern, felieDatenAendern.
-Supervisor prüft: alle aktuellen Eingaben haben Leser, sichtbaren Zweck, Herkunft, Lebensdauer und Löschregel; keine neue zweite Wahrheit.
-Abnahme: schriftlicher Feldvertrag und grüne Offline-Regressionen, einschließlich Korrektur/Löschung und Wiederöffnen alter Gespräche.
+Abnahmemassstab sind die Offline-Regressionen. Aus dem Projektordner:
 
-## Gate 1 – Expo-Grundgerüst und native Navigation
-
-TypeScript-Projekt mit zur Umsetzungszeit unterstütztem Expo SDK anlegen; Versionen fixieren. Expo Router als Ausgangspunkt prüfen.
-Farben, Schriftarten, Icons, Abstände und gemeinsame Bubble-/Sheet-Komponenten aus der Referenz übertragen.
-Keine HTML-Strings, DOM-Manipulation oder localStorage-Aufrufe in die React-Native-Oberfläche kopieren.
-Supervisor prüft: Startbarkeit auf Android/iOS, native Zurück-Navigation, Safe Areas, Tastatur, Schriftvergrößerung, Bildschirmleser-Bezeichnungen.
-Abnahme: navigierbare Screens mit synthetischen Zuständen, noch ohne produktive API.
-
-## Gate 2 – Datenmodell, Repository und Migration
-
-Profilbasis, Fakten, Episoden, Signale, Zyklus, Archiv und Einstellungen getrennt typisieren; Beziehungen über stabile IDs.
-SQLite mit Transaktionen ist ein geeigneter Ausgangspunkt für verbundene Daten. Einen einzigen Repository-Zugang verwenden.
-SecureStore nur für kleine gerätebezogene Zugangsdaten; IONOS-/Backend-Geheimnisse bleiben ausschließlich auf dem Server.
-Browser-Sicherung erst validieren, dann atomar importieren. Export/Import, Wiederholbarkeit und Abbruch prüfen.
-Historische Daten dürfen durch Migration nicht als neu bestätigt gelten. Eindeutige Altbelege zuordnen; bei Mehrdeutigkeit keine Beziehung erfinden.
-Supervisor prüft: Neustart, doppelter Import, defekte Sicherung, voller Speicher, Schreibfehler, abgestürzter Commit, mehrdeutiger Altbestand.
-Abnahme: unabhängige Daten bleiben erhalten; verknüpfte Änderungen/Löschungen werden vollständig oder gar nicht gespeichert.
-
-## Gate 3 – Kennenlernen und Profil
-
-Den aktuellen deterministischen Onboarding-Flow als Zustandsautomat übertragen: Entwurf, bestätigte Eingabe, Überspringen, Zurück, Bearbeiten, Abschluss.
-Jede Auswahl in die vorgesehenen Datensätze übernehmen, ausdrücklich auch „keine Kinder“ und „Kinderwunsch“.
-Name/Alter sind Profilbasis. Familie/Arbeit/Körperkontext/Schlafroutine sind Fakten. Anliegen/Gefühl/Ziel/grober Zyklus sind Episoden.
-Gefühl zum Anliegen nicht als aktuelle Tagesstimmung behandeln; grobe Zyklusangabe nicht in ein Periodenstartdatum umrechnen.
-Name und Alter stehen zuerst im Über-dich-Bereich und werden einzeln bearbeitet. Zyklus bleibt im Profil unter Über dich.
-Supervisor prüft: alle Optionen und Skip-Wege, App-Neustart in jeder Phase, keine doppelten oder wiederbelebten Erinnerungen.
-Abnahme: UI, persistierter Zustand und späterer Kontext stimmen für jede Eingabe überein.
-
-## Gate 4 – Gedächtnis und Archiv als zusammenhängender Ablauf
-
-„Neu“ ist eine Markierung bereits gespeicherter Erinnerungen, keine Genehmigungswarteschlange.
-Herkunft und spätere Bearbeitung getrennt speichern: Korrigieren verschiebt eine Gesprächserinnerung nicht ins Profil.
-Gedächtniskorrektur sperrt veraltete Archivnotizen und deren Quellnachrichten für automatische KI-Nutzung; Originalverlauf bleibt sichtbar.
-Eine korrigierte Archivnotiz aktualisiert identische Kurzableitungen. Anders formulierte ungeprüfte Ableitungen nicht blind umschreiben;
-veraltete Ableitungen entfernen und die vollständige korrigierte Notiz als Quelle behalten.
-Nutzerentscheidung: Ein ganzes Archivgespräch löschen entfernt auch zugehörige Erinnerungen. Unabhängige Profilangaben bleiben.
-Abgelaufene Episoden bleiben sichtbar, werden aber nicht als aktuelle Themen gesendet. Exaktes Ablaufdatum und ungültige Fristen testen.
-Supervisor prüft: Bearbeitung in jeder Ansicht, Löschung, Neustart, Wiederöffnen alter Chats, erneute Extraktion, Speicherausfälle und laufende Antworten.
-Abnahme: keine Wiederbelebung einer verworfenen Quelle über einen zweiten Datenweg; uneindeutige Altzuordnungen explizit sichtbar machen.
-
-## Gate 5 – Selbstreflexion, Körperdaten und Zyklus
-
-Quelle, Mess-/Eingabezeit, Bestätigung und Einheit mit jedem Signal speichern. Subjektives Befinden nicht aus Gerätescores ableiten.
-Stimmung, Nacht und Energie bilden die aktuelle Selbstreflexion. Weitere unterstützte Signale nur mit vorhandener Erfassung/Importfunktion anbieten.
-Kalenderwerte rein berechnen; keinen neuen Periodenstart erfinden. Unbekannte Kalenderphase darf eine bekannte Lebensphase nicht löschen.
-Zeitabhängige Regeln mit kontrollierter Uhr testen: Mitternacht, Zeitzonen, Sommerzeit, abgelaufene Werte und fehlende Datumsangaben.
-Supervisor prüft: Eintragung/Korrektur wirkt gleichermaßen auf Anzeige, Speicherung und Kontextauswahl. Oura bleibt aus diesem Gate ausgeschlossen.
-Abnahme: keine kosmetischen Messwerte ohne Datenquelle; historische Werte bleiben eindeutig historisch.
-
-## Gate 6 – Chat und Modell-Gateway
-
-Promptmontage und Datenauswahl als reine, separat testbare Funktionen portieren. Statische Regeln, Modus, Stil und zitierte Daten trennen.
-Normalchat, Begrüßung und Zusammenfassung erhalten jeweils ihren definierten Umfang. Keine pauschale Übergabe der gesamten Datenbank.
-Für normale Chats gelten aktuell 1000 Ausgabe-Token; Worker-Obergrenze 4096. Keine Anthropic-Caching-Felder mehr senden.
-Aktuelle Browserreferenz begrenzt den Request kontrolliert auf 240000 Zeichen und meldet Überschreitung, statt Text heimlich abzuschneiden.
-Für die native App ein explizites Eingabebudget mit nachvollziehbarer Historien-/Kontextauswahl festlegen; aktuelle Nutzerkorrekturen erhalten.
-Laufende Anfrage abbrechen/entwerten bei Kontextänderung, Chatwechsel oder Löschung. Späte Antworten dürfen keinen alten Zustand überschreiben.
-Wichtig: Der bestehende Worker prüft Browser-Origins. Vor nativer Live-Anbindung einen passenden authentifizierten Zugriff vereinbaren;
-keinen Browser-Origin als vermeintliche Authentifizierung fälschen und die Sperre nicht still entfernen.
-Supervisor prüft: normalisierte Request-Snapshots, Reasoning-Konfiguration, Fehler/Timeout/Retry, parallele Eingaben, Offline-Modus und Antwortgrenzen.
-Abnahme: Mock-Anfragen identisch zum Vertrag; Live-Test erst mit geklärtem Gateway und synthetischen Gesprächen.
-
-## Gate 7 – Abschluss, Feedback und Sicherung
-
-Archivierung und Gedächtnis-Extraktion getrennt nachvollziehbar machen; Herkunft mit Gesprächs-ID erhalten.
-Originalbelegprüfung ist Herkunftsprüfung, keine Garantie für richtige Interpretation. Keine Assistentenaussagen zu Nutzerfakten befördern.
-Bei Extraktionsfehler bleibt der Verlauf erhalten und die fehlende Zusammenfassung sichtbar. Kein erfolgreicher Speicherhinweis bei Fehler.
-Feedback läuft getrennt vom Modellkontext. Übertragung des Verlaufs nur nach entsprechender Auswahl; Metadaten transparent behandeln.
-Supervisor prüft: Abschluss ohne doppelte Archivierung, Teilfehler, Retry, Datenlöschung, Sicherungs-Roundtrip und unterbrochene Schreibvorgänge.
-Abnahme: keine stillen Verluste, keine unbeabsichtigte Übermittlung und keine Erinnerung ohne nachvollziehbare Herkunft.
-
-## Gate 8 – Geräteabnahme und Übergabe
-
-Auf echten Android-/iOS-Geräten prüfen: Erststart, wiederkehrende Nutzerin, langer Chat, großer Altbestand, schwaches Netz, Tastatur, System-Zurück,
-kleine Displays, große Schrift, Hintergrund/Vordergrund, Berechtigungsablehnung und Prozessneustart.
-Vergleichsscreenshots und kurze Videos für die wichtigsten Abläufe mit der HTML-Referenz erstellen.
-Supervisor prüft Code, Datenbankzustände, Request-Snapshots und echte Testausgaben; nicht nur eine Zusammenfassung des Coding-Agenten.
-Abnahme: offene Abweichungen mit Entscheidung dokumentiert; reproduzierbarer Build. Veröffentlichung ist ein gesonderter Schritt.
-
-## Prüfpaket nach jedem Gate
-
-1. Gate-Nummer und konkretes Ergebnis, Branch/Commit und geänderte Dateien.
-2. Reproduzierbare Testbefehle mit tatsächlichen Ergebnissen und verwendeten Fixtures.
-3. Relevante Vorher/Nachher-Daten und normalisierte API-Payloads ohne echte Nutzerdaten/Geheimnisse.
-4. Screenshots/Video der betroffenen Abläufe und dokumentierte Fehlerfälle.
-5. Offene Abweichungen, Risiken und Entscheidungen; keine pauschale Meldung „alles getestet“.
-6. Supervisor-Entscheidung: bestanden / Nacharbeit / externe Blockade. Nächster Schritt erst nach passendem Ergebnis.
-
-Vorbereiteter Supervisor-Status: Referenz und Gates liegen bereit. Es läuft noch kein Expo-Umbau und keine automatische Überwachung.
-Eine Prüfung startet, sobald der jeweilige Implementierungsstand und das Prüfpaket in dieser Aufgabe vorliegen.
-
-## Offizielle Ausgangsdokumentation (vor konkreter Implementierung erneut auf Versionsstand prüfen)
-
-- Expo Router: https://docs.expo.dev/router/introduction/
-- Expo SQLite: https://docs.expo.dev/versions/latest/sdk/sqlite/
-- Expo SecureStore: https://docs.expo.dev/versions/latest/sdk/securestore/
+  npm install && npm test
 
 END_EXPO_REBUILD_CONTRACT_V6
 -->
@@ -12034,22 +11930,67 @@ var FELIE_ANFRAGE = { maxAusgabe: 4096, maxZeichen: 240000, timeout: 65000 };
    Modellvergleich gedacht, ist als Nutzerinnen-Ansicht aber fehl am
    Platz und deshalb entfernt — die Pruefung selbst (Wurf bei Abweichung)
    bleibt unveraendert bestehen. */
-function felieModellPruefen(data) {
+function felieModellPruefen(data, vomWorker) {
   var meta = data && data.felie_test;
   if (!data || data.model !== FELIE_MODELL.name || !meta
       || meta.provider !== FELIE_MODELL.anbieter || meta.variant !== FELIE_MODELL.variante
       || (meta.reasoning_tokens != null && meta.reasoning_tokens > 0))
     throw new Error('Modell oder Reasoning entspricht nicht dieser Testfassung');
+  /* Hat der Worker den Prompt gebaut, muss er auch sagen welche Fassung. Fehlt
+     die Angabe, hat er den Vertrag nicht verarbeitet und irgendetwas anderes
+     geantwortet — das ist ein Fehler und kein Schoenheitsfehler, weil sonst
+     unbemerkt ohne die Sicherheits- und Evidenzregeln geantwortet wuerde. */
+  if (vomWorker && !data.felie_prompt_version)
+    throw new Error('Antwort ohne Promptfassung: der Worker hat den Systemprompt nicht gebaut');
+}
+
+/* Modi, deren Systemprompt der Worker baut. Fuer sie sendet felieRequest den
+   Vertrag (mode, personality, flags) statt eines fertigen system-Arrays.
+
+   Warum eine Liste und kein Schalter fuer alles: die Weiche im Worker ist
+   alles-oder-nichts. Steht mode im Rumpf, baut er den gesamten dynamischen
+   Block einschliesslich buildKlPrompt. Eine Trennung nach Feldern ist damit
+   nicht moeglich, wohl aber nach Modus — die Weiche entscheidet pro Anfrage.
+   So laesst sich die Umstellung in Paketen ausrollen, statt alle elf Modi
+   gleichzeitig zu bewegen.
+
+   kennenlernen fehlt bewusst: es ist der einzige Modus mit kl-Zustand und
+   folgt in Schritt 3. Wird er ergaenzt, muss body.kl mitgesendet werden. */
+var FELIE_WORKER_PROMPT = ['chat', 'befund', 'willkommen', 'einordnung',
+  'aktualisierung', 'stimmung', 'wiedereinstieg', 'profil', 'zusammenfassung',
+  'screenshot', 'kennenlernen'];
+
+/* Nur Schluessel aus KL_ZIELE weitergeben.
+
+   klAntwortPruefen laesst aus Modellantworten ohnehin nichts anderes durch.
+   Der Wiederherstellungspfad prueft aber nur, ob answered und skipped Listen
+   SIND, nicht was darin steht. Ein liegengebliebener Stand aus einer Fassung
+   mit anderem Schluesselsatz wuerde vom Worker mit 400 abgewiesen — und weil
+   der Stand im Speicher bleibt, waere das Kennenlernen dauerhaft blockiert,
+   nicht nur einmal gestoert.
+
+   Verworfen: den Stand beim Wiederherstellen zu bereinigen. Das waere die
+   gruendlichere Stelle, fasst aber einen Pfad an, der mit dem Datenvertrag
+   abgenommen wurde. Hier zu filtern degradiert stattdessen sanft: der
+   betroffene Punkt wird hoechstens noch einmal gefragt. Die Pruefung im
+   Worker bleibt als Sicherheitsgrenze unveraendert bestehen. */
+function klSchluesselFiltern(liste) {
+  var erlaubt = KL_ZIELE.map(function(z) { return z.key; });
+  return (Array.isArray(liste) ? liste : []).filter(function(k) { return erlaubt.indexOf(k) >= 0; });
 }
 
 function felieRequest(mode, messages, opts) {
   opts = opts || {};
-  var dynamic = felieModusRegeln(mode);
-  if (['chat', 'befund', 'willkommen', 'einordnung', 'aktualisierung', 'stimmung', 'wiedereinstieg'].indexOf(mode) >= 0)
-    dynamic += '\n' + buildPersonalityPrompt(mode);
-  if (mode === 'chat') dynamic += '\n' + feliePromptContext();
-  if (mode === 'kennenlernen') dynamic += '\n' + buildKlPrompt();
-  if (mode === 'chat' || mode === 'befund') dynamic += '\n\n' + felieChatAntwortRegeln();
+  var vomWorker = FELIE_WORKER_PROMPT.indexOf(mode) >= 0;
+  var dynamic = null;
+  if (!vomWorker) {
+    dynamic = felieModusRegeln(mode);
+    if (['chat', 'befund', 'willkommen', 'einordnung', 'aktualisierung', 'stimmung', 'wiedereinstieg'].indexOf(mode) >= 0)
+      dynamic += '\n' + buildPersonalityPrompt(mode);
+    if (mode === 'chat') dynamic += '\n' + feliePromptContext();
+    if (mode === 'kennenlernen') dynamic += '\n' + buildKlPrompt();
+    if (mode === 'chat' || mode === 'befund') dynamic += '\n\n' + felieChatAntwortRegeln();
+  }
   var msgs = (messages || []).map(function(m) { return { role: m.role, content: m.content }; });
   if (opts.context !== false) {
     var ctx = opts.context || (mode === 'kennenlernen' ? felieProfilDaten()
@@ -12063,8 +12004,32 @@ function felieRequest(mode, messages, opts) {
   }
   var body = { model: FELIE_MODELL.name, felie_variant: FELIE_MODELL.variante,
     max_tokens: Math.min(FELIE_ANFRAGE.maxAusgabe, opts.maxTokens || 1000), temperature: 0.7, top_p: 0.8,
-    system: [{ type: 'text', text: mode === 'willkommen' ? feliePromptRegeln() : feliePromptStable(mode) },
-      { type: 'text', text: dynamic }], messages: msgs };
+    messages: msgs };
+  if (vomWorker) {
+    /* Nur Zahlen und Booleans. Kein Feld, dessen Inhalt als Text in den
+       Systemprompt fliesst — sonst laege die Sicherheitsgrenze wieder hier.
+       Personenbezogenes reist unveraendert im felie_daten-Block in msgs[0]. */
+    var p = window._personality || loadPersonality();
+    body.mode = mode;
+    body.personality = { waerme: p.waerme, direktheit: p.direktheit,
+      ausfuehrlichkeit: p.ausfuehrlichkeit, koerperbezug: p.koerperbezug,
+      ton: p.ton, humor: !!p.humor };
+    body.flags = { bekannt: felieKenntNutzerin(), ritualFrisch: !!window._felieRitualFrisch };
+    if (mode === 'kennenlernen') {
+      var s = klZustand();
+      /* Felder einzeln uebernehmen, niemals klZustand() als Ganzes: der
+         Zustand enthaelt unter anderem den unabgeschickten Eingabetext und die
+         offene Frage. Beides ist freier Text und haette im Systemprompt nichts
+         zu suchen — genau die Grenze, um die es bei der Verlagerung geht. */
+      body.kl = { phase: klPhase, extraAsked: !!s.extraAsked,
+        requests: Math.max(0, Number(s.requests) || 0),
+        answered: klSchluesselFiltern(s.answered),
+        skipped: klSchluesselFiltern(s.skipped) };
+    }
+  } else {
+    body.system = [{ type: 'text', text: mode === 'willkommen' ? feliePromptRegeln() : feliePromptStable(mode) },
+      { type: 'text', text: dynamic }];
+  }
   var serialized = JSON.stringify(body);
   if (serialized.length > FELIE_ANFRAGE.maxZeichen) {
     var limit = new Error('Kontextgrenze');
@@ -12078,7 +12043,7 @@ function felieRequest(mode, messages, opts) {
     if (!r.ok) throw new Error('felie HTTP ' + r.status);
     return r.json();
   }).then(function(data) {
-    felieModellPruefen(data);
+    felieModellPruefen(data, vomWorker);
     if (data.error || !felieReplyText(data).trim()) throw new Error('Keine vollständige felie-Antwort');
     if (opts.json && data.stop_reason === 'max_tokens') throw new Error('JSON wurde abgeschnitten');
     return data;

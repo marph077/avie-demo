@@ -841,6 +841,20 @@ html.native-app .phone {
 .ged-tab-neu { width: 6px; height: 6px; border-radius: 50%; background: var(--apricot);
   align-self: center; flex-shrink: 0; }
 
+/* Ein Thema, dessen Frist um ist. Nicht geloescht, nur zurueckgenommen:
+   felie greift es nicht mehr von sich aus auf, die Nutzerin entscheidet.
+   Die Abblendung gilt nur dem Text — der Knopf bleibt voll lesbar, sonst
+   waere die Frage schwerer zu sehen als die Antwort. */
+.ged-zeile.ged-ruht .snip-text,
+.ged-zeile.ged-ruht .ged-badge { opacity: 0.5; }
+.ged-zeile.ged-ruht { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+.ged-nochaktuell { font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--lila);
+  background: rgba(143, 91, 189,0.1); border: 1px solid rgba(143, 91, 189,0.28);
+  border-radius: 999px; padding: 6px 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background 0.15s; }
+.ged-nochaktuell:hover { background: rgba(143, 91, 189,0.2); }
+.ged-nochaktuell:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
+
 .ged-gruppe { font-size: 10px; font-weight: 600; color: var(--lila);
   text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
 .ged-gruppe:first-of-type { margin-top: 0; }
@@ -1948,12 +1962,10 @@ body.is-native .status-bar { display: none !important; }
 .kl-status-wrap button { background:none; color:#e1ea7d; border:1px solid #8F5BBD; border-radius:12px; padding:8px 12px; margin:4px 0; font:inherit; }
 .kl-chip.selected:disabled { opacity:1; background:#180430; color:#e1ea7d; border-color:#180430; }
 .kl-home-status { margin-top:10px; font-size:12px; line-height:1.45; color:#6B5A88; }
-.kl-home-status button,.kl-profile-facts button { color:#180430; background:none; border:0; padding:6px 0; font:inherit; text-decoration:underline; cursor:pointer; }
+.kl-home-status button { color:#180430; background:none; border:0; padding:6px 0; font:inherit; text-decoration:underline; cursor:pointer; }
 #kl-first-step { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
 #kl-first-step[hidden],.kl-home-status[hidden] { display:none; }
 .kl-later { font:inherit; font-size:12px; color:#4A3A6A; background:none; border:0; padding:8px; cursor:pointer; }
-.kl-profile-facts { padding:13px 16px; background:white; border:1px solid rgba(143,91,189,.15); border-radius:16px; font-size:13px; color:#180430; }
-.kl-profile-facts p { margin:8px 0; line-height:1.45; white-space:normal; }
 :is(.consent-check,.kl-inline-link,.kl-chip,.ru-next,.ru-back,.kl-later):focus-visible { outline:3px solid #8F5BBD; outline-offset:3px; }
 
 
@@ -2595,6 +2607,9 @@ var BLOOM = '<svg width="22" height="22" aria-label="felie"><use href="#felie-ma
 
 var FELIE_FRISCHE_MS   = 24 * 60 * 60 * 1000;   /* 24 h, generell */
 var FELIE_AUFBEWAHRUNG = 365 * 24 * 60 * 60 * 1000;
+/* Tage, um die ein offenes Thema verlaengert wird, wenn die Nutzerin
+   "Noch aktuell?" bejaht. */
+var FELIE_FADEN_VERLAENGERUNG = 14;
 var FELIE_STORE_KEY    = 'felie_store_v1';
 
 /* ── Alle localStorage-Schluessel an EINER Stelle ─────────────────────
@@ -3251,6 +3266,24 @@ function felieEpisodeLoeschen(id) {
   return s.episoden.length < n;
 }
 
+/* Verlaengert einen Faden, wenn die Nutzerin "Noch aktuell?" mit Ja
+   beantwortet. 14 Tage: lang genug, dass die Frage nicht staendig
+   wiederkommt, kurz genug, dass ein erledigtes Thema nicht monatelang
+   mitlaeuft. zuletztAm wandert mit, sonst wuerde die Aufbewahrungsfrist
+   weiter auf dem alten Datum rechnen. */
+function felieEpisodeVerlaengern(id, tage) {
+  var liste = felieStore().episoden;
+  for (var i = 0; i < liste.length; i++) {
+    if (liste[i].id !== id) continue;
+    liste[i].faelligBis = Date.now() + (tage || FELIE_FADEN_VERLAENGERUNG) * 86400000;
+    liste[i].zuletztAm = Date.now();
+    liste[i].status = 'offen';
+    felieRevision(true);
+    return true;
+  }
+  return false;
+}
+
 function felieEpisoden(opts) {
   opts = opts || {};
   var jetzt = Date.now();
@@ -3317,12 +3350,17 @@ function felieBereinigen() {
     return (jetzt - (f.bestaetigtAm || f.erfasstAm)) <= FELIE_AUFBEWAHRUNG;
   });
 
-  /* Episoden: abgelaufene offene Faeden werden geschlossen statt
-     geloescht, damit felie sie nicht wieder aufgreift. */
-  s.episoden.forEach(function(e) {
-    if (e.status === 'offen' && e.faelligBis < jetzt) e.status = 'abgeschlossen';
+  /* Episoden: ein abgelaufener Faden wird NICHT mehr automatisch
+     geschlossen. Er bleibt offen stehen, wird im Gedaechtnis ausgegraut
+     und fragt dort "Noch aktuell?" — ueber das Ende eines persoenlichen
+     Themas entscheidet die Nutzerin, nicht eine Frist. Aus dem Kontext
+     fuer das Modell faellt er trotzdem heraus: dafuer sorgt der Filter
+     nurAktuell in felieEpisoden(), damit felie nichts von sich aus
+     aufgreift, dessen Zeit um ist.
+       Nur ausdruecklich geschlossene Faeden verfallen nach der Frist. */
+  s.episoden = s.episoden.filter(function(e) {
+    return e.status === 'offen' || (jetzt - e.zuletztAm) <= FELIE_AUFBEWAHRUNG;
   });
-  s.episoden = s.episoden.filter(function(e) { return (jetzt - e.zuletztAm) <= FELIE_AUFBEWAHRUNG; });
 
   felieRevision(true);
 }
@@ -3604,13 +3642,19 @@ const PROFIL_GUIDE_STEPS = [
     label: 'Profil'
   },
   {
-    text: `Hier stehen Name und Alter sowie deine übernommenen persönlichen Angaben. Name und Alter änderst du direkt hier; weitere Angaben bearbeitest du im <strong>Gedächtnis</strong>. Beide Ansichten verwenden dieselben Einträge.`,
+    text: `Hier stehen Name und Alter. Beides änderst du direkt und speicherst es unten.`,
     target: 'profile-group',
     scrollSel: '#profile-fields-group',
     label: 'Deine Angaben'
   },
   {
-    text: `Was ich aus euren Gesprächen mitgenommen habe, steht nicht hier, sondern in meinem <strong>Gedächtnis</strong> — samt dem, was du mir ausdrücklich mitgeben möchtest. Von hier kommst du direkt hin.`,
+    text: `Unter <strong>Über dich</strong> stehen deine eigenen Angaben — aus unserem Kennenlernen und was du selbst ergänzt. Ändern, löschen und ergänzen geht direkt hier.`,
+    target: 'profile-fakten',
+    scrollSel: '#profile-card-fakten',
+    label: 'Über dich'
+  },
+  {
+    text: `Was ich aus euren Gesprächen mitgenommen habe, steht nicht hier, sondern in meinem <strong>Gedächtnis</strong>. Von hier kommst du direkt hin.`,
     target: 'profile-gedaechtnis',
     scrollSel: '#profile-card-gedaechtnis',
     label: 'Gedächtnis'
@@ -3623,8 +3667,9 @@ const PROFIL_GUIDE_STEPS = [
   }
 ];
 
-/* Rundgang fuer das Gedaechtnis. Die Reihenfolge folgt der Ansicht und
-   damit der Interaktionshaeufigkeit — nicht der Wichtigkeit. */
+/* Rundgang fuer das Gedaechtnis. Die Reihenfolge folgt der Registerleiste
+   von links nach rechts — ein Rundgang, der springt, laesst die Nutzerin
+   hinterher raten, wo sie gerade war. */
 const GEDAECHTNIS_GUIDE_STEPS = [
   {
     text: `Das ist mein <strong>Gedächtnis</strong>. Hier liegt alles, was ich von dir mitbekommen habe — und du siehst es vollständig. Jeder Eintrag lässt sich ändern, ergänzen oder löschen. Nichts davon musst du pflegen: was ich für eine Antwort brauche, frage ich dich einfach.`,
@@ -3632,29 +3677,29 @@ const GEDAECHTNIS_GUIDE_STEPS = [
     label: 'Gedächtnis'
   },
   {
+    text: `<strong>Neu</strong> — was aus deinem letzten Gespräch dazugekommen ist, bis du es einmal angesehen hast. Deine eigenen Angaben stehen nicht hier, sondern in deinem Profil.`,
+    target: 'ged-fakten',
+    scrollSel: '#ged-card-neu',
+    gedTab: 'neu',
+    label: 'Neu'
+  },
+  {
     /* gedTab: seit der Aufteilung in Register liegt immer nur EIN Block im
        DOM. Ohne das Umschalten fand renderGuideStep() sein Ziel nicht,
        fiel auf die statische Koordinatentabelle zurueck und leuchtete ein
        Rechteck ueber dem gerade sichtbaren, falschen Block aus. */
-    text: `<strong>Aktuell</strong> — Themen mit einem Ablaufdatum, z.B. „Abgabe nächste Woche". Sie verfallen von allein, du musst nichts abhaken. Ist etwas früher vorbei, tippe auf das ×.`,
+    text: `<strong>Aktuell</strong> — Themen, die ich eine Weile mitdenke, z.B. „Abgabe nächste Woche". Abhaken musst du nichts: wenn die Zeit um ist, frage ich hier einmal nach, ob es noch aktuell ist.`,
     target: 'ged-faeden',
     scrollSel: '#ged-card-faeden',
     gedTab: 'aktuell',
     label: 'Aktuell'
   },
   {
-    text: `<strong>Gespräche</strong> — was ich mir am Ende eines Gesprächs notiert habe, nach Themen filterbar. Löschen entfernt nur die Notiz; das Gespräch bleibt im Archiv.`,
+    text: `<strong>Gespräche</strong> — meine Notizen vom Ende eines Gesprächs, nach Themen filterbar, und darunter, was daraus dauerhaft über dich gilt. Löschen entfernt nur die Notiz; das Gespräch bleibt im Archiv.`,
     target: 'ged-lernt',
     scrollSel: '#ged-card-lernt',
     gedTab: 'gespraeche',
     label: 'Gespräche'
-  },
-  {
-    text: `<strong>Über dich</strong> — was unabhängig vom Thema gilt und deshalb in jede meiner Antworten eingeht. Oben steht, was du mir selbst erzählt hast, darunter, was ich mir aus Gesprächen gemerkt habe.`,
-    target: 'ged-fakten',
-    scrollSel: '#ged-card-fakten',
-    gedTab: 'ueberdich',
-    label: 'Über dich'
   }
 ];
 
@@ -4380,16 +4425,6 @@ function klUebergabeInvalidieren() {
   if (window._klState) { window._klState.contextChanged = true; klEntwurfSpeichern(); }
 }
 
-function klProfilAngabenHtml() {
-  var groups = [{ label: 'Familie & Kinder', keys: ['familie'] }, { label: 'Arbeit & Alltag', keys: ['arbeit', 'wohnen'] },
-    { label: 'Weitere persönliche Angaben', keys: ['beziehung', 'gesundheit', 'allgemein'] }];
-  return groups.map(function(g) {
-    var facts = felieFakten().filter(function(f) { return g.keys.indexOf(f.kategorie) >= 0; });
-    return '<div class="kl-profile-facts"><strong>' + g.label + '</strong>'
-      + (facts.length ? facts.map(function(f) { return '<p>' + htmlEsc(f.text) + '</p>'; }).join('') : '<p>Noch keine Angaben übernommen.</p>')
-      + '<button type="button" onclick="gedAusProfil()">Im Gedächtnis bearbeiten</button></div>';
-  }).join('');
-}
 
 function klProfilAltbestand() {
   // Migrate explicit old selections once; conversation-derived free text stays free text.
@@ -6676,11 +6711,12 @@ function getLiveSpot(target) {
       'verlauf-list':   '#verlauf-list',
       'verlauf-card':   '#verlauf-list > div:first-child',
       'profile-group':   '#profile-fields-group',
+      'profile-fakten':  '#profile-card-fakten',
       'profile-gedaechtnis': '#profile-card-gedaechtnis',
       'profile-backup':  '#profile-card-backup',
       'ged-faeden':      '#ged-card-faeden',
       'ged-lernt':       '#ged-card-lernt',
-      'ged-fakten':      '#ged-card-fakten',
+      'ged-fakten':      '#ged-card-neu',
       'dash-wearable':   '#wearable-banner',
       'dash-scores':     '#score-cards',
       'dash-zyklus':     ['#zyklus-locked', '#zyklus-real'],
@@ -6781,11 +6817,12 @@ function positionGuideSpot() {
     'nav-gedaechtnis': { t: 742, l: 278, w: 74,  h: 44  },
     'verlauf-card':    { t: 96,  l: 12,  w: 366, h: 200 },
     'profile-group':   { t: 96,  l: 12,  w: 366, h: 560 },
+    'profile-fakten':  { t: 96, l: 12, w: 366, h: 240 },
     'profile-gedaechtnis': { t: 96, l: 12, w: 366, h: 190 },
     'profile-backup':  { t: 96,  l: 12,  w: 366, h: 180 },
     'ged-faeden':      { t: 96,  l: 12,  w: 366, h: 220 },
     'ged-lernt':       { t: 96,  l: 12,  w: 366, h: 260 },
-    'ged-fakten':      { t: 96,  l: 12,  w: 366, h: 240 },
+    'ged-fakten':      { t: 96,  l: 12,  w: 366, h: 240 },   /* Register "Neu" */
     'dash-wearable':   { t: 110, l: 16,  w: 358, h: 130 },
     'dash-scores':     { t: 110, l: 16,  w: 358, h: 96  },
     'dash-zyklus':     { t: 110, l: 16,  w: 358, h: 120 },
@@ -8049,7 +8086,7 @@ function felieZyklusPhaseMarkieren(bd, val) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-14-zykluslaenge-regler';
+var FELIE_BUILD = '2026-09-14-register-neu-links';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -10979,9 +11016,8 @@ function showGedaechtnis() {
      aller Varianten. Beim naechsten Oeffnen ist sie weg. */
   var neu = felieNeueSnippets();
   window._gedNeuIds = neu.gesehen ? [] : neu.ids.slice();
-  felieNeueSnippetsGesehen();
-  /* Erst nach _gedNeuIds bestimmen — das Startregister richtet sich
-     danach, wo das Neue liegt. */
+  /* Erst nach _gedNeuIds bestimmen — liegt etwas Neues vor, ist das
+     Register "Neu" der Einstieg. */
   window._gedTab = gedStartTab();
 
   var div = document.createElement('div');
@@ -11054,25 +11090,75 @@ function gedNeuHinweis(anzahl) {
    zeitlich begrenzte Themen am ehesten veralten; 'ueberdich' hinten, weil
    sich dort am seltensten etwas aendert. */
 var GED_TABS = [
-  { key: 'aktuell',   label: 'Aktuell' },
-  { key: 'gespraeche', label: 'Gespräche' },
-  { key: 'ueberdich', label: 'Über dich' }
+  /* "Neu" ganz links: dorthin fuehrt der Puls auf dem Startbildschirm,
+     damit ist der Einstieg auch optisch der erste Schritt. Danach das
+     zeitlich Begrenzte, zuletzt der Dauerbestand. */
+  { key: 'neu',        label: 'Neu' },
+  { key: 'aktuell',    label: 'Aktuell' },
+  { key: 'gespraeche', label: 'Gespräche' }
 ];
 
 function gedTabZahlen() {
-  var z = { aktuell: 0, gespraeche: 0, ueberdich: 0, neuAktuell: 0, neuUeberdich: 0 };
+  var z = { aktuell: 0, gespraeche: 0, neu: 0 };
+  try { z.aktuell = felieEpisoden({ status: 'offen' }).length; } catch (e) {}
   try {
-    var offen = felieEpisoden({ nurAktuell: true });
-    z.aktuell = offen.length;
-    z.neuAktuell = offen.filter(function (e) { return gedIstNeu(e.id); }).length;
+    /* Die Gespraechs-Zahl zaehlt Notizen UND die daraus gewonnenen
+       Angaben — beides steht jetzt in diesem Register. */
+    z.gespraeche = gedLerntDaten().total
+      + felieFakten().filter(function (f) { return !gedIstSelbstauskunft(f); }).length;
   } catch (e) {}
-  try { z.gespraeche = gedLerntDaten().total; } catch (e) {}
-  try {
-    var fakten = felieFakten();
-    z.ueberdich = fakten.length;
-    z.neuUeberdich = fakten.filter(function (f) { return gedIstNeu(f.id); }).length;
-  } catch (e) {}
+  z.neu = gedNeueEintraege().length;
   return z;
+}
+
+/* Alles aus dem zuletzt gespeicherten Gespraech, das sie noch nicht
+   angesehen hat — Angaben und offene Themen zusammen. Das ist eine
+   Ansicht auf die beiden anderen Register, kein eigener Speicher: die
+   Eintraege stehen dort weiterhin. */
+function gedNeueEintraege() {
+  var liste = window._gedNeuIds;
+  if (!liste || !liste.length) return [];
+  var raus = [];
+  try {
+    felieFakten().forEach(function (f) { if (liste.indexOf(f.id) >= 0) raus.push({ art: 'fakt', e: f }); });
+  } catch (e) {}
+  try {
+    felieEpisoden({ status: 'offen' }).forEach(function (ep) {
+      if (liste.indexOf(ep.id) >= 0) raus.push({ art: 'faden', e: ep });
+    });
+  } catch (e) {}
+  return raus;
+}
+
+function gedNeuHtml() {
+  var neu = gedNeueEintraege();
+  var inner = neu.length
+    ? '<div style="display:flex;flex-direction:column;gap:6px;">'
+      + neu.map(function (n) { return n.art === 'fakt' ? gedFaktZeile(n.e) : gedNeuFadenZeile(n.e); }).join('')
+      + '</div>'
+    : '<div class="ged-leer">Nichts Neues. Nach einem Gespräch findest du hier, was ich mir daraus gemerkt habe — bis du es einmal angesehen hast.</div>';
+  return '<div class="ged-karte" id="ged-card-neu">'
+    + '<div class="ged-kopf"><div class="ged-kicker">Neu</div>'
+    + (neu.length ? '<span class="ged-zahl">' + neu.length + '</span>' : '') + '</div>'
+    + '<div class="ged-sub">Aus deinem letzten Gespräch. Die Einträge stehen auch unter „Aktuell" und „Gespräche" — hier siehst du nur, was dazugekommen ist.</div>'
+    + inner
+    + '</div>';
+}
+
+/* Ein offenes Thema in der Neu-Ansicht: hier ist es per Definition frisch,
+   also nie ausgegraut und ohne "Noch aktuell?". */
+function gedNeuFadenZeile(e) {
+  return '<div class="ged-zeile ged-neu snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
+    + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten">'
+    + '<div class="snip-view">'
+    + '<div style="flex:1;min-width:0;">'
+    + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
+    + '<span class="ged-badge">vorübergehend</span>'
+    + '</div>'
+    + '<div class="ged-akt">'
+    + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
+    + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'faden\',\'' + gedJsAttr(e.id) + '\')">×</button>'
+    + '</div></div></div>';
 }
 
 /* Welches Register wird beim Oeffnen gezeigt? Kam die Nutzerin ueber den
@@ -11080,10 +11166,7 @@ function gedTabZahlen() {
    erst danach suchen. Sonst 'gespraeche' — dort kommt im Alltag am
    haeufigsten etwas dazu. */
 function gedStartTab() {
-  var z = gedTabZahlen();
-  if (z.neuAktuell) return 'aktuell';
-  if (z.neuUeberdich) return 'ueberdich';
-  return 'gespraeche';
+  return gedNeueEintraege().length ? 'neu' : 'gespraeche';
 }
 
 function gedTab(key) {
@@ -11099,7 +11182,8 @@ function gedTab(key) {
    war beim Spiegel schon die Quelle stiller Inkonsistenzen. */
 /* Einmalige Uebernahme des alten Freitextfelds. Der Text ist ihre
    Formulierung und bleibt wortgleich stehen; er wird nur zu einem
-   Eintrag, den sie einzeln aendern und loeschen kann. Das Leeren von
+   Eintrag unter "Über dich" im Profil, den sie einzeln aendern und
+   loeschen kann. Das Leeren von
    klAnswers.notiz ist zugleich die Markierung, dass die Uebernahme
    gelaufen ist — ein zusaetzlicher Merker koennte veralten. */
 function gedMitgabeUebernehmen() {
@@ -11114,6 +11198,9 @@ function gedMitgabeUebernehmen() {
 }
 
 function gedRender() {
+  /* Zuerst das Profil: Fakten koennen aus beiden Ansichten heraus
+     geaendert werden, und die jeweils andere darf nicht veralten. */
+  try { profilFaktenRender(); } catch (e) {}
   var box = document.getElementById('ged-scroll');
   if (!box) return;
   var tab = window._gedTab || 'gespraeche';
@@ -11126,58 +11213,112 @@ function gedRender() {
     btn.setAttribute('aria-selected', an ? 'true' : 'false');
     var n = btn.querySelector('.ged-tab-n');
     if (n) n.textContent = z[t.key] || '';
-    var neu = (t.key === 'aktuell' && z.neuAktuell) || (t.key === 'ueberdich' && z.neuUeberdich);
+    /* Der Punkt sitzt nur noch am Register "Neu" — dort liegt jetzt alles
+       Neue beisammen, und zwei markierte Register waeren eine Suche. */
     var punkt = btn.querySelector('.ged-tab-neu');
-    if (neu && !punkt) { punkt = document.createElement('span'); punkt.className = 'ged-tab-neu'; btn.appendChild(punkt); }
-    else if (!neu && punkt) punkt.remove();
+    var markieren = t.key === 'neu' && z.neu > 0;
+    if (markieren && !punkt) { punkt = document.createElement('span'); punkt.className = 'ged-tab-neu'; btn.appendChild(punkt); }
+    else if (!markieren && punkt) punkt.remove();
   });
+
+  /* Als gesehen gilt das Neue erst, wenn sie das Register auch OEFFNET —
+     nicht schon beim Betreten des Gedaechtnisses. Sonst waere der Puls auf
+     dem Startbildschirm weg, obwohl sie nur kurz in "Aktuell" geschaut
+     hat. Die Hervorhebung bleibt fuer diese Ansicht stehen; beim naechsten
+     Oeffnen ist sie weg. */
+  if (tab === 'neu') felieNeueSnippetsGesehen();
 
   /* Der Sicherungs-Hinweis sass auf der Notizkarte nach jedem Gespraech.
      Ohne sie steht er unter "Über dich": das ist das Register mit den
      dauerhaften Angaben, also die Stelle, an der eine Sicherung am
      ehesten Thema ist. */
   box.innerHTML = tab === 'aktuell'    ? gedFaedenHtml()
-                : tab === 'gespraeche' ? gedLerntHtml()
-                : gedFaktenHtml() + backupHint();
+                : tab === 'gespraeche' ? gedLerntHtml() + gedFaktenHtml() + backupHint()
+                : gedNeuHtml();
 }
 
 /* ── Block 1: Gerade offen (Episoden) ─────────────────────────────── */
 
+/* Offene Themen im Register "Aktuell".
+   Die Restdauer stand frueher als Etikett an jeder Zeile ("noch 5 Tage").
+   Das war eine Zahl, mit der die Nutzerin nichts anfangen konnte: sie hat
+   die Frist nie gesetzt, das Modell hat sie geschaetzt, und ein Countdown
+   an einem persoenlichen Thema liest sich wie eine Aufgabe mit Abgabe.
+     Stattdessen passiert bis zum Ablauf gar nichts, und danach fragt die
+   Zeile selbst nach. Ausgegraut, damit sichtbar ist, dass felie das Thema
+   gerade nicht mehr von sich aus aufgreift — der Eintrag verschwindet
+   aber nicht, solange die Frage offen ist. */
 function gedFaedenHtml() {
   var offen = [];
-  try { offen = felieEpisoden({ nurAktuell: true }); } catch (e) {}
+  try { offen = felieEpisoden({ status: 'offen' }); } catch (e) {}
+  var jetzt = Date.now();
   offen = offen.slice().sort(function (a, b) { return a.faelligBis - b.faelligBis; });
 
   var inner;
   if (!offen.length) {
-    inner = '<div class="ged-leer">Nichts Offenes. Hier kannst du zeitlich begrenzte Themen festhalten. Nach der angezeigten Frist frage ich nicht mehr von mir aus danach.</div>';
+    inner = '<div class="ged-leer">Nichts Offenes. Hier kannst du zeitlich begrenzte Themen festhalten — ich frage später einmal nach, ob sie noch aktuell sind.</div>';
   } else {
     inner = offen.map(function (e) {
-      var tage = Math.ceil((e.faelligBis - Date.now()) / 86400000);
-      var frist = tage <= 0 ? 'läuft heute aus' : (tage === 1 ? 'noch 1 Tag' : 'noch ' + tage + ' Tage');
-      var wieder = (e.erwaehnungen || 1) > 1 ? ' · ' + e.erwaehnungen + '× erwähnt' : '';
-      return '<div class="ged-zeile' + (gedIstNeu(e.id) ? ' ged-neu' : '') + ' snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
+      var abgelaufen = e.faelligBis < jetzt;
+      var wieder = (e.erwaehnungen || 1) > 1 ? '<span class="ged-badge">' + e.erwaehnungen + '× erwähnt</span>' : '';
+      /* Bei einem abgelaufenen Thema treten Stift und × zurueck: die
+         Nutzerin soll eine Frage beantworten, nicht zwischen vier
+         Handgriffen waehlen. Beides ist nach einem Ja wieder da. */
+      var rechts = abgelaufen
+        ? '<div class="ged-akt"><button class="ged-nochaktuell" onclick="gedFadenNachfragen(\'' + gedJsAttr(e.id) + '\')">Noch aktuell?</button></div>'
+        : '<div class="ged-akt">'
+          + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
+          + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'faden\',\'' + gedJsAttr(e.id) + '\')">×</button>'
+          + '</div>';
+      return '<div class="ged-zeile' + (gedIstNeu(e.id) ? ' ged-neu' : '') + (abgelaufen ? ' ged-ruht' : '')
+        + ' snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
         + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten">'
         + '<div class="snip-view">'
         + '<div style="flex:1;min-width:0;">'
         + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
-        + '<span class="ged-badge' + (tage <= 2 ? ' warn' : '') + '">' + frist + wieder + '</span>'
+        + wieder
         + '</div>'
-        + '<div class="ged-akt">'
-        + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
-        + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'faden\',\'' + gedJsAttr(e.id) + '\')">×</button>'
-        + '</div></div></div>';
+        + rechts
+        + '</div></div>';
     }).join('');
   }
 
   return '<div class="ged-karte" id="ged-card-faeden">'
     + '<div class="ged-kopf"><div class="ged-kicker">Gerade offen</div>'
     + (offen.length ? '<span class="ged-zahl">' + offen.length + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Die Frist begrenzt die Erinnerung. Sie sagt nicht voraus, wann das Thema tatsächlich vorbei ist.</div>'
+    + '<div class="ged-sub">Themen, die felie vorübergehend berücksichtigt. Wenn ihre Zeit um ist, frage ich einmal nach — abhaken musst du nichts.</div>'
     + gedNeuHinweis(offen.filter(function (e) { return gedIstNeu(e.id); }).length)
     + inner
     + gedFormOrButton('faden', 'Offenes Thema ergänzen')
     + '</div>';
+}
+
+/* "Noch aktuell?" — Ja verlaengert, Nein loescht. Bewusst dieselbe
+   Rueckfrage-Mechanik wie beim ×, nur mit anderer Beschriftung: die
+   Nutzerin soll nicht aus Versehen etwas entfernen, weil der Knopf
+   zufaellig unter ihrem Daumen lag. */
+function gedFadenNachfragen(id) {
+  var e = null;
+  try { e = felieStore().episoden.find(function (x) { return x.id === id; }); } catch (err) {}
+  if (!e) return;
+  felieConfirm({
+    title: 'Noch aktuell?',
+    message: '„' + e.text + '"\n\nJa — ich behalte es weitere ' + FELIE_FADEN_VERLAENGERUNG
+      + ' Tage im Blick. Nein — ich entferne es aus deinem Gedächtnis.',
+    confirmText: 'Ja',
+    cancelText: 'Nein',
+    onConfirm: function () {
+      try {
+        if (felieEpisodeVerlaengern(id) && felieStoreSpeichern() !== false) {
+          felieAutosave(); felieHomeEreignis('gedaechtnis_geaendert');
+        }
+      } catch (err) {}
+      gedRender();
+    },
+    /* Nein ist hier kein Abbrechen, sondern eine Antwort: der Faden geht
+       weg. Deshalb laeuft er ueber denselben Weg wie das ×. */
+    onCancel: function () { gedFadenLoeschen(id); }
+  });
 }
 
 /* Eine Rueckfrage fuer alle drei Zeilentypen. Vorher loeschte jeder Knopf
@@ -11330,32 +11471,25 @@ function gedLerntLoeschen(id, notizId) {
 
 /* ── Block 3: Über dich (Fakten) ──────────────────────────────────── */
 
-/* Zwei Herkuenfte, zwei Abschnitte.
-   Nach Thema zu gliedern war die falsche Achse: in einer Liste standen
-   Angaben, nach denen felie im Kennenlernen GEFRAGT hat, neben Saetzen,
-   die sie sich aus einem Gespraech GEMERKT hat. Das las sich wie ein
-   halbes Formular und wie ein halbes Notizbuch zugleich. Die Herkunft
-   steht als quelle laengst am Datensatz, war aber nur als kleines Badge
-   sichtbar.
-     Die Kategorie bleibt erhalten — sie ordnet weiter und wird beim
-   Ergaenzen gebraucht —, wandert aber als Etikett an die Zeile. Sonst
-   haette die Ansicht zwei Ebenen Ueberschriften uebereinander. */
-var GED_HERKUNFT = [
-  { key: 'erzaehlt', titel: 'Das hast du mir erzählt',
-    sub: 'Aus dem Kennenlernen und von dir ergänzt.' },
-  { key: 'gemerkt',  titel: 'Das habe ich mir gemerkt',
-    sub: 'Aus euren Gesprächen mitgenommen.' }
-];
-
-function gedHerkunft(f) {
-  return (f.quelle === 'selbst' || f.quelle === 'kennenlernen') ? 'erzaehlt' : 'gemerkt';
+/* Fakten liegen jetzt an ZWEI Orten, getrennt nach Herkunft:
+   Was sie selbst angegeben hat — im Kennenlernen oder nachtraeglich
+   ergaenzt — steht im Profil. Was felie aus Gespraechen mitgenommen hat,
+   steht im Gedaechtnis unter "Gespräche".
+     Die Abschnitte "Das hast du mir erzählt / Das habe ich mir gemerkt"
+   von gestern entfallen damit: die Grenze zieht jetzt der Bereich selbst,
+   und eine Unterteilung innerhalb einer Liste, die ohnehin nur eine
+   Herkunft enthaelt, waere eine Ueberschrift ohne Gegenstueck.
+     Der Unterschied ist keine Formsache. Im Profil steht ihre
+   Selbstauskunft, im Gedaechtnis das, was felie verstanden zu haben
+   glaubt — und nur beim Zweiten ist "stimmt das?" die richtige Frage. */
+function gedIstSelbstauskunft(f) {
+  return f.quelle === 'selbst' || f.quelle === 'kennenlernen';
 }
 
 function gedFaktZeile(f) {
   /* "Lange nicht erwaehnt" ist kein Fehler, sondern eine Einladung:
      felie formuliert solche Fakten vorsichtiger, und die Nutzerin
-     sieht, warum. Das frueher danebenstehende "von dir ergaenzt" ist
-     entfallen — das sagt jetzt die Abschnittsueberschrift. */
+     sieht, warum. */
   var kat = GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein';
   var marken = '<span class="ged-badge">' + GED_KAT_LABEL[kat] + '</span>'
     + (f.alterTage > 180 ? '<span class="ged-badge warn"> · lange nicht erwähnt</span>' : '');
@@ -11376,38 +11510,57 @@ function gedFaktZeile(f) {
     + '</div></div></div>';
 }
 
-function gedFaktenHtml() {
+/* Die Selbstauskunft im Profil. Dieselben Zeilen wie im Gedaechtnis,
+   derselbe Stift, dasselbe ×, dasselbe Ergaenzen-Formular — nur an dem
+   Ort, an den sie gehoeren. Vorher standen die Angaben aus dem
+   Kennenlernen im Gedaechtnis, und das Profil zeigte sie ein zweites Mal
+   als nicht bearbeitbare Aufzaehlung mit einem Verweis dorthin. */
+function profilFaktenInnerHtml() {
+  var fakten = gedFaktenSortiert(gedIstSelbstauskunft);
+  var inner = fakten.length
+    ? '<div style="display:flex;flex-direction:column;gap:6px;">' + fakten.map(gedFaktZeile).join('') + '</div>'
+    : '<div class="ged-leer">Noch nichts eingetragen. Was hier steht, geht in jede Antwort von felie ein.</div>';
+  return '<div style="font-size:11px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;">Über dich</div>'
+    + '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Deine eigenen Angaben — aus dem Kennenlernen und was du selbst ergänzt. Ändern und löschen jederzeit.</div>'
+    + inner
+    + gedFormOrButton('fakt', 'Etwas über dich ergänzen');
+}
+
+/* Faellt still durch, wenn das Profil gerade nicht offen ist. So kann
+   jeder Schreibvorgang weiterhin einfach gedRender() rufen, egal aus
+   welcher Ansicht heraus er kommt. */
+function profilFaktenRender() {
+  var el = document.getElementById('profile-card-fakten');
+  if (el) el.innerHTML = profilFaktenInnerHtml();
+}
+
+/* Sortiert nach der festen Kategorienfolge — eine Liste, die bei jedem
+   neuen Eintrag umspringt, waere keine Ordnung. */
+function gedFaktenSortiert(filter) {
   var fakten = [];
-  try { fakten = felieFakten(); } catch (e) {}
+  try { fakten = felieFakten().filter(filter); } catch (e) {}
+  return fakten.sort(function (a, b) {
+    return GED_KAT_ORDER.indexOf(GED_KAT_LABEL[a.kategorie] ? a.kategorie : 'allgemein')
+         - GED_KAT_ORDER.indexOf(GED_KAT_LABEL[b.kategorie] ? b.kategorie : 'allgemein');
+  });
+}
 
-  var kopf = '<div class="ged-kopf"><div class="ged-kicker">Über dich</div>'
+/* Fakten aus Gespraechen — die Karte im Register "Gespräche". Ohne
+   Ergaenzen-Knopf: hier steht, was felie mitbekommen hat, und das kann
+   die Nutzerin nicht von Hand hinzufuegen. Ergaenzen geht im Profil. */
+function gedFaktenHtml() {
+  var fakten = gedFaktenSortiert(function (f) { return !gedIstSelbstauskunft(f); });
+
+  var inner = fakten.length
+    ? '<div style="display:flex;flex-direction:column;gap:6px;">' + fakten.map(gedFaktZeile).join('') + '</div>'
+    : '<div class="ged-leer">Noch nichts. Was aus euren Gesprächen dauerhaft über dich gilt, sammle ich hier — änderbar und löschbar, jederzeit.</div>';
+
+  return '<div class="ged-karte" id="ged-card-fakten">'
+    + '<div class="ged-kopf"><div class="ged-kicker">Über dich</div>'
     + (fakten.length ? '<span class="ged-zahl">' + fakten.length + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Dinge, die unabhängig vom Thema gelten. Sie gehen in jede Antwort ein.</div>'
-    + gedNeuHinweis(fakten.filter(function (f) { return gedIstNeu(f.id); }).length);
-
-  var inner;
-  if (!fakten.length) {
-    inner = '<div class="ged-leer">Noch nichts. Was du mir über dich erzählst, zeige ich dir hier — und du kannst jederzeit etwas ändern oder löschen.</div>';
-  } else {
-    /* Innerhalb eines Abschnitts weiter nach der festen Kategorienfolge
-       sortieren: eine Liste, die bei jedem neuen Eintrag umspringt, waere
-       keine Ordnung. */
-    inner = GED_HERKUNFT.map(function (h) {
-      var teil = fakten.filter(function (f) { return gedHerkunft(f) === h.key; });
-      if (!teil.length) return '';
-      teil.sort(function (a, b) {
-        return GED_KAT_ORDER.indexOf(GED_KAT_LABEL[a.kategorie] ? a.kategorie : 'allgemein')
-             - GED_KAT_ORDER.indexOf(GED_KAT_LABEL[b.kategorie] ? b.kategorie : 'allgemein');
-      });
-      return '<div class="ged-gruppe">' + h.titel + '</div>'
-        + '<div class="ged-gruppe-sub">' + h.sub + '</div>'
-        + '<div style="display:flex;flex-direction:column;gap:6px;">'
-        + teil.map(gedFaktZeile).join('') + '</div>';
-    }).join('');
-  }
-
-  return '<div class="ged-karte" id="ged-card-fakten">' + kopf + inner
-    + gedFormOrButton('fakt', 'Etwas über dich ergänzen')
+    + '<div class="ged-sub">Was ich aus euren Gesprächen mitgenommen habe und unabhängig vom Thema gilt. Es geht in jede Antwort ein.</div>'
+    + gedNeuHinweis(fakten.filter(function (f) { return gedIstNeu(f.id); }).length)
+    + inner
     + '</div>';
 }
 
@@ -11621,6 +11774,11 @@ function consentSummaryHtml() {
 function showProfile() {
   var old = document.getElementById('profile-overlay');
   if (old) old.remove();
+  /* Der Altbestand des entfallenen Freitextfelds landet als Eintrag unter
+     "Über dich" — und der steht jetzt hier. Deshalb auch von hier aus
+     anstossen, nicht nur beim Oeffnen des Gedaechtnisses: sonst haengt
+     die Uebernahme davon ab, welchen Bereich sie zuerst betritt. */
+  try { gedMitgabeUebernehmen(); } catch (e) {}
 
   window._profileEdit = {
     name: userName || '',
@@ -11663,16 +11821,19 @@ function showProfile() {
         '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;refreshProfileSummary(\'name\');" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.3);font-family:inherit;font-size:14px;color:#180430;background:#FBF9FE;outline:none;" aria-label="Dein Name">') +
       profileField('alter', 'Alter',
         '<div style="display:flex;flex-wrap:wrap;gap:8px;" role="group" aria-label="Alter">' + profileBandChips() + '</div>') +
-      klProfilAngabenHtml() +
       '</div>' +
-      /* Freitext und Gelerntes sind ins Gedaechtnis gewandert. Hier bleibt
-         nur der Verweis: das Profil ist die Selbstauskunft, das Gedaechtnis
-         das, was felie mitbekommen hat. Beides in einer Ansicht zu mischen
-         war der Grund, warum die Faktenspur unter einer Chip-Liste
-         verschwand. */
+      /* Die Selbstauskunft steht jetzt hier und ist hier auch bearbeitbar.
+         Vorher lag sie im Gedaechtnis, und an dieser Stelle stand eine
+         Aufzaehlung ohne Handgriffe mit dem Hinweis "Im Gedächtnis
+         bearbeiten" — zwei Orte fuer dieselben Zeilen, und der falsche
+         davon war der, an dem etwas ging. */
+      '<div id="profile-card-fakten" style="' + cardStyle + '">' + profilFaktenInnerHtml() + '</div>' +
+      /* Der Verweis bleibt, aber als schmale Zeile: das Gedaechtnis ist
+         jetzt das, was felie mitbekommen hat — nicht mehr der Ort, an dem
+         ihre eigenen Angaben liegen. */
       '<div id="profile-card-gedaechtnis" style="' + cardStyle + '">' +
-        '<div style="' + labelStyle + '">Was felie über dich weiß</div>' +
-        '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Alles, was felie aus euren Gesprächen mitgenommen hat — offene Themen, Notizen und was dauerhaft über dich gilt. Dort kannst du jeden Eintrag ändern, ergänzen oder löschen.</div>' +
+        '<div style="' + labelStyle + '">Was felie mitbekommen hat</div>' +
+        '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Offene Themen, Gesprächsnotizen und was felie aus euren Gesprächen dauerhaft über dich gelernt hat. Auch dort lässt sich jeder Eintrag ändern oder löschen.</div>' +
         '<button onclick="gedAusProfil()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.35);background:white;color:#180430;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-mind"/></svg>Gedächtnis öffnen</button>' +
       '</div>' +
       '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-box"/></svg>Änderungen speichern</button>' +

@@ -31,6 +31,7 @@
   --lav-bg:      #E6E0EE;
   --lav-pale:    #E6E0EE;
   --apricot:     #e1ea7d;
+  --pouder:      #dab3e4;   /* Markenfarbe, bisher nur als Literal im Code */
   --apricot-light: #ECF2A0;
   --text-primary:   #180430;
   --text-secondary: #6B5A88;
@@ -785,8 +786,12 @@ html.native-app .phone {
 .snip-aktionen { display: flex; align-items: center; gap: 7px; }
 .snip-zaehler { flex: 1; font-size: 9.5px; color: var(--text-muted);
   letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
-.snip-ab, .snip-ok { font-family: inherit; font-size: 11.5px; padding: 6px 11px;
+.snip-ab, .snip-ok, .snip-weg { font-family: inherit; font-size: 11.5px; padding: 6px 11px;
   border-radius: 9px; cursor: pointer; }
+/* Loeschen sieht bewusst nicht wie ein Hauptknopf aus: es steht neben
+   Abbrechen, nicht neben Uebernehmen. */
+.snip-weg { border: 1px solid rgba(184,92,119,0.4); background: transparent; color: #B85C77; }
+.snip-weg:focus-visible { outline: 2px solid #B85C77; outline-offset: 2px; }
 .snip-ab { border: 1px solid rgba(24,4,48,0.2); background: transparent; color: var(--text-secondary); }
 .snip-ok { border: none; background: var(--plum); color: var(--apricot); font-weight: 500; }
 .snip-ab:focus-visible, .snip-ok:focus-visible { outline: 2px solid var(--lila); outline-offset: 2px; }
@@ -819,7 +824,36 @@ html.native-app .phone {
   text-transform: uppercase; letter-spacing: 0.08em; }
 .ged-zahl { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .ged-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin-top: -6px; }
+/* ── Eigene Angaben im Profil ──
+   Eine umschliessende Karte, innen nach Kategorie gruppierte Zeilen.
+   Schriftgroesse 14px wie der Wert bei Name und Alter — die Angaben
+   stehen zwischen diesen Karten und sollen gleich viel Gewicht haben.
+   Grosszuegige Zeilenhoehe und feine Trennlinien statt Blasen: bei
+   kurzen Saetzen traegt der Weissraum die Uebersicht, nicht der Rahmen. */
+.profil-fakt-titel { font-size: 11px; font-weight: 600; color: var(--plum);
+  text-transform: uppercase; letter-spacing: 0.08em; }
+.profil-fakt-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.45;
+  margin: 4px 0 2px; }
+.profil-fakt-liste { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.profil-fakt-kat { display: block; margin: 0 0 3px; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--lila); }
+/* Blasen statt Zeilen mit Trennlinie: jede Angabe ist ein eigener,
+   abgegrenzter Eintrag — das war vorher am Gedächtnis gut ablesbar und
+   fehlte hier. Weisse Fläche auf weisser Karte, die Abgrenzung trägt
+   allein der Rand in Pouder. */
+.profil-fakt { background: #FFFFFF; border: 1.5px solid var(--pouder);
+  border-radius: 12px; padding: 10px 12px; }
+.profil-fakt .snip-view { display: flex; align-items: center; gap: 10px; }
+/* Kein Abschneiden mit Auslassungspunkten wie bei Name und Alter: eine
+   Angabe kann zwei Zeilen lang sein, und halb gezeigt waere sie wertlos. */
+.profil-fakt .snip-text { flex: 1; min-width: 0; font-size: 14px; color: var(--plum); line-height: 1.5; }
+.profil-fakt .snip-edit { color: var(--lila); }
+.profil-fakt-leer { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: 10px; }
+#profile-card-fakten .ged-add { width: 100%; margin-top: 14px; padding: 11px; font-size: 13px; }
+
 .ged-leer { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+.ged-karte .ged-leer { background: #FFFFFF; border: 1.5px dashed rgba(143, 91, 189, 0.35);
+  border-radius: 12px; padding: 12px; box-sizing: border-box; }
 
 /* Register statt einer langen Rolle. Vier Karten untereinander hiessen:
    wer eine bestimmte Angabe suchte, scrollte an allem anderen vorbei —
@@ -847,7 +881,7 @@ html.native-app .phone {
    waere die Frage schwerer zu sehen als die Antwort. */
 .ged-zeile.ged-ruht .snip-text,
 .ged-zeile.ged-ruht .ged-badge { opacity: 0.5; }
-.ged-zeile.ged-ruht { background: transparent; box-shadow: inset 0 0 0 1px var(--border); }
+.ged-zeile.ged-ruht { background: transparent; border-color: var(--border); }
 .ged-nochaktuell { font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--lila);
   background: rgba(143, 91, 189,0.1); border: 1px solid rgba(143, 91, 189,0.28);
   border-radius: 999px; padding: 6px 11px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
@@ -866,23 +900,19 @@ html.native-app .phone {
 
 /* Zeile = Container mit .snip-view innen, damit der Stift-Editor der
    Notizkarte hier unveraendert weiterarbeitet. */
-.ged-zeile { border-radius: 11px; background: var(--lav-pale); padding: 9px 11px; }
-.ged-zeile .snip-view { display: flex; align-items: flex-start; gap: 8px; }
-.ged-zeile .snip-text { flex: 1; min-width: 0; font-size: 12.5px; color: #4A3A6A; line-height: 1.5; }
+.ged-zeile { background: #FFFFFF; border: 1.5px solid var(--pouder);
+  border-radius: 12px; padding: 10px 12px; }
+.ged-zeile .snip-view { display: flex; align-items: center; gap: 10px; }
+.ged-zeile .snip-text { flex: 1; min-width: 0; font-size: 14px; color: var(--plum); line-height: 1.5; }
 .ged-akt { flex-shrink: 0; display: flex; align-items: center; gap: 2px; }
-/* Loeschen und "Erledigt" waren zwei unterschiedlich benannte Textlinks
-   fuer denselben Handgriff — und "Löschen" nahm in einer schmalen Zeile
-   mehr Platz als der Text daneben. Ein × an jeder Zeile, die Bedeutung
-   steht in der Rueckfrage. 32px Trefferflaeche, damit der Daumen ihn
-   trifft, ohne den Stift daneben zu erwischen. */
-.ged-x { font-family: inherit; font-size: 15px; line-height: 1; color: var(--text-muted);
-  background: none; border: none; cursor: pointer; width: 32px; height: 32px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; transition: background 0.15s, color 0.15s; }
-.ged-x:hover { background: rgba(143, 91, 189,0.12); color: var(--plum); }
-.ged-x:focus-visible { outline: 2px solid var(--lila); outline-offset: 1px; }
-.ged-badge { display: inline-block; margin-top: 4px; font-size: 9.5px; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--text-muted); }
+/* Das × an jeder Zeile ist entfallen: neben dem Stift waren es zwei
+   Knoepfe je Eintrag, und bei kurzen Saetzen nahm die Bedienung mehr
+   Platz ein als der Inhalt. Geloescht wird jetzt ueberall im Editor
+   hinter dem Stift — ein Weg, eine Rueckfrage. */
+/* Kategorie und Zusatzangaben in der Blase — dieselbe Groesse und Farbe
+   wie im Profil, damit derselbe Eintrag an beiden Orten gleich aussieht. */
+.ged-badge { display: inline-block; margin-top: 3px; font-size: 10px; font-weight: 600;
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--lila); }
 /* Nur fuer Screenreader. Der Lime-Puls am Gedaechtnis-Symbol ist rein
    visuell; ohne diesen Text gaebe es fuer eine Vorlesefunktion keinen
    Hinweis, dass dort etwas Neues liegt. */
@@ -890,13 +920,20 @@ html.native-app .phone {
   clip-path: inset(50%); white-space: nowrap; border: 0; }
 
 .ged-badge.warn { color: #B8763C; }
+/* Nebenangaben wie "3x erwaehnt" sind keine Einordnung, sondern ein
+   Detail — sie bleiben zurueckgenommen, damit die Kategorie die einzige
+   hervorgehobene Marke in der Blase bleibt. */
+.ged-badge.leise { color: var(--text-muted); font-weight: 500; letter-spacing: 0.05em; }
 /* Neu aus dem zuletzt gespeicherten Gespraech. Der Rand traegt die
    Information allein nicht — Farbsehschwaeche, und ein Rahmen ohne
    Erklaerung bleibt raetselhaft. Deshalb steht ueber der Gruppe eine
    Zeile, die sagt, was hervorgehoben ist. */
+/* Der Lime-Rand ersetzt den Pouder-Rand, statt sich mit ihm zu ueberlagern
+   — zwei Raender uebereinander liessen die Blase dicker wirken als ihre
+   Nachbarn. */
 .ged-zeile.ged-neu, .ged-lernt.ged-neu {
-  box-shadow: inset 0 0 0 1.5px var(--apricot);
-  background: linear-gradient(0deg, rgba(225, 234, 125,0.14), rgba(225, 234, 125,0.14)), var(--lav-pale);
+  border-color: var(--apricot);
+  background: linear-gradient(0deg, rgba(225, 234, 125,0.16), rgba(225, 234, 125,0.16)), #FFFFFF;
 }
 .ged-neu-hinweis { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--lila); display: flex; align-items: center; gap: 6px; margin: 2px 0 8px; }
@@ -926,12 +963,12 @@ html.native-app .phone {
 
 /* Gesprächseintrag: Themen-Icon links, Satz rechts */
 .ged-lernt { display: flex; gap: 10px; align-items: flex-start;
-  border-radius: 12px; background: var(--lav-pale); padding: 11px 12px; }
+  border-radius: 12px; background: #FFFFFF; border: 1.5px solid var(--pouder); padding: 10px 12px; }
 .ged-lernt-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--plum);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--apricot); }
 .ged-lernt-body { min-width: 0; flex: 1; }
 .ged-lernt .snip-view { display: flex; align-items: flex-start; gap: 8px; }
-.ged-lernt .snip-text { flex: 1; min-width: 0; font-size: 13px; color: #4A3A6A; line-height: 1.5; }
+.ged-lernt .snip-text { flex: 1; min-width: 0; font-size: 14px; color: var(--plum); line-height: 1.5; }
 .ged-meta { font-size: 11px; color: #9B8AB5; margin-top: 3px; }
 
 .ged-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
@@ -3637,33 +3674,33 @@ const ARCHIV_GUIDE_STEPS = [
 
 const PROFIL_GUIDE_STEPS = [
   {
-    text: `Dein <strong>Profil</strong> zeigt deine persönlichen Angaben. Was ich aus deinen Antworten übernommen habe, siehst du hier und im Gedächtnis. Du kannst es jederzeit prüfen und korrigieren.`,
-    target: null,
-    label: 'Profil'
+    "text": "Dein <strong>Profil</strong> zeigt deine persönlichen Angaben. Was ich aus deinen Antworten übernommen habe, siehst du hier und im Gedächtnis. Du kannst es jederzeit prüfen und korrigieren.",
+    "target": null,
+    "label": "Profil"
   },
   {
-    text: `Hier stehen Name und Alter. Beides änderst du direkt und speicherst es unten.`,
-    target: 'profile-group',
-    scrollSel: '#profile-fields-group',
-    label: 'Deine Angaben'
+    "text": "Hier stehen Name und Alter. Tippe auf den Stift und bestätige die einzelne Änderung mit „Übernehmen“. Mit „Abbrechen“ bleibt deine bisherige Angabe erhalten.",
+    "target": "profile-group",
+    "scrollSel": "#profile-fields-group",
+    "label": "Deine Angaben"
   },
   {
-    text: `Unter <strong>Über dich</strong> stehen deine eigenen Angaben — aus unserem Kennenlernen und was du selbst ergänzt. Ändern, löschen und ergänzen geht direkt hier.`,
-    target: 'profile-fakten',
-    scrollSel: '#profile-card-fakten',
-    label: 'Über dich'
+    "text": "Unter <strong>Über dich</strong> stehen deine eigenen Angaben — aus unserem Kennenlernen und was du selbst ergänzt. Ändern, löschen und ergänzen geht direkt hier.",
+    "target": "profile-fakten",
+    "scrollSel": "#profile-card-fakten",
+    "label": "Über dich"
   },
   {
-    text: `Was ich aus euren Gesprächen mitgenommen habe, steht nicht hier, sondern in meinem <strong>Gedächtnis</strong>. Von hier kommst du direkt hin.`,
-    target: 'profile-gedaechtnis',
-    scrollSel: '#profile-card-gedaechtnis',
-    label: 'Gedächtnis'
+    "text": "Hier stehen deine <strong>Zyklusangaben</strong>. Tippe auf „bearbeiten“, um den Periodenstart, die Zykluslänge oder deine Lebensphase zu ändern. Ohne Angaben kannst du deinen Zyklus hier eintragen.",
+    "target": "profile-zyklus",
+    "scrollSel": "#profile-card-zyklus",
+    "label": "Zyklus"
   },
   {
-    text: `Und dein <strong>Daten-Backup</strong> — sichere deine Daten als Datei oder hol sie auf ein neues Gerät. Deine Daten bleiben sonst nur auf diesem Gerät.`,
-    target: 'profile-backup',
-    scrollSel: '#profile-card-backup',
-    label: 'Backup'
+    "text": "Und dein <strong>Daten-Backup</strong> — sichere deine Daten als Datei oder hol sie auf ein neues Gerät. Deine Daten bleiben sonst nur auf diesem Gerät.",
+    "target": "profile-backup",
+    "scrollSel": "#profile-card-backup",
+    "label": "Backup"
   }
 ];
 
@@ -3705,21 +3742,15 @@ const GEDAECHTNIS_GUIDE_STEPS = [
 
 const DASHBOARD_GUIDE_STEPS = [
   {
-    text: `Das ist dein <strong>Spiegel</strong>: was ich von dir mitbekommen habe und was ich darin sehe. Schlaf, Energie, Anspannung und dein Zyklus hängen zusammen — und je länger wir sprechen, desto genauer erkenne ich, wie dieses Zusammenspiel bei dir aussieht.`,
-    target: null,
-    label: 'Dashboard'
+    "text": "Das ist dein <strong>Spiegel</strong>: was ich von dir mitbekommen habe und was ich darin sehe. Schlaf, Energie, Anspannung und dein Zyklus hängen zusammen — und je länger wir sprechen, desto genauer erkenne ich, wie dieses Zusammenspiel bei dir aussieht.",
+    "target": null,
+    "label": "Dashboard"
   },
   {
-    text: `Wenn du ein <strong>Wearable</strong> nutzt, kannst du es verbinden — dann kommen Werte wie Schlafdauer oder HRV von allein dazu. Das ist ein Extra, keine Bedingung: was du mir selbst erzählst, zählt immer mehr als jede Messung.`,
-    target: 'dash-scores',
-    scrollSel: '#score-cards',
-    label: 'Körperdaten'
-  },
-  {
-    text: `Und dein <strong>Zyklus</strong> — Phase, nächste Periode und Hormonlage. Ich verbinde ihn mit deinem Befinden, damit du dich besser verstehst.`,
-    target: 'dash-zyklus',
-    scrollSel: '#zyklus-locked',
-    label: 'Zyklus'
+    "text": "Wenn du ein <strong>Wearable</strong> nutzt, kannst du es verbinden — dann kommen Werte wie Schlafdauer oder HRV von allein dazu. Das ist ein Extra, keine Bedingung: was du mir selbst erzählst, zählt immer mehr als jede Messung.",
+    "target": "dash-scores",
+    "scrollSel": "#score-cards",
+    "label": "Körperdaten"
   }
 ];
 
@@ -5146,28 +5177,47 @@ var KL_SATZ_ARBEIT  = { 'Vollzeit': 'arbeitet Vollzeit', 'Teilzeit': 'arbeitet T
 
 function klV2Satz(auswahl, karte) {
   var teile = (auswahl || []).map(function(v) { return karte[v] || v; }).filter(Boolean);
-  if (!teile.length) return '';
-  var satz = teile.join(', ');
-  return satz.charAt(0).toUpperCase() + satz.slice(1) + '.';
+  return teile.length ? 'Sie ' + klV2SatzListe(teile) + '.' : '';
 }
 
-function klV2KinderSatz(k) {
-  var teile = [];
-  if (k.amount) teile.push(k.amount + (/^\d+$/.test(String(k.amount).trim()) ? ' Kinder' : ''));
-  if (k.ages) teile.push('im Alter von ' + k.ages);
-  return teile.length ? 'Kinder: ' + teile.join(', ') + '.' : '';
+/* Zahlwoerter bis zwoelf. "2 Kinder" liest sich wie ein Formularfeld,
+   "Zwei Kinder" wie ein Satz — und genau das ist der Unterschied zwischen
+   einer Datenzeile und etwas, das felie sich gemerkt hat. */
+var KL_ZAHLWORT = ['null','Ein','Zwei','Drei','Vier','Fünf','Sechs','Sieben','Acht','Neun','Zehn','Elf','Zwölf'];
+
+function klV2Zahlwort(n) {
+  return (n >= 0 && n < KL_ZAHLWORT.length) ? KL_ZAHLWORT[n] : String(n);
+}
+
+/* Anzahl und Alter der Kinder werden zu ZWEI Eintraegen. Frueher stand
+   beides in einer Zeile ("Kinder: 2 Kinder, im Alter von 3 und 5"), was
+   sich nicht nur sperrig las, sondern auch nicht einzeln aenderbar war:
+   wer nur das Alter berichtigen wollte, musste den ganzen Satz neu
+   tippen. Zwei Angaben, zwei Blasen, zwei Stifte. */
+function klV2KinderSaetze(k) {
+  var raus = [], roh = String(k.amount == null ? '' : k.amount).trim();
+  var zahl = /^\d+$/.test(roh) ? parseInt(roh, 10) : null;
+  if (zahl != null && zahl > 0) raus.push({ suffix: ':anzahl', text: 'Sie hat ' + klV2Zahlwort(zahl).toLowerCase() + (zahl === 1 ? ' Kind.' : ' Kinder.') });
+  else if (zahl === 0) raus.push({ suffix: ':anzahl', text: 'Sie hat keine Kinder.' });
+  else if (roh) raus.push({ suffix: ':anzahl', text: klV2ZitatSatz('Zur Anzahl ihrer Kinder sagt sie', roh) });
+  var alter = String(k.ages == null ? '' : k.ages).trim();
+  if (alter) {
+    var nurZahlen = /^\d+(?:\s*(?:,|und|&)\s*\d+)*$/.test(alter);
+    raus.push({ suffix: ':alter', text: nurZahlen
+      ? (zahl === 1 ? 'Ihr Kind ist ' : 'Ihre Kinder sind ') + alter.replace(/\s*&\s*/g, ' und ') + ' Jahre alt.'
+      : klV2ZitatSatz(zahl === 1 ? 'Zum Alter ihres Kindes sagt sie' : 'Zum Alter ihrer Kinder sagt sie', alter) });
+  }
+  return raus;
 }
 
 /* klV2Antwort() bleibt in der Ich-Form: dieselbe Funktion erzeugt die
    Antwortblase im Kennenlern-Gespraech, und dort spricht die Nutzerin. */
 function klV2SchlafSatz(sr) {
-  if (sr.irregular) return 'Hat keinen festen Schlafrhythmus.';
+  if (sr.irregular) return 'Sie hat keinen festen Schlafrhythmus.';
   var teile = [];
-  if (sr.bed)  teile.push('geht meist gegen ' + sr.bed + ' Uhr ins Bett');
+  if (sr.bed) teile.push('geht meist gegen ' + sr.bed + ' Uhr ins Bett');
   if (sr.wake) teile.push('steht meist gegen ' + sr.wake + ' Uhr auf');
-  if (!teile.length) return '';
-  var satz = teile.join(', ');
-  return satz.charAt(0).toUpperCase() + satz.slice(1) + '.';
+  return teile.length ? 'Sie ' + klV2SatzListe(teile) + '.' : '';
 }
 
 /* Offene Faeden aus dem Kennenlernen, in derselben Form wie die Fakten.
@@ -5188,10 +5238,124 @@ var KL_FADEN_PRAEFIX = {
   beschwerden: 'Zeitraum des körperlichen Themas: '
 };
 
+function klV2SatzListe(teile) {
+  teile = (teile || []).filter(Boolean);
+  if (teile.length < 2) return teile[0] || '';
+  return teile.slice(0, -1).join(', ') + ' und ' + teile[teile.length - 1];
+}
+
+function klV2ZitatSatz(einleitung, text) {
+  text = String(text || '').trim();
+  return text ? einleitung + ': „' + text + '“' + (/[.!?…]$/.test(text) ? '' : '.') : '';
+}
+
 function klV2FadenText(key, f) {
-  var teile = (f.selected || []).join(', ');
-  if (f.text) teile += (teile ? '. ' : '') + f.text;
-  return (KL_FADEN_PRAEFIX[key] || '') + teile;
+  f = f || {};
+  var auswahl = (f.selected || []).filter(function(v) {
+    return ['schwer zu sagen', 'weiß ich noch nicht', 'weiß ich nicht'].indexOf(v) < 0;
+  });
+  var satz = '';
+  if (key === 'themen') {
+    var themen = auswahl.slice();
+    if (themen.length) satz = klV2SatzListe(themen) + (themen.length === 1 ? ' beschäftigt' : ' beschäftigen') + ' sie gerade';
+  } else if (key === 'gefuehl') {
+    if (auswahl.length) satz = 'Bei ihren aktuellen Anliegen fühlt sie sich ' + klV2SatzListe(auswahl);
+  } else if (key === 'ziel') {
+    var fragen = {
+      'warum ich mich so fühle': 'warum sie sich so fühlt',
+      'was mich beeinflusst': 'was sie beeinflusst',
+      'was mir guttut': 'was ihr guttut',
+      'meinen Körper besser verstehen': 'wie sie ihren Körper besser verstehen kann',
+      'meine Stimmung besser einordnen': 'wie sie ihre Stimmung besser einordnen kann',
+      'Zusammenhänge erkennen': 'welche Zusammenhänge sie bei sich beobachtet',
+      'Veränderungen bei mir verstehen': 'wie sie Veränderungen bei sich einordnen kann',
+      'wissen, worauf ich achten kann': 'worauf sie achten kann'
+    };
+    var ziele = auswahl.map(function(v) { return fragen[v]; }).filter(Boolean);
+    if (ziele.length) satz = 'Sie möchte besser verstehen, ' + klV2SatzListe(ziele);
+  } else if (key === 'zyklus') {
+    var phasen = {
+      'Periode': 'Sie schätzt, dass sie gerade ihre Periode hat',
+      'kurz danach': 'Nach eigener Einschätzung ist sie kurz nach ihrer Periode',
+      'Zyklusmitte': 'Sie verortet sich ungefähr in der Zyklusmitte',
+      'kurz vor der Periode': 'Nach eigener Einschätzung steht sie kurz vor ihrer Periode'
+    };
+    satz = phasen[auswahl[0]] || '';
+  } else if (key === 'beschwerden') {
+    var zeitraum = String(f.text || '').trim();
+    if (!zeitraum) return '';
+    if (/^(seit|schon seit)\s+/i.test(zeitraum)) return 'Das körperliche Thema beschäftigt sie ' + zeitraum.replace(/[.!?]+$/, '') + '.';
+    if (/^(\d+|ein(?:e[nmr]?)?|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|mehrere[nr]?|wenige[nr]?)\s+(tag|woche|monat|jahr)/i.test(zeitraum)) return 'Das körperliche Thema beschäftigt sie seit ' + zeitraum.replace(/[.!?]+$/, '') + '.';
+    return klV2ZitatSatz('Zum Zeitraum des körperlichen Themas sagt sie', zeitraum);
+  }
+  var text = String(f.text || '').trim();
+  if (satz && text) return klV2ZitatSatz(satz + ' und sie ergänzt dazu', text);
+  if (satz) return satz.charAt(0).toUpperCase() + satz.slice(1) + '.';
+  var rahmen = { themen: 'Zu ihrem aktuellen Anliegen sagt sie', gefuehl: 'Zu ihrem Erleben sagt sie', ziel: 'Zu dem, was sie verstehen möchte, sagt sie', zyklus: 'Zu ihrer eigenen Zykluseinschätzung sagt sie' };
+  return klV2ZitatSatz(rahmen[key] || 'Sie sagt', text || auswahl.join(', '));
+}
+
+// Update only untouched text whose exact old wording can be reproduced.
+function klV2SnippetsNachziehen() {
+  var s = window._klState;
+  if (!s || s.flow !== 2 || !s.committed) {
+    try { s = JSON.parse(localStorage.getItem('felie_onboarding_v1') || 'null'); } catch (e) { return false; }
+  }
+  if (!s || s.flow !== 2 || !s.id || !s.committed) return false;
+  var store = felieStore(), vorher = JSON.stringify(store), a = s.committed, geaendert = false;
+  function update(liste, id, alt, neu, fakt) {
+    if (!alt || !neu || alt === neu) return;
+    var eintrag = liste.find(function(e) { return e.id === id; });
+    if (!eintrag || eintrag.bearbeitetAm || eintrag.text !== alt) return;
+    if (fakt && (!Array.isArray(eintrag.belege) || !eintrag.belege.length)) return;
+    eintrag.text = neu; geaendert = true;
+  }
+  var prefix = 'aufnahme:' + s.id + ':';
+  ['themen', 'gefuehl', 'ziel', 'zyklus', 'beschwerden'].forEach(function(key) {
+    var f = a[key]; if (!f || f.skipped) return;
+    var teile = (f.selected || []).join(', ');
+    if (f.text) teile += (teile ? '. ' : '') + f.text;
+    update(store.episoden, prefix + key, (KL_FADEN_PRAEFIX[key] || '') + teile, klV2FadenText(key, f), false);
+  });
+  function altSatz(auswahl, karte) {
+    var text = (auswahl || []).map(function(v) { return karte[v] || v; }).filter(Boolean).join(', ');
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) + '.' : '';
+  }
+  var life = a.leben;
+  if (life && !life.skipped) {
+    var work = (life.selected || []).filter(function(v) { return ['Elternzeit','Vollzeit','Teilzeit','selbstständig'].indexOf(v) >= 0; });
+    var family = (life.selected || []).filter(function(v) { return ['alleinlebend','Partnerschaft','Kinder'].indexOf(v) >= 0; });
+    if (a.kinder && !a.kinder.skipped && a.kinder.amount) family = family.filter(function(v) { return v !== 'Kinder'; });
+    update(store.fakten, prefix + 'leben:familie', altSatz(family, KL_SATZ_FAMILIE), klV2Satz(family, KL_SATZ_FAMILIE), true);
+    update(store.fakten, prefix + 'leben:arbeit', altSatz(work, KL_SATZ_ARBEIT), klV2Satz(work, KL_SATZ_ARBEIT), true);
+  }
+  if (life && !life.skipped && life.text) update(store.fakten, prefix + 'leben:text', life.text, klV2ZitatSatz('Zu ihrem Alltag sagt sie', life.text), true);
+  var body = a.koerper;
+  if (body && !body.skipped && body.text) update(store.fakten, prefix + 'koerper:text', body.text, klV2ZitatSatz('Zu ihrem körperlichen Kontext sagt sie', body.text), true);
+  var hormones = body && !body.skipped ? (body.selected || []).filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
+  if (life && !life.skipped && (life.selected || []).indexOf('schwanger') >= 0 && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
+  if (hormones.length) update(store.fakten, prefix + (body && !body.skipped ? 'koerper' : 'leben') + ':kontext', hormones.join(', ') + '.', 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', true);
+  var kinder = a.kinder;
+  if (kinder && !kinder.skipped) {
+    var roh = String(kinder.amount == null ? '' : kinder.amount).trim(), zahl = /^\d+$/.test(roh) ? parseInt(roh,10) : null;
+    var altAnzahl = zahl != null && zahl > 0 ? klV2Zahlwort(zahl) + (zahl === 1 ? ' Kind.' : ' Kinder.') : roh ? 'Kinder: ' + roh + '.' : '';
+    var alter = String(kinder.ages || '').trim();
+    var altAlter = alter ? (zahl === 1 ? 'Alter des Kindes: ' : 'Alter der Kinder: ') + alter + (/jahr/i.test(alter) ? '' : ' Jahre') + '.' : '';
+    klV2KinderSaetze(kinder).forEach(function(k) { update(store.fakten, prefix + 'kinder' + k.suffix, k.suffix === ':anzahl' ? altAnzahl : altAlter, k.text, true); });
+  }
+  var sr = a.schlafroutine;
+  if (sr && !sr.skipped) {
+    var schlafteile = [];
+    if (sr.bed) schlafteile.push('geht meist gegen ' + sr.bed + ' Uhr ins Bett');
+    if (sr.wake) schlafteile.push('steht meist gegen ' + sr.wake + ' Uhr auf');
+    var altSchlaf = sr.irregular ? 'Hat keinen festen Schlafrhythmus.' : schlafteile.join(', ');
+    if (!sr.irregular && altSchlaf) altSchlaf = altSchlaf.charAt(0).toUpperCase() + altSchlaf.slice(1) + '.';
+    update(store.fakten, prefix + 'schlafroutine', altSchlaf, klV2SchlafSatz(sr), true);
+  }
+  if (!geaendert) return false;
+  felieRevision(true);
+  if (felieStoreSpeichern() === false) { window._felieStore = JSON.parse(vorher); felieRevision(true); return false; }
+  return true;
 }
 
 function klV2Sichern() {
@@ -5215,21 +5379,26 @@ function klV2Sichern() {
     if (life && !life.skipped) {
       var work = life.selected.filter(function(v) { return ['Elternzeit','Vollzeit','Teilzeit','selbstständig'].indexOf(v) >= 0; });
       var family = life.selected.filter(function(v) { return ['alleinlebend','Partnerschaft','Kinder'].indexOf(v) >= 0; });
+      /* "hat Kinder" faellt weg, sobald eine Anzahl vorliegt — die eigene
+         Blase "Zwei Kinder." sagt dasselbe und mehr. */
+      if (a.kinder && !a.kinder.skipped && a.kinder.amount)
+        family = family.filter(function(v) { return v !== 'Kinder'; });
       if (family.length) fact('leben', klV2Satz(family, KL_SATZ_FAMILIE), 'familie', ':familie');
       if (work.length) fact('leben', klV2Satz(work, KL_SATZ_ARBEIT), 'arbeit', ':arbeit');
-      if (life.text) fact('leben', life.text, 'allgemein', ':text');
+      if (life.text) fact('leben', klV2ZitatSatz('Zu ihrem Alltag sagt sie', life.text), 'allgemein', ':text');
     }
-    if (a.kinder && !a.kinder.skipped && (a.kinder.amount || a.kinder.ages)) fact('kinder', klV2KinderSatz(a.kinder), 'familie');
+    if (a.kinder && !a.kinder.skipped)
+      klV2KinderSaetze(a.kinder).forEach(function(k) { fact('kinder', k.text, 'familie', k.suffix); });
     var body = a.koerper, hormones = body && !body.skipped ? body.selected.filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
     if (klV2Hat('leben','schwanger') && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
-    /* Die Kennzeichnung "nach eigener Angabe" bleibt bei den beiden
-       gesundheitlichen Eintraegen stehen, waehrend die uebrigen Praefixe
-       entfallen. Sie ist kein Ordnungsvermerk, sondern die Abgrenzung:
-       felie stellt nichts fest, sie gibt wieder, was die Nutzerin gesagt
-       hat. Dieser Text geht auch in den Modellkontext, wo die Herkunft
-       nicht aus der Ueberschrift daneben ablesbar ist. */
-    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Hormoneller Kontext nach eigener Angabe: ' + hormones.join(', ') + '.', 'gesundheit', ':kontext');
-    if (body && !body.skipped && body.text) fact('koerper', 'Körperliches Thema nach eigener Angabe: ' + body.text, 'gesundheit', ':text');
+    /* Auch hier ohne Praefix. "Nach eigener Angabe" war als Abgrenzung
+       gedacht — felie stellt nichts fest, sie gibt wieder —, aber diese
+       Abgrenzung gehoert nicht in den angezeigten Satz: im Profil steht
+       ohnehin nur Selbstauskunft, und die Kategorie "Gesundheit" steht in
+       der Blase. Fuer das Modell traegt sie jetzt felieKontextDaten() als
+       eigenes Feld quelle bei, statt sie in den Text zu schreiben. */
+    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', 'gesundheit', ':kontext');
+    if (body && !body.skipped && body.text) fact('koerper', klV2ZitatSatz('Zu ihrem körperlichen Kontext sagt sie', body.text), 'gesundheit', ':text');
     if (a.schlafroutine && !a.schlafroutine.skipped && (a.schlafroutine.bed || a.schlafroutine.wake || a.schlafroutine.irregular)) fact('schlafroutine', klV2SchlafSatz(a.schlafroutine), 'allgemein');
     ['themen','gefuehl','ziel','zyklus','beschwerden'].forEach(function(key) {
       var f = a[key]; if (!f || f.skipped) return;
@@ -6719,7 +6888,7 @@ function getLiveSpot(target) {
       'ged-fakten':      '#ged-card-neu',
       'dash-wearable':   '#wearable-banner',
       'dash-scores':     '#score-cards',
-      'dash-zyklus':     ['#zyklus-locked', '#zyklus-real'],
+      'profile-zyklus':  '#profile-card-zyklus',
     };
     const sel = selectors[target];
     if (!sel) return null;
@@ -7842,41 +8011,6 @@ function showDashboard() {
       <div id="body-avg"></div>
       <div id="body-curve" style="margin-top:10px;"></div>
 
-      <div class="dash-section-label">Zyklus</div>
-
-      <!-- Zyklus locked -->
-      <div id="zyklus-locked" onclick="showCycleInput()" style="background:white;border-radius:14px;border:1px dashed rgba(143, 91, 189,0.35);flex-shrink:0;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#E6E0EE'" onmouseout="this.style.background='white'">
-        <div style="padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
-          <div style="opacity:0.35;color:#8F5BBD;"><svg class="ico" style="width:28px;height:28px"><use href="#i-bloom"/></svg></div>
-          <div style="font-size:13px;font-weight:500;color:#6B5A88;">Kein Zyklus eingetragen</div>
-          <div style="font-size:11px;color:#8F5BBD;line-height:1.5;">Tippe hier um deinen Zyklus einzutragen</div>
-        </div>
-      </div>
-
-      <!-- Zyklus real (hidden until data entered) -->
-      <div id="zyklus-real" style="display:none;" class="dash-zyklus-card">
-        <div class="dash-zyklus-top">
-          <div class="dash-zyklus-title" id="zy-title">Tag — von —</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="dash-zyklus-phase" id="zy-phase">—</div>
-            <button style="font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(143, 91, 189,0.3);background:transparent;color:#8F5BBD;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;" onclick="showCycleInput()"><svg class="ico" style="width:12px;height:12px"><use href="#i-pencil"/></svg>bearbeiten</button>
-          </div>
-        </div>
-        <div class="dash-zyklus-bar"><div class="dash-zyklus-fill" id="zy-fill"></div></div>
-        <div class="dash-zyklus-labels"><span>Menstruation</span><span>Follikel</span><span>Luteal</span></div>
-        <div class="dash-zyklus-info">
-          <div>
-            <div class="dash-zyklus-item-label">Nächste Periode</div>
-            <div class="dash-zyklus-item-val" id="zy-next-val">—</div>
-            <div class="dash-zyklus-item-sub" id="zy-next-sub">—</div>
-          </div>
-          <div>
-            <div class="dash-zyklus-item-label">Aktuelle Hormone</div>
-            <div class="dash-zyklus-item-val" id="zy-hormone-val">—</div>
-            <div class="dash-zyklus-item-sub" id="zy-hormone-sub">—</div>
-          </div>
-        </div>
-      </div>
 
     </div>
 
@@ -7901,9 +8035,7 @@ function showDashboard() {
         try { renderOuraComparison(); } catch(e) {}
     }, 100);
   }
-  if (window.cycleData) {
-    setTimeout(function() { populateZyklusCard(window.cycleData); }, 150);
-  }
+
   /* Check-in und Verlauf immer rendern — unabhängig von Zyklus- oder Körperdaten */
   /* Uhrzeit mitlaufen lassen — vorher fror sie beim Aufbau ein. */
   try {
@@ -8086,7 +8218,7 @@ function felieZyklusPhaseMarkieren(bd, val) {
 /* Zyklustag als Text — leer bei unbekanntem Zyklus. Verhindert
    "Tag null von null" bei Schwangerschaft, Postmenopause usw. */
 /* Build-Kennzeichnung — hilft, Feedback einer Version zuzuordnen. */
-var FELIE_BUILD = '2026-09-14-register-neu-links';
+var FELIE_BUILD = '2026-09-16-profil-inline-prompt-v5';
 
 /* ══ Gemeinsame Helfer ══ */
 
@@ -9894,7 +10026,7 @@ function populateZyklusCard(data) {
      den Zyklustag vom Tag der Eingabe. */
   try { if (data && data === window.cycleData) data = cycleRefresh() || data; } catch (e) {}
   saveBodyData();
-  const dash = document.getElementById('dashboard');
+  const dash = document.getElementById('profile-card-zyklus');
   if (!dash) return;
   const locked = dash.querySelector('#zyklus-locked');
   const real   = dash.querySelector('#zyklus-real');
@@ -11009,6 +11141,7 @@ function showGedaechtnis() {
      geschriebener Text darf deshalb nicht einfach verschwinden: er wird
      beim naechsten Oeffnen zu einem ganz normalen Eintrag. */
   try { gedMitgabeUebernehmen(); } catch (e) {}
+  try { klV2SnippetsNachziehen(); } catch (e) {}
   /* Einmaliger Blick: beim ersten Oeffnen nach einem Gespraech werden die
      neuen Eintraege hervorgehoben, gleichzeitig gilt der Hinweis als
      gesehen. Die Hervorhebung bleibt fuer DIESE Ansicht stehen — sie
@@ -11140,7 +11273,7 @@ function gedNeuHtml() {
   return '<div class="ged-karte" id="ged-card-neu">'
     + '<div class="ged-kopf"><div class="ged-kicker">Neu</div>'
     + (neu.length ? '<span class="ged-zahl">' + neu.length + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Aus deinem letzten Gespräch. Die Einträge stehen auch unter „Aktuell" und „Gespräche" — hier siehst du nur, was dazugekommen ist.</div>'
+    + '<div class="ged-sub">Neue Erinnerungen für felie aus deinen letzten Gesprächen.</div>'
     + inner
     + '</div>';
 }
@@ -11149,16 +11282,14 @@ function gedNeuHtml() {
    also nie ausgegraut und ohne "Noch aktuell?". */
 function gedNeuFadenZeile(e) {
   return '<div class="ged-zeile ged-neu snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
-    + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten">'
+    + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten" data-snip-loeschbar="1">'
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
     + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
     + '<span class="ged-badge">vorübergehend</span>'
     + '</div>'
-    + '<div class="ged-akt">'
-    + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
-    + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'faden\',\'' + gedJsAttr(e.id) + '\')">×</button>'
-    + '</div></div></div>';
+    + '<div class="ged-akt">' + felieSnipStiftHtml('„' + e.text + '" bearbeiten') + '</div>'
+    + '</div></div>';
 }
 
 /* Welches Register wird beim Oeffnen gezeigt? Kam die Nutzerin ueber den
@@ -11193,7 +11324,7 @@ function gedMitgabeUebernehmen() {
   klAnswers.notiz = '';
   klAnswers.notizQuelle = null;
   try { felieStoreSpeichern(); } catch (e) {}
-  try { saveProfile(); } catch (e) {}
+  try { saveUserProfile(); } catch (e) {}
   return true;
 }
 
@@ -11233,7 +11364,7 @@ function gedRender() {
      dauerhaften Angaben, also die Stelle, an der eine Sicherung am
      ehesten Thema ist. */
   box.innerHTML = tab === 'aktuell'    ? gedFaedenHtml()
-                : tab === 'gespraeche' ? gedLerntHtml() + gedFaktenHtml() + backupHint()
+                : tab === 'gespraeche' ? gedLerntHtml() + backupHint()
                 : gedNeuHtml();
 }
 
@@ -11260,19 +11391,16 @@ function gedFaedenHtml() {
   } else {
     inner = offen.map(function (e) {
       var abgelaufen = e.faelligBis < jetzt;
-      var wieder = (e.erwaehnungen || 1) > 1 ? '<span class="ged-badge">' + e.erwaehnungen + '× erwähnt</span>' : '';
+      var wieder = (e.erwaehnungen || 1) > 1 ? '<span class="ged-badge leise">' + e.erwaehnungen + '× erwähnt</span>' : '';
       /* Bei einem abgelaufenen Thema treten Stift und × zurueck: die
          Nutzerin soll eine Frage beantworten, nicht zwischen vier
          Handgriffen waehlen. Beides ist nach einem Ja wieder da. */
       var rechts = abgelaufen
         ? '<div class="ged-akt"><button class="ged-nochaktuell" onclick="gedFadenNachfragen(\'' + gedJsAttr(e.id) + '\')">Noch aktuell?</button></div>'
-        : '<div class="ged-akt">'
-          + felieSnipStiftHtml('„' + e.text + '" bearbeiten')
-          + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'faden\',\'' + gedJsAttr(e.id) + '\')">×</button>'
-          + '</div>';
+        : '<div class="ged-akt">' + felieSnipStiftHtml('„' + e.text + '" bearbeiten') + '</div>';
       return '<div class="ged-zeile' + (gedIstNeu(e.id) ? ' ged-neu' : '') + (abgelaufen ? ' ged-ruht' : '')
         + ' snip" data-snip="faden" data-snip-max="' + FELIE_SNIP_MAX.faden + '"'
-        + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten">'
+        + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten" data-snip-loeschbar="1">'
         + '<div class="snip-view">'
         + '<div style="flex:1;min-width:0;">'
         + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
@@ -11284,9 +11412,9 @@ function gedFaedenHtml() {
   }
 
   return '<div class="ged-karte" id="ged-card-faeden">'
-    + '<div class="ged-kopf"><div class="ged-kicker">Gerade offen</div>'
+    + '<div class="ged-kopf"><div class="ged-kicker">GERADE AKTUELL</div>'
     + (offen.length ? '<span class="ged-zahl">' + offen.length + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Themen, die felie vorübergehend berücksichtigt. Wenn ihre Zeit um ist, frage ich einmal nach — abhaken musst du nichts.</div>'
+    + '<div class="ged-sub">Themen, die felie vorübergehend berücksichtigt.</div>'
     + gedNeuHinweis(offen.filter(function (e) { return gedIstNeu(e.id); }).length)
     + inner
     + gedFormOrButton('faden', 'Offenes Thema ergänzen')
@@ -11376,36 +11504,63 @@ function gedLerntDaten() {
     groups[cat.key].entries.push(c);
   });
   order.sort(function(a, b) { return groups[b].entries.length - groups[a].entries.length; });
-  if (window._gedLerntFilter !== 'all' && !groups[window._gedLerntFilter]) window._gedLerntFilter = 'all';
+  /* 'ueberdich' ist kein Thema aus den Notizen, sondern ein eigener
+     Filter auf die Angaben — er darf hier nicht als unbekannt gelten
+     und zurueckgesetzt werden. */
+  if (window._gedLerntFilter !== 'all' && window._gedLerntFilter !== 'ueberdich'
+      && !groups[window._gedLerntFilter]) window._gedLerntFilter = 'all';
   return { groups: groups, order: order, total: mit.length };
 }
 
+/* Register "Gespräche": Notizen und die daraus gewonnenen Angaben in
+   EINER Karte. "Über dich" ist dabei kein eigener Block darunter, sondern
+   ein Filter neben den Themen — die Angaben stammen aus denselben
+   Gespraechen wie die Notizen, nur in anderer Form. Ein zweiter Block
+   haette suggeriert, es handle sich um eine andere Quelle. */
 function gedLerntHtml() {
   var d = gedLerntDaten();
-  var kopf = '<div class="ged-kopf"><div class="ged-kicker">Aus euren Gesprächen</div>'
-    + (d.total ? '<span class="ged-zahl">' + d.total + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Was ich mir am Ende eines Gesprächs notiert habe. Löschen entfernt nur die Notiz — das Gespräch bleibt im Archiv.</div>';
+  var fakten = gedFaktenSortiert(function (f) { return !gedIstSelbstauskunft(f); });
+  var sel = window._gedLerntFilter;
+  /* Ein Filter, dessen Inhalt verschwunden ist, darf nicht zu einer
+     leeren Ansicht ohne Erklaerung fuehren. */
+  if (sel === 'ueberdich' && !fakten.length) sel = window._gedLerntFilter = 'all';
 
-  if (!d.total) {
+  var kopf = '<div class="ged-kopf"><div class="ged-kicker">AUS UNSEREN GESPRÄCHEN</div>'
+    + (d.total ? '<span class="ged-zahl">' + d.total + '</span>' : '') + '</div>'
+    + '<div class="ged-sub">Was ich mir aus unseren Gesprächen gemerkt habe.</div>';
+
+  if (!d.total && !fakten.length) {
     return '<div class="ged-karte" id="ged-card-lernt">' + kopf
       + '<div class="ged-leer">Noch nichts. Je öfter wir sprechen, desto mehr sammelt sich hier.</div></div>';
   }
 
-  var sel = window._gedLerntFilter;
   var chips = '<button class="ged-chip' + (sel === 'all' ? ' aktiv' : '') + '" onclick="gedLerntFilter(\'all\')">Alle'
     + '<span class="ged-chip-n">' + d.total + '</span></button>'
     + d.order.map(function (k) {
         var g = d.groups[k];
         return '<button class="ged-chip' + (sel === k ? ' aktiv' : '') + '" onclick="gedLerntFilter(\'' + k + '\')">'
           + g.icon + g.label + '<span class="ged-chip-n">' + g.entries.length + '</span></button>';
-      }).join('');
+      }).join('')
+    /* Ganz rechts, damit die Themenfilter untereinander die gewohnte
+       Reihenfolge behalten. */
+    + (fakten.length ? '<button class="ged-chip' + (sel === 'ueberdich' ? ' aktiv' : '') + '" onclick="gedLerntFilter(\'ueberdich\')">'
+        + '<svg class="ico" style="width:16px;height:16px"><use href="#i-mind"/></svg>Über dich'
+        + '<span class="ged-chip-n">' + fakten.length + '</span></button>' : '');
+
+  if (sel === 'ueberdich') {
+    return '<div class="ged-karte" id="ged-card-lernt">' + kopf
+      + '<div class="ged-chips">' + chips + '</div>'
+      + gedNeuHinweis(fakten.filter(function (f) { return gedIstNeu(f.id); }).length)
+      + '<div style="display:flex;flex-direction:column;gap:6px;">' + fakten.map(gedFaktZeile).join('') + '</div>'
+      + '</div>';
+  }
 
   var eintraege = [];
   if (sel === 'all') {
     d.order.forEach(function (k) {
       d.groups[k].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[k].icon }); });
     });
-  } else {
+  } else if (d.groups[sel]) {
     d.groups[sel].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[sel].icon }); });
   }
   eintraege.sort(function (a, b) { return (b.c.timestamp || 0) - (a.c.timestamp || 0); });
@@ -11419,7 +11574,7 @@ function gedLerntHtml() {
     var when = '';
     try { when = relativeTime(c.timestamp) || ''; } catch (x) {}
     return '<div class="ged-lernt snip" data-snip="chatlernt" data-snip-max="' + FELIE_SNIP_MAX.chatlernt + '"'
-      + ' data-snip-id="' + id + '" data-snip-notiz="' + felieSnipAttr(c.notizId) + '" data-snip-label="Notiz zu diesem Gespräch bearbeiten">'
+      + ' data-snip-id="' + id + '" data-snip-notiz="' + felieSnipAttr(c.notizId) + '" data-snip-label="Notiz zu diesem Gespräch bearbeiten" data-snip-loeschbar="1">'
       + '<div class="ged-lernt-icon">' + e.icon + '</div>'
       + '<div class="ged-lernt-body">'
       + '<div class="snip-view">'
@@ -11428,10 +11583,8 @@ function gedLerntHtml() {
       + '<div class="ged-meta">' + gedEsc(c.thema || 'Gespräch') + (when ? ' · ' + when : '') + '</div>'
       + (!felieArchivNotizQuelle(c) ? '<div class="ged-meta">Ältere, ungeprüfte Notiz. felie nutzt sie nicht automatisch; du kannst sie korrigieren.</div>' : '')
       + '</div>'
-      + '<div class="ged-akt">'
-      + felieSnipStiftHtml('Notiz zu „' + (c.thema || 'Gespräch') + '" bearbeiten')
-      + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'lernt\',' + id + ',\'' + gedJsAttr(c.notizId) + '\')">×</button>'
-      + '</div></div></div></div>';
+      + '<div class="ged-akt">' + felieSnipStiftHtml('Notiz zu „' + (c.thema || 'Gespräch') + '" bearbeiten') + '</div>'
+      + '</div></div></div>';
   }).join('');
 
   var mehr = '';
@@ -11498,16 +11651,14 @@ function gedFaktZeile(f) {
     + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
     + ' data-snip-klasse="' + felieSnipAttr(f.klasse) + '"'
     + ' data-snip-quelle="' + felieSnipAttr(f.quelle || 'gespraech') + '"'
-    + ' data-snip-label="Eintrag bearbeiten">'
+    + ' data-snip-label="Eintrag bearbeiten" data-snip-loeschbar="1">'
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
     + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
     + marken
     + '</div>'
-    + '<div class="ged-akt">'
-    + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
-    + '<button class="ged-x" aria-label="Erinnerung löschen" onclick="gedLoeschenFragen(\'fakt\',\'' + gedJsAttr(f.id) + '\')">×</button>'
-    + '</div></div></div>';
+    + '<div class="ged-akt">' + felieSnipStiftHtml('„' + f.text + '" bearbeiten') + '</div>'
+    + '</div></div>';
 }
 
 /* Die Selbstauskunft im Profil. Dieselben Zeilen wie im Gedaechtnis,
@@ -11515,14 +11666,48 @@ function gedFaktZeile(f) {
    Ort, an den sie gehoeren. Vorher standen die Angaben aus dem
    Kennenlernen im Gedaechtnis, und das Profil zeigte sie ein zweites Mal
    als nicht bearbeitbare Aufzaehlung mit einem Verweis dorthin. */
+/* Eine Angabe im Profil. Nur der Stift, kein zusaetzliches × — in einer
+   Liste kurzer Saetze waren zwei Knoepfe je Zeile mehr Bedienung als
+   Inhalt. Geloescht wird im Editor, der sich hinter dem Stift oeffnet.
+     Schriftgroesse wie bei Name und Alter: die Angaben stehen zwischen
+   diesen Karten und sollen gleich viel Gewicht haben.
+     Der Stift-Editor bleibt derselbe: er braucht nur .snip mit den
+   data-Attributen und ein .snip-view innen, die Gestaltung ist ihm egal. */
+function profilFaktZeile(f) {
+  return '<div class="profil-fakt snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
+    + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
+    + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
+    + ' data-snip-klasse="' + felieSnipAttr(f.klasse) + '"'
+    + ' data-snip-quelle="' + felieSnipAttr(f.quelle || 'selbst') + '"'
+    + ' data-snip-loeschbar="1"'
+    + ' data-snip-label="Angabe bearbeiten">'
+    + '<div class="snip-view">'
+    + '<div style="flex:1;min-width:0;">'
+    /* Die Kategorie steht in der Blase, nicht als Ueberschrift darueber:
+       so traegt jeder Eintrag seine Einordnung selbst und bleibt auch
+       dann lesbar, wenn er einzeln betrachtet oder verschoben wird. */
+    + '<span class="profil-fakt-kat">' + GED_KAT_LABEL[GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein'] + '</span>'
+    + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
+    + '</div>'
+    + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
+    + '</div></div>';
+}
+
+/* Alles in EINER Karte, innen nach Kategorie gruppiert. Eine Karte je
+   Kategorie liess das Profil in lauter kleine Kaesten zerfallen; die
+   Gruppenzeile darin ordnet genauso, ohne die Flaeche zu zerschneiden. */
 function profilFaktenInnerHtml() {
   var fakten = gedFaktenSortiert(gedIstSelbstauskunft);
-  var inner = fakten.length
-    ? '<div style="display:flex;flex-direction:column;gap:6px;">' + fakten.map(gedFaktZeile).join('') + '</div>'
-    : '<div class="ged-leer">Noch nichts eingetragen. Was hier steht, geht in jede Antwort von felie ein.</div>';
-  return '<div style="font-size:11px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;">Über dich</div>'
-    + '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Deine eigenen Angaben — aus dem Kennenlernen und was du selbst ergänzt. Ändern und löschen jederzeit.</div>'
-    + inner
+  var kopf = '<div class="profil-fakt-titel">Über dich</div>'
+    + '<div class="profil-fakt-sub">Deine eigenen Angaben — aus dem Kennenlernen und was du selbst ergänzt. Sie gehen in jede Antwort von felie ein.</div>';
+  return kopf
+    + '<div class="profil-fakt-liste">'
+    + '<div id="profile-fields-group" style="display:flex;flex-direction:column;gap:6px;">'
+    + profileField('name', 'Name')
+    + profileField('alter', 'Alter')
+    + '</div>'
+    + fakten.map(profilFaktZeile).join('')
+    + '</div>'
     + gedFormOrButton('fakt', 'Etwas über dich ergänzen');
 }
 
@@ -11548,21 +11733,6 @@ function gedFaktenSortiert(filter) {
 /* Fakten aus Gespraechen — die Karte im Register "Gespräche". Ohne
    Ergaenzen-Knopf: hier steht, was felie mitbekommen hat, und das kann
    die Nutzerin nicht von Hand hinzufuegen. Ergaenzen geht im Profil. */
-function gedFaktenHtml() {
-  var fakten = gedFaktenSortiert(function (f) { return !gedIstSelbstauskunft(f); });
-
-  var inner = fakten.length
-    ? '<div style="display:flex;flex-direction:column;gap:6px;">' + fakten.map(gedFaktZeile).join('') + '</div>'
-    : '<div class="ged-leer">Noch nichts. Was aus euren Gesprächen dauerhaft über dich gilt, sammle ich hier — änderbar und löschbar, jederzeit.</div>';
-
-  return '<div class="ged-karte" id="ged-card-fakten">'
-    + '<div class="ged-kopf"><div class="ged-kicker">Über dich</div>'
-    + (fakten.length ? '<span class="ged-zahl">' + fakten.length + '</span>' : '') + '</div>'
-    + '<div class="ged-sub">Was ich aus euren Gesprächen mitgenommen habe und unabhängig vom Thema gilt. Es geht in jede Antwort ein.</div>'
-    + gedNeuHinweis(fakten.filter(function (f) { return gedIstNeu(f.id); }).length)
-    + inner
-    + '</div>';
-}
 
 function gedFaktLoeschen(id) {
   try {
@@ -11729,20 +11899,13 @@ function toggleProfileEdit(key) {
   if (ic) ic.style.color = open ? '#180430' : '#8F5BBD';
 }
 
-function profileField(key, label, controlHtml) {
-  var labelStyle = 'font-size:11px;font-weight:600;color:#180430;text-transform:uppercase;letter-spacing:0.08em;';
-  var cardStyle = 'background:white;border-radius:16px;border:1px solid rgba(143, 91, 189,0.15);padding:13px 16px;box-shadow:0 2px 10px rgba(24, 4, 48,0.07);';
-  var pencil = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10.5-10.5a1.8 1.8 0 0 0 0-2.5l-1.5-1.5a1.8 1.8 0 0 0-2.5 0L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
-  return '<div style="' + cardStyle + '">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
-      '<div style="min-width:0;flex:1;">' +
-        '<div style="' + labelStyle + '">' + label + '</div>' +
-        '<div id="profile-sum-' + key + '" style="font-size:14px;color:#180430;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + profileSummary(key) + '</div>' +
-      '</div>' +
-      '<button id="profile-editicon-' + key + '" onclick="toggleProfileEdit(\'' + key + '\')" title="Bearbeiten" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#8F5BBD;padding:5px;display:flex;align-items:center;">' + pencil + '</button>' +
-    '</div>' +
-    '<div id="profile-edit-' + key + '" style="display:none;margin-top:12px;">' + controlHtml + '</div>' +
-  '</div>';
+function profileField(key, label) {
+  return '<div class="profil-fakt snip" data-snip="profil" data-snip-key="' + key + '"'
+    + ' data-snip-max="' + (key === 'alter' ? 3 : 100) + '" data-snip-label="' + felieSnipAttr(label) + '">'
+    + '<div class="snip-view"><div style="flex:1;min-width:0;">'
+    + '<span class="profil-fakt-kat">' + felieSnipAttr(label) + '</span>'
+    + '<div class="snip-text" id="profile-sum-' + key + '">' + felieSnipAttr(profileSummary(key)) + '</div></div>'
+    + felieSnipStiftHtml(label + ' bearbeiten') + '</div></div>';
 }
 
 /* Kartentext fuer die Einwilligungs-Uebersicht im Profil. Datum stammt aus
@@ -11771,6 +11934,38 @@ function consentSummaryHtml() {
     '<button onclick="withdrawConsent()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Einwilligung widerrufen</button>';
 }
 
+function profilZyklusHtml() {
+  return "<section id=\"profile-card-zyklus\" aria-label=\"Zyklus\" style=\"background:white;border-radius:16px;border:1px solid rgba(143, 91, 189,0.15);padding:16px;box-shadow:0 2px 10px rgba(24, 4, 48,0.07);display:flex;flex-direction:column;gap:12px;\"><div class=\"profil-fakt-titel\" style=\"margin:0;\">Zyklus</div>      <!-- Zyklus locked -->\n      <div id=\"zyklus-locked\" onclick=\"showCycleInput()\" style=\"background:white;border-radius:14px;border:1px dashed rgba(143, 91, 189,0.35);flex-shrink:0;cursor:pointer;transition:background 0.15s;\" onmouseover=\"this.style.background='#E6E0EE'\" onmouseout=\"this.style.background='white'\">\n        <div style=\"padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;\">\n          <div style=\"opacity:0.35;color:#8F5BBD;\"><svg class=\"ico\" style=\"width:28px;height:28px\"><use href=\"#i-bloom\"/></svg></div>\n          <div style=\"font-size:13px;font-weight:500;color:#6B5A88;\">Kein Zyklus eingetragen</div>\n          <div style=\"font-size:11px;color:#8F5BBD;line-height:1.5;\">Tippe hier um deinen Zyklus einzutragen</div>\n        </div>\n      </div>\n\n      <!-- Zyklus real (hidden until data entered) -->\n      <div id=\"zyklus-real\" style=\"display:none;padding:0;border:0;box-shadow:none;background:transparent;\" class=\"dash-zyklus-card\">\n        <div class=\"dash-zyklus-top\">\n          <div class=\"dash-zyklus-title\" id=\"zy-title\">Tag — von —</div>\n          <div style=\"display:flex;align-items:center;gap:8px;\">\n            <div class=\"dash-zyklus-phase\" id=\"zy-phase\">—</div>\n            <button style=\"font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(143, 91, 189,0.3);background:transparent;color:#8F5BBD;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;\" onclick=\"showCycleInput()\"><svg class=\"ico\" style=\"width:12px;height:12px\"><use href=\"#i-pencil\"/></svg>bearbeiten</button>\n          </div>\n        </div>\n        <div class=\"dash-zyklus-bar\"><div class=\"dash-zyklus-fill\" id=\"zy-fill\"></div></div>\n        <div class=\"dash-zyklus-labels\"><span>Menstruation</span><span>Follikel</span><span>Luteal</span></div>\n        <div class=\"dash-zyklus-info\">\n          <div>\n            <div class=\"dash-zyklus-item-label\">Nächste Periode</div>\n            <div class=\"dash-zyklus-item-val\" id=\"zy-next-val\">—</div>\n            <div class=\"dash-zyklus-item-sub\" id=\"zy-next-sub\">—</div>\n          </div>\n          <div>\n            <div class=\"dash-zyklus-item-label\">Aktuelle Hormone</div>\n            <div class=\"dash-zyklus-item-val\" id=\"zy-hormone-val\">—</div>\n            <div class=\"dash-zyklus-item-sub\" id=\"zy-hormone-sub\">—</div>\n          </div>\n        </div>\n      </div>\n</section>";
+}
+
+function profilBasisSpeichern(key, wert) {
+  if (key !== 'name' && key !== 'alter') return false;
+  wert = String(wert == null ? '' : wert).replace(/\s+/g, ' ').trim();
+  if (key === 'alter' && wert !== '' && !/^(?:1[89]|[2-9]\d|1[01]\d|120)$/.test(wert)) {
+    felieAlert('Bitte gib dein Alter als ganze Zahl zwischen 18 und 120 ein.'); return false;
+  }
+  var vorher = { name: userName, answers: JSON.stringify(klAnswers) };
+  if (key === 'name') userName = wert.slice(0, 100);
+  else {
+    delete klAnswers.alter; delete klAnswers.alterExact; delete klAnswers.alterErfasstAm;
+    if (wert !== '') { klAnswers.alterExact = Number(wert); klAnswers.alterErfasstAm = Date.now(); }
+  }
+  if (!saveUserProfile()) {
+    userName = vorher.name;
+    Object.keys(klAnswers).forEach(function(k) { delete klAnswers[k]; });
+    Object.assign(klAnswers, JSON.parse(vorher.answers));
+    felieAlert('Deine Änderung konnte nicht gespeichert werden. Bitte versuche es erneut.'); return false;
+  }
+  if (!window._profileEdit) window._profileEdit = {};
+  window._profileEdit.name = userName;
+  window._profileEdit.alter = klAnswers.alter || '';
+  window._profileEdit.alterExact = klAnswers.alterExact == null ? '' : klAnswers.alterExact;
+  delete window._profileEdit.alterGeaendert;
+  try { klUebergabeInvalidieren(); } catch (e) {}
+  try { personalizeApp(); refreshGreeting(); } catch (e) {}
+  return true;
+}
+
 function showProfile() {
   var old = document.getElementById('profile-overlay');
   if (old) old.remove();
@@ -11779,6 +11974,7 @@ function showProfile() {
      anstossen, nicht nur beim Oeffnen des Gedaechtnisses: sonst haengt
      die Uebernahme davon ab, welchen Bereich sie zuerst betritt. */
   try { gedMitgabeUebernehmen(); } catch (e) {}
+  try { klV2SnippetsNachziehen(); } catch (e) {}
 
   window._profileEdit = {
     name: userName || '',
@@ -11816,27 +12012,13 @@ function showProfile() {
       '</div>' +
     '</div>' +
     '<div id="profile-scroll" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;">' +
-      '<div id="profile-fields-group" style="display:flex;flex-direction:column;gap:12px;">' +
-      profileField('name', 'Name',
-        '<input id="profile-name-input" type="text" oninput="window._profileEdit.name=this.value;refreshProfileSummary(\'name\');" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.3);font-family:inherit;font-size:14px;color:#180430;background:#FBF9FE;outline:none;" aria-label="Dein Name">') +
-      profileField('alter', 'Alter',
-        '<div style="display:flex;flex-wrap:wrap;gap:8px;" role="group" aria-label="Alter">' + profileBandChips() + '</div>') +
-      '</div>' +
       /* Die Selbstauskunft steht jetzt hier und ist hier auch bearbeitbar.
          Vorher lag sie im Gedaechtnis, und an dieser Stelle stand eine
          Aufzaehlung ohne Handgriffe mit dem Hinweis "Im Gedächtnis
          bearbeiten" — zwei Orte fuer dieselben Zeilen, und der falsche
          davon war der, an dem etwas ging. */
       '<div id="profile-card-fakten" style="' + cardStyle + '">' + profilFaktenInnerHtml() + '</div>' +
-      /* Der Verweis bleibt, aber als schmale Zeile: das Gedaechtnis ist
-         jetzt das, was felie mitbekommen hat — nicht mehr der Ort, an dem
-         ihre eigenen Angaben liegen. */
-      '<div id="profile-card-gedaechtnis" style="' + cardStyle + '">' +
-        '<div style="' + labelStyle + '">Was felie mitbekommen hat</div>' +
-        '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Offene Themen, Gesprächsnotizen und was felie aus euren Gesprächen dauerhaft über dich gelernt hat. Auch dort lässt sich jeder Eintrag ändern oder löschen.</div>' +
-        '<button onclick="gedAusProfil()" style="width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.35);background:white;color:#180430;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-mind"/></svg>Gedächtnis öffnen</button>' +
-      '</div>' +
-      '<button onclick="saveProfile()" style="width:100%;padding:14px;border-radius:16px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg class="ico" style="width:15px;height:15px;flex-shrink:0"><use href="#i-box"/></svg>Änderungen speichern</button>' +
+      profilZyklusHtml() +
       '<div style="' + cardStyle + '">' +
         '<div style="' + labelStyle + '">Expert Circle</div>' +
         '<div style="font-size:12px;color:#6B5A88;line-height:1.45;">Deine Perspektive ist für uns von unschätzbarem Wert. Teile hier dein Feedback über felie — es fließt direkt in die Weiterentwicklung ein.</div>' +
@@ -11851,8 +12033,7 @@ function showProfile() {
         '</div>' +
       '</div>' +
       '<div id="profile-card-consent" style="' + cardStyle + '">' + '<div style="' + labelStyle + '">Deine Einwilligung</div>' + consentSummaryHtml() + '</div>' +
-      '<button onclick="restartGuides()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.3);background:transparent;color:#4A3A6A;font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:10px;">Rundgänge erneut zeigen</button>' +
-      '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:transparent;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
+      '<button onclick="resetUserData()" style="width:100%;padding:12px;border-radius:14px;border:1.5px solid rgba(200,80,80,0.35);background:white;color:#C25050;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:2px;">Nutzerdaten löschen</button>' +
       '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;padding:10px 0 4px;">' +
         '<span onclick="showDatenschutz()" style="color:#8F5BBD;font-size:12px;cursor:pointer;text-decoration:underline;">Datenschutzerklärung</span>' +
         '<span style="color:#6B5A88;">·</span>' +
@@ -11863,9 +12044,8 @@ function showProfile() {
     '</div>';
 
   document.querySelector('.phone').appendChild(div);
+  try { var zyklus = cycleRefresh() || window.cycleData; if (zyklus) populateZyklusCard(zyklus); } catch (e) {}
   felieDialog(div, { label: 'Profil', onClose: function() { div.remove(); } });
-  var ni = document.getElementById('profile-name-input');
-  if (ni) ni.value = window._profileEdit.name;
 }
 
 /* Aus dem Profil ins Gedaechtnis. Das Profil wird geschlossen statt
@@ -12958,16 +13138,17 @@ function felieModusRegeln(mode) {
 
 function felieChatAntwortRegeln() {
   return [
-    "<antwortauftrag>",
-    "Schreibe jetzt die nächste felie-Antwort. Beginne mit der hilfreichen Aussage. Standard: zwei bis vier kurze Sätze; ein erbetener Plan darf wenige ausführbare Schritte haben. Eine erbetene Idee bedeutet genau eine, ohne weitere Alternative. Ohne Zahlenwunsch genügen ein bis zwei Ideen. Eine Frage nur für eine notwendige Angabe oder um einen neu vorgeschlagenen Weg abzustimmen. Nach Zustimmung sofort konkret am bisherigen Vorschlag weiterarbeiten. Fehlt nichts Entscheidendes, endet die Antwort mit der Hilfe.",
-    "Führe das Gespräch voran: Ist das Anliegen unklar, biete einen konkreten Einstieg und höchstens eine leicht beantwortbare Frage an. Sobald eine Richtung genannt ist, liefere eine passende Umsetzung statt einer weiteren Eingrenzungsrunde. Nach Zustimmung oder Präzisierung arbeite den Vorschlag aus. Fehlt kein entscheidender Kontext, endet die Antwort mit der Hilfe: ohne Schlussfrage und ohne „Wenn du magst, kann ich …“. Fragen dienen einer konkreten Entscheidung, nicht dem Offenhalten des Chats. Bei einer selbst vorgeschlagenen neuen Richtung darf eine kurze Passungsfrage stehen; nach Zustimmung entfällt sie. „Nur zuhören“ und Themenwechsel gelten sofort.",
-    "Medizinische Grenze: meist ein Satz, dann passende Hilfe direkt ausführen. Keine persönliche Laborbewertung, auch nicht indirekt oder als „allgemein“ etikettiert: kein Vergleich mit Grenz- oder Referenzwerten, kein hoch/niedrig/normal, kein Speicherzustand, Mangel oder Behandlungsbedarf. Auch vollständige Daten erlauben keine eigene Bewertung. Keine fehlenden Laborangaben zur späteren Bewertung nachfordern. Allgemeines Wissen verständlich erklären, ohne ungefragt zur persönlichen Abklärung überzugehen. Abklärung bei anhaltenden oder besorgniserregenden Beschwerden bleibt wichtig; bekannte Abklärung nicht ohne neuen Anlass wiederholen. Akute Gefahr hat immer Vorrang.",
-    "Für die Praxis einen fertigen neutralen Satz aus berichteten Angaben liefern. Keine Verdachtsdiagnose, Ursachenrangliste, Anamnese, zusätzlichen Symptome oder Untersuchungen vorgeben. Auch in einer vorgeschlagenen Arztfrage keine Laborliste, keinen TSH-/Eisentest und keine Bestätigung, dass bestimmte Blutwerte nötig seien. Die Praxis bestimmt die Abklärung; du hilfst beim Beschreiben. Keine Stärke, Dauer, Beschwerden, Medikamente oder Einnahmetreue hinzuerfinden. Ein möglicher Zusammenhang bleibt als Frage offen: „Besteht ein Zusammenhang?“. Keine Bezugnahme auf Beschwerden, wenn keine genannt wurden. Nach einer eigenen unbelegten Erklärung knapp korrigieren und keine neue Erklärung an ihre Stelle setzen.",
-    "Bleibe bei belegtem Kontext, auch in Rückfragen, Entwürfen und empathischen Formulierungen. Keine vorgestellten Szenen oder Gewohnheiten als Tatsachen schildern. Diagnose ist kein Anlass, Medikamenteneinnahme zu unterstellen. Begründe Alltagstipps praktisch, ohne erfundene Körper- oder Gehirnwirkung und ohne Zahlen für den erwarteten Erfolg. Bei Entlastung eine tatsächlich verschiebbare Aufgabe verkleinern oder verschieben; notwendige Pflichten bleiben bestehen. Keine freie Zeit oder Unterstützung voraussetzen. Keine ungefragten Zusicherungen zu Haltbarkeit oder fehlender Kühlpflicht. Kurze vollständige Sätze in natürlichem Deutsch.",
-    "VERLÄSSLICHE FORM: Bei einer Frage nach der Bedeutung ihres persönlichen Laborwerts beschränke die Antwort auf eine knappe Grenze und eine neutrale Praxisfrage. Diese Antwort enthält weder eine allgemeine Schwelle noch einen Vergleich noch eine eigene Einordnung. Bei reiner Begriffserklärung dagegen direkt den Begriff erklären und keine persönliche Abklärung hinzufügen. Berichtete Angaben in Praxisentwürfen so genau erhalten wie in einem Zitat; keine fehlende Einheit, Beschwerden, Dauer, Stärke oder Einnahmehäufigkeit ergänzen.",
-    "GESPRÄCHSFADEN: Beispiele unten zeigen unterschiedliche Situationen. Eine Zustimmung bezieht sich ausschließlich auf den tatsächlich vorherigen Vorschlag in diesem Gespräch. Übertrage nur das Vorgehen; keine fremde Aufgabe, Situation oder Formulierung einsetzen. Nach einer Korrektur bleibt die Ursache offen. In Krisen ist ein erwogener oder empfohlener Anruf noch kein erfolgter Anruf: Erst eine ausdrückliche Nutzerbestätigung belegt, dass Hilfe gerufen wurde. Eine Schwester anzurufen ersetzt bei unmittelbarer Gefahr nicht den Notruf.",
-    "</antwortauftrag>"
-  ].join('\n\n');
+  "<antwortauftrag>",
+  "Antworte auf die letzte Nachricht. Schreib freundlich, klar und persönlich in natürlichem Deutsch. Die Nutzerin soll sich verstanden fühlen und mit deiner Antwort etwas anfangen können. Nimm einen konkreten Punkt aus ihrer Nachricht auf. Eine Sachfrage darf sofort eine sachliche Antwort bekommen. Beginne nicht mit einer allgemeinen Bewertung des Anliegens oder Gefühls wie „Das ist ein sehr …“. Wärme braucht keinen solchen Vorspann.",
+  "Bei Unklarheit einen einfachen Einstieg vorschlagen und abstimmen. Bei konkreten Wünschen sofort helfen: eine ausführbare Idee, die gewünschte Erklärung oder den fertigen Text liefern. Höchstens eine Frage, die an ihre Worte anknüpft und die weitere Hilfe verändert. Nach Zustimmung den vereinbarten Vorschlag ausarbeiten. Ein Einwand verändert den Vorschlag: Es muss weiter zu ihrem Ziel passen, statt das Problem nur zu verlagern. Keine unerwähnten Geräte, Helfer oder freie Zeit voraussetzen. Vergangenes nicht als noch offene Aufgabe behandeln. Beim Wunsch nach Zuhören weder Rat noch Aufgabe.",
+  "Medizinische Grenze: meist ein Satz, dann passende Hilfe direkt ausführen. Keine persönliche Laborbewertung, auch nicht indirekt oder als „allgemein“ etikettiert: kein Vergleich mit Grenz- oder Referenzwerten, kein hoch/niedrig/normal, kein Speicherzustand, Mangel oder Behandlungsbedarf. Auch vollständige Daten erlauben keine eigene Bewertung. Keine fehlenden Laborangaben zur späteren Bewertung nachfordern. Allgemeines Wissen verständlich erklären, ohne ungefragt zur persönlichen Abklärung überzugehen. Abklärung bei anhaltenden oder besorgniserregenden Beschwerden bleibt wichtig; bekannte Abklärung nicht ohne neuen Anlass wiederholen. Akute Gefahr hat immer Vorrang.",
+  "Für die Praxis einen fertigen neutralen Satz aus berichteten Angaben liefern. Keine Verdachtsdiagnose, Ursachenrangliste, Anamnese, zusätzlichen Symptome oder Untersuchungen vorgeben. Auch in einer vorgeschlagenen Arztfrage keine Laborliste, keinen TSH-/Eisentest und keine Bestätigung, dass bestimmte Blutwerte nötig seien. Die Praxis bestimmt die Abklärung; du hilfst beim Beschreiben. Keine Stärke, Dauer, Beschwerden, Medikamente oder Einnahmetreue hinzuerfinden. Ein möglicher Zusammenhang bleibt als Frage offen: „Besteht ein Zusammenhang?“. Keine Bezugnahme auf Beschwerden, wenn keine genannt wurden. Nach einer eigenen unbelegten Erklärung knapp korrigieren und keine neue Erklärung an ihre Stelle setzen.",
+  "Bleibe bei belegtem Kontext, auch in Rückfragen, Entwürfen und empathischen Formulierungen. Keine vorgestellten Szenen oder Gewohnheiten als Tatsachen schildern. Diagnose ist kein Anlass, Medikamenteneinnahme zu unterstellen. Begründe Alltagstipps praktisch, ohne erfundene Körper- oder Gehirnwirkung und ohne Zahlen für den erwarteten Erfolg. Bei Entlastung eine tatsächlich verschiebbare Aufgabe verkleinern oder verschieben; notwendige Pflichten bleiben bestehen. Keine freie Zeit oder Unterstützung voraussetzen. Keine ungefragten Zusicherungen zu Haltbarkeit oder fehlender Kühlpflicht. Kurze vollständige Sätze in natürlichem Deutsch.",
+  "VERLÄSSLICHE FORM: Bei einer Frage nach der Bedeutung ihres persönlichen Laborwerts beschränke die Antwort auf eine knappe Grenze und eine neutrale Praxisfrage. Diese Antwort enthält weder eine allgemeine Schwelle noch einen Vergleich noch eine eigene Einordnung. Bei reiner Begriffserklärung dagegen direkt den Begriff erklären und keine persönliche Abklärung hinzufügen. Berichtete Angaben in Praxisentwürfen so genau erhalten wie in einem Zitat; keine fehlende Einheit, Beschwerden, Dauer, Stärke oder Einnahmehäufigkeit ergänzen.",
+  "GESPRÄCHSFADEN: Beispiele unten zeigen unterschiedliche Situationen. Eine Zustimmung bezieht sich ausschließlich auf den tatsächlich vorherigen Vorschlag in diesem Gespräch. Übertrage nur das Vorgehen; keine fremde Aufgabe, Situation oder Formulierung einsetzen. Nach einer Korrektur bleibt die Ursache offen. In Krisen ist ein erwogener oder empfohlener Anruf noch kein erfolgter Anruf: Erst eine ausdrückliche Nutzerbestätigung belegt, dass Hilfe gerufen wurde. Eine Schwester anzurufen ersetzt bei unmittelbarer Gefahr nicht den Notruf.",
+  "SCHREIBWEISE: Wenige zusammenhängende Sätze in ein bis zwei kurzen Absätzen reichen meistens. Erbetene Pläne oder Erklärungen dürfen länger sein. Schreibe aus, wie eine Idee umsetzbar ist; eine erbetene Idee bleibt eine. Keine Folge abgehackter Befehle, kein Vortrag und keine künstliche Schlussfrage. Konkrete Wörter statt abstrakter Sammelbegriffe: „ein Buch“ statt „Hobbymaterial“, „abends abschalten“ statt „die Abendroutine optimieren“. Medizinische Grenzen kurz und verständlich sagen. Grammatisch saubere Alltagssprache, keine erfundenen Redewendungen. Keine dekorativen Überschriften, routinemäßigen Dreierlisten, Werbe- oder Coaching-Floskeln. Keine künstlichen Gegensätze und keine Schlusszusammenfassung. Gefühle weder verstärken noch Ursachen dazuerfinden. Keine feste Gesprächsschablone: Reagiere auf diesen Moment, statt einen Beispielsatz einzusetzen.",
+  "</antwortauftrag>"
+].join('\n\n');
 }
 
 /* onboardingAussagen und onboardingThemen sind entfallen. Sie kamen aus
@@ -13079,8 +13260,19 @@ function felieArchivZitat(text, messages) {
 
 function felieKontextDaten() {
   var fakten = felieFakten().map(function(f) {
-    return { text: f.text, klasse: f.klasse, alterTage: f.alterTage, bestaetigtAm: f.bestaetigtAm,
-      quelle: f.quelle === 'selbst' ? 'persönliche Merknotiz der Nutzerin' : 'gespeicherte Merknotiz, kann überholt sein' };
+    /* Kategorie und Herkunft gehen jetzt als eigene Felder mit. Vorher
+       stand die Einordnung als Praefix im Text ("Hormoneller Kontext nach
+       eigener Angabe: …") — das las sich im Profil wie ein Formularfeld
+       und war der einzige Weg, dem Modell zu sagen, WOHER die Angabe
+       stammt. Zwei getrennte Aufgaben, jetzt auch zwei getrennte Felder.
+         'kennenlernen' war bisher mit den Gespraechsfakten in einen Topf
+       geworfen und trug die Warnung "kann überholt sein" — dabei ist es
+       ihre eigene Auskunft. */
+    return { text: f.text, kategorie: f.kategorie, klasse: f.klasse,
+      alterTage: f.alterTage, bestaetigtAm: f.bestaetigtAm,
+      quelle: f.quelle === 'selbst' ? 'von der Nutzerin selbst eingetragen'
+        : f.quelle === 'kennenlernen' ? 'Selbstauskunft aus dem Kennenlernen'
+        : 'aus einem Gespräch mitgenommen, kann überholt sein' };
   });
   var episoden = felieEpisoden({ nurAktuell: true }).map(function(e) {
     return { text: e.text, status: e.status, faelligBis: e.faelligBis };
@@ -13158,7 +13350,7 @@ function felieRequest(mode, messages, opts) {
   opts = opts || {};
   var dynamic = felieModusRegeln(mode);
   if (['chat', 'befund', 'willkommen', 'einordnung', 'aktualisierung', 'stimmung', 'wiedereinstieg'].indexOf(mode) >= 0)
-    dynamic += '\n' + buildPersonalityPrompt();
+    dynamic += '\n' + buildPersonalityPrompt(mode);
   if (mode === 'chat') dynamic += '\n' + feliePromptContext();
   if (mode === 'kennenlernen') dynamic += '\n' + buildKlPrompt();
   if (mode === 'chat' || mode === 'befund') dynamic += '\n\n' + felieChatAntwortRegeln();
@@ -13176,7 +13368,7 @@ function felieRequest(mode, messages, opts) {
   return felieFetch(FELIE_MODELL.endpunkt, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: FELIE_MODELL.name, felie_variant: FELIE_MODELL.variante,
-      max_tokens: opts.maxTokens || 1000,
+      max_tokens: opts.maxTokens || 1000, temperature: 0.7, top_p: 0.8,
       system: [{ type: 'text', text: mode === 'willkommen' ? feliePromptRegeln() : feliePromptStable(mode), cache_control: { type: 'ephemeral' } },
         { type: 'text', text: dynamic }], messages: msgs })
   }, opts.timeout || 30000).then(function(r) {
@@ -13478,7 +13670,7 @@ function felieZusammenfassungPruefen(o, source) {
   return out;
 }
 
-function buildPersonalityPrompt() {
+function buildPersonalityPrompt(mode) {
   var p = window._personality || loadPersonality();
   function pick(v, arr) { var i = Math.min(arr.length - 1, Math.max(0, (parseInt(v, 10) || 3) - 1)); return arr[i]; }
   var waerme = pick(p.waerme, [
@@ -13502,6 +13694,15 @@ function buildPersonalityPrompt() {
     'Antworte ausführlicher und erkläre Zusammenhänge.',
     'Antworte ausführlich und erklärend, nimm dir Raum.'
   ]);
+  if (mode === 'chat' || mode === 'befund') {
+    ausf = pick(p.ausfuehrlichkeit, [
+      'Sehr knapp; die erbetene Hilfe bleibt verständlich und ausführbar.',
+      'Knapp, mit den nötigen Einzelheiten.',
+      'Wenige zusammenhängende Sätze; erkläre so viel, wie das Anliegen braucht.',
+      'Ausführlicher, mit konkreten Beispielen oder Schritten, wenn hilfreich.',
+      'Ausführlich und erklärend, ohne Wiederholungen.'
+    ]);
+  }
   var koerper = pick(p.koerperbezug, [
     'Wenn relevant und belegt, nur kurz auf Körperdaten eingehen.',
     'Wenn relevant und belegt, Körperdaten knapp erklären.',
@@ -13662,21 +13863,22 @@ function feliePromptStable(mode) {
 
 function felieChatBeispiele() {
   return [
-    "KURZE BEISPIELE. Synthetische andere Gespräche; ihre Fakten gehören nicht zur aktuellen Nutzerin. Entscheidend sind ihr aktuelles Anliegen und der unmittelbar vorherige Vorschlag.",
-    "ORIENTIERUNG. „Ich weiß nicht, was ich brauche.“ → „Wir können zuerst einen Moment aus deinem Tag anschauen und daraus einen kleinen nächsten Schritt wählen. Ergänze einfach: Heute war es besonders viel, als … Passt dir dieser Einstieg?“ Nach einer Antwort zu den Abenden den Abend konkret vereinfachen; keine weitere Auswahlrunde zu anderen Themen.",
-    "ZUSTIMMUNG IM HAUSHALT. Felie hat vorgeschlagen, eine nicht dringende Aufräumaufgabe zu verkleinern. „Ja, lass uns das machen.“ → „Begrenze das Aufräumen heute auf die Fläche, die du als Nächstes brauchst. Den übrigen Feinschliff lässt du für später. So wird genau diese Aufgabe kleiner.“ Notwendige andere Pflichten werden damit nicht gestrichen.",
-    "ZUSTIMMUNG ZUM ARBEITSABSCHLUSS. Felie hat vorgeschlagen, den nächsten Arbeitsschritt zu notieren. „Ja, wie genau?“ → „Schreib vor dem Arbeitsende auf: Morgen beginne ich mit … Ergänze eine konkrete Aufgabe und lege den Zettel zu deinen Arbeitssachen. Damit steht der Einstieg für morgen schon fest.“ Dieses Beispiel gilt nur, wenn Arbeitsabschluss tatsächlich das Thema ist.",
-    "KONKRETE MAHLZEIT. „Eine vegetarische Idee ohne Kochen.“ → „Mische abgespülte weiße Bohnen aus der Dose mit Tomaten, Olivenöl und Zitronensaft. Iss Vollkornbrot dazu.“ Keine zusätzliche Alternative, kein Wirkungsversprechen, keine Haltbarkeitsaussage.",
-    "DIAGNOSE UND ORGANISATION. „Ich habe eine Schilddrüsenunterfunktion und suche morgens immer meine Sachen.“ → „Stell einen Korb an einen passenden festen Ort und lege dort die Dinge hinein, die du morgens sonst suchst. So haben sie einen gemeinsamen Ablageplatz.“ Keine medizinische Abgrenzung oder Medikamentenannahme.",
-    "ZUHÖREN. „Meine Freundin ist gestorben. Abends möchte ich ihr schreiben. Keine Tipps.“ → „Du möchtest ihr schreiben, und sie fehlt dir gerade sehr. Ich höre dir zu.“ Keine frühere Gewohnheit behaupten und keine eigene Traurigkeit als KI beschreiben.",
-    "KORREKTUR. Felie hat eine Ursache behauptet. „Das kannst du gar nicht wissen.“ → „Du hast recht, dafür fehlt mir die Grundlage. Die Ursache bleibt offen.“ Keine Ersatzursache oder umgekehrte Gewissheit.",
-    "LABORWERT. „Mein Ferritin ist 18. Ist mein Speicher leer? Sag es nur allgemein.“ → „Deinen Speicherzustand bewerte ich nicht anhand des Werts. Für die Praxis: Wie ist mein Ferritinwert einzuordnen?“ Keine Ergänzung über typische Grenzwerte und keine Einheit erfinden.",
-    "REFERENZVERGLEICH. „Mein TSH ist 6,9, der Bereich endet bei 4,5. Ist das hoch?“ → „Ich nehme keine persönliche Befundbewertung vor, auch keinen Referenzvergleich. Für die Praxis: Wie ist mein TSH-Ergebnis einzuordnen?“ Keine rechnerische Einordnung nachreichen.",
-    "ARZTVORBEREITUNG. „Ich bin trotz meiner Schilddrüsentabletten müde. Formuliere eine Frage an die Praxis.“ → „Ich bin trotz meiner Schilddrüsentabletten müde. Wie lässt sich das abklären?“ Keine Einnahmetreue, Untersuchungen oder Dosierungsentscheidung ergänzen. Genannte Beschwerden und Zeitangaben in anderen Fällen ebenso genau erhalten.",
-    "WISSEN. „Was bedeutet Ferritin allgemein?“ → „Ferritin ist ein Eiweiß, das Eisen speichert. Seine Konzentration im Blut wird als ein Hinweis auf die Eisenspeicher genutzt.“ Keine Übertragung auf ihre Dokumentwerte.",
-    "AKUTE GEFAHR IN DEUTSCHLAND. „Ich habe Angst, mir jetzt etwas anzutun, und bin allein.“ → „Ruf jetzt 112 an oder bitte eine erreichbare Person, den Anruf zu übernehmen. Hole dir zusätzlich jemanden an deine Seite, damit du nicht allein bleibst.“ Nach „Ich kann meine Schwester anrufen“ → „Ruf sie jetzt an und bitte sie, zu dir zu kommen. Ruf außerdem 112 oder bitte sie, den Notruf zu übernehmen.“ Eine Möglichkeit ist noch kein erfolgter Anruf.",
-    "AKUTE BRUSTSCHMERZEN MIT ATEMNOT IN DEUTSCHLAND. → „Ruf jetzt sofort 112 an oder bitte jemanden bei dir, den Anruf zu übernehmen. Warte nicht ab und fahre nicht selbst.“ Nach „Ich wollte nur über Stress reden“ → „Die beschriebenen Beschwerden haben weiterhin Vorrang. Ruf jetzt 112 an oder bitte jemanden, den Anruf zu übernehmen.“ Keine schon erfolgte Hilfe erfinden."
-  ].join('\n\n');
+  "KURZE BEISPIELE. Synthetische andere Gespräche; ihre Fakten gehören nicht zur aktuellen Nutzerin. Entscheidend sind ihr aktuelles Anliegen und der unmittelbar vorherige Vorschlag.",
+  "ORIENTIERUNG. „Heute ist alles durcheinander. Ich weiß nicht, wo anfangen.“ → „Ich würde zuerst sortieren, was heute noch ansteht und was warten kann. Dann suchen wir einen Anfang, der machbar ist. Passt das für dich?“ Nach einer konkreten Antwort an dieser Situation bleiben, statt erneut andere Themen zur Wahl zu stellen.",
+  "VORSCHLAG AUSARBEITEN. Felie hat vorgeschlagen, das Handy kurz vor dem Schlafen wegzulegen. „Ja, wie mache ich das?“ → „Probier es heute mit zehn Minuten vor dem Schlafengehen. Leg das Handy zum Laden außer Reichweite und mach dich dann in Ruhe bettfertig. Das ist ein kleiner Anfang, für den du deinen Abend nicht komplett umstellen musst.“ Keine Ersatzgeräte vorschlagen.",
+  "EINWAND AUFGREIFEN. „Das Handy ist meine einzige freie Zeit. Die will ich nicht auch noch verplanen.“ → „Dann würde ich nicht gleich eine feste Zeit daraus machen. Was gefällt dir an der Zeit am Handy am meisten?“ Die Frage klärt, was sie behalten möchte, statt ihr die gleiche Regel noch einmal aufzutragen. Andere Anliegen brauchen andere Fragen.",
+  "VEREINBARTEN TEXT LIEFERN. „Hilf mir, meiner Kollegin abzusagen. Ich kann ihr morgen nicht bei der Präsentation helfen.“ → „Du könntest ihr schreiben: ‚Ich kann dir morgen leider nicht bei der Präsentation helfen. Ich wollte dir rechtzeitig Bescheid sagen, damit du anders planen kannst.‘“ Keine Gründe, Termine oder Gefühle dazuerfinden.",
+  "KONKRETE MAHLZEIT. „Eine vegetarische Idee zum Mitnehmen, ohne Aufwärmen?“ → „Ein Bohnensalat passt gut: Spül weiße Bohnen aus der Dose ab, schneide Tomaten dazu und misch beides mit Olivenöl und Zitronensaft. Füll den Salat in eine Dose und nimm Vollkornbrot dazu. Den kannst du kalt essen.“ Keine zusätzliche Idee und keine ungefragte Lagerungs- oder Wirkungszusage.",
+  "ALLTAG TROTZ DIAGNOSE. „Ich habe eine Schilddrüsenunterfunktion. Beim Feierabend denke ich schon wieder an die Aufgaben von morgen.“ → „Probier, vor dem Feierabend eine kurze Notiz zu machen: ‚Morgen fange ich mit … an.‘ Trag nur den ersten Arbeitsschritt ein und lass die Notiz bei deinen Arbeitssachen. So musst du den Gedanken nicht den ganzen Abend im Kopf behalten.“ Keine Medikamentenannahme oder medizinische Abgrenzung bei dieser gewöhnlichen Organisationsfrage.",
+  "NUR ZUHÖREN. „Meine Freundin ist gestorben. Abends möchte ich ihr schreiben. Keine Tipps.“ → „Du möchtest ihr schreiben, und sie ist nicht mehr da. Ich höre dir zu.“ Keine Aufgabe, keine Deutung ihrer Trauer und keine eigene Traurigkeit behaupten.",
+  "KORREKTUR. Felie hat eine Ursache behauptet. „Das kannst du gar nicht wissen.“ → „Du hast recht, dafür fehlt mir die Grundlage. Die Ursache bleibt offen.“ Keine Ersatzursache oder umgekehrte Gewissheit.",
+  "LABORWERT. „Mein Ferritin ist 18. Ist mein Speicher leer? Sag es nur allgemein.“ → „Was der Wert für dich bedeutet, muss deine Praxis einordnen. Du kannst dort fragen: ‚Wie ist mein Ferritinwert einzuordnen?‘“ Keine Speicherbewertung, Grenzwerte oder erfundene Einheit.",
+  "REFERENZVERGLEICH. „Mein TSH ist 6,9, der Bereich endet bei 4,5. Ist das hoch?“ → „Die persönliche Bewertung des Ergebnisses gehört in deine Praxis. Eine Frage dafür wäre: ‚Wie ist mein TSH-Ergebnis einzuordnen?‘“ Keine rechnerische Einordnung oder eigene Bewertung nachreichen.",
+  "ARZTVORBEREITUNG. „Ich bin trotz meiner Schilddrüsentabletten müde. Formuliere eine Frage an die Praxis.“ → „Ich bin trotz meiner Schilddrüsentabletten müde. Wie lässt sich das abklären?“ Keine Einnahmetreue, Untersuchungen oder Dosierungsentscheidung ergänzen. Genannte Beschwerden und Zeitangaben in anderen Fällen ebenso genau erhalten.",
+  "WISSEN. „Was bedeutet Ferritin allgemein?“ → „Ferritin ist ein Eiweiß, das Eisen speichert. Seine Konzentration im Blut wird als ein Hinweis auf die Eisenspeicher genutzt.“ Keine Übertragung auf ihre Dokumentwerte.",
+  "AKUTE GEFAHR IN DEUTSCHLAND. „Ich habe Angst, mir jetzt etwas anzutun, und bin allein.“ → „Ruf jetzt 112 an oder bitte eine erreichbare Person, den Anruf zu übernehmen. Hole dir zusätzlich jemanden an deine Seite, damit du nicht allein bleibst.“ Nach „Ich kann meine Schwester anrufen“ → „Ruf sie jetzt an und bitte sie, zu dir zu kommen. Ruf außerdem 112 oder bitte sie, den Notruf zu übernehmen.“ Eine Möglichkeit ist noch kein erfolgter Anruf.",
+  "AKUTE BRUSTSCHMERZEN MIT ATEMNOT IN DEUTSCHLAND. → „Ruf jetzt sofort 112 an oder bitte jemanden bei dir, den Anruf zu übernehmen. Warte nicht ab und fahre nicht selbst.“ Nach „Ich wollte nur über Stress reden“ → „Die beschriebenen Beschwerden haben weiterhin Vorrang. Ruf jetzt 112 an oder bitte jemanden, den Anruf zu übernehmen.“ Keine schon erfolgte Hilfe erfinden."
+].join('\n\n');
 }
 
 /* Kennt felie diese Nutzerin schon? Gemessen am Bestand, nicht an der
@@ -14624,6 +14826,10 @@ function felieSnipStart(btn) {
      als Ausgangstext im Eingabefeld landen, sonst tippt die Nutzerin hinter
      einem Zeichen weiter, das nie Inhalt war. */
   if (alt === '—' || alt === '-') alt = '';
+  if (art === 'profil') {
+    alt = host.dataset.snipKey === 'alter'
+      ? (klAnswers.alterExact == null ? '' : String(klAnswers.alterExact)) : (userName || '');
+  }
 
   host.dataset.snipOffen = '1';
   host.dataset.snipAlt = alt;
@@ -14632,10 +14838,23 @@ function felieSnipStart(btn) {
   var form = document.createElement('div');
   form.className = 'snip-form';
   form.innerHTML =
-    '<textarea class="snip-input" rows="2" maxlength="' + max + '"'
-    + ' aria-label="' + felieSnipAttr(host.dataset.snipLabel || 'Text bearbeiten') + '"></textarea>'
+    (art === 'profil'
+      ? '<input class="snip-input" ' + (host.dataset.snipKey === 'alter'
+          ? 'type="number" inputmode="numeric" min="18" max="120" step="1"'
+          : 'type="text" maxlength="100" autocomplete="given-name"')
+        + ' aria-label="' + felieSnipAttr(host.dataset.snipLabel || 'Angabe bearbeiten') + '">'
+      : '<textarea class="snip-input" rows="2" maxlength="' + max + '"'
+        + ' aria-label="' + felieSnipAttr(host.dataset.snipLabel || 'Text bearbeiten') + '"></textarea>')
     + '<div class="snip-aktionen">'
     + '<span class="snip-zaehler" aria-hidden="true"></span>'
+    /* Loeschen sitzt im Editor statt als eigenes × an der Zeile: in einer
+       Liste kurzer Angaben waren Stift UND × nebeneinander mehr Bedienung
+       als Inhalt. Wer loeschen will, ist ohnehin schon beim Bearbeiten —
+       und die Rueckfrage dahinter bleibt dieselbe. Nur wo es ausdruecklich
+       erlaubt ist (data-snip-loeschbar), sonst wuerde der Knopf auch an
+       Feldern auftauchen, die gar keinen Eintrag zum Loeschen haben. */
+    + (host.dataset.snipLoeschbar === '1'
+        ? '<button type="button" class="snip-weg" onclick="felieSnipLoeschen(this)">Löschen</button>' : '')
     + '<button type="button" class="snip-ab" onclick="felieSnipAbbrechen(this)">Abbrechen</button>'
     + '<button type="button" class="snip-ok" onclick="felieSnipUebernehmen(this)">Übernehmen</button>'
     + '</div>';
@@ -14670,6 +14889,15 @@ function felieSnipUebernehmen(el) {
   var textEl = host.querySelector('.snip-text');
   if (!ta || !textEl) { felieSnipSchliessen(host); return; }
 
+  if (host.dataset.snip === 'profil') {
+    var wert = ta.value.replace(/\s+/g, ' ').trim();
+    if (wert !== (host.dataset.snipAlt || '')) {
+      if (!profilBasisSpeichern(host.dataset.snipKey, wert)) { try { ta.focus(); } catch (e) {} return; }
+      textEl.textContent = profileSummary(host.dataset.snipKey);
+    }
+    felieSnipSchliessen(host); return;
+  }
+
   var max = parseInt(host.dataset.snipMax, 10) || 240;
   var neu = ta.value.replace(/\s+/g, ' ').trim();
   if (neu.length > max) neu = neu.slice(0, max).trim();
@@ -14692,6 +14920,21 @@ function felieSnipUebernehmen(el) {
 function felieSnipAbbrechen(el) {
   var host = felieSnipHost(el);
   if (host) felieSnipSchliessen(host);
+}
+
+/* Loeschen aus dem Editor heraus. Der Editor schliesst zuerst — sonst
+   liegt die Rueckfrage ueber einem offenen Eingabefeld, und ein "Nein"
+   liesse die Nutzerin in einem halb bearbeiteten Zustand zurueck. Die
+   Rueckfrage selbst ist dieselbe wie ueberall sonst. */
+function felieSnipLoeschen(el) {
+  var host = felieSnipHost(el);
+  if (!host) return;
+  var art = host.dataset.snip;
+  var id = host.dataset.snipId;
+  felieSnipSchliessen(host);
+  if (!id) return;
+  if (art === 'fakt' || art === 'faden') gedLoeschenFragen(art, id);
+  else if (art === 'chatlernt') gedLoeschenFragen('lernt', id, host.dataset.snipNotiz);
 }
 
 function felieSnipSchliessen(host) {

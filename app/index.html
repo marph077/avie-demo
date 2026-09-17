@@ -5358,7 +5358,8 @@ function klV2VerbindungenNachziehen() {
         var ix = (chat.messages || []).findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === 'leben'; });
         // A migration must not turn an old statement into a new confirmation:
         // die historische Zeit geht mit dem Aufruf, nicht als Nachbesserung.
-        felieFaktSetzen({ id:id, text:choice[2], kategorie:'familie', klasse:'volatil', quelle:'selbst',
+        felieFaktSetzen({ id:id, text:choice[2], kategorie:'familie',
+          klasse: choice[1] === ':kinderstatus' ? 'stabil' : 'volatil', quelle:'selbst',
           erfasstAm: life.ts || chat.timestamp, bestaetigtAm: life.ts || chat.timestamp,
           gespraechId: chat.id || chat.timestamp,
           belege:ix >= 0 ? [{nachricht:ix,beleg:chat.messages[ix].content}] : [] });
@@ -5383,7 +5384,27 @@ function klV2SnippetsNachziehen() {
     if (fakt && (!Array.isArray(eintrag.belege) || !eintrag.belege.length)) return;
     eintrag.text = neu; geaendert = true;
   }
+  /* Die Klasse einer schon gespeicherten Aufnahme-Angabe nachziehen. Nur
+     wenn sie noch auf dem alten Pauschalwert steht und die Nutzerin den
+     Eintrag nicht selbst bearbeitet hat - ihre eigene Entscheidung wird
+     nicht ueberschrieben. Die Bestaetigungszeit bleibt unberuehrt: das
+     hier ist eine Korrektur unserer Einstufung, keine neue Bestaetigung
+     durch sie (E16). */
+  function klasseNachziehen(id, klasse) {
+    var e = store.fakten.find(function(x) { return x.id === id; });
+    if (!e || e.bearbeitetAm || e.klasse === klasse) return;
+    e.klasse = klasse; geaendert = true;
+  }
   var prefix = 'aufnahme:' + s.id + ':';
+  if (a.leben && !a.leben.skipped) {
+    var arbeitswahl = (a.leben.selected || []).filter(function (v) {
+      return ['Elternzeit', 'Vollzeit', 'Teilzeit', 'selbstständig'].indexOf(v) >= 0; });
+    if (arbeitswahl.length && arbeitswahl.indexOf('Elternzeit') < 0)
+      klasseNachziehen(prefix + 'leben:arbeit', 'stabil');
+    if ((a.leben.selected || []).indexOf('keine Kinder') >= 0)
+      klasseNachziehen(prefix + 'leben:kinderstatus', 'stabil');
+  }
+  if (a.kinder && !a.kinder.skipped) klasseNachziehen(prefix + 'kinder:anzahl', 'stabil');
   ['themen', 'gefuehl', 'ziel', 'zyklus', 'beschwerden'].forEach(function(key) {
     var f = a[key]; if (!f || f.skipped) return;
     var teile = (f.selected || []).join(', ');
@@ -5407,7 +5428,13 @@ function klV2SnippetsNachziehen() {
   if (body && !body.skipped && body.text) update(store.fakten, prefix + 'koerper:text', body.text, klV2ZitatSatz('Zu ihrem körperlichen Kontext sagt sie', body.text), true);
   var hormones = body && !body.skipped ? (body.selected || []).filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
   if (life && !life.skipped && (life.selected || []).indexOf('schwanger') >= 0 && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
-  if (hormones.length) update(store.fakten, prefix + (body && !body.skipped ? 'koerper' : 'leben') + ':kontext', hormones.join(', ') + '.', 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', true);
+  if (hormones.length) {
+    var kontextId = prefix + (body && !body.skipped ? 'koerper' : 'leben') + ':kontext';
+    update(store.fakten, kontextId, hormones.join(', ') + '.', 'Sie nennt als körperlichen Kontext: ' + klV2SatzListe(hormones) + '.', true);
+    /* Zweiter Schritt fuer alle, die den fehlerhaften Satz schon stehen
+       haben. Ohne ihn bliebe „nennt sie natürlicher Zyklus" fuer immer. */
+    update(store.fakten, kontextId, 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', 'Sie nennt als körperlichen Kontext: ' + klV2SatzListe(hormones) + '.', true);
+  }
   var kinder = a.kinder;
   if (kinder && !kinder.skipped) {
     var roh = String(kinder.amount == null ? '' : kinder.amount).trim(), zahl = /^\d+$/.test(roh) ? parseInt(roh,10) : null;
@@ -5453,10 +5480,20 @@ function klV2SichernIntern() {
     felieStore().fakten = felieStore().fakten.filter(function(f) { return String(f.id).indexOf(prefix) !== 0; });
     felieStore().episoden = felieStore().episoden.filter(function(f) { return String(f.id).indexOf(prefix) !== 0; });
     felieStore().signale = felieStore().signale.filter(function(f) { return !(f.meta && f.meta.onboardingId === s.id); });
-    function fact(key, text, cat, suffix) {
+    /* Die Klasse entscheidet, wann eine Angabe als überholungsbeduerftig
+       gilt: 'stabil' verfällt nie durch Nichterwähnung, 'volatil' 365 Tage
+       nach der letzten Bestätigung. Die Aufnahme schrieb bisher ALLES als
+       volatil - „Sie hat zwei Kinder." lief damit auf dieselbe Frist wie
+       eine Tageslage. Jetzt entscheidet die Aussage, nach der Regel, die
+       oben bei den Fakten steht: stabil sind Kinder, Chronisches und die
+       Arbeitssituation; volatil sind Wohnsituation, Beziehungsstatus und
+       aktuelle Last. */
+    function fact(key, text, cat, suffix, klasse) {
       if (!text) return;
       var i = chat.messages.findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === key; });
-      felieFaktSetzen({ id: 'aufnahme:' + s.id + ':' + key + (suffix || ''), text: text, kategorie: cat, klasse: 'volatil', quelle: 'selbst', belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
+      felieFaktSetzen({ id: 'aufnahme:' + s.id + ':' + key + (suffix || ''), text: text, kategorie: cat,
+        klasse: klasse === 'stabil' ? 'stabil' : 'volatil', quelle: 'selbst',
+        belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
     }
     var a = s.committed, life = a.leben;
     if (life && !life.skipped) {
@@ -5466,14 +5503,20 @@ function klV2SichernIntern() {
          Blase "Zwei Kinder." sagt dasselbe und mehr. */
       if (a.kinder && !a.kinder.skipped && a.kinder.amount)
         family = family.filter(function(v) { return v !== 'Kinder'; });
-      if (life.selected.indexOf('keine Kinder') >= 0) fact('leben', 'Sie hat keine Kinder.', 'familie', ':kinderstatus');
+      if (life.selected.indexOf('keine Kinder') >= 0) fact('leben', 'Sie hat keine Kinder.', 'familie', ':kinderstatus', 'stabil');
       if (life.selected.indexOf('Kinderwunsch') >= 0) fact('leben', 'Sie hat einen Kinderwunsch.', 'familie', ':kinderwunsch');
       if (family.length) fact('leben', klV2Satz(family, KL_SATZ_FAMILIE), 'familie', ':familie');
-      if (work.length) fact('leben', klV2Satz(work, KL_SATZ_ARBEIT), 'arbeit', ':arbeit');
+      /* Elternzeit ist eine Phase, keine Arbeitssituation - eine Auswahl,
+         die sie enthält, bleibt volatil und will wieder bestätigt werden. */
+      if (work.length) fact('leben', klV2Satz(work, KL_SATZ_ARBEIT), 'arbeit', ':arbeit',
+        work.indexOf('Elternzeit') < 0 ? 'stabil' : 'volatil');
       if (life.text) fact('leben', klV2ZitatSatz('Zu ihrem Alltag sagt sie', life.text), 'allgemein', ':text');
     }
     if (a.kinder && !a.kinder.skipped)
-      klV2KinderSaetze(a.kinder).forEach(function(k) { fact('kinder', k.text, 'familie', k.suffix); });
+      /* Die ANZAHL der Kinder ändert sich nicht durch Zeitablauf, ihr ALTER
+         schon - deshalb nicht dieselbe Klasse fuer beide Sätze. */
+      klV2KinderSaetze(a.kinder).forEach(function(k) {
+        fact('kinder', k.text, 'familie', k.suffix, k.suffix === ':anzahl' ? 'stabil' : 'volatil'); });
     var body = a.koerper, hormones = body && !body.skipped ? body.selected.filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
     if (klV2Hat('leben','schwanger') && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
     /* Auch hier ohne Praefix. "Nach eigener Angabe" war als Abgrenzung
@@ -5482,7 +5525,12 @@ function klV2SichernIntern() {
        ohnehin nur Selbstauskunft, und die Kategorie "Gesundheit" steht in
        der Blase. Fuer das Modell traegt sie jetzt felieKontextDaten() als
        eigenes Feld quelle bei, statt sie in den Text zu schreiben. */
-    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', 'gesundheit', ':kontext');
+    /* „nennt sie natürlicher Zyklus" war falsches Deutsch: nach „nennt"
+       steht der Akkusativ, die Auswahlwerte stehen im Nominativ. Statt die
+       Werte zu beugen - „einen natürlichen Zyklus", aber „eine hormonelle
+       Verhütung" - loest der Doppelpunkt die Rektion auf. Der Satz beginnt
+       jetzt ausserdem mit „Sie", damit die Anzeige ihren Namen einsetzt. */
+    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Sie nennt als körperlichen Kontext: ' + klV2SatzListe(hormones) + '.', 'gesundheit', ':kontext');
     if (body && !body.skipped && body.text) fact('koerper', klV2ZitatSatz('Zu ihrem körperlichen Kontext sagt sie', body.text), 'gesundheit', ':text');
     if (a.schlafroutine && !a.schlafroutine.skipped && (a.schlafroutine.bed || a.schlafroutine.wake || a.schlafroutine.irregular)) fact('schlafroutine', klV2SchlafSatz(a.schlafroutine), 'allgemein');
     ['themen','gefuehl','ziel','zyklus','beschwerden'].forEach(function(key) {
@@ -12214,7 +12262,7 @@ function felieChatKern() {
     "MEDIZINISCHE FUNKTIONSGRENZE: Keine persönliche Diagnose oder Differentialdiagnose, Befundbewertung, Dosierung, Therapieentscheidung oder Behandlungsempfehlung. Keine Erkennung, Vorbeugung, Überwachung, Vorhersage, Prognose, Behandlung oder Linderung von Krankheiten; keine medizinische Beurteilung oder Behandlung von Verletzungen oder Behinderungen. Keine medizinische Untersuchung, Bestimmung oder Steuerung anatomischer, physiologischer oder pathologischer Vorgänge und Zustände. Keine persönliche Bestimmung von Hormonlage, Nervensystemzustand, Blutzuckerverlauf, Eisprung, fruchtbaren Tagen oder Empfängniswahrscheinlichkeit und keine individuelle Steuerung von Empfängnisförderung oder -verhütung. Ernährung, Bewegung oder Stressübungen zur persönlichen Krankheitsbehandlung bleiben Therapie, auch unter dem Namen Lifestyle.",
     "WAS DU LEISTEST: Allgemeine Gesundheitsbegriffe und gesichertes Hintergrundwissen verständlich erklären; daraus keine persönliche Ursache, Eignung, Prognose oder Therapie ableiten. Genannte Diagnosen sind Kontext, kein automatischer Ablehnungsgrund. Gewöhnliche Mahlzeiten-, Bewegungs- und Pausenideen sowie Alltagsorganisation sind möglich. Passe sie an genannte Wünsche, Allergien, Möglichkeiten und ärztliche Vorgaben an, ohne medizinische Eignung selbst zu bestätigen. Bei einer entscheidenden ungeklärten Einschränkung gezielt nachfragen oder einen unabhängigen Alltagsschritt wählen. Eine normale Alltagsfrage braucht keinen Nicht-Ärztin-Hinweis. Eine betroffene Grenze knapp benennen und mit dem zulässigen Teil konkret weiterhelfen.",
     "BESCHWERDEN UND KRISE: Anhaltende, neue besorgniserregende oder zunehmende Beschwerden ärztlich abklären lassen. Bereits vereinbarte Abklärung ohne neuen Anlass nicht wiederholen. Bei unmittelbarer Gefahr ist der nächste Schritt menschliche Notfallhilfe: In Deutschland jetzt 112 anrufen oder eine erreichbare Person bitten, den Anruf zu übernehmen. Keine eigene Anreise oder andere Telefonnummer als gleichwertige Alternative. Bei unmittelbarer Selbstgefährdung zusätzlich eine vertraute Person hinzuholen und nicht allein bleiben; den Notruf nicht von einer weiteren Verschlechterung abhängig machen. Bei seelischer Krise ohne unmittelbare Gefahr in Deutschland Telefonseelsorge 0800 111 0 111. Bei unbekanntem Land den örtlichen Notruf nennen. Ruhig und zugewandt, keine Methoden, Diagnose oder Wellnesslösung. Höchstens eine Frage zum nächsten sicheren Schritt. Traurigkeit allein ist kein Notfall; akute Gefahr behält bei einem Themenwechsel Vorrang.",
-    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
+    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. OFFENE THEMEN: Das Feld offeneEpisoden nennt Anliegen, die sie FRÜHER angesprochen hat, mit einer Frist. Es ist kein Bericht darüber, wovon sie gerade spricht — auch dann nicht, wenn der Eintrag selbst „gerade“ oder „aktuell“ sagt. Sage niemals auf dieser Grundlage, sie erzähle gerade von etwas, und leite daraus keinen heutigen Zustand ab. Was sie JETZT beschäftigt, steht ausschließlich in ihren Nachrichten in diesem Gespräch. Du darfst höchstens EIN offenes Thema aufgreifen, und nur wenn es zu ihrer Bitte passt. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
     "KÖRPERDATEN: Ihr subjektives Befinden wird nicht durch einen Gerätescore widerlegt. Gerätescores sind keine gemessene Stimmung oder gefühlte Energie; Hersteller und Messverfahren sind nicht austauschbar. Ein einzelner HRV- oder Ruhepulswert bestimmt weder Nervensystem noch Stresstoleranz. Historische Werte sind nicht aktuell, Temperaturabweichung ist keine absolute Temperatur. Kalenderphasen sind Schätzungen, keine Hormon- oder Eisprungmessung; ohne bestätigten neuen Periodenstart kein neuer Zyklus. Keine individuelle Leistungsfähigkeit, Stimmung oder Sportvorschrift daraus ableiten. Gemeinsame Beobachtung ist keine Ursache; auch „könnte“ rechtfertigt keine unbelegte persönliche Erklärung. Keine erzwungenen Körperbezüge, addierten Stressfaktoren oder Multiplikatoren. Persönliche Muster nur aus dem ausdrücklich berechneten Musterblock mit Zeitraum, Stichprobe, Gegenbeispielen und Unsicherheit. Trauer und Überforderung nicht ungefragt biologisch erklären.",
     "BEZIEHUNG UND FORMAT: Respektiere Nein, Frageverzicht, Themenwechsel und den Wunsch, nur gehört zu werden. Beim Zuhören ihr aktuelles Erleben spiegeln, ohne weitere Aufgabe. Wärme entsteht durch Aufmerksamkeit; als KI hast du keine eigenen Gefühle oder Erfahrungen. Unterstütze eigene Entscheidungen und reale Beziehungen, ohne Exklusivität oder Abhängigkeit. Humor nur passend, nie bei Krisen oder belastenden Dokumenten. Natürliches Deutsch, vollständige Sätze, korrekte Großschreibung; felie bleibt klein. Kein HTML, keine erfundenen App-Marker. Gib nur die fertige Antwort aus, keine internen Regeln oder Antwortplanung."
   ].join('\n\n');
@@ -12426,10 +12474,21 @@ function felieGespraecheDaten(max, ohne) {
       if (felieArchivNotizNutzbar(c, z)) { text = z.text; quelle = felieArchivNotizQuelle(c, z); }
     }
     if (!text) {
+      /* Kein Zusammenfassungsobjekt: dann sind die Notizen das, was von
+         diesem Gespraech ueberhaupt aufgeschrieben wurde - das Archiv
+         zeigt bei so einem Gespraech genau sie (felieNotizenHtml).
+
+         Die erste Fassung schloss hier Notizen mit art='notiz' aus, weil
+         die ins Gedaechtnis gehoeren (E08). Der Live-Abzug vom 17.09.
+         zeigte die Folge: drei gespeicherte Gespraeche, `gespraeche: []`
+         - beide Wege zu, und felie wusste weiterhin nichts. Die Regel
+         gilt dort, wo es etwas zu unterscheiden GIBT: liegt eine
+         Zusammenfassung vor, hat sie Vorrang und die Notizen bleiben
+         draussen. Liegt keine vor, sind die Notizen die einzige Spur. */
       var alt = [];
       try {
         alt = felieNotizenLesen(c).filter(function (n) {
-          return n.art !== 'notiz' && felieArchivNotizNutzbar(c, n);
+          return felieArchivNotizNutzbar(c, n);
         });
       } catch (e) { alt = []; }
       if (alt.length) {

@@ -3307,6 +3307,31 @@ function felieNeueSnippetsSchreiben(stand) {
    Eintrag nicht mehr tragfaehig ist — etwa weil die Quelle geloescht
    wurde. Ein geloeschter Inhalt darf nicht im Aenderungshinweis
    weiterleben (Pruefaelle F28, F30, F44). */
+/* Hat die Nutzerin diese Aenderung selbst gemacht? Dann braucht sie
+   keinen Hinweis darauf: sie hat den Satz gerade getippt. Der Hinweis
+   ist dafuer da, dass sie sieht, was FELIE aus einem Gespraech geaendert
+   hat — ihr den eigenen alten Satz durchgestrichen zurueckzuspielen,
+   kommentiert ihr Tun (entschieden am 17.09.).
+
+   Erkannt wird das an der Belegart: eine Bearbeitung im Gedaechtnis
+   traegt eine direkte Quelle mit authoredValue, eine Ableitung aus einem
+   Gespraech nicht. */
+function felieHinweisVonIhr(d, entryId) {
+  var eintrag = felieRepoFind(d.entries, entryId);
+  var kopf = eintrag && eintrag.headRevisionId
+    ? felieRepoFind(d.revisions, eintrag.headRevisionId) : null;
+  if (!kopf) return false;
+  var selbst = false;
+  (kopf.supportSets || []).forEach(function (set) {
+    (set || []).forEach(function (id) {
+      var ev = felieRepoFind(d.evidence, id);
+      if (ev && ev.locator && ev.locator.kind === 'direct'
+        && ev.locator.authoredValue != null) selbst = true;
+    });
+  });
+  return selbst;
+}
+
 function felieNeuHinweiseNachziehen(d) {
   var stand = felieNeueSnippets();
   /* Zur Kenntnis genommene Hinweise tragen keinen Vorher-Text mehr und
@@ -3317,6 +3342,7 @@ function felieNeuHinweiseNachziehen(d) {
 
   felieRepoNeuHinweise(d).forEach(function (h) {
     if (h.art === 'new' || h.nachher == null) return;
+    if (felieHinweisVonIhr(d, h.entryId)) return;
     var da = hinweise.filter(function (x) { return x.id === h.entryId; })[0];
     /* Mehrere ungelesene Aenderungen derselben Angabe ergeben EINEN
        Hinweis: vom ersten noch zulaessigen Vorherstand bis zum
@@ -6486,7 +6512,15 @@ function felieErinnerungBearbeiten(art, id, text, wie) {
     var unveraendert = !!(kopf && kopf.text
       && felieNotizSchluessel(kopf.text) === felieNotizSchluessel(text));
 
-    if (unveraendert || wie === 'bestaetigung') {
+    /* Unveraendert gespeichert ist KEINE Bestaetigung (entschieden am
+       17.09.). Den Editor zu oeffnen und wieder zu schliessen ist kein
+       Vorgang, und eine Angabe soll nicht dadurch frisch wirken, dass
+       jemand sie versehentlich angetippt hat. Nur eine tatsaechliche
+       Eingabe zaehlt. Ausdrueckliches Bestaetigen bleibt ueber den
+       Parameter moeglich, falls die Oberflaeche spaeter einen eigenen
+       Weg dafuer bekommt. */
+    if (unveraendert && wie !== 'bestaetigung') return;
+    if (wie === 'bestaetigung') {
       felieBrueckeBefehl({ kind: 'confirm', entryId: eintrag.id,
         expectedHeadRevisionId: kopf ? kopf.id : null,
         evidence: [quelle], supportSets: [[quelle.id]] });
@@ -14138,21 +14172,6 @@ function felieSnipSchliessen(host) {
 
 
 
-/* „So stimmt es jetzt" gegenueber „Nur anders formuliert". Zwei echte
-   Wege, kein Bestaetigen-Abbrechen: der zweite Knopf verwirft nichts,
-   er sagt nur, dass sich am Inhalt nichts geaendert hat. */
-function felieBearbeitungsartFragen(weiter) {
-  felieConfirm({
-    title: 'Was hat sich geändert?',
-    message: 'Stimmt die Angabe jetzt inhaltlich anders — oder ist es derselbe Inhalt, nur anders gesagt? '
-      + 'Bei einer inhaltlichen Änderung merke ich mir den früheren Stand als überholt.',
-    confirmText: 'Stimmt jetzt so',
-    cancelText: 'Nur anders gesagt',
-    onConfirm: function () { weiter('inhalt'); },
-    onCancel: function () { weiter('formulierung'); }
-  });
-}
-
 function felieSnipSchreiben(host, wert) {
   var art = host.dataset.snip;
   if (art === 'notiz') {
@@ -14173,17 +14192,18 @@ function felieSnipSchreiben(host, wert) {
      Im Gedaechtnis existieren sie schon und haben eine id. Korrekturen
      gehen hier also direkt in den Store bzw. ins Archiv — es gibt keinen
      spaeteren Bestaetigungsschritt, der sie noch schreiben koennte. */
-  if (art === 'fakt' || art === 'faden') {
-    /* Eine Rueckfrage, und nur dort, wo sie etwas entscheidet: hat sich
-       der Inhalt geaendert oder nur die Formulierung? Bei unveraendertem
-       Text gibt es sie nicht — das ist eine Bestaetigung und braucht
-       keinen Knopf (Pruefall F38). */
-    felieBearbeitungsartFragen(function (wie) {
-      felieErinnerungBearbeiten(art, host.dataset.snipId, wert, wie);
-      try { gedRender(); } catch (e) {}
-    });
-    return true;
-  }
+  /* Keine Rueckfrage. Wer den eigenen Satz korrigiert, soll ihn
+     korrigieren und nicht erklaeren muessen, was fuer eine Art von
+     Korrektur das war — eine zweite Bestaetigung liest sich wie eine
+     Kontrolle. felie nimmt die Aenderung hin und setzt sie als richtig
+     voraus. Entschieden am 17.09.
+
+     Die drei Wege des Vertrags bleiben: unveraenderter Text ist eine
+     Bestaetigung, geaenderter Text eine inhaltliche Aenderung. Der
+     dritte, die reine Umformulierung, steht der Oberflaeche weiterhin
+     als Parameter zur Verfuegung — sichtbar angeboten wird er nicht. */
+  if (art === 'fakt' || art === 'faden')
+    return felieErinnerungBearbeiten(art, host.dataset.snipId, wert);
 
   if (art === 'chatlernt') {
     /* Der Satz gehoert zu einem archivierten Gespraech. Nur dieses eine

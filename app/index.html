@@ -6182,6 +6182,74 @@ function felieHomeZeitMerken(jetzt) {
   try { localStorage.setItem('felie_home_zuletzt', String(s.zuletzt)); } catch (e) {}
 }
 
+/* ══ Der Anknuepfungspunkt der Begruessung ══════════════════════
+   Bis M15 stand die Rangfolge als Bitte im Prompt, und die Auswahl traf
+   das Modell. Zwei Dinge gingen damit nicht:
+
+     - Die App wusste nicht, worauf felie angesprochen hatte. Sie konnte
+       sich also auch nicht merken, dass die Frage schon gestellt war -
+       und felie fragte bei jedem Oeffnen wieder dasselbe.
+     - Eine Rangfolge unter dreissig Verboten ist eine Bitte, keine Regel.
+
+   Seit M16 waehlt die APP genau EINEN Punkt und gibt ihn im Feld `bezug`
+   mit. Der Prompt nimmt ihn, statt selbst zu suchen. Damit ist die
+   Auswahl nachvollziehbar, pruefbar und merkbar.
+
+   Rangfolge, nach Marcels Begruendung vom 17.09.: zuerst das Befristete.
+   Ein offenes Thema hat eine Frist und laeuft deshalb noch; eine
+   dauerhafte Angabe ist keine Neuigkeit.
+
+   Einmal angesprochen, faellt ein Punkt dauerhaft aus der Auswahl. Der
+   Ausloeser ist das ANBIETEN, nicht das Beantworten: ob sie geantwortet
+   hat, laesst sich nicht zuverlaessig feststellen, und zweimal dasselbe
+   zu fragen ist in beiden Faellen falsch. */
+/* Als FUNKTION, nicht als Konstante: die Pruefumgebung laedt nur eine
+   feste Liste von Deklarationen auf oberster Ebene, und eine neue
+   Konstante waere dort still undefined - der Merker landete dann unter
+   dem Schluessel "undefined" und verschwaende bei jedem Neustart. */
+function felieBezugFeld() { return 'begruessungBezuege'; }
+
+function felieBezugVerbraucht() {
+  try { return felieStore().zusatz[felieBezugFeld()] || {}; } catch (e) { return {}; }
+}
+
+function felieBegruessungBezug(chats, offen) {
+  var weg = felieBezugVerbraucht();
+  var frei = function (schluessel) { return !Object.prototype.hasOwnProperty.call(weg, schluessel); };
+
+  /* (1) Das juengste offene Thema. */
+  var t = (offen || []).find(function (e) { return e.id && frei('thema:' + e.id); });
+  if (t) return { art: 'thema', schluessel: 'thema:' + t.id, text: t.text,
+    hinweis: 'ein offenes Thema von ihr; zeitlich begrenzt und deshalb wahrscheinlich noch aktuell' };
+
+  /* (2) Das juengste Gespraech mit Zusammenfassung. */
+  var g = (chats || []).find(function (c) {
+    return c.zusammenfassung && frei('gespraech:' + (c.id || c.timestamp)); });
+  if (g) return { art: 'gespraech', schluessel: 'gespraech:' + (g.id || g.timestamp),
+    text: g.zusammenfassung.text, thema: g.thema || null,
+    datum: new Date(g.timestamp).toLocaleDateString('de-DE'),
+    hinweis: 'euer Gespraech von diesem Tag; damaliger Stand, kein Beleg fuer Fortdauer' };
+
+  /* (3) Zuletzt eine dauerhafte Angabe. */
+  var f = null;
+  try { f = felieFakten().find(function (x) { return x.id && frei('angabe:' + x.id); }); } catch (e) {}
+  if (f) return { art: 'angabe', schluessel: 'angabe:' + f.id, text: f.text,
+    hinweis: 'eine dauerhafte Angabe; gilt laenger und ist selten das, was sie gerade bewegt' };
+
+  return null;
+}
+
+function felieBezugVerbrauchen(bezug) {
+  if (!bezug || !bezug.schluessel) return;
+  try {
+    felieDatenAendern(function (store) {
+      var feld = felieBezugFeld();
+      store.zusatz[feld] = store.zusatz[feld] || {};
+      store.zusatz[feld][bezug.schluessel] = Date.now();
+    });
+  } catch (e) {}
+}
+
 function felieHomeKontext(besuch, anlass) {
   var jetzt = Date.now(), d = new Date(jetzt), chat = null;
   var chats = getSavedChats().filter(function(c) { return Number.isFinite(c.timestamp) && c.timestamp <= jetzt; });
@@ -6200,14 +6268,21 @@ function felieHomeKontext(besuch, anlass) {
     var ts = Math.max.apply(Math, [e.bearbeitetAm, e.zuletztAm, e.erfasstAm].filter(function(t) {
       return Number.isFinite(t) && t <= jetzt;
     }).concat([0]));
-    return { text: e.text, aktualisiertAm: ts, status: 'offen' };
+    /* Die Kennung wird fuer die Auswahl des Anknuepfungspunkts gebraucht
+       und vor dem Senden wieder entfernt - das Modell hat mit ihr nichts
+       zu tun. */
+    return { id: e.id, text: e.text, aktualisiertAm: ts, status: 'offen' };
   }).sort(function(a, b) { return b.aktualisiertAm - a.aktualisiertAm; });
   var gesehen = {};
   offen = offen.filter(function(e) {
     var key = felieNotizSchluessel(e.text);
     if (Object.prototype.hasOwnProperty.call(gesehen, key)) return false;
     gesehen[key] = true; return true;
-  }).slice(0, 2);
+  });
+  /* Ausgewaehlt wird aus ALLEN offenen Themen, mitgesendet werden zwei. */
+  var bezug = felieBegruessungBezug(chats, offen);
+  offen = offen.slice(0, 2).map(function (e) {
+    return { text: e.text, aktualisiertAm: e.aktualisiertAm, status: e.status }; });
   var anlassText = anlass === 'gespraech_beendet'
       ? 'Gespräch gerade beendet und gespeichert; die Nutzerin ist eben zur Startseite zurückgekehrt'
     : anlass === 'gespraech_verlassen'
@@ -6244,6 +6319,9 @@ function felieHomeKontext(besuch, anlass) {
        im Chat und durch dieselben Sperren gefiltert (M10). */
     merknotizen: felieAngabenDaten(),
     gespraeche: felieGespraecheDaten(3),
+    /* Genau EIN Anknuepfungspunkt, von der App gewaehlt. Siehe
+       felieBegruessungBezug. */
+    bezug: bezug,
     letztesGespraech: chat, offeneEpisoden: offen,
     einstieg: einstieg || undefined };
 }
@@ -6288,6 +6366,12 @@ function felieHomeBegruessen() {
      Nutzerin frisch von der Tuer ab. */
   var anlassOffen = s.anlassOffen; s.anlassOffen = null;
   var ctx = felieHomeKontext(besuch, anlassOffen);
+  /* Verbraucht wird beim ANBIETEN, nicht beim Beantworten: ob sie
+     geantwortet hat, ist nicht zuverlaessig feststellbar, und zweimal
+     dasselbe zu fragen ist in beiden Faellen falsch. Hier und nicht in
+     felieHomeKontext, weil diese Funktion auch nur lesend aufgerufen wird
+     (felieKontextFuer('startseite'), Pruefungen). */
+  felieBezugVerbrauchen(ctx.bezug);
   s.erneuern = false; s.anlass = anlassOffen || 'oeffnen';
   var revision = ++s.revision;
   felieHomeZeitMerken();
@@ -12275,7 +12359,7 @@ function felieChatKern() {
     "MEDIZINISCHE FUNKTIONSGRENZE: Keine persönliche Diagnose oder Differentialdiagnose, Befundbewertung, Dosierung, Therapieentscheidung oder Behandlungsempfehlung. Keine Erkennung, Vorbeugung, Überwachung, Vorhersage, Prognose, Behandlung oder Linderung von Krankheiten; keine medizinische Beurteilung oder Behandlung von Verletzungen oder Behinderungen. Keine medizinische Untersuchung, Bestimmung oder Steuerung anatomischer, physiologischer oder pathologischer Vorgänge und Zustände. Keine persönliche Bestimmung von Hormonlage, Nervensystemzustand, Blutzuckerverlauf, Eisprung, fruchtbaren Tagen oder Empfängniswahrscheinlichkeit und keine individuelle Steuerung von Empfängnisförderung oder -verhütung. Ernährung, Bewegung oder Stressübungen zur persönlichen Krankheitsbehandlung bleiben Therapie, auch unter dem Namen Lifestyle.",
     "WAS DU LEISTEST: Allgemeine Gesundheitsbegriffe und gesichertes Hintergrundwissen verständlich erklären; daraus keine persönliche Ursache, Eignung, Prognose oder Therapie ableiten. Genannte Diagnosen sind Kontext, kein automatischer Ablehnungsgrund. Gewöhnliche Mahlzeiten-, Bewegungs- und Pausenideen sowie Alltagsorganisation sind möglich. Passe sie an genannte Wünsche, Allergien, Möglichkeiten und ärztliche Vorgaben an, ohne medizinische Eignung selbst zu bestätigen. Bei einer entscheidenden ungeklärten Einschränkung gezielt nachfragen oder einen unabhängigen Alltagsschritt wählen. Eine normale Alltagsfrage braucht keinen Nicht-Ärztin-Hinweis. Eine betroffene Grenze knapp benennen und mit dem zulässigen Teil konkret weiterhelfen.",
     "BESCHWERDEN UND KRISE: Anhaltende, neue besorgniserregende oder zunehmende Beschwerden ärztlich abklären lassen. Bereits vereinbarte Abklärung ohne neuen Anlass nicht wiederholen. Bei unmittelbarer Gefahr ist der nächste Schritt menschliche Notfallhilfe: In Deutschland jetzt 112 anrufen oder eine erreichbare Person bitten, den Anruf zu übernehmen. Keine eigene Anreise oder andere Telefonnummer als gleichwertige Alternative. Bei unmittelbarer Selbstgefährdung zusätzlich eine vertraute Person hinzuholen und nicht allein bleiben; den Notruf nicht von einer weiteren Verschlechterung abhängig machen. Bei seelischer Krise ohne unmittelbare Gefahr in Deutschland Telefonseelsorge 0800 111 0 111. Bei unbekanntem Land den örtlichen Notruf nennen. Ruhig und zugewandt, keine Methoden, Diagnose oder Wellnesslösung. Höchstens eine Frage zum nächsten sicheren Schritt. Traurigkeit allein ist kein Notfall; akute Gefahr behält bei einem Themenwechsel Vorrang.",
-    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. IHR AKTUELLES WORT: Was sie in dieser Nachricht sagt, hat Vorrang vor allem Gespeicherten. Widerspricht das Gespeicherte, folge der Nachricht — ohne Richtigstellung und ohne Nachfrage, warum es jetzt anders ist. KENNENLERNEN: Das Feld kennenlernen enthält den Verlauf einer Aufnahme, die sie unmittelbar vor diesem Gespräch ausgefüllt hat, und fehlt in späteren Gesprächen. Es ist frisch: du darfst ausdrücklich daran anknüpfen — als etwas, das SIE gesagt hat („beim Kennenlernen hast du erzählt …“), nie als etwas, das sie gerade sagt. Bereits beantwortete Profilfragen nicht wiederholen. OFFENE THEMEN: Das Feld offeneEpisoden nennt Anliegen, die sie FRÜHER angesprochen hat, mit einer Frist. Es ist kein Bericht darüber, wovon sie gerade spricht — auch dann nicht, wenn der Eintrag selbst „gerade“ oder „aktuell“ sagt. Sage niemals auf dieser Grundlage, sie erzähle gerade von etwas, und leite daraus keinen heutigen Zustand ab. Was sie JETZT beschäftigt, steht ausschließlich in ihren Nachrichten in diesem Gespräch. Du darfst höchstens EIN offenes Thema aufgreifen, und nur wenn es zu ihrer Bitte passt. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
+    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. WER MIT WEM: Jedes Gespraech in gespraeche, letztesGespraech oder rueckblick ist EURES — deines mit ihr. Sprich davon in der Wir-Form („als wir zuletzt gesprochen haben“), nie mit „ihr habt“: „ihr“ meint sie und eine andere Person und ist hier falsch. IHR AKTUELLES WORT: Was sie in dieser Nachricht sagt, hat Vorrang vor allem Gespeicherten. Widerspricht das Gespeicherte, folge der Nachricht — ohne Richtigstellung und ohne Nachfrage, warum es jetzt anders ist. KENNENLERNEN: Das Feld kennenlernen enthält den Verlauf einer Aufnahme, die sie unmittelbar vor diesem Gespräch ausgefüllt hat, und fehlt in späteren Gesprächen. Es ist frisch: du darfst ausdrücklich daran anknüpfen — als etwas, das SIE gesagt hat („beim Kennenlernen hast du erzählt …“), nie als etwas, das sie gerade sagt. Bereits beantwortete Profilfragen nicht wiederholen. OFFENE THEMEN: Das Feld offeneEpisoden nennt Anliegen, die sie FRÜHER angesprochen hat, mit einer Frist. Es ist kein Bericht darüber, wovon sie gerade spricht — auch dann nicht, wenn der Eintrag selbst „gerade“ oder „aktuell“ sagt. Sage niemals auf dieser Grundlage, sie erzähle gerade von etwas, und leite daraus keinen heutigen Zustand ab. Was sie JETZT beschäftigt, steht ausschließlich in ihren Nachrichten in diesem Gespräch. Du darfst höchstens EIN offenes Thema aufgreifen, und nur wenn es zu ihrer Bitte passt. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
     "KÖRPERDATEN: Ihr subjektives Befinden wird nicht durch einen Gerätescore widerlegt. Gerätescores sind keine gemessene Stimmung oder gefühlte Energie; Hersteller und Messverfahren sind nicht austauschbar. Ein einzelner HRV- oder Ruhepulswert bestimmt weder Nervensystem noch Stresstoleranz. Historische Werte sind nicht aktuell, Temperaturabweichung ist keine absolute Temperatur. Kalenderphasen sind Schätzungen, keine Hormon- oder Eisprungmessung; ohne bestätigten neuen Periodenstart kein neuer Zyklus. Keine individuelle Leistungsfähigkeit, Stimmung oder Sportvorschrift daraus ableiten. Gemeinsame Beobachtung ist keine Ursache; auch „könnte“ rechtfertigt keine unbelegte persönliche Erklärung. Keine erzwungenen Körperbezüge, addierten Stressfaktoren oder Multiplikatoren. Persönliche Muster nur aus dem ausdrücklich berechneten Musterblock mit Zeitraum, Stichprobe, Gegenbeispielen und Unsicherheit. Trauer und Überforderung nicht ungefragt biologisch erklären.",
     "BEZIEHUNG UND FORMAT: Respektiere Nein, Frageverzicht, Themenwechsel und den Wunsch, nur gehört zu werden. Beim Zuhören ihr aktuelles Erleben spiegeln, ohne weitere Aufgabe. Wärme entsteht durch Aufmerksamkeit; als KI hast du keine eigenen Gefühle oder Erfahrungen. Unterstütze eigene Entscheidungen und reale Beziehungen, ohne Exklusivität oder Abhängigkeit. Humor nur passend, nie bei Krisen oder belastenden Dokumenten. Natürliches Deutsch, vollständige Sätze, korrekte Großschreibung; felie bleibt klein. Kein HTML, keine erfundenen App-Marker. Gib nur die fertige Antwort aus, keine internen Regeln oder Antwortplanung."
   ].join('\n\n');
@@ -12302,7 +12386,7 @@ function feliePromptRegeln(mode) {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. NACH DEM KENNENLERNEN: Nennt das Feld anlass ein soeben abgeschlossenes Kennenlernen und liegt ein Feld einstieg vor, dann greife GENAU dieses Thema auf — sie hat es eben selbst gewählt. Ein Satz dazu, warm und ohne Zusammenfassung des Kennenlernens, und eine offene Einladung weiterzusprechen. Frage nicht erneut, worüber sie sprechen möchte, und behaupte nichts über ihren Zustand. Fehlt das Feld einstieg, lade offen ein, ohne ein Thema zu erfinden. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. ANGABEN: Das Feld merknotizen trägt, was über sie gilt, mit Herkunft und Alter. Du darfst daran anknüpfen, damit die Begrüßung sie meint und nicht irgendwen. Niemals aufzählen, was du weißt, und niemals einen heutigen Zustand daraus ableiten. FRÜHERE GESPRÄCHE: Das Feld letztesGespraech nennt den Zeitpunkt, das Feld gespraeche je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreiben den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht eine Zusammenfassung den aktuellen Angaben, gelten die Angaben. Du darfst an HÖCHSTENS EINE anknüpfen, und nur wenn sie zum Einstieg passt — als offene Einladung, nie als Nacherzählung und nie als Behauptung, dass es heute noch so ist. Ist das Feld leer oder wurde das letzte Gespräch ohne Speichern verlassen, liegt dazu nichts vor: dann nicht so tun, als wüsstest du, worum es ging, und nichts erfinden. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
+    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. NACH DEM KENNENLERNEN: Nennt das Feld anlass ein soeben abgeschlossenes Kennenlernen und liegt ein Feld einstieg vor, dann greife GENAU dieses Thema auf — sie hat es eben selbst gewählt. Ein Satz dazu, warm und ohne Zusammenfassung des Kennenlernens, und eine offene Einladung weiterzusprechen. Frage nicht erneut, worüber sie sprechen möchte, und behaupte nichts über ihren Zustand. Fehlt das Feld einstieg, lade offen ein, ohne ein Thema zu erfinden. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. WER MIT WEM: Jedes genannte Gespraech ist EURES — deines mit ihr. Sprich davon in der Wir-Form, nie mit „ihr habt“; „ihr“ meint sie und eine andere Person. ANGABEN: Das Feld merknotizen trägt, was über sie gilt, mit Herkunft und Alter. Niemals aufzählen, was du weißt, und niemals einen heutigen Zustand daraus ableiten. KONKRET WERDEN: Das Feld bezug nennt GENAU EINEN Anknüpfungspunkt, den die App ausgewählt hat; sein Feld hinweis sagt, was er ist. Nimm genau diesen — suche nicht selbst in den anderen Feldern danach und nenne keinen zweiten. Deine Begrüßung greift ihn auf: ein Satz dazu, der an ihre eigene Aussage anknüpft, und eine offene Einladung weiterzusprechen. Eine Begrüßung, die für jede beliebige Nutzerin stimmen würde, ist die falsche Antwort; die Vorgaben hier grenzen ein, WIE der Bezug aussieht, nicht OB es ihn gibt. Du fragst nach, du stellst nichts fest: keine Behauptung, dass es heute noch so ist, keine Bewertung, keine Deutung und keine Ursache. Hat sie etwas Belastendes genannt, darfst du es ansprechen — mit ihren Worten, als Frage, ohne Ratschlag und ohne medizinische Einordnung. Bei kurze_rueckkehr bleibt es bei einem Satz — auch der trägt den Bezug. Ist bezug leer oder nicht vorhanden, lädt eine offene Frage ein, ohne ein Thema zu erfinden. FRÜHERE GESPRÄCHE: Das Feld letztesGespraech nennt den Zeitpunkt, das Feld gespraeche je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreiben den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht eine Zusammenfassung den aktuellen Angaben, gelten die Angaben. Du darfst an HÖCHSTENS EINE anknüpfen, und nur wenn sie zum Einstieg passt — als offene Einladung, nie als Nacherzählung und nie als Behauptung, dass es heute noch so ist. Ist das Feld leer oder wurde das letzte Gespräch ohne Speichern verlassen, liegt dazu nichts vor: dann nicht so tun, als wüsstest du, worum es ging, und nichts erfinden. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Sie dienen dem Verständnis ihrer Lage; angesprochen wird nur, was im Feld bezug steht. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',
@@ -12472,7 +12556,15 @@ function felieGespraecheDaten(max, ohne) {
      dem Modell dieselbe Sache zweimal zu sagen - einmal im Wortlaut und
      einmal in felies Nacherzaehlung (Pruefall F25). */
   var schon = (window._felieRueckblickAuswahl || []).map(String);
-  [window._felieAktiverArchivChat, window._letzteChatId].concat(ohne || []).forEach(function (id) {
+  /* NUR das gerade geoeffnete Archivgespraech, nicht das zuletzt
+     gespeicherte. `_letzteChatId` stand hier bis zum 17.09. mit drin und
+     war ein Fehler: saveChat setzt es auf das eben abgeschlossene
+     Gespraech, und damit fehlte auf der Startseite ausgerechnet das, worum
+     es gerade ging — felie griff nach dem vorletzten. Fuer die Dublette
+     beim Fortsetzen (F25) reicht `_felieAktiverArchivChat`; nur das setzt
+     reopenSavedChat, und `felieKontextFuer('fortsetzung')` nennt sein
+     Gespraech ohnehin ausdruecklich. */
+  [window._felieAktiverArchivChat].concat(ohne || []).forEach(function (id) {
     if (id != null) schon.push(String(id));
   });
   var out = [];

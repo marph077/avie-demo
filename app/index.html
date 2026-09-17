@@ -4948,6 +4948,28 @@ var KL_PLAENE = {
   Arbeit: 'wir schauen zuerst auf eine konkrete Situation bei der Arbeit, die dich gerade beschäftigt'
 };
 
+/* Was sie mir konkret schreiben kann. Der Plan sagt, WORAN wir
+   arbeiten; diese Zeile sagt, WOMIT sie anfaengt. Ohne sie endete die
+   erste Startseite mit „hier direkt weitersprechen" — eine Einladung
+   ohne Ziel, und das beim allerersten Besuch (Befund 17.09.).
+   Jede Zeile ist die Fortsetzung von „Du kannst mir auch direkt
+   schreiben, ..." und steht deshalb im Nebensatz. */
+var KL_EINSTIEGSFRAGEN = {
+  Schlaf: 'wie deine Abende gerade aussehen',
+  Stress: 'was dich im Moment am meisten beansprucht',
+  Energie: 'an welcher Stelle deines Tages dir am meisten Energie fehlt',
+  Stimmung: 'welche Situation dir zuletzt besonders nachgegangen ist',
+  'Körper': 'was du an deinem Körper konkret wahrnimmst',
+  Zyklus: 'was dir in den letzten Wochen an dir aufgefallen ist',
+  'Ernährung': 'wie deine Mahlzeiten im Alltag gerade aussehen',
+  Bewegung: 'wie viel Bewegung gerade in deinen Alltag passt',
+  'Mental Load': 'welche Aufgabe dir gerade am meisten im Kopf herumgeht',
+  Familie: 'welche Situation in deiner Familie dich gerade beschäftigt',
+  Arbeit: 'welche Situation bei der Arbeit dich gerade beschäftigt'
+};
+
+var KL_EINSTIEGSFRAGE_OFFEN = 'was dir gerade am meisten durch den Kopf geht';
+
 var KL_PLAN_OFFEN = 'wir sortieren zunächst gemeinsam, was gerade Raum in deinem Alltag einnimmt, und wählen einen kleinen nächsten Schritt';
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -5593,8 +5615,13 @@ function klV2StartseitenText() {
      den erstgenannten. Beim offenen Thema gibt es keinen Plan — dann
      bleibt der neutrale Text unten. */
   if (landing && landing.plan && !s.contextChanged) {
+    /* „Diesen Gedanken nehmen wir mit" stand vor dem Plan und sagte
+       nichts — der Plan ist der Gedanke. Er steht jetzt als eigener
+       Satz. */
     var plan = landing.plan.charAt(0).toUpperCase() + landing.plan.slice(1);
-    return 'Diesen Gedanken nehmen wir mit: ' + plan + '.\n\nDu kannst dich erst einmal umschauen oder hier direkt weitersprechen – so, wie es für dich passt.';
+    var frage = (landing.thema && KL_EINSTIEGSFRAGEN[landing.thema]) || KL_EINSTIEGSFRAGE_OFFEN;
+    return plan + '.\n\nSchau dich gern erst einmal ein bisschen in der App um. '
+      + 'Du kannst mir aber auch direkt schreiben, ' + frage + '.';
   }
   return 'Schau dich gern erst einmal um. Wenn du direkt weitersprechen möchtest: Worüber würdest du gerne mit mir sprechen?';
 }
@@ -6213,14 +6240,68 @@ function felieBezugVerbraucht() {
   try { return felieStore().zusatz[felieBezugFeld()] || {}; } catch (e) { return {}; }
 }
 
+/* Nicht jede offene Episode taugt als Einstieg in ein Gespraech. Das
+   Kennenlernen legt fuer jedes beantwortete Feld eine an — auch fuer die
+   Zyklusfrage. Die ist aber eine technische Selbstauskunft und kein
+   Thema, das sie mitgebracht hat: „Wo stehst du ungefaehr?" ist eine
+   Einstellung, die felie ohnehin als Zyklusdaten fuehrt. Als Anlass einer
+   Begruessung gelesen wird daraus „Dein Gefuehl, dich ungefaehr in der
+   Zyklusmitte zu verorten, war zuletzt dein Thema" — felie fragt nach
+   einem Anliegen, das nie eines war (Befund 17.09., 21:50).
+
+   Ausgeschlossen wird nur die AUSWAHL fuer die Begruessung. Die Episode
+   bleibt im Gedaechtnis und im Kontext; sie ist ihre Aussage. */
+/* Als Funktion, nicht als Konstante — siehe felieBezugFeld(). */
+function felieBezugAusgeschlossen() { return ['zyklus']; }
+
+/* Welches Kennenlern-Feld steckt hinter der Episode? Leer, wenn sie im
+   Gespraech entstanden ist. */
+function felieBezugKlFeld(e) {
+  var id = String((e && e.id) || '');
+  return id.indexOf('aufnahme:') === 0 ? id.split(':').pop() : '';
+}
+
+/* Die Nachfrage haengt davon ab, WAS der Punkt ist. M18 hat eine Form
+   festgelegt — „gilt das noch?" —, die zu einer Lage passt, die sich
+   aendert. Fuer eine Beschwerde, die seit Wochen laeuft, ist sie falsch:
+   „Ist das noch aktuell?" protokolliert einen Zustand, statt zu
+   begleiten (Marcel, 17.09.). Dort fragt felie nach dem, was sich seither
+   bewegt hat — Klarheit, ein naechster Schritt —, nicht nach dem
+   Fortbestand.
+
+   Der Wortlaut steht in der APP und nicht im Prompt, weil er an der Art
+   des Punktes haengt, die die App ohnehin schon kennt. */
+function felieBezugNachfrage(feld) {
+  if (feld === 'beschwerden')
+    return 'Frage NICHT, ob es das noch gibt — das protokolliert nur einen Zustand. '
+      + 'Frage stattdessen, ob sie inzwischen Klarheit darüber hat, in dieser Art: '
+      + '„Hast du Klarheit über das körperliche Thema, das dich seit drei Wochen beschäftigt?" '
+      + 'Der Ausweg auf ein anderes Thema bleibt auch hier.';
+  return '';
+}
+
+function felieBezugTauglich(e) {
+  var id = String((e && e.id) || '');
+  if (id.indexOf('aufnahme:') !== 0) return true;
+  return felieBezugAusgeschlossen().indexOf(id.split(':').pop()) < 0;
+}
+
 function felieBegruessungBezug(chats, offen) {
   var weg = felieBezugVerbraucht();
   var frei = function (schluessel) { return !Object.prototype.hasOwnProperty.call(weg, schluessel); };
 
   /* (1) Das juengste offene Thema. */
-  var t = (offen || []).find(function (e) { return e.id && frei('thema:' + e.id); });
-  if (t) return { art: 'thema', schluessel: 'thema:' + t.id, text: t.text,
-    hinweis: 'ein offenes Thema von ihr; zeitlich begrenzt und deshalb wahrscheinlich noch aktuell' };
+  var t = (offen || []).find(function (e) {
+    return e.id && frei('thema:' + e.id) && felieBezugTauglich(e); });
+  if (t) {
+    var feld = felieBezugKlFeld(t), nachfrage = felieBezugNachfrage(feld);
+    var b = { art: 'thema', schluessel: 'thema:' + t.id, text: t.text,
+      hinweis: feld === 'beschwerden'
+        ? 'ein koerperliches Thema von ihr, das laenger laeuft — keine Tageslage'
+        : 'ein offenes Thema von ihr; zeitlich begrenzt und deshalb wahrscheinlich noch aktuell' };
+    if (nachfrage) b.nachfrage = nachfrage;
+    return b;
+  }
 
   /* (2) Das juengste Gespraech mit Zusammenfassung. */
   var g = (chats || []).find(function (c) {
@@ -12386,7 +12467,7 @@ function feliePromptRegeln(mode) {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. NACH DEM KENNENLERNEN: Nennt das Feld anlass ein soeben abgeschlossenes Kennenlernen und liegt ein Feld einstieg vor, dann greife GENAU dieses Thema auf — sie hat es eben selbst gewählt. Ein Satz dazu, warm und ohne Zusammenfassung des Kennenlernens, und eine offene Einladung weiterzusprechen. Frage nicht erneut, worüber sie sprechen möchte, und behaupte nichts über ihren Zustand. Fehlt das Feld einstieg, lade offen ein, ohne ein Thema zu erfinden. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. WER MIT WEM: Jedes genannte Gespraech ist EURES — deines mit ihr. Sprich davon in der Wir-Form, nie mit „ihr habt“; „ihr“ meint sie und eine andere Person. ANGABEN: Das Feld merknotizen trägt, was über sie gilt, mit Herkunft und Alter. Niemals aufzählen, was du weißt, und niemals einen heutigen Zustand daraus ableiten. KONKRET WERDEN: Das Feld bezug nennt GENAU EINEN Anknüpfungspunkt, den die App ausgewählt hat; sein Feld hinweis sagt, was er ist. Nimm genau diesen — suche nicht selbst in den anderen Feldern danach und nenne keinen zweiten. Deine Begrüßung greift ihn auf, und zwar in dieser Form: Der erste Satz gibt IHRE Aussage an SIE zurück, in der Du-Form und als Vergangenheit — „Dein …“, „Du hast …“, mit einem Zeitwort wie zuletzt oder neulich. Der zweite Satz fragt, ob das noch gilt, und lässt ihr im selben Satz den Ausweg auf ein anderes Thema; Nachfrage und Ausweg bilden zusammen die eine erlaubte Frage. SPRICH NICHT ÜBER DICH: kein Satz über dein Erinnern, Denken, Wissen oder Notieren — kein „Ich denke an …“, kein „Mir fällt ein …“, kein „Ich erinnere mich …“, kein „Ich habe notiert …“. Der Bezug gehört ihr und ist kein Beleg dafür, dass du dir etwas gemerkt hast. SO KLINGT DAS (synthetisches Beispiel, nicht ihre Daten): „Dein Lipödem hat dir zuletzt Kraft und Konzentration bei der Arbeit geraubt. Geht es dir nach wie vor so, oder möchtest du lieber über etwas anderes sprechen?“ So NICHT: „Ich denke an das Thema Lipödem, das dir in der Arbeit Kraft und Konzentration raubt. Möchtest du darüber sprechen?“ — das erzählt von dir statt von ihr, stellt ihren Zustand als andauernd fest und lässt ihr keinen Ausweg. Eine Begrüßung, die für jede beliebige Nutzerin stimmen würde, ist die falsche Antwort; die Vorgaben hier grenzen ein, WIE der Bezug aussieht, nicht OB es ihn gibt. Du fragst nach, du stellst nichts fest: keine Behauptung, dass es heute noch so ist, keine Bewertung, keine Deutung und keine Ursache. Hat sie etwas Belastendes genannt, darfst du es ansprechen — mit ihren Worten, als Frage, ohne Ratschlag und ohne medizinische Einordnung. Bei kurze_rueckkehr genügt statt der zwei Sätze einer — auch der trägt den Bezug und fragt nach, mit dem Ausweg darin. Ist bezug leer oder nicht vorhanden, lädt eine offene Frage ein, ohne ein Thema zu erfinden. FRÜHERE GESPRÄCHE: Das Feld letztesGespraech nennt den Zeitpunkt, das Feld gespraeche je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreiben den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht eine Zusammenfassung den aktuellen Angaben, gelten die Angaben. Du darfst an HÖCHSTENS EINE anknüpfen, und nur wenn sie zum Einstieg passt — als offene Einladung, nie als Nacherzählung und nie als Behauptung, dass es heute noch so ist. Ist das Feld leer oder wurde das letzte Gespräch ohne Speichern verlassen, liegt dazu nichts vor: dann nicht so tun, als wüsstest du, worum es ging, und nichts erfinden. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Sie dienen dem Verständnis ihrer Lage; angesprochen wird nur, was im Feld bezug steht. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
+    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. NACH DEM KENNENLERNEN: Nennt das Feld anlass ein soeben abgeschlossenes Kennenlernen und liegt ein Feld einstieg vor, dann greife GENAU dieses Thema auf — sie hat es eben selbst gewählt. Ein Satz dazu, warm und ohne Zusammenfassung des Kennenlernens, und eine offene Einladung weiterzusprechen. Frage nicht erneut, worüber sie sprechen möchte, und behaupte nichts über ihren Zustand. Fehlt das Feld einstieg, lade offen ein, ohne ein Thema zu erfinden. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. WER MIT WEM: Jedes genannte Gespraech ist EURES — deines mit ihr. Sprich davon in der Wir-Form, nie mit „ihr habt“; „ihr“ meint sie und eine andere Person. ANGABEN: Das Feld merknotizen trägt, was über sie gilt, mit Herkunft und Alter. Niemals aufzählen, was du weißt, und niemals einen heutigen Zustand daraus ableiten. KONKRET WERDEN: Das Feld bezug nennt GENAU EINEN Anknüpfungspunkt, den die App ausgewählt hat; sein Feld hinweis sagt, was er ist. Nimm genau diesen — suche nicht selbst in den anderen Feldern danach und nenne keinen zweiten. Deine Begrüßung greift ihn auf, und zwar in dieser Form: Der erste Satz gibt IHRE Aussage an SIE zurück, in der Du-Form und als Vergangenheit — „Dein …“, „Du hast …“, mit einem Zeitwort wie zuletzt oder neulich. Der zweite Satz fragt, ob das noch gilt, und lässt ihr im selben Satz den Ausweg auf ein anderes Thema; Nachfrage und Ausweg bilden zusammen die eine erlaubte Frage. Trägt der Bezug ein Feld nachfrage, dann gilt SEIN Wortlaut für den zweiten Satz statt der Standardnachfrage; der erste Satz bleibt unverändert wie beschrieben. SPRICH NICHT ÜBER DICH: kein Satz über dein Erinnern, Denken, Wissen oder Notieren — kein „Ich denke an …“, kein „Mir fällt ein …“, kein „Ich erinnere mich …“, kein „Ich habe notiert …“. Der Bezug gehört ihr und ist kein Beleg dafür, dass du dir etwas gemerkt hast. SO KLINGT DAS (synthetisches Beispiel, nicht ihre Daten): „Dein Lipödem hat dir zuletzt Kraft und Konzentration bei der Arbeit geraubt. Geht es dir nach wie vor so, oder möchtest du lieber über etwas anderes sprechen?“ So NICHT: „Ich denke an das Thema Lipödem, das dir in der Arbeit Kraft und Konzentration raubt. Möchtest du darüber sprechen?“ — das erzählt von dir statt von ihr, stellt ihren Zustand als andauernd fest und lässt ihr keinen Ausweg. Eine Begrüßung, die für jede beliebige Nutzerin stimmen würde, ist die falsche Antwort; die Vorgaben hier grenzen ein, WIE der Bezug aussieht, nicht OB es ihn gibt. Du fragst nach, du stellst nichts fest: keine Behauptung, dass es heute noch so ist, keine Bewertung, keine Deutung und keine Ursache. Hat sie etwas Belastendes genannt, darfst du es ansprechen — mit ihren Worten, als Frage, ohne Ratschlag und ohne medizinische Einordnung. Bei kurze_rueckkehr genügt statt der zwei Sätze einer — auch der trägt den Bezug und fragt nach, mit dem Ausweg darin. Ist bezug leer oder nicht vorhanden, lädt eine offene Frage ein, ohne ein Thema zu erfinden. FRÜHERE GESPRÄCHE: Das Feld letztesGespraech nennt den Zeitpunkt, das Feld gespraeche je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreiben den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht eine Zusammenfassung den aktuellen Angaben, gelten die Angaben. Du darfst an HÖCHSTENS EINE anknüpfen, und nur wenn sie zum Einstieg passt — als offene Einladung, nie als Nacherzählung und nie als Behauptung, dass es heute noch so ist. Ist das Feld leer oder wurde das letzte Gespräch ohne Speichern verlassen, liegt dazu nichts vor: dann nicht so tun, als wüsstest du, worum es ging, und nichts erfinden. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Sie dienen dem Verständnis ihrer Lage; angesprochen wird nur, was im Feld bezug steht. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',

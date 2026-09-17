@@ -5404,7 +5404,17 @@ function klV2SnippetsNachziehen() {
   return true;
 }
 
+/* Waehrend die Aufnahme ihre eigenen Angaben schreibt, gilt der Kontext
+   nicht als fremd veraendert. Die Klammer sitzt hier und nicht an den
+   einzelnen Schreibaufrufen, damit sie auch fuer alles gilt, was
+   klV2SichernIntern spaeter noch dazunimmt. */
 function klV2Sichern() {
+  window._klOnboardingSchreibt = true;
+  try { return klV2SichernIntern(); }
+  finally { window._klOnboardingSchreibt = false; }
+}
+
+function klV2SichernIntern() {
   var s = klZustand(); if (s.stage !== 'aufnahme') return true;
   klV2Verlauf(); var chat = klArchivSichern(); if (!chat) return false;
   var before = JSON.stringify(felieStore());
@@ -6127,11 +6137,27 @@ function felieHomeKontext(besuch, anlass) {
       ? 'Gespräch gerade beendet und gespeichert; die Nutzerin ist eben zur Startseite zurückgekehrt'
     : anlass === 'gespraech_verlassen'
       ? 'Gespräch gerade ohne Speichern verlassen; es gibt dazu keine Notiz'
+    : anlass === 'kennenlernen'
+      ? 'Kennenlernen gerade abgeschlossen; die Nutzerin steht zum ersten Mal auf der Startseite'
       : 'Startseite geöffnet';
+
+  /* Womit sie anfangen wollte. Das ist kein Archivinhalt, sondern eine
+     Auswahl, die sie vor Sekunden getroffen hat — ohne sie muesste die
+     Begruessung nach etwas fragen, das sie gerade beantwortet hat.
+     Faellt weg, sobald sie danach etwas korrigiert hat: dann ist die
+     vorbereitete Uebergabe ueberholt (dieselbe Regel wie in
+     klUebergabeKontext). */
+  var einstieg = null;
+  var kl = window._klState;
+  if (anlass === 'kennenlernen' && kl && kl.landing && kl.landing.active && !kl.contextChanged)
+    einstieg = { wahl: kl.landing.choice, angenommenerVorschlag: kl.landing.plan || null,
+      hinweis: 'Von ihr eben ausgewählt. Nicht erneut danach fragen.' };
+
   return { anlass: anlassText, besuch: besuch || 'erster_besuch',
     datum: d.toLocaleDateString('de-DE'), uhrzeit: d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
     tageszeit: d.getHours() < 12 ? 'Morgen' : d.getHours() < 18 ? 'Tag' : 'Abend',
-    name: userName || null, letztesGespraech: chat, offeneEpisoden: offen };
+    name: userName || null, letztesGespraech: chat, offeneEpisoden: offen,
+    einstieg: einstieg || undefined };
 }
 
 function felieHomeFallback(ctx) {
@@ -6369,7 +6395,17 @@ function felieDatenAendern(mutator) {
     felieBrueckeStart(felieStore(), chats);
     mutator(felieStore(), chats);
     felieBrueckeAbschluss(felieStore(), chats);
-    if (window._klState) window._klState.contextChanged = true;
+    /* „Der Kontext hat sich geaendert" heisst: die Nutzerin hat NACH der
+       Aufnahme etwas korrigiert, die vorbereitete Uebergabe ist damit
+       ueberholt. Die Aufnahme selbst schreibt aber ihre eigenen Angaben
+       ueber denselben Weg — seit M2b laufen alle Schreibwege durch
+       felieDatenAendern. Ohne diese Ausnahme erklaerte das Kennenlernen
+       seine eigene Uebergabe fuer ungueltig: klUebergabeKontext() gab
+       null zurueck und klV2StartseitenText() fiel auf den allgemeinen
+       Satz zurueck. Fuer die Nutzerin sah das so aus, als haette felie
+       ihr gerade gewaehltes Thema vergessen. */
+    if (window._klState && !window._klOnboardingSchreibt)
+      window._klState.contextChanged = true;
     localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore()));
     felieDatensatzSpeichern();
     localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
@@ -11985,7 +12021,7 @@ function feliePromptRegeln(mode) {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. LETZTES GESPRÄCH: Zum letzten Gespräch liegt nur der Zeitpunkt vor, kein Inhalt. Du darfst darauf Bezug nehmen, DASS zuletzt gesprochen wurde, niemals worüber. Keine Erinnerung erfinden, keine Vermutung über das damalige Thema, kein Ausweichen auf ältere Gespräche. Was du über die Nutzerin weißt, steht ausschließlich in den aktuellen Angaben; der damalige Stand ist keine Aussage über heute. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
+    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. NACH DEM KENNENLERNEN: Nennt das Feld anlass ein soeben abgeschlossenes Kennenlernen und liegt ein Feld einstieg vor, dann greife GENAU dieses Thema auf — sie hat es eben selbst gewählt. Ein Satz dazu, warm und ohne Zusammenfassung des Kennenlernens, und eine offene Einladung weiterzusprechen. Frage nicht erneut, worüber sie sprechen möchte, und behaupte nichts über ihren Zustand. Fehlt das Feld einstieg, lade offen ein, ohne ein Thema zu erfinden. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. LETZTES GESPRÄCH: Zum letzten Gespräch liegt nur der Zeitpunkt vor, kein Inhalt. Du darfst darauf Bezug nehmen, DASS zuletzt gesprochen wurde, niemals worüber. Keine Erinnerung erfinden, keine Vermutung über das damalige Thema, kein Ausweichen auf ältere Gespräche. Was du über die Nutzerin weißt, steht ausschließlich in den aktuellen Angaben; der damalige Stand ist keine Aussage über heute. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',

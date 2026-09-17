@@ -986,11 +986,12 @@ html.native-app .phone {
   #home-nav-gedaechtnis.hat-neues .ged-puls-punkt { animation: none; }
 }
 
-/* Gesprächseintrag: Themen-Icon links, Satz rechts */
-.ged-lernt { display: flex; gap: 10px; align-items: flex-start;
+/* Gesprächseintrag: nur der Satz. Das Themen-Icon links ist am 17.09.
+   entfallen — es kostete 38px Breite je Zeile und sagte nichts, was die
+   Kategorie unter dem Satz und der Filterknopf darüber nicht schon
+   sagen. Die Filterknöpfe behalten ihr Icon. */
+.ged-lernt { display: flex; align-items: flex-start;
   border-radius: 12px; background: #FFFFFF; border: 1.5px solid var(--pouder); padding: 10px 12px; }
-.ged-lernt-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--plum);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--apricot); }
 .ged-lernt-body { min-width: 0; flex: 1; }
 .ged-lernt .snip-view { display: flex; align-items: flex-start; gap: 8px; }
 .ged-lernt .snip-text { flex: 1; min-width: 0; font-size: 14px; color: var(--plum); line-height: 1.5; }
@@ -4302,7 +4303,7 @@ function klStatusZeigen() {
   var s = klZustand(), msg = '';
   if (window._klStorageError) msg = 'Dein Gerät konnte den Stand nicht sichern. Bitte lasse diese Seite geöffnet und versuche das Speichern erneut.';
   else if (s.responseMissing) msg = 'Die Antwort ist noch offen. Deine Eingabe ist gesichert; du kannst die Anfrage wiederholen.';
-  else if (klDone && s.extraction === 'laeuft') msg = 'Dein Gespräch ist gesichert. Die Angaben für dein Gedächtnis werden noch vorbereitet.';
+  else if (klDone && s.extraction === 'laeuft') msg = 'Dein Gespräch ist gesichert. Die Angaben für mein Gedächtnis werden noch vorbereitet.';
   else if (klDone && s.extraction === 'fehler') msg = 'Dein Gespräch ist im Archiv gesichert. Die Übernahme ins Gedächtnis ist noch offen.';
   else if (klDone && s.extraction === 'fertig') msg = 'Dein Gespräch und die übernommenen Angaben sind gespeichert.';
   if (el) { el.textContent = msg; el.hidden = !msg; }
@@ -4443,7 +4444,7 @@ function klHomeStatusZeigen() {
   if (!s || ['fertig', 'entfernt'].indexOf(s.extraction) >= 0) { host.hidden = true; return; }
   host.hidden = false;
   host.innerHTML = '<span role="status">' + (s.extraction === 'laeuft'
-    ? 'Dein Gespräch ist gesichert. Dein Gedächtnis wird noch vorbereitet.'
+    ? 'Dein Gespräch ist gesichert. Mein Gedächtnis wird noch vorbereitet.'
     : 'Dein Gespräch ist gesichert; die Übernahme ins Gedächtnis ist noch offen.') + '</span>'
     + (s.extraction === 'fehler' ? ' <button type="button" onclick="klExtract()">Übernahme erneut versuchen</button>' : '');
 }
@@ -6297,8 +6298,8 @@ function felieHomeAenderungssatz(d) {
   if (d.wie === 'geloescht') {
     if (thema) return z ? z + ' behalte ich nicht mehr im Blick.'
                         : 'Das offene Thema ist gel\u00f6scht.';
-    return z ? z + ' ist aus deinem Ged\u00e4chtnis gel\u00f6scht.'
-             : 'Die Erinnerung ist aus deinem Ged\u00e4chtnis gel\u00f6scht.';
+    return z ? z + ' ist aus meinem Ged\u00e4chtnis gel\u00f6scht.'
+             : 'Die Erinnerung ist aus meinem Ged\u00e4chtnis gel\u00f6scht.';
   }
   if (!t) return null;
   /* Die Tageszahl kommt vom Aufrufer, nicht aus der Konstanten: die
@@ -6343,7 +6344,10 @@ function felieHomeEreignis(art, detail) {
     gedaechtnis_geaendert: 'Deine Änderungen im Gedächtnis sind gespeichert.',
     /* 'thema_erledigt' ist entfallen: ein offenes Thema wird jetzt
        geloescht statt abgehakt, und dafuer passt der Satz darueber. */
-    gedaechtnis_geloescht: 'Die ausgewählte Erinnerung ist aus deinem Gedächtnis entfernt.'
+    /* "mein", nicht "dein": das Gedächtnis ist felies, die Angaben darin
+       sind ihre. Der App-Guide sagt das seit jeher ("Das ist mein
+       Gedächtnis"), diese Meldungen sagten das Gegenteil. */
+    gedaechtnis_geloescht: 'Die ausgewählte Erinnerung ist aus meinem Gedächtnis gelöscht.'
   };
   if (art !== 'selbstreflexion' && !texte[art]) return;
   ++s.revision; s.pending = null;
@@ -10805,7 +10809,7 @@ function gedFadenNachfragen(id) {
   felieConfirm({
     title: 'Noch aktuell?',
     message: '„' + e.text + '"\n\nJa — ich behalte es weitere ' + FELIE_FADEN_VERLAENGERUNG
-      + ' Tage im Blick. Nein — ich entferne es aus deinem Gedächtnis.',
+      + ' Tage im Blick. Nein — ich entferne es aus meinem Gedächtnis.',
     confirmText: 'Ja',
     cancelText: 'Nein',
     onConfirm: function () {
@@ -11021,10 +11025,10 @@ function gedLerntHtml() {
   var alleFakten = sel === 'all' ? fakten : [];
   if (sel === 'all') {
     d.order.forEach(function (k) {
-      d.groups[k].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[k].icon }); });
+      d.groups[k].entries.forEach(function (c) { eintraege.push({ c: c }); });
     });
   } else if (d.groups[sel]) {
-    d.groups[sel].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[sel].icon }); });
+    d.groups[sel].entries.forEach(function (c) { eintraege.push({ c: c }); });
   }
   eintraege.sort(function (a, b) { return (b.c.timestamp || 0) - (a.c.timestamp || 0); });
 
@@ -11039,7 +11043,6 @@ function gedLerntHtml() {
     try { when = relativeTime(c.timestamp) || ''; } catch (x) {}
     return '<div class="ged-lernt snip" data-snip="chatlernt" data-snip-max="' + FELIE_SNIP_MAX.chatlernt + '"'
       + ' data-snip-id="' + id + '" data-snip-notiz="' + felieSnipAttr(c.notizId) + '" data-snip-label="Notiz zu diesem Gespräch bearbeiten" data-snip-loeschbar="1">'
-      + '<div class="ged-lernt-icon">' + e.icon + '</div>'
       + '<div class="ged-lernt-body">'
       + '<div class="snip-view">'
       + '<div style="flex:1;min-width:0;">'
@@ -14058,7 +14061,7 @@ function felieMerkPromptTeil() {
     + 'BEISPIEL: Erzählt die Nutzerin von einer Schwangerschaft und einer festgestellten Diagnose, ergibt das EINE zusammenfassung über beides, ZWEI angabe-Einträge (je einer) und KEINE Notiz, die beides noch einmal zusammenfasst. '
     + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und dem bestand erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits vorgeschlagene Punkte weder umformulieren noch wiederholen. '
     + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. Ohne relevante Angaben ist eine leere Liste mit weitere_notizen=false richtig. '
-    + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Sagt der Satz etwas über die Nutzerin aus, steht „Sie“ als Subjekt am Anfang — nicht als subjektloses Fragment. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Sie ist durch ein krankes Kind belastet und fühlt sich selbst erschöpft.“ Ein reiner Sachverhalt ohne Bezug auf sie bleibt ohne Subjekt. '
+    + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Sagt der Satz etwas über die Nutzerin aus, steht „Sie“ als Subjekt am Anfang — nicht als subjektloses Fragment. Den Namen der Nutzerin NIE in den Text schreiben, auch nicht wenn er im Gespräch fällt: sie ist immer „Sie“ beziehungsweise „ihr“. Namen stehen ausschließlich für ANDERE Personen, die sie erwähnt. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Sie ist durch ein krankes Kind belastet und fühlt sich selbst erschöpft.“ Ein reiner Sachverhalt ohne Bezug auf sie bleibt ohne Subjekt. '
     + '„Ne niemand hat Zeit“ wird nur bei klarem Gesprächskontext zu „Aktuell keine verfügbare Unterstützung.“ Ohne Kontext weglassen. '
     + 'Keine neuen Tatsachen ergänzen, Verneinungen und Unsicherheit bewahren, spätere Korrekturen berücksichtigen. Symptome nicht zu Diagnosen machen. Vermutungen und selbst berichtete Diagnosen ausdrücklich als solche kennzeichnen. Angaben der Assistentin sind keine Belege für persönliche Fakten. '
     + 'BELEGE: Ein bis sechs Nutzerbelege je Eintrag; IDs aus den gelieferten Daten unverändert übernehmen. Der Originalauszug darf länger als der Anzeigetext sein, auch umgangssprachlich und ohne Satzzeichen. Belege dienen nur der Zuordnung und werden nicht als sichtbarer Snippettext verwendet. Ist der Beleg nur eine Zustimmung wie „Ja“ oder „Genau“, trägt er den Inhalt nicht allein: dann muss frage die ID der Nachricht nennen, auf die sich die Zustimmung bezieht. Führe einen abschließenden Abgleich durch: Jede Aussage in text muss aus den Belegen und ihrem Gesprächskontext folgen. Keine Mindestzahl an Vorschlägen. '

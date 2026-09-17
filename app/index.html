@@ -6215,6 +6215,7 @@ function felieHomeBegruessen() {
   var s = felieHomeZustand();
   if (!document.getElementById('home-open-question')) return Promise.resolve();
   if (s.text && felieHomeBesuch(s.zuletzt, Date.now()) === 'neuer_tag') s.erneuern = true;
+  if (felieHomeFluechtigSchritt(s, felieHomeIstSichtbar())) s.erneuern = true;
   if (!s.erneuern && (s.text || s.pending)) {
     if (s.text) felieHomeTextZeigen(s.text);
     return s.pending || Promise.resolve();
@@ -6249,7 +6250,92 @@ function felieHomeBegruessen() {
   return pending;
 }
 
-function felieHomeEreignis(art) {
+/* Ein Zitat aus ihren eigenen Worten, gekuerzt auf Bubblelaenge. Gekuerzt
+   wird an der Wortgrenze, nicht mitten im Wort: ein abgeschnittenes Wort
+   liest sich wie ein Fehler der App. */
+function felieHomeZitat(text, max) {
+  var t = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
+  var g = max || 64;
+  if (t.length <= g) return t;
+  var kurz = t.slice(0, g);
+  var luecke = kurz.lastIndexOf(' ');
+  if (luecke > Math.floor(g / 2)) kurz = kurz.slice(0, luecke);
+  return kurz.replace(/[\s,.;:!?\u2013\u2014-]+$/, '') + ' \u2026';
+}
+
+/* Die Rueckmeldung nach einem Handgriff im Gedaechtnis nennt seit dem
+   17.09. das, was sich geaendert hat.
+
+   Vorher lagen ACHT verschiedene Vorgaenge auf zwei festen Saetzen -
+   Angabe angelegt, Angabe inhaltlich geaendert, nur umformuliert, Thema
+   angelegt, Thema verlaengert, Gespraechsnotiz bearbeitet, Erinnerung
+   geloescht, Gespraech geloescht. Das las sich beliebig und war an zwei
+   Stellen schlicht falsch: ein geloeschtes GESPRAECH meldete eine
+   geloeschte Erinnerung, und eine reine Umformulierung meldete eine
+   Aenderung, die inhaltlich keine ist.
+
+   Zitiert wird IHR Wortlaut, nie felies Deutung. "Sichtbar machen, was
+   sie selbst erzaehlt hat" ist die Rolle, die felie hier hat - sie
+   kommentiert den Inhalt nicht und bewertet ihn nicht.
+
+   Fehlt die Angabe, was passiert ist, bleibt es beim alten Satz: ein
+   Aufrufer, der nichts mitgibt, soll keine erfundene Meldung erzeugen. */
+function felieHomeAenderungssatz(d) {
+  if (!d || !d.was || !d.wie) return null;
+  /* Zitiert wird, was sie im Gedaechtnis liest - nicht die gespeicherte
+     Fassung. Sonst meldet die Startseite "Sie hat ...", waehrend zwei
+     Zentimeter weiter ihr Name steht. */
+  var t = felieHomeZitat(felieTextMitName(d.text));
+  var z = t ? '\u201e' + t + '\u201c' : null;
+  if (d.was === 'gespraech') return 'Das Gespr\u00e4ch ist gel\u00f6scht.';
+  if (d.was === 'notiz') {
+    if (d.wie === 'geloescht') return 'Deine Notiz ist gel\u00f6scht. Das Gespr\u00e4ch bleibt im Archiv.';
+    return t ? 'Ich habe deine Notiz so \u00fcbernommen: ' + t
+             : 'Ich habe deine Notiz \u00fcbernommen.';
+  }
+  var thema = d.was === 'thema';
+  if (d.wie === 'geloescht') {
+    if (thema) return z ? z + ' behalte ich nicht mehr im Blick.'
+                        : 'Das offene Thema ist gel\u00f6scht.';
+    return z ? z + ' ist aus deinem Ged\u00e4chtnis gel\u00f6scht.'
+             : 'Die Erinnerung ist aus deinem Ged\u00e4chtnis gel\u00f6scht.';
+  }
+  if (!t) return null;
+  /* Die Tageszahl kommt vom Aufrufer, nicht aus der Konstanten: die
+     Pruefumgebung laedt nur eine feste Liste von Konstanten, und ein
+     Zugriff hier waere dort still undefined ("weitere undefined Tage"). */
+  if (d.wie === 'verlaengert') return d.tage
+    ? 'Ich behalte es weitere ' + d.tage + ' Tage im Blick: ' + t
+    : 'Ich behalte es weiter im Blick: ' + t;
+  if (d.wie === 'neu') return thema ? 'Ich behalte das im Blick: ' + t
+                                    : 'Ich habe mir gemerkt: ' + t;
+  if (d.wie === 'formulierung') return 'Ich habe es so notiert, wie du es gesagt hast: ' + t;
+  if (d.wie === 'bestaetigung') return 'Ich behalte es genau so: ' + t;
+  return thema ? 'Gut \u2014 im Blick behalte ich jetzt: ' + t
+               : 'Gut \u2014 ich merke mir jetzt: ' + t;
+}
+
+/* Die Bestaetigung gehoert zum Handgriff und ist danach erledigt: sie
+   steht, bis die Nutzerin die Startseite das naechste Mal von neuem
+   oeffnet, und macht dann wieder der normalen Begruessung Platz.
+
+   Gezaehlt wird in ZWEI Schritten, und nur solange die Startseite
+   wirklich sichtbar ist. Der erste Durchlauf ist genau der, bei dem sie
+   aus dem Gedaechtnis zurueckkommt - da soll der Satz stehen. Erst der
+   naechste loest ihn ab. Ohne die Sichtbarkeitsbedingung wuerde ihn ein
+   Hintergrunddurchlauf abraeumen, bevor sie ihn gelesen hat.
+
+   Der Grund ist nicht Kosmetik: der Satz zitiert ihre eigenen Worte, und
+   die sollen nicht stundenlang auf dem Bildschirm stehen, den sie offen
+   liegen laesst. */
+function felieHomeFluechtigSchritt(s, sichtbar) {
+  if (!s || !s.text || !s.fluechtig || !sichtbar) return false;
+  if (!s.fluechtigGesehen) { s.fluechtigGesehen = true; return false; }
+  s.fluechtig = false; s.fluechtigGesehen = false;
+  return true;
+}
+
+function felieHomeEreignis(art, detail) {
   var s = felieHomeZustand();
   var texte = {
     gespraech_beendet: 'Danke für unser Gespräch. Lass es in Ruhe nachklingen.',
@@ -6281,7 +6367,12 @@ function felieHomeEreignis(art) {
   } else {
     window._felieRitualEchoText = null;
     renderRitualEcho(false);
-    felieHomeTextZeigen(texte[art]);
+    /* Nur die beiden Gedaechtnismeldungen sind fluechtig. Die Saetze nach
+       einem Gespraech werden ohnehin von der naechsten Begruessung
+       abgeloest (erneuern=true oben). */
+    s.fluechtig = !nachGespraech;
+    s.fluechtigGesehen = false;
+    felieHomeTextZeigen(felieHomeAenderungssatz(detail) || texte[art]);
   }
   s.anlass = art;
 }
@@ -6492,10 +6583,17 @@ function felieDatenAendern(mutator) {
    war. Die Unterscheidung kommt von der Nutzerin, nie aus
    Textaehnlichkeit: raten waere hier schlimmer als fragen. */
 function felieErinnerungBearbeiten(art, id, text, wie) {
+  /* Was tatsaechlich passiert ist - erst hier drin steht es fest. Der
+     Aufrufer weiss nicht, ob sein Text am Ende eine Aenderung war: bei
+     unveraendertem Wortlaut passiert naemlich nichts (entschieden am
+     17.09.), und dann darf die Startseite auch nichts melden. */
+  var vorgang = null;
   var ok = felieDatenAendern(function(s, chats) {
     var liste = art === 'fakt' ? s.fakten : s.episoden;
     var e = liste.find(function(x) { return x.id === id; });
     if (!e) throw felieStandFehler('Erinnerung fehlt');
+    var was = art === 'fakt' ? 'angabe' : 'thema';
+    var alterText = e.text;
     felieArchivQuelleSperren(chats, e);
     var d = window._felieRepoAktiv;
     var eintrag = felieBrueckeEintragZuAltId(d, art === 'fakt' ? 'personal' : 'topic', id);
@@ -6504,6 +6602,7 @@ function felieErinnerungBearbeiten(art, id, text, wie) {
     if (text === null) {
       felieBrueckeBefehl({ kind: 'forgetEntry', entryId: eintrag.id,
         expectedHeadRevisionId: kopf ? kopf.id : null });
+      vorgang = { was: was, wie: 'geloescht', text: alterText };
       return;
     }
     var quelle = { id: felieRepoId('ev'), recordedAt: felieRepoJetzt(), assertion: 'explicit',
@@ -6524,8 +6623,10 @@ function felieErinnerungBearbeiten(art, id, text, wie) {
       felieBrueckeBefehl({ kind: 'confirm', entryId: eintrag.id,
         expectedHeadRevisionId: kopf ? kopf.id : null,
         evidence: [quelle], supportSets: [[quelle.id]] });
+      vorgang = { was: was, wie: 'bestaetigung', text: text };
       return;
     }
+    vorgang = { was: was, wie: wie === 'formulierung' ? 'formulierung' : 'inhalt', text: text };
     felieBrueckeBefehl({ kind: wie === 'formulierung' ? 'reword' : 'manualUpdate',
       entryId: eintrag.id, expectedHeadRevisionId: kopf ? kopf.id : null,
       candidate: { text: text, supportSets: [[quelle.id]],
@@ -6533,7 +6634,11 @@ function felieErinnerungBearbeiten(art, id, text, wie) {
         expiresAt: kopf ? kopf.expiresAt : null },
       evidence: [quelle] });
   });
-  if (ok) felieHomeEreignis(text === null ? 'gedaechtnis_geloescht' : 'gedaechtnis_geaendert');
+  /* Kein Vorgang, keine Meldung. Bisher meldete auch das unveraenderte
+     Speichern "gespeichert" - eine Bestaetigung fuer etwas, das gar nicht
+     stattgefunden hat. */
+  if (ok && vorgang) felieHomeEreignis(
+    vorgang.wie === 'geloescht' ? 'gedaechtnis_geloescht' : 'gedaechtnis_geaendert', vorgang);
   return ok;
 }
 function felieArchivAbleitungenAendern(s, chats, chat, n, text) {
@@ -10541,7 +10646,7 @@ function gedNeuFadenZeile(e) {
     + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten" data-snip-loeschbar="1">'
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
-    + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
+    + '<div class="snip-text">' + gedEsc(felieTextMitName(e.text)) + '</div>'
     + '<span class="ged-badge">vorübergehend</span>'
     + '</div>'
     + '<div class="ged-akt">' + felieSnipStiftHtml('„' + e.text + '" bearbeiten') + '</div>'
@@ -10671,7 +10776,7 @@ function gedFaedenHtml() {
         + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten" data-snip-loeschbar="1">'
         + '<div class="snip-view">'
         + '<div style="flex:1;min-width:0;">'
-        + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
+        + '<div class="snip-text">' + gedEsc(felieTextMitName(e.text)) + '</div>'
         + marke + wieder
         + '</div>'
         + rechts
@@ -10704,7 +10809,9 @@ function gedFadenNachfragen(id) {
     confirmText: 'Ja',
     cancelText: 'Nein',
     onConfirm: function () {
-      if (felieDatenAendern(function() { if (!felieEpisodeVerlaengern(id)) throw new Error('Thema fehlt'); })) felieHomeEreignis('gedaechtnis_geaendert');
+      if (felieDatenAendern(function() { if (!felieEpisodeVerlaengern(id)) throw new Error('Thema fehlt'); }))
+        felieHomeEreignis('gedaechtnis_geaendert',
+          { was: 'thema', wie: 'verlaengert', text: e.text, tage: FELIE_FADEN_VERLAENGERUNG });
       gedRender();
     },
     /* Nein ist hier kein Abbrechen, sondern eine Antwort: der Faden geht
@@ -10936,7 +11043,7 @@ function gedLerntHtml() {
       + '<div class="ged-lernt-body">'
       + '<div class="snip-view">'
       + '<div style="flex:1;min-width:0;">'
-      + '<div class="snip-text">' + gedEsc(c.felie_lernt) + '</div>'
+      + '<div class="snip-text">' + gedEsc(felieTextMitName(c.felie_lernt)) + '</div>'
       + '<div class="ged-meta">' + gedEsc(c.thema || 'Gespräch') + (when ? ' · ' + when : '') + '</div>'
       + (!felieArchivNotizQuelle(c) ? '<div class="ged-meta">Ältere, ungeprüfte Notiz. felie nutzt sie nicht automatisch; du kannst sie korrigieren.</div>' : '')
       + '</div>'
@@ -11023,7 +11130,7 @@ function gedFaktZeile(f) {
     + ' data-snip-label="Eintrag bearbeiten" data-snip-loeschbar="1">'
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
-    + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
+    + '<div class="snip-text">' + gedEsc(felieTextMitName(f.text)) + '</div>'
     + aend + marken
     + '</div>'
     + '<div class="ged-akt">' + felieSnipStiftHtml('„' + f.text + '" bearbeiten') + '</div>'
@@ -11056,7 +11163,7 @@ function profilFaktZeile(f) {
        so traegt jeder Eintrag seine Einordnung selbst und bleibt auch
        dann lesbar, wenn er einzeln betrachtet oder verschoben wird. */
     + '<span class="profil-fakt-kat">' + GED_KAT_LABEL[GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein'] + '</span>'
-    + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
+    + '<div class="snip-text">' + gedEsc(felieTextMitName(f.text)) + '</div>'
     + '</div>'
     + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
     + '</div></div>';
@@ -11194,7 +11301,9 @@ function gedFaktAnlegen() {
   if (!felieDatenAendern(function() {
     felieFaktSetzen({text:t.slice(0,FELIE_SNIP_MAX.fakt), kategorie:window._gedFormKat || 'allgemein', klasse:'stabil', quelle:'selbst'});
   })) return;
-  window._gedForm = null; felieHomeEreignis('gedaechtnis_geaendert'); gedRender();
+  window._gedForm = null;
+  felieHomeEreignis('gedaechtnis_geaendert', { was: 'angabe', wie: 'neu', text: t });
+  gedRender();
 }
 
 function gedFadenAnlegen() {
@@ -11203,7 +11312,9 @@ function gedFadenAnlegen() {
   if (!felieDatenAendern(function() {
     felieEpisode({text:t.slice(0,FELIE_SNIP_MAX.faden),faelligBis:Date.now()+tage*86400000});
   })) return;
-  window._gedForm = null; felieHomeEreignis('gedaechtnis_geaendert'); gedRender();
+  window._gedForm = null;
+  felieHomeEreignis('gedaechtnis_geaendert', { was: 'thema', wie: 'neu', text: t });
+  gedRender();
 }
 
 /* ── Block 4: Was ich felie mitgeben möchte ───────────────────────────
@@ -11763,7 +11874,9 @@ function confirmDeleteSavedChat(id) {
     felieSessionZuruecksetzen(); chatHistory.length = 0;
     var win = document.getElementById('chat-window'); if (win) win.classList.remove('open');
   }
-  fillHomeThemen(); felieHomeEreignis('gedaechtnis_geloescht');
+  /* Ein geloeschtes Gespraech ist keine geloeschte Erinnerung - der alte
+     Satz behauptete etwas anderes, als tatsaechlich passiert ist. */
+  fillHomeThemen(); felieHomeEreignis('gedaechtnis_geloescht', { was: 'gespraech', wie: 'geloescht' });
   if (document.getElementById('verlauf-overlay')) showVerlauf();
 }
 
@@ -12952,7 +13065,7 @@ function felieNotizenHtml(chat, editierbar) {
   if (chat && chat.zusammenfassung && chat.zusammenfassung.text) {
     return '<div class="ged-sub">Zusammenfassung</div>'
       + '<div class="notiz-feld notiz-feld--erkenntnis"><div class="snip-view">'
-      + '<div class="snip-text notiz-text">' + felieSnipAttr(chat.zusammenfassung.text) + '</div>'
+      + '<div class="snip-text notiz-text">' + felieSnipAttr(felieTextMitName(chat.zusammenfassung.text)) + '</div>'
       + '</div></div>';
   }
   var liste = felieNotizenLesen(chat);
@@ -12963,7 +13076,7 @@ function felieNotizenHtml(chat, editierbar) {
       return '<div class="notiz-feld notiz-feld--erkenntnis' + (editierbar ? ' snip' : '') + '"' + attr + '>'
         + '<div class="snip-view"><div class="notiz-kopf"><div class="notiz-kicker">' + felieSnipAttr(n.thema || chat.thema || 'Aus eurem Gespräch') + '</div>'
         + (editierbar ? felieSnipStiftHtml('Gesprächsnotiz bearbeiten') : '') + '</div>'
-        + '<div class="snip-text notiz-text">' + felieSnipAttr(n.text) + '</div></div></div>';
+        + '<div class="snip-text notiz-text">' + felieSnipAttr(felieTextMitName(n.text)) + '</div></div></div>';
     }).join('') + '</div>';
 }
 
@@ -12983,7 +13096,8 @@ function felieChatNotizSetzen(id, notizId, text) {
     chat.begruessungAuslassen = (chat.begruessungAuslassen || []).filter(function(k) { return k !== notizId; });
     felieNotizVorschau(chat);
   });
-  if (ok) felieHomeEreignis(neu ? 'gedaechtnis_geaendert' : 'gedaechtnis_geloescht');
+  if (ok) felieHomeEreignis(neu ? 'gedaechtnis_geaendert' : 'gedaechtnis_geloescht',
+    { was: 'notiz', wie: neu ? 'inhalt' : 'geloescht', text: neu });
   return ok;
 }
 
@@ -13944,7 +14058,7 @@ function felieMerkPromptTeil() {
     + 'BEISPIEL: Erzählt die Nutzerin von einer Schwangerschaft und einer festgestellten Diagnose, ergibt das EINE zusammenfassung über beides, ZWEI angabe-Einträge (je einer) und KEINE Notiz, die beides noch einmal zusammenfasst. '
     + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und dem bestand erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits vorgeschlagene Punkte weder umformulieren noch wiederholen. '
     + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. Ohne relevante Angaben ist eine leere Liste mit weitere_notizen=false richtig. '
-    + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze oder verständliche Satzfragmente, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Belastung durch ein krankes Kind; fühlt sich selbst erschöpft.“ '
+    + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Sagt der Satz etwas über die Nutzerin aus, steht „Sie“ als Subjekt am Anfang — nicht als subjektloses Fragment. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Sie ist durch ein krankes Kind belastet und fühlt sich selbst erschöpft.“ Ein reiner Sachverhalt ohne Bezug auf sie bleibt ohne Subjekt. '
     + '„Ne niemand hat Zeit“ wird nur bei klarem Gesprächskontext zu „Aktuell keine verfügbare Unterstützung.“ Ohne Kontext weglassen. '
     + 'Keine neuen Tatsachen ergänzen, Verneinungen und Unsicherheit bewahren, spätere Korrekturen berücksichtigen. Symptome nicht zu Diagnosen machen. Vermutungen und selbst berichtete Diagnosen ausdrücklich als solche kennzeichnen. Angaben der Assistentin sind keine Belege für persönliche Fakten. '
     + 'BELEGE: Ein bis sechs Nutzerbelege je Eintrag; IDs aus den gelieferten Daten unverändert übernehmen. Der Originalauszug darf länger als der Anzeigetext sein, auch umgangssprachlich und ohne Satzzeichen. Belege dienen nur der Zuordnung und werden nicht als sichtbarer Snippettext verwendet. Ist der Beleg nur eine Zustimmung wie „Ja“ oder „Genau“, trägt er den Inhalt nicht allein: dann muss frage die ID der Nachricht nennen, auf die sich die Zustimmung bezieht. Führe einen abschließenden Abgleich durch: Jede Aussage in text muss aus den Belegen und ihrem Gesprächskontext folgen. Keine Mindestzahl an Vorschlägen. '
@@ -14129,6 +14243,52 @@ var FELIE_SNIP_MAX = {
   fakt: 90, faden: 90, chatlernt: 240
 };
 
+/* ══ Ihr Name statt "Sie" ═══════════════════════════════════
+   "Sie hat zwei Kinder" schafft Abstand zu einer Angabe, die ueber SIE
+   ist. "Du hast zwei Kinder" waere die naheliegende Antwort und ist der
+   falsche Weg: die Snippets gehen wortgleich als merknotizen in den
+   Systemprompt, und dort liest ein Modell "Du" im Zweifel als Aussage
+   ueber sich selbst.
+
+   Der Name loest das ohne diesen Preis, weil er SELBST dritte Person
+   ist: "Anna hat zwei Kinder" braucht keine einzige Verbform anders als
+   "Sie hat zwei Kinder". Keine Morphologie, kein Randfall - getauscht
+   wird ein Wort am Satzanfang.
+
+   Nur am ANFANG: "Sie schaetzt, dass sie gerade ihre Periode hat" wird
+   zu "Anna schaetzt, dass sie gerade ihre Periode hat" - das zweite
+   "sie" ist richtig als Pronomen und bleibt. Aus demselben Grund bleiben
+   "ihr/ihre/ihrem" unangetastet: sie sind mit einem Namen genauso
+   richtig wie mit "Sie".
+
+   Gespeichert wird weiterhin "Sie ...". Der Name steht im Profil und
+   nirgends sonst; ihn in jeden Satz zu schreiben hiesse, ihn bei einer
+   Namensaenderung ueberall stehen zu lassen. Beim Bearbeiten geht es
+   deshalb den Weg zurueck (felieTextOhneName). */
+function felieAnzeigeName() {
+  var n = typeof userName === 'string' ? userName.replace(/\s+/g, ' ').trim() : '';
+  /* Ein Name, der selbst wie das ersetzte Wort aussieht, wuerde beim
+     Zurueckschreiben nicht mehr zu unterscheiden sein. */
+  return (!n || /^sie$/i.test(n)) ? '' : n;
+}
+
+function felieTextMitName(text) {
+  var t = text == null ? '' : String(text);
+  var n = felieAnzeigeName();
+  if (!n || !t) return t;
+  /* "Nutzerin" und "Die Nutzerin" stammen aus Gespraechszusammenfassungen
+     ("Nutzerin teilt mit, dass ..."). Dieselbe Rechnung, dasselbe
+     Ergebnis: eine Bezeichnung in dritter Person gegen eine andere. */
+  return t.replace(/^(Sie|Die Nutzerin|Nutzerin)(?=\s)/, n);
+}
+
+function felieTextOhneName(text) {
+  var t = text == null ? '' : String(text);
+  var n = felieAnzeigeName();
+  if (!n || t.indexOf(n) !== 0 || !/\s/.test(t.charAt(n.length))) return t;
+  return 'Sie' + t.slice(n.length);
+}
+
 function felieSnipAttr(s) {
   return (s == null ? '' : String(s))
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -14254,7 +14414,10 @@ function felieSnipUebernehmen(el) {
   if (!neu) { felieSnipSchliessen(host); return; }
 
   if (neu !== (host.dataset.snipAlt || '')) {
-    if (felieSnipSchreiben(host, neu) === false) { try { ta.focus(); } catch (e) {} return; }
+    /* Angezeigt und bearbeitet wird mit ihrem Namen, gespeichert wird mit
+       "Sie" - sonst stuende der Name in jedem Satz und bliebe dort auch
+       stehen, wenn sie ihn spaeter aendert. */
+    if (felieSnipSchreiben(host, felieTextOhneName(neu)) === false) { try { ta.focus(); } catch (e) {} return; }
     textEl.textContent = neu;
     var editButton = host.querySelector('.snip-edit');
     if (editButton) editButton.setAttribute('aria-label', '„' + neu + '“ bearbeiten');

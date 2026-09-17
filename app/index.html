@@ -10758,15 +10758,64 @@ function gedFadenLoeschen(id) { if (felieErinnerungBearbeiten('faden', id, null)
 
    Sichtbar bleibt die Notiz im Archiv, bei ihrem Gespraech. */
 function gedNotizGedeckt(chat, notiz, fakten, chats) {
-  var belege = (notiz && notiz.nachweis && notiz.nachweis.belege) || [];
+  var text = notiz && notiz.text;
+  if (!text) return false;
+  var belege = (notiz.nachweis && notiz.nachweis.belege) || [];
   if (!belege.length) return false;
-  return fakten.some(function (f) {
-    if (!felieErinnerungAusChat(f, chat, chats)) return false;
-    var fb = f.belege || [];
-    if (!fb.length) return false;
-    return belege.every(function (b) {
-      return fb.some(function (x) { return x.nachricht === b.nachricht; }); });
-  });
+
+  /* Gedeckt wird ueber ALLE Angaben aus diesem Gespraech zusammen, nicht
+     ueber eine einzelne. Eine Notiz, die zwei Sachverhalte nennt, wurde
+     sonst von keiner der beiden Angaben gedeckt und blieb als Dublette
+     stehen — genau der Fall, den E04 ausschliesst.
+
+     Zwei Bedingungen, beide notwendig:
+       die Belegstellen der Notiz liegen im Belegraum der Angaben, und
+       jedes Inhaltswort der Notiz kommt in den Angaben vor.
+     Die zweite haelt das offen, was E04 ausdruecklich schuetzt: ein
+     Gefuehl, ein Anliegen oder ein offenes Thema neben der Angabe bleibt
+     eine eigene Information und verschwindet nicht mit. */
+  var ausChat = fakten.filter(function (f) { return felieErinnerungAusChat(f, chat, chats); });
+  if (!ausChat.length) return false;
+
+  var stellen = {};
+  ausChat.forEach(function (f) {
+    (f.belege || []).forEach(function (b) { stellen[b.nachricht] = true; }); });
+  if (!belege.every(function (b) { return stellen[b.nachricht]; })) return false;
+
+  var worte = [];
+  ausChat.forEach(function (f) {
+    felieMerkWorte(f.text).forEach(function (w) { if (worte.indexOf(w) < 0) worte.push(w); }); });
+  var eigene = felieMerkWorte(text);
+  if (!eigene.length) return false;
+  /* Verneinungen trennen: „keine Kinder" und „Kinder" sind nie dasselbe. */
+  var verneintNotiz = FELIE_MERK_VERNEINUNG.test(String(text));
+  var verneintAngaben = ausChat.some(function (f) { return FELIE_MERK_VERNEINUNG.test(String(f.text)); });
+  if (verneintNotiz !== verneintAngaben) return false;
+
+  /* Eine Notiz, die sich auf MEHRERE Stellen des Gespraechs stuetzt und
+     deren Stellen alle von Angaben gedeckt sind, ist eine
+     Zusammenfassung — unabhaengig davon, wie sie formuliert ist. Genau
+     diese Form entstand unter dem alten Auftrag ("Nutzerin teilt mit,
+     ... Parallel wurde ..."), und ihre Erzaehlwoerter wuerden jede
+     Wortpruefung ueberstehen. Sie gehoert ins Archiv, nicht ins
+     Gedaechtnis (E08); verloren geht dabei nichts, weil das Archiv sie
+     weiterhin zeigt.
+       Bei einer Notiz zu EINER Stelle entscheidet der Inhalt: dort
+     schuetzt die Wortpruefung das, was E04 ausdruecklich offenhaelt —
+     ein Gefuehl oder Anliegen neben der Angabe. */
+  /* Eine Altnotiz (ohne art) ist unter dem alten Auftrag entstanden und
+     fasst das Gespraech zusammen — mit Erzaehlwoertern wie „Nutzerin
+     teilt mit", die jede Wortpruefung ueberstehen wuerden. Sind ihre
+     Belegstellen von Angaben gedeckt, gehoert sie ins Archiv und nicht
+     ins Gedaechtnis (E08). Verloren geht nichts: das Archiv zeigt sie
+     weiterhin.
+       Eine Notiz nach neuem Vertrag traegt genau EINEN Sachverhalt. Bei
+     ihr entscheidet der Inhalt, und die Wortpruefung haelt offen, was
+     E04 ausdruecklich schuetzt: ein Gefuehl oder Anliegen neben der
+     Angabe bleibt eine eigene Information. */
+  if (notiz.art !== 'notiz') return true;
+
+  return eigene.every(function (w) { return felieMerkWortDrin(w, worte); });
 }
 
 function gedLerntDaten() {
@@ -12709,8 +12758,9 @@ function felieNotizPruefen(item, source, max) {
 async function felieNotizErzeugen(history, vorhanden, mode) {
   var source = felieExtraktionsDaten(history);
   if (!source.some(function(m) { return m.rolle === 'user'; })) throw new Error('Kein archivfähiges Gespräch');
-  var out = { thema: 'Unser Gespräch', notizen: [], fakten: [], faeden: [], feldQuelle: {}, version: 5, notizenStatus: 'vollstaendig' };
-  var groesse = 6, fehlerOhneFortschritt = 0;
+  var out = { thema: 'Unser Gespräch', zusammenfassung: null, notizen: [], fakten: [], faeden: [],
+    feldQuelle: {}, version: 5, notizenStatus: 'vollstaendig' };
+  var groesse = 6, fehlerOhneFortschritt = 0, runden = 0, nachgefasst = 0;
   var bekannt = (vorhanden || []).reduce(function(liste, n) {
     return liste.concat([n.ursprungstext, n.text].filter(Boolean));
   }, []);
@@ -12760,6 +12810,7 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
       unvollstaendig(); break;
     }
     if (out.thema === 'Unser Gespräch' && page.thema) out.thema = page.thema;
+    if (!out.zusammenfassung && page.zusammenfassung) out.zusammenfassung = page.zusammenfassung;
     var zuwachs = 0;
     ['notizen', 'fakten', 'faeden'].forEach(function(k) {
       page[k].forEach(function(n) {
@@ -12773,9 +12824,24 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
         out[k].push(n); zuwachs++;
       });
     });
-    var brauchtWeiter = page.weitere_notizen || page.verworfen > 0 ||
-      (!out.notizen.length && !bekannt.length && mode !== 'profil' && !page.listenformat);
+    /* Jede Runde ist ein vollstaendiger Modellaufruf mit dem ganzen
+       Gespraech und rund 4.000 Token Systemprompt, und das Gespraech
+       erscheint erst nach der letzten unter „Deine letzten Gespraeche".
+       Bis hierher loeste JEDER verworfene Vorschlag eine weitere Runde
+       aus — und seit M3 gibt es viel mehr Gruende zu verwerfen
+       (unbekannte zielId, veraltete ausgangsRevision, fehlender
+       zeitbezug, falsche Kategorie). Aus einer Runde wurden leicht vier.
+         Beim Nachfassen wegen Verworfenem wird deshalb hoechstens EINMAL
+       nachgehakt. Sagt das Modell selbst, dass noch etwas fehlt
+       (weitere_notizen), wird weitergefragt wie bisher. */
+    runden++;
+    var nachfassen = page.verworfen > 0 && nachgefasst < 1;
+    if (nachfassen) nachgefasst++;
+    var brauchtWeiter = page.weitere_notizen || nachfassen ||
+      (!out.notizen.length && !out.zusammenfassung && !bekannt.length
+        && mode !== 'profil' && !page.listenformat);
     if (!brauchtWeiter) break;
+    if (runden >= 6) { unvollstaendig(); break; }
     if (!zuwachs) {
       if (++fehlerOhneFortschritt >= 2) { unvollstaendig(); break; }
     } else fehlerOhneFortschritt = 0;
@@ -12787,7 +12853,13 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
      bekam nicht einmal den Knopf zum Ergaenzen. Der Auftrag an das
      Modell (felieMerkPromptTeil) verlangt die Notiz ausdruecklich; das
      hier ist das Netz darunter. */
-  if (!out.notizen.length && (out.fakten.length || out.faeden.length)) unvollstaendig();
+  /* Nicht fertig ist ein Gespraech, aus dem etwas gewonnen wurde, dem
+     aber die Zusammenfassung fuers Archiv fehlt. Ob Notizen dabei sind,
+     entscheidet nicht darueber: wenn alles Gesagte zu Angaben geworden
+     ist, ist keine Notiz das richtige Ergebnis (E04). */
+  if (!out.zusammenfassung && !out.notizen.length
+      && (out.fakten.length || out.faeden.length)) unvollstaendig();
+  out.runden = runden;
   felieNotizVorschau(out);
   return out;
 }
@@ -12831,7 +12903,8 @@ function felieArchivNotizErstellen(id, btn) {
       if (!q) return;
       var nummer = liste.length;
       while (liste.some(function(e) { return e.id === 'notiz:' + nummer; })) nummer++;
-      liste.push({ id: 'notiz:' + nummer, thema: n.thema, text: n.text, merken: n.merken !== false, nachweis: q });
+      liste.push({ id: 'notiz:' + nummer, art: n.art, thema: n.thema, text: n.text,
+        merken: n.merken !== false, nachweis: q });
     });
     var status = summary.notizenStatus || 'vollstaendig';
     var changed = liste.length > anzahl || !Array.isArray(current.notizen) || current.notizenStatus !== status;
@@ -12873,6 +12946,15 @@ function felieNotizVorschau(summary) {
 }
 
 function felieNotizenHtml(chat, editierbar) {
+  /* Das Archiv zeigt die Zusammenfassung des Gespraechs (E08). Fuer
+     Gespraeche aus der Zeit davor gibt es sie nicht — dort bleiben die
+     Notizen die Zusammenfassung, wie bisher. */
+  if (chat && chat.zusammenfassung && chat.zusammenfassung.text) {
+    return '<div class="ged-sub">Zusammenfassung</div>'
+      + '<div class="notiz-feld notiz-feld--erkenntnis"><div class="snip-view">'
+      + '<div class="snip-text notiz-text">' + felieSnipAttr(chat.zusammenfassung.text) + '</div>'
+      + '</div></div>';
+  }
   var liste = felieNotizenLesen(chat);
   if (!liste.length) return '<div class="ged-leer">Noch keine Gesprächsnotizen vorhanden.</div>';
   return '<div class="ged-sub">' + liste.length + ' Gesprächsnotiz' + (liste.length === 1 ? '' : 'en') + '</div>'
@@ -12930,6 +13012,7 @@ function felieBeleg(item, source, max) {
    Bestand mitbringt. */
 function felieVorschlaegePruefen(o, source, bestand) {
   var out = { thema: felieNotizText(o.thema).slice(0, 60) || 'Unser Gespräch',
+    zusammenfassung: null,
     notizen: [], erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], feldQuelle: {}, version: 6,
     weitere_notizen: o.weitere_notizen === true, listenformat: true, verworfen: 0 };
   var kat = ['familie', 'arbeit', 'gesundheit', 'beziehung', 'wohnen', 'allgemein'];
@@ -12938,12 +13021,24 @@ function felieVorschlaegePruefen(o, source, bestand) {
 
   (Array.isArray(o.vorschlaege) ? o.vorschlaege : []).forEach(function (v) {
     if (!v || typeof v !== 'object') { out.verworfen++; return; }
-    var art = ['notiz', 'angabe', 'thema'].indexOf(v.art) >= 0 ? v.art : null;
+    var art = ['zusammenfassung', 'notiz', 'angabe', 'thema'].indexOf(v.art) >= 0 ? v.art : null;
     var bezug = ['neu', 'bestaetigung', 'aktualisierung', 'widerspruch'].indexOf(v.bezug) >= 0 ? v.bezug : null;
     if (!art || !bezug) { out.verworfen++; return; }
 
-    var n = felieNotizPruefen(v, source, art === 'notiz' ? 240 : 90);
+    var n = felieNotizPruefen(v, source,
+      art === 'zusammenfassung' ? 600 : art === 'notiz' ? 240 : 90);
     if (!n) { out.verworfen++; return; }
+
+    /* Die Zusammenfassung gehoert dem Archiv. Sie ist kein
+       Gedaechtniseintrag und wird deshalb weder gezaehlt noch mit dem
+       Bestand abgeglichen: sie behauptet nichts Neues, sie erzaehlt
+       (E08). Kommt mehr als eine, gilt die erste. */
+    if (art === 'zusammenfassung') {
+      if (!out.zusammenfassung)
+        out.zusammenfassung = { text: n.text, belege: n.belege,
+          nachweis: { quelle: 'zusammenfassung', text: n.text, belege: n.belege } };
+      return;
+    }
 
     var ziel = null;
     if (bezug !== 'neu') {
@@ -12967,7 +13062,12 @@ function felieVorschlaegePruefen(o, source, bestand) {
       zeitbezug: typeof v.zeitbezug === 'string' ? v.zeitbezug.slice(0, 60) : null };
 
     if (art === 'notiz') {
-      out.notizen.push({ id: 'notiz:' + out.notizen.length,
+      /* 'art' haelt fest, unter welchem Vertrag diese Notiz entstanden
+         ist. Eine Notiz nach neuem Vertrag traegt EINEN Sachverhalt, und
+         die Entdopplung darf ihr deshalb glauben, dass zusaetzlicher
+         Inhalt darin auch zusaetzlicher Inhalt ist. Eine Altnotiz ohne
+         dieses Feld ist eine Zusammenfassung und wird anders behandelt. */
+      out.notizen.push({ id: 'notiz:' + out.notizen.length, art: 'notiz',
         thema: felieNotizText(v.thema).slice(0, 60) || out.thema,
         text: n.text, merken: true, bezug: bezug, zielId: gemeinsam.zielId,
         nachweis: { quelle: 'zusammenfassung', text: n.text, belege: n.belege } });
@@ -13776,8 +13876,15 @@ function saveChat(summary, messages) {
     chats.push({
       id: ts,
       version: 5,
+      /* Die Zusammenfassung gehoert dem Gespraech, nicht dem Gedaechtnis
+         (E08). Sie steht deshalb als eigenes Feld hier und taucht in der
+         Gedaechtnisliste nirgends auf. */
+      zusammenfassung: summary.zusammenfassung ? {
+        text: summary.zusammenfassung.text,
+        nachweis: felieArchivFeldQuelle(summary.zusammenfassung.text,
+          summary.zusammenfassung.nachweis, messages) } : undefined,
       notizen: Array.isArray(summary.notizen) ? summary.notizen.map(function(n) {
-        return { id: n.id, thema: n.thema, text: n.text, merken: n.merken !== false,
+        return { id: n.id, art: n.art, thema: n.thema, text: n.text, merken: n.merken !== false,
           nachweis: felieArchivFeldQuelle(n.text, n.nachweis, messages) };
       }) : undefined,
       notizenStatus: summary.notizenStatus || 'vollstaendig',
@@ -13824,14 +13931,17 @@ function saveChat(summary, messages) {
 function felieMerkPromptTeil() {
   return 'Nur JSON: {"thema":"kurzer Gesamttitel","vorschlaege":[],"weitere_notizen":false}. '
     + 'VOLLSTÄNDIGKEIT: Es gibt KEINE feste Höchstzahl an Vorschlägen pro Gespräch. Erfasse das Gespräch als Notiz UND alle wichtigen neuen Nutzerangaben, Anliegen, Wünsche, Entscheidungen und Veränderungen aus sämtlichen besprochenen Themen. Je mehr relevante neue Informationen, desto mehr Einträge. Nicht auf zwei Kernaussagen verdichten; unabhängige Punkte einzeln festhalten. Keine ausdrückliche Selbsterkenntnis erforderlich. '
-    + 'vorschlaege: Liste von {"bezug":"neu|bestaetigung|aktualisierung|widerspruch","zielId":null,"ausgangsRevision":null,"art":"notiz|angabe|thema","thema":"kurze Themenüberschrift, nur bei art=notiz","text":"sinngemäße, gut lesbare Formulierung","kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil","zeitbezug":null,"belege":[{"nachricht":ID,"beleg":"wörtlicher Originalauszug","frage":null}]}. '
+    + 'vorschlaege: Liste von {"bezug":"neu|bestaetigung|aktualisierung|widerspruch","zielId":null,"ausgangsRevision":null,"art":"zusammenfassung|notiz|angabe|thema","thema":"kurze Themenüberschrift, nur bei art=notiz","text":"sinngemäße, gut lesbare Formulierung","kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil","zeitbezug":null,"belege":[{"nachricht":ID,"beleg":"wörtlicher Originalauszug","frage":null}]}. '
     + 'BEZUG: Der mitgelieferte bestand enthält die bereits gemerkten Angaben mit id, revision, art, text und kategorie. Jeder Vorschlag sagt, wie er dazu steht. '
     + 'neu: kein Eintrag des bestands deckt diesen Inhalt; zielId und ausgangsRevision bleiben null. '
     + 'bestaetigung: derselbe Sachverhalt mit demselben Wert, nur neu belegt oder anders formuliert; text wiederholt die Angabe, zielId und ausgangsRevision benennen den Eintrag. '
     + 'aktualisierung: derselbe Sachverhalt, veränderter Wert, und die Nutzerin hat die Veränderung erkennbar zeitlich eingeordnet; zeitbezug enthält ihre eigene Zeitangabe, etwa "seit gestern". Ohne solche Einordnung ist es kein aktualisierung. '
     + 'widerspruch: passt nicht zum bestand und die Auflösung ist unklar; zielId benennt den betroffenen Eintrag. Lieber widerspruch als eine geratene aktualisierung. '
     + 'Die Kategorie entscheidet NIE über die Zuordnung: dieselbe Angabe darf in einer anderen Kategorie stehen, und eine gemeinsame Kategorie macht zwei Angaben nicht zum selben Sachverhalt. Ein anders formulierter, inhaltlich vollständig gedeckter Vorschlag ist eine bestaetigung, kein neuer Eintrag. Zusätzliche Information — ein Gefühl, ein Anliegen, ein offenes Thema neben der Angabe — bleibt ein eigener Vorschlag. '
-    + 'ART: notiz erzählt das Gespräch, höchstens 240 Zeichen je Eintrag, mit thema. JEDES Gespräch, in dem die Nutzerin etwas erzählt hat, bekommt mindestens einen Vorschlag mit art=notiz — sie ist das, was die Nutzerin später im Archiv liest, und ohne sie bleibt das Gespräch dort ohne Zusammenfassung. Eine Notiz ist keine Angabe: sie darf Gefühle, Anlass und Verlauf benennen, auch wenn daraus keine dauerhafte Angabe wird. angabe hält einen längerfristigen Zustand, höchstens 90 Zeichen, mit kategorie und klasse; nur ausdrücklich berichtete Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. thema ist ein aktuell offenes, zeitlich begrenztes Anliegen, höchstens 90 Zeichen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. Die Länge gilt für EINEN Eintrag, nie für das gesamte Gespräch. '
+    + 'ART: Vier Arten, und sie gehen an verschiedene Orte. '
+    + 'zusammenfassung: GENAU EINE je Gespräch, höchstens 600 Zeichen, erzählt das ganze Gespräch zusammenhängend und darf mehrere Themen und Absätze enthalten. Sie ist das, was die Nutzerin später im ARCHIV liest, und sie geht NICHT ins Gedächtnis. Jedes Gespräch, in dem die Nutzerin etwas erzählt hat, bekommt sie. '
+    + 'notiz: EIN Sachverhalt je Eintrag, höchstens 240 Zeichen, mit thema. Mehrere Themen ergeben mehrere Notizen, nie eine gesammelte. Notizen gehen ins GEDÄCHTNIS. Eine Notiz ist keine Angabe: sie darf ein Gefühl, ein Anliegen oder den Anlass benennen, auch wenn daraus keine dauerhafte Angabe wird. Wird derselbe Sachverhalt bereits als angabe vorgeschlagen, ist dafür KEINE zusätzliche Notiz nötig — die Angabe hat Vorrang. angabe hält einen längerfristigen Zustand, höchstens 90 Zeichen, mit kategorie und klasse; nur ausdrücklich berichtete Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. thema ist ein aktuell offenes, zeitlich begrenztes Anliegen, höchstens 90 Zeichen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. Die Länge gilt für EINEN Eintrag, nie für das gesamte Gespräch. '
+    + 'BEISPIEL: Erzählt die Nutzerin von einer Schwangerschaft und einer festgestellten Diagnose, ergibt das EINE zusammenfassung über beides, ZWEI angabe-Einträge (je einer) und KEINE Notiz, die beides noch einmal zusammenfasst. '
     + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und dem bestand erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits vorgeschlagene Punkte weder umformulieren noch wiederholen. '
     + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. Ohne relevante Angaben ist eine leere Liste mit weitere_notizen=false richtig. '
     + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze oder verständliche Satzfragmente, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Belastung durch ein krankes Kind; fühlt sich selbst erschöpft.“ '

@@ -12314,6 +12314,30 @@ var FELIE_FRAGEN = {
 
 /* Setzt Budget und offene Frage zurueck. Eine Session ist bei einer
    Begleiter-App die Sitzung, nicht der Kalendertag. */
+/* Der Wachposten fuers Archivieren stellt EINE Frage: ist das noch
+   dasselbe Gespraech? Bisher las er dafuer _felieSessionGeneration —
+   und den zaehlt felieDatenAendern bei JEDER Datenaenderung hoch.
+
+   Seit M16 verbraucht die Startseite beim Begruessen ihren
+   Anknuepfungspunkt, und das ist eine Datenaenderung. Der Ablauf beim
+   Schliessen eines Gespraechs:
+
+     1. generateChatSummary merkt sich den Zaehlerstand
+     2. die Startseite wird sichtbar, baut ihre Begruessung und
+        verbraucht dabei den Bezug  ->  Zaehler +1
+     3. rund 36 Sekunden spaeter kommt die Auswertung zurueck
+     4. Zaehlerstand stimmt nicht mehr  ->  ABBRUCH, ohne ein Wort
+
+   Das Gespraech war damit weg: kein Archiveintrag, keine Snippets, keine
+   Meldung. Und zwar genau dann, wenn die Begruessung ein Thema
+   aufgegriffen hatte — ohne Bezug gibt es nichts zu verbrauchen, dann
+   ging es gut. Befund 17.09., Datenverlust.
+
+   Deshalb ein eigener Zaehler, den NUR ein echter Gespraechswechsel
+   hochzaehlt. _felieSessionGeneration bleibt unveraendert, damit der
+   Chatpfad (callFelie) sich nicht mitaendert. */
+function felieGespraechGeneration() { return window._felieGespraechGeneration || 0; }
+
 function felieSessionZuruecksetzen() {
   window._felieOnboardingChatId = null;
   window._felieAktiverArchivChat = null;
@@ -12321,6 +12345,7 @@ function felieSessionZuruecksetzen() {
 
   window._lastCut = false;
   window._felieSessionGeneration = (window._felieSessionGeneration || 0) + 1;
+  window._felieGespraechGeneration = felieGespraechGeneration() + 1;
 
 }
 
@@ -14293,7 +14318,7 @@ function discardChatAndClose() {
 
 function generateChatSummary(historySnapshot) {
   felieHomeEreignis('gespraech_beendet');
-  var generation = window._felieSessionGeneration || 0;
+  var generation = felieGespraechGeneration();
   var history = felieSichererVerlauf(historySnapshot || chatHistory);
   if (!history.some(function(m) { return m.role === 'user'; })) {
     window._letzteChatId = null; hideFelieLoader();
@@ -14302,10 +14327,10 @@ function generateChatSummary(historySnapshot) {
     return Promise.resolve();
   }
   return felieNotizErzeugen(history).then(function(summary) {
-    if (generation !== (window._felieSessionGeneration || 0)) { hideFelieLoader(); return; }
+    if (generation !== felieGespraechGeneration()) { hideFelieLoader(); return; }
     gespraechAbschliessen(summary, history);
   }).catch(function() {
-    if (generation !== (window._felieSessionGeneration || 0)) { hideFelieLoader(); return; }
+    if (generation !== felieGespraechGeneration()) { hideFelieLoader(); return; }
     /* Fehlgeschlagene Notiz: das Gespraech wird trotzdem archiviert und
        traegt notizenStatus 'unvollstaendig' — die Archivkarte zeigt das
        an und bietet dort das erneute Erzeugen. Ohne Pop-up ist die

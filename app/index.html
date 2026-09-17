@@ -958,9 +958,8 @@ html.native-app .phone {
   border-color: var(--apricot);
   background: linear-gradient(0deg, rgba(225, 234, 125,0.16), rgba(225, 234, 125,0.16)), #FFFFFF;
 }
-.ged-aend { font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.45; }
+.ged-aend { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.45; }
 .ged-aend .ged-aend-vor { text-decoration: line-through; opacity: 0.75; }
-.ged-aend .ged-aend-pfeil { margin: 0 5px; }
 .ged-neu-hinweis { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--lila); display: flex; align-items: center; gap: 6px; margin: 2px 0 8px; }
 .ged-neu-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--apricot);
@@ -2686,8 +2685,16 @@ var FELIE_STORE_KEY    = 'felie_store_v1';
    Beispieldaten wirken.
    Beide Funktionen lesen jetzt diese Liste. Wer einen Schluessel
    hinzufuegt, traegt ihn genau hier ein. */
+var FELIE_DATENSATZ_KEY = 'felie_dataset_v2';
+
 var FELIE_LS_KEYS = [
   'felie_profile', 'felie_saved_chats', 'felie_body_data', FELIE_STORE_KEY,
+  /* Der dauerhafte Gedaechtnisteil des Vertragsdatensatzes (M6). Er
+     gehoert in die Sicherung: ohne ihn waere eine zurueckgespielte
+     Sicherung um alle Revisionen, Belege und Sperren aermer, und die
+     Altlisten allein wuerden beim naechsten Vorgang wieder zu einer
+     einzigen Fassung je Angabe eingeebnet. */
+  FELIE_DATENSATZ_KEY,
   'felie_personality',
   'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
   'felie_guide_gedaechtnis', 'felie_guide_home',
@@ -3496,9 +3503,15 @@ function felieStoreLaden() {
       };
       felieRevision(true);
       felieBereinigen();
+      /* Erst jetzt, mit geladener Projektion: der Datensatz vergleicht
+         seinen Fingerabdruck gegen genau diese Listen. */
+      try { felieDatensatzLaden(); } catch (e) {}
       return true;
     }
   } catch (e) {}
+  /* Kein Altstand: ein Datensatz kann trotzdem vorliegen (geleerte
+     Projektion, zurueckgespielte Sicherung). */
+  try { felieDatensatzLaden(); } catch (e) {}
   return false;
 }
 
@@ -6127,7 +6140,11 @@ function felieHomeFallback(ctx) {
   gruss += (ctx.name ? ', ' + ctx.name : '') + '.';
   // Ohne Modell keine semantische Umformulierung erraten. Der generische
   // Rückbezug bleibt wahr, auch wenn sensible oder korrigierte Details fehlen.
-  return gruss + (ctx.letztesGespraech && ctx.letztesGespraech.notizen.length
+  /* Geprueft wird, OB zuletzt gesprochen wurde — nicht, was dabei notiert
+     wurde. Seit M4 traegt der Startseitenkontext nur noch den Zeitpunkt des
+     letzten Gespraechs (E11); der alte Zugriff auf .notizen.length lief
+     danach auf undefined und riss den Start mit. */
+  return gruss + (ctx.letztesGespraech
     ? ' Wenn du magst, knüpfen wir an unser letztes Gespräch an – oder du erzählst, was dir heute wichtig ist.'
     : ' Hier ist Raum für das, was dir gerade wichtig ist.');
 }
@@ -6302,6 +6319,30 @@ function felieArchivQuelleSperren(chats, vorher) {
 }
 // Rollback on synchronous storage errors; localStorage is not crash-atomic.
 // Native migration: use a single database transaction (Supervisor Gate 2).
+/* Der Bezug einer Aenderung stimmt nicht mehr: der Eintrag, das
+   Gespraech oder die Notiz, auf die sie sich beruft, ist nicht mehr da.
+   Kein Speicherproblem — deshalb als eigener Grund gekennzeichnet. */
+function felieStandFehler(meldung) {
+  var e = new Error(meldung);
+  e.repoFehler = 'bezug_fehlt';
+  return e;
+}
+
+/* Sagt, WARUM eine Aenderung nicht durchging — in der Sprache der
+   Nutzerin und ohne falsche Faehrte. */
+function felieAendernFehlertext(e) {
+  var code = e && (e.repoFehler || e.felieRepoFehler);
+  if (code) return 'Diese Änderung passt nicht mehr zum aktuellen Stand — '
+    + 'möglicherweise wurde die Angabe oder ihre Quelle inzwischen geändert. '
+    + 'Deine bisherige Angabe bleibt erhalten. Bitte sieh dir den aktuellen Stand '
+    + 'an und mach die Änderung von dort aus noch einmal.';
+  var voll = e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014);
+  if (voll) return 'Der Speicher dieses Geräts ist voll. Deine bisherige Angabe bleibt '
+    + 'erhalten. Bitte gib Speicher frei und versuche es erneut.';
+  return 'Die Änderung konnte nicht gespeichert werden. Deine bisherige Angabe bleibt '
+    + 'erhalten. Bitte versuche es erneut.';
+}
+
 function felieDatenAendern(mutator) {
   felieSpeicherHorchen();
   var keys = [FELIE_STORE_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
@@ -6330,6 +6371,7 @@ function felieDatenAendern(mutator) {
     felieBrueckeAbschluss(felieStore(), chats);
     if (window._klState) window._klState.contextChanged = true;
     localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore()));
+    felieDatensatzSpeichern();
     localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
     if (window._klState) localStorage.setItem('felie_onboarding_v1', JSON.stringify(window._klState));
     felieRevision(true);
@@ -6348,7 +6390,13 @@ function felieDatenAendern(mutator) {
     } catch (restoreError) {} });
     felieSpeicherStandMerken();
     felieRevision(true);
-    felieAlert('Die Änderung konnte nicht gespeichert werden. Deine bisherige Angabe bleibt erhalten. Bitte prüfe den freien Speicher und versuche es erneut.');
+    /* Zwei sehr verschiedene Gruende hatten bis hier dieselbe Meldung. Ein
+       abgelehnter Befehl hat mit freiem Speicher nichts zu tun: der
+       Vorgang passte nicht zum aktuellen Stand, etwa weil sich die
+       Angabe inzwischen geaendert hat oder ihre Quelle nicht mehr da
+       ist. Wer daraufhin Speicher freiraeumt, sucht an der falschen
+       Stelle — und beim zweiten Versuch passiert dasselbe. */
+    felieAlert(felieAendernFehlertext(e));
     return false;
   }
 }
@@ -6363,11 +6411,29 @@ function felieDatenAendern(mutator) {
    verlaengerte die Aufbewahrungsfrist, ohne dass jemand das so gewaehlt
    haette. Neu ist nur, dass die vorige Fassung nicht mehr als damaliger
    Stand erzaehlt wird, solange die zeitliche Einordnung fehlt. */
-function felieErinnerungBearbeiten(art, id, text) {
+/* Drei Wege, nicht einer (Pruefall F38, entschieden am 17.09.).
+
+     unveraenderter Text  → Bestaetigung. Die Angabe stimmt weiterhin;
+                            das ist eine eigene Quelle, aber kein neuer
+                            Inhalt und keine abgeloeste Fassung.
+     'formulierung'       → nur anders gesagt. Herkunft, Gueltigkeit und
+                            Bestaetigungszeit bleiben, wie sie waren; der
+                            fruehere Stand bleibt fuer den Rueckblick
+                            verwendbar.
+     sonst                → inhaltliche Aenderung. Die vorige Fassung
+                            wird abgeloest und ohne zeitliche Einordnung
+                            nicht mehr als damaliger Stand erzaehlt.
+
+   Bis M6 war jede Bearbeitung der dritte Fall. Ein berichtigter
+   Tippfehler setzte damit die Bestaetigungszeit neu und sperrte die
+   Vergangenheit der Angabe — fuer eine Aenderung, die inhaltlich keine
+   war. Die Unterscheidung kommt von der Nutzerin, nie aus
+   Textaehnlichkeit: raten waere hier schlimmer als fragen. */
+function felieErinnerungBearbeiten(art, id, text, wie) {
   var ok = felieDatenAendern(function(s, chats) {
     var liste = art === 'fakt' ? s.fakten : s.episoden;
     var e = liste.find(function(x) { return x.id === id; });
-    if (!e) throw new Error('Erinnerung fehlt');
+    if (!e) throw felieStandFehler('Erinnerung fehlt');
     felieArchivQuelleSperren(chats, e);
     var d = window._felieRepoAktiv;
     var eintrag = felieBrueckeEintragZuAltId(d, art === 'fakt' ? 'personal' : 'topic', id);
@@ -6376,17 +6442,26 @@ function felieErinnerungBearbeiten(art, id, text) {
     if (text === null) {
       felieBrueckeBefehl({ kind: 'forgetEntry', entryId: eintrag.id,
         expectedHeadRevisionId: kopf ? kopf.id : null });
-    } else {
-      var quelle = { id: felieRepoId('ev'), recordedAt: felieRepoJetzt(), assertion: 'explicit',
-        locator: { kind: 'direct', sourceEventId: felieRepoId('edit'), fieldKey: null,
-          authoredValue: text, confirmedRevisionId: kopf ? kopf.id : null } };
-      felieBrueckeBefehl({ kind: 'manualUpdate', entryId: eintrag.id,
-        expectedHeadRevisionId: kopf ? kopf.id : null,
-        candidate: { text: text, supportSets: [[quelle.id]],
-          retention: kopf ? kopf.retention : 'volatileDefault',
-          expiresAt: kopf ? kopf.expiresAt : null },
-        evidence: [quelle] });
+      return;
     }
+    var quelle = { id: felieRepoId('ev'), recordedAt: felieRepoJetzt(), assertion: 'explicit',
+      locator: { kind: 'direct', sourceEventId: felieRepoId('edit'), fieldKey: null,
+        authoredValue: text, confirmedRevisionId: kopf ? kopf.id : null } };
+    var unveraendert = !!(kopf && kopf.text
+      && felieNotizSchluessel(kopf.text) === felieNotizSchluessel(text));
+
+    if (unveraendert || wie === 'bestaetigung') {
+      felieBrueckeBefehl({ kind: 'confirm', entryId: eintrag.id,
+        expectedHeadRevisionId: kopf ? kopf.id : null,
+        evidence: [quelle], supportSets: [[quelle.id]] });
+      return;
+    }
+    felieBrueckeBefehl({ kind: wie === 'formulierung' ? 'reword' : 'manualUpdate',
+      entryId: eintrag.id, expectedHeadRevisionId: kopf ? kopf.id : null,
+      candidate: { text: text, supportSets: [[quelle.id]],
+        retention: kopf ? kopf.retention : 'volatileDefault',
+        expiresAt: kopf ? kopf.expiresAt : null },
+      evidence: [quelle] });
   });
   if (ok) felieHomeEreignis(text === null ? 'gedaechtnis_geloescht' : 'gedaechtnis_geaendert');
   return ok;
@@ -9551,6 +9626,15 @@ function reopenSavedChat(ts) {
     chat.messages.forEach(function(m, index) {
       var e = Object.assign({}, m);
       e.kontextAuslassen = !!m.kontextAuslassen || (chat.kontextNachrichtenAuslassen || []).indexOf(index) >= 0;
+      /* Eine berichtigte oder geloeschte Aussage darf aus ihrer
+         Ursprungsstelle nicht neu gewonnen werden — die Stelle faellt
+         weg, der Rest der Nachricht bleibt verwendbar (Pruefall F14).
+         Bleibt nichts Tragfaehiges uebrig, ist die Nachricht draussen. */
+      if (!e.kontextAuslassen && m.role === 'user' && typeof m.content === 'string') {
+        var rein = felieStelleBereinigt(chat, index, m.content);
+        if (rein === null) e.kontextAuslassen = true;
+        else if (rein !== m.content) e.inhaltBereinigt = rein;
+      }
       if (m.hidden) e.hidden = true;
       chatHistory.push(e);
       /* Wiederhergestellter Verlauf: Chips an einer alten Blase waeren
@@ -10271,6 +10355,7 @@ function gedSchliessen() {
   var ov = document.getElementById('gedaechtnis-overlay');
   if (ov) ov.remove();
   window._gedNeuIds = [];
+  window._gedNeuHinweise = null;
   /* Der Puls haengt am Merkzettel, der oben schon auf "gesehen" steht —
      hier wird die Startseite nur neu gezeichnet. */
   try { felieGedPulsAktualisieren(); } catch (e) {}
@@ -10287,7 +10372,22 @@ function gedNeuIdsSetzen() {
   if (!neu.gesehen) neu.hinweise.forEach(function (h) {
     if (ids.indexOf(h.id) < 0) ids.push(h.id); });
   window._gedNeuIds = ids;
+  /* Die Hinweise werden beim Oeffnen einmal festgehalten — genau wie die
+     Hervorhebung darueber. Das Register "Neu" setzt die Kenntnisnahme,
+     SOBALD es geoeffnet wird, und zwar vor dem Zeichnen; ohne diese
+     Aufnahme waere der Vorher-Text schon weg, bevor ihn jemand gesehen
+     hat, und beim Wechsel auf ein anderes Register mittendrin
+     verschwunden. Fuer diese Ansicht bleibt er stehen, beim naechsten
+     Oeffnen ist er weg. */
+  window._gedNeuHinweise = neu.gesehen ? [] : neu.hinweise.slice();
   return ids;
+}
+
+/* Der Hinweis zu einer Angabe fuer die gerade offene Ansicht. */
+function gedNeuHinweisFuer(id) {
+  var liste = window._gedNeuHinweise;
+  if (!liste) return felieNeuHinweis(id);
+  return liste.filter(function (x) { return x.id === id; })[0] || null;
 }
 
 /* Ist dieser Eintrag neu aus dem zuletzt gespeicherten Gespraech? */
@@ -10563,10 +10663,45 @@ function gedFadenLoeschen(id) { if (felieErinnerungBearbeiten('faden', id, null)
 
 /* ── Block 2: Aus euren Gesprächen (felie_lernt) ──────────────────── */
 
+/* Wurde aus dieser Notiz bereits eine Angabe? Entschieden wird an der
+   QUELLE, nicht am Wortlaut: eine Angabe, die sich auf dieselbe Stelle
+   im Gespraech stuetzt, IST diese Notiz — nur in der Form, die felie
+   weiterverwendet. Beide nebeneinander zu zeigen hiess, denselben
+   Sachverhalt zweimal zu behaupten (E03, E04, Pruefall F04).
+
+   Am Wortlaut liesse sich das nicht entscheiden: „Sie hat einen Mann
+   kennengelernt und lebt nun mit ihm zusammen" und „Sie lebt mit ihrem
+   Partner zusammen" sind verschieden geschrieben und meinen dasselbe.
+   Das zu erkennen waere geraten; dieselbe Belegstelle ist eine Tatsache.
+
+   Sichtbar bleibt die Notiz im Archiv, bei ihrem Gespraech. */
+function gedNotizGedeckt(chat, notiz, fakten, chats) {
+  var belege = (notiz && notiz.nachweis && notiz.nachweis.belege) || [];
+  if (!belege.length) return false;
+  return fakten.some(function (f) {
+    if (!felieErinnerungAusChat(f, chat, chats)) return false;
+    var fb = f.belege || [];
+    if (!fb.length) return false;
+    return belege.every(function (b) {
+      return fb.some(function (x) { return x.nachricht === b.nachricht; }); });
+  });
+}
+
 function gedLerntDaten() {
   var mit = [];
-  getSavedChats().forEach(function(c) {
-    felieNotizenLesen(c).filter(function(n) { return n.merken !== false; }).forEach(function(n) {
+  var alleChats = getSavedChats();
+  /* Aus dem Speicher, nicht aus der abgeleiteten Sicht: Belege und
+     Gespraechszuordnung stehen nur dort. Beruecksichtigt werden nur
+     Angaben, die auch sichtbar sind. */
+  var alleFakten = [];
+  try {
+    var sichtbar = {};
+    felieFakten().forEach(function (f) { sichtbar[f.id] = true; });
+    alleFakten = felieStore().fakten.filter(function (f) { return sichtbar[f.id]; });
+  } catch (e) {}
+  alleChats.forEach(function(c) {
+    felieNotizenLesen(c).filter(function(n) {
+      return n.merken !== false && !gedNotizGedeckt(c, n, alleFakten, alleChats); }).forEach(function(n) {
       mit.push({ id: c.id || c.timestamp, timestamp: c.timestamp, thema: n.feld ? c.thema : n.thema || c.thema,
         notizId: n.id, felie_lernt: n.text, feldQuelle: { felie_lernt: n.nachweis }, messages: c.messages });
     });
@@ -10742,11 +10877,12 @@ function gedFaktZeile(f) {
      bleibt die Angabe, der alte Wortlaut faellt weg (Pruefall F28). */
   var aend = '';
   try {
-    var hw = felieNeuHinweis(f.id);
+    var hw = gedNeuHinweisFuer(f.id);
+    /* Nur der alte Wortlaut. Der neue steht als Text der Zeile darueber —
+       ihn zu wiederholen machte die Karte laenger, ohne etwas zu sagen. */
     if (hw && hw.vorher) aend = '<div class="ged-aend">'
       + (hw.art === 'corrected' ? 'Berichtigt' : 'Aktualisiert') + ': '
-      + '<span class="ged-aend-vor">' + gedEsc(hw.vorher) + '</span>'
-      + '<span class="ged-aend-pfeil">→</span>' + gedEsc(hw.nachher || f.text) + '</div>';
+      + '<span class="ged-aend-vor">' + gedEsc(hw.vorher) + '</span></div>';
   } catch (e) {}
   return '<div class="ged-zeile' + (gedIstNeu(f.id) ? ' ged-neu' : '') + ' snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
     + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
@@ -10757,7 +10893,7 @@ function gedFaktZeile(f) {
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
     + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
-    + marken + aend
+    + aend + marken
     + '</div>'
     + '<div class="ged-akt">' + felieSnipStiftHtml('„' + f.text + '" bearbeiten') + '</div>'
     + '</div></div>';
@@ -11480,7 +11616,7 @@ function closeConfirmDelete() {
 function confirmDeleteSavedChat(id) {
   var ok = felieDatenAendern(function(s, chats) {
     var c = chats.find(function(x) { return (x.id || x.timestamp) == id; });
-    if (!c) throw new Error('Gespräch fehlt');
+    if (!c) throw felieStandFehler('Gespräch fehlt');
     var cid = felieBrueckeGespraechId(c);
     felieBrueckeAltlinksLoeschen(cid);
     felieBrueckeBefehl({ kind: 'deleteConversation', conversationId: cid });
@@ -11849,7 +11985,7 @@ function feliePromptRegeln(mode) {
 function felieModusRegeln(mode) {
   var modes = {
     chat: 'Beantworte die letzte echte Nachricht. Bei einem App-Ereignis nur dessen Anlass aufgreifen: ein gewähltes Thema eröffnet das Gespräch; neue Daten ändern keine früheren Aussagen automatisch; Fortsetzen ergänzt die abgeschnittene Antwort ohne Wiederholung. App-Ereignisse sind keine Selbstauskunft.',
-    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. LETZTES GESPRÄCH: Wenn letztesGespraech.notizen verwendbare Angaben enthält, baue IMMER einen dezenten, konkreten Bezug zu einem passenden Aspekt genau dieses Gesprächs ein. Keine Zusammenfassung oder Liste; der damalige Stand ist keine Aussage über heute. Sensible Details zurückhaltend, ohne ungefragte Diagnosen oder intime Einzelheiten auszubreiten. Sind keine verwendbaren Notizen vorhanden, offen einladen, keine Erinnerung erfinden und nicht auf ältere Gespräche ausweichen. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
+    willkommen: 'STARTSCREEN BEIM ÖFFNEN. Gib der Nutzerin das Gefühl, willkommen zu sein, und erleichtere ihr den Einstieg mit ihrem eigenen Anliegen. Zwei bis drei kurze Sätze, insgesamt höchstens eine offene Frage; eine Einladung ohne Frage ist ebenso passend. Begrüße genau einmal, bei bekanntem Namen persönlich. Verwende die mitgelieferte lokale Tageszeit. Bei erster_besuch, neuer_tag oder nach_pause passt ein neuer Gruß; bei kurze_rueckkehr nur eine knappe Rückkehrformulierung, keine erneute Vorstellung. GERADE BEENDETES GESPRÄCH: Nennt das Feld anlass ein soeben beendetes Gespräch, begrüße nicht neu, sondern knüpfe daran an — ein Satz zu einem konkreten Aspekt daraus und eine offene Einladung für das, was als Nächstes kommt. Wurde es ohne Speichern verlassen, liegt dazu keine Notiz vor: dann nicht so tun, als wüsstest du, worum es ging, und auch kein älteres Gespräch an seine Stelle setzen. LETZTES GESPRÄCH: Zum letzten Gespräch liegt nur der Zeitpunkt vor, kein Inhalt. Du darfst darauf Bezug nehmen, DASS zuletzt gesprochen wurde, niemals worüber. Keine Erinnerung erfinden, keine Vermutung über das damalige Thema, kein Ausweichen auf ältere Gespräche. Was du über die Nutzerin weißt, steht ausschließlich in den aktuellen Angaben; der damalige Stand ist keine Aussage über heute. OFFENE EPISODEN: Die höchstens zwei mitgelieferten neuesten offenen Themen sind eine Auswahl, keine Pflichtliste. Greife höchstens eines davon ergänzend auf, wenn es zum Einstieg und möglichst zum letzten Gespräch passt. Wiederholungen mit dem Gesprächsbezug vermeiden; keine Aufforderung, mehrere Baustellen abzuarbeiten. Keine Frist als Ereignisdatum oder Prognose auslegen, keine Fortdauer alter Beschwerden behaupten. Keine Körperdaten auswerten, keinen Zustand aus Tageszeit oder vergangenem Gespräch ableiten. Keine Erinnerung an versäumte Eingaben und kein verpflichtendes Nachfragen. Ton und Wärme an die Persönlichkeitseinstellung anpassen; diese kurze Aufgabenform hat Vorrang vor längeren Stilwünschen.',
     einordnung: 'Kurze Einordnung auf Wunsch: höchstens drei kurze Absätze und insgesamt etwa 160 Wörter. Beschreibe relevante berichtete Erfahrungen und getrennt dazu vorhandene Messungen. Allgemeine Möglichkeiten nur soweit die Frage es verlangt. Ohne Grundlage keine Erklärung erzwingen. Kein täglicher Bericht, kein Pflichtabschnitt zu Hormonen oder Nervensystem. Höchstens eine freiwillige Alltagsidee, keine zusätzliche Frage.',
     aktualisierung: 'Nach einer Datenaktualisierung höchstens zwei Sätze. Knüpfe an das ausdrücklich genannte Thema an, soweit eine relevante neue Angabe vorliegt. Keine neue Ursache vermuten, keine Werte aufzählen, keine zusätzliche Rückfrage. Ohne relevanten neuen Bezug genügt eine kurze Bestätigung.',
     stimmung: 'Greife die ausdrücklich gewählte Stimmung in zwei bis vier Sätzen auf. Sie ist ihre Erfahrung. Erkläre nicht ungefragt, warum sie sich so fühlt. Bei Traurigkeit und Überforderung bleibe bei ihrem Erleben und Alltag. Höchstens eine passende, offene Frage.',
@@ -12028,17 +12164,144 @@ function felieRueckblickDaten(gespraechIds) {
   if (!ids.length) return { zweck: 'rueckblick', gespraeche: [], hinweis: 'Ohne ausgewähltes Gespräch kein Rückblick.' };
   var chats = getSavedChats().filter(function (c) {
     return ids.indexOf(String(c.id || c.timestamp)) >= 0; });
+  /* Was der Rueckblick liefert, sind die eigenen Worte der Nutzerin und
+     die Fassungen, die damals galten — keine Paraphrase.
+
+     Die Altnotizen gehen NICHT mehr als Text mit. Sie sind
+     Zusammenfassungen ohne Bindung an eine Aussage: eine Korrektur kann
+     sie nicht gezielt erreichen, und eine Sperre haette sie nur ganz
+     treffen koennen, mitsamt allem Unbeteiligten darin (Pruefaelle F06,
+     F13). Beides ist geraten. Die Nachrichten der Nutzerin dagegen sind
+     die Urquelle, und eine Berichtigung sperrt darin genau die Stelle,
+     an der die ueberholte Aussage stand.
+
+     Sichtbar bleiben die Notizen unveraendert im Archiv — sie sind ihre
+     Gespraechsnotizen, nicht Modellfutter. */
   var raus = [];
   chats.forEach(function (c) {
-    var notizen = felieNotizenLesen(c).filter(function (n) {
-      return felieArchivNotizNutzbar(c, n); }).map(function (n) { return n.text; });
-    if (!notizen.length) return;
+    var cid = String(c.id || c.timestamp);
+    var eigene = [];
+    (c.messages || []).forEach(function (m, i) {
+      if (!m || m.role !== 'user' || typeof m.content !== 'string') return;
+      var text = felieStelleBereinigt(c, i, m.content);
+      if (text) eigene.push(text);
+    });
+    var damals = felieRueckblickAussagen(cid);
+    if (!eigene.length && !damals.length) return;
     raus.push({ datum: new Date(c.timestamp).toLocaleDateString('de-DE'),
-      thema: c.thema || 'Unser Gespräch', notizen: notizen,
+      thema: c.thema || 'Unser Gespräch', eigeneWorte: eigene, aussagen: damals,
       zeitbezug: 'damaliger Stand; kein Beleg für Fortdauer' });
   });
   return { zweck: 'rueckblick', gespraeche: raus,
-    hinweis: 'Ausdrücklich ausgewählter Rückblick. Historischen Stand mit Datum benennen und vom aktuellen Stand getrennt halten.' };
+    hinweis: 'Ausdrücklich ausgewählter Rückblick. Historischen Stand mit Datum benennen und vom aktuellen Stand getrennt halten. Die Angaben sind die eigenen Worte der Nutzerin von damals; berichtigte Stellen fehlen bewusst und dürfen nicht ergänzt werden.' };
+}
+
+/* ── Rückblick: erkennen, klären, erst dann ausliefern ────────────────
+   Entschieden am 17.09.: bei mehreren passenden Gespraechen fragt felie
+   EINMAL nach, und erst die Antwort waehlt aus. Ohne Antwort geht kein
+   Rueckblick an das Modell — ersatzweise die letzten Gespraeche
+   beizulegen bleibt ausgeschlossen (E11, Pruefaelle F22, F23).
+
+   Die Absicht wird an ausdruecklichen Ruckwaertsbezuegen erkannt, nicht
+   geraten. Faellt die Erkennung aus, passiert nichts Schlimmes: es bleibt
+   ein normales Gespraech ohne Archivbeigabe. Das ist die richtige
+   Fehlerrichtung. */
+/* Als Funktion, nicht als Konstante: die bestehenden Regressionen laden
+   nur eine feste Liste von Variablendeklarationen in ihren Testkontext.
+   Eine neue Konstante waere dort schlicht nicht vorhanden — derselbe
+   Fehler ist in M2a schon einmal passiert. */
+function felieRueckblickMarker() {
+  return ['haben wir', 'hatten wir', 'habe ich dir', 'erzählt', 'besprochen',
+    'geredet', 'gesprochen', 'letztes mal', 'damals', 'neulich',
+    'erinnerst du dich', 'weißt du noch', 'worüber'];
+}
+
+function felieRueckblickAbsicht(text) {
+  var t = String(text || '').toLowerCase();
+  if (!t) return false;
+  return felieRueckblickMarker().some(function (m) { return t.indexOf(m) >= 0; });
+}
+
+/* Welche gespeicherten Gespraeche passen zu dieser Frage? Verglichen
+   wird gegen Thema und eigene Worte — nicht gegen die Notizen, die
+   seit M6 ohnehin kein Modellfutter mehr sind. */
+function felieRueckblickKandidaten(text) {
+  var woerter = String(text || '').toLowerCase()
+    .replace(/[^a-zäöüß0-9 ]/g, ' ').split(/\s+/)
+    .filter(function (w) { return w.length >= 5 && felieRueckblickMarker().indexOf(w) < 0; });
+  if (!woerter.length) return [];
+  return getSavedChats().filter(function (c) {
+    var heu = ((c.thema || '') + ' ' + (c.messages || []).map(function (m) {
+      return m && m.role === 'user' ? m.content : ''; }).join(' ')).toLowerCase();
+    return woerter.some(function (w) { return heu.indexOf(w) >= 0; });
+  });
+}
+
+function felieRueckblickFrage(kandidaten) {
+  var teile = kandidaten.slice(0, 4).map(function (c) {
+    return (c.thema || 'unser Gespräch') + ' vom '
+      + new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+  });
+  return 'Dazu finde ich mehrere Gespräche: ' + teile.join(', ')
+    + '. Welches meinst du?';
+}
+
+/* Der einzige Zugang fuer den Chat. Drei Ausgaenge, keine Zwischentoene. */
+function felieRueckblickAnfrage(text) {
+  /* Steht eine Rueckfrage offen, ist die naechste Nachricht ihre
+     Antwort — auch ohne Rueckwaertsbezug darin. „Das über die
+     Wohnungssuche." ist eine Antwort, kein neues Anliegen. */
+  var offen = window._felieRueckblickOffen;
+  if (offen && offen.length) {
+    var wahl = felieRueckblickAuswahlLesen(text, offen);
+    window._felieRueckblickOffen = null;
+    if (!wahl) return { modus: 'kein' };
+    return { modus: 'rueckblick', gespraeche: [wahl] };
+  }
+  if (!felieRueckblickAbsicht(text)) return { modus: 'kein' };
+  var k = felieRueckblickKandidaten(text);
+  if (!k.length) return { modus: 'kein' };
+  if (k.length === 1) return { modus: 'rueckblick',
+    gespraeche: [String(k[0].id || k[0].timestamp)] };
+  window._felieRueckblickOffen = k.map(function (c) {
+    return { id: String(c.id || c.timestamp), thema: c.thema || '', timestamp: c.timestamp }; });
+  return { modus: 'rueckfrage', frage: felieRueckblickFrage(k),
+    kandidaten: window._felieRueckblickOffen };
+}
+
+/* Die Antwort der Nutzerin auf die Rueckfrage. Erkannt wird, was sie
+   tatsaechlich schreibt: ein Datum, ein Monat oder ein Wort aus dem
+   Thema. Bleibt es unklar, wird NICHT geraten — dann gibt es keinen
+   Rueckblick, und sie kann es noch einmal sagen. */
+function felieRueckblickAuswahlLesen(text, kandidaten) {
+  var t = String(text || '').toLowerCase();
+  var treffer = kandidaten.filter(function (k) {
+    var d = new Date(k.timestamp);
+    var tag = String(d.getDate());
+    var monat = d.toLocaleDateString('de-DE', { month: 'long' }).toLowerCase();
+    if (t.indexOf(tag + '.') >= 0 || (t.indexOf(monat) >= 0 && t.indexOf(tag) >= 0)) return true;
+    return (k.thema || '').toLowerCase().split(/\s+/).some(function (w) {
+      return w.length >= 5 && t.indexOf(w) >= 0; });
+  });
+  return treffer.length === 1 ? treffer[0].id : null;
+}
+
+/* Fassungen, die zu diesem Gespraech gehoeren und damals zutrafen.
+   Berichtigtes bleibt draussen: historicalUse entscheidet, nicht der
+   Zeitstempel (E17). */
+function felieRueckblickAussagen(cid) {
+  var d = window._felieDatensatz;
+  if (!d || !Array.isArray(d.revisions)) return [];
+  var raus = [];
+  d.revisions.forEach(function (r) {
+    if (!r.text || r.historicalUse !== 'allowed') return;
+    if (r.status !== 'current' && r.status !== 'superseded') return;
+    var link = (d.legacyHerkunft || []).filter(function (l) { return l.entryId === r.entryId; })[0];
+    var gehoert = !!(link && link.conversationIds.indexOf(cid) >= 0);
+    if (!gehoert) return;
+    if (raus.indexOf(r.text) < 0) raus.push(r.text);
+  });
+  return raus;
 }
 
 function felieKontextDaten() {
@@ -12074,6 +12337,11 @@ function felieKontextDaten() {
          Fuer einen ausdruecklichen Rueckblick gibt es jetzt
        felieRueckblickDaten mit ausgewaehlten Gespraechen. */
     zweck: 'aktuelles_gespraech',
+    /* Nur bei ausdruecklicher Auswahl, und dann sichtbar getrennt vom
+       aktuellen Stand. Ohne Auswahl ist das Feld nicht da — der normale
+       Chat bekommt weiterhin kein Archiv (E11). */
+    rueckblick: window._felieRueckblickAuswahl && window._felieRueckblickAuswahl.length
+      ? felieRueckblickDaten(window._felieRueckblickAuswahl) : undefined,
     berechneteMuster: { quelle: 'App-Berechnung; Beobachtung, keine Ursache', eintraege: muster } };
 }
 
@@ -12267,7 +12535,10 @@ function felieSichererVerlauf(hist) {
 
 function felieExtraktionsDaten(hist) {
   return felieSichererVerlauf(hist).map(function(m, i) {
-    return { id: i, rolle: m.role, text: m.content };
+    /* Was gesperrt ist, steht der erneuten Auswertung nicht zur
+       Verfuegung — auch dann nicht, wenn es woertlich in der
+       Ursprungsnachricht steht (E15, Pruefall F14). */
+    return { id: i, rolle: m.role, text: m.inhaltBereinigt != null ? m.inhaltBereinigt : m.content };
   });
 }
 
@@ -12502,7 +12773,7 @@ function felieChatNotizSetzen(id, notizId, text) {
   var ok = felieDatenAendern(function(s, chats) {
     var chat = chats.find(function(c) { return (c.id || c.timestamp) === id; });
     var n = felieNotizenLesen(chat, true).find(function(x) { return x.id === notizId; });
-    if (!chat || !n) throw new Error('Notiz fehlt');
+    if (!chat || !n) throw felieStandFehler('Notiz fehlt');
     felieArchivVerlaufSperren(chat, n.nachweis && n.nachweis.belege);
     felieArchivAbleitungenAendern(s, chats, chat, n, neu);
     if (!n.ursprungstext) n.ursprungstext = n.text;
@@ -12997,6 +13268,19 @@ function callFelie(userMessage, opts) {
   var fluechtig = chatHistory.some(function(m) { return m.befund; });
   var entry = { role: 'user', content: userMessage, hidden: !!opts.hidden, internal: !!opts.hidden, befund: fluechtig };
   chatHistory.push(entry);
+
+  /* Rueckblick: passen mehrere Gespraeche, fragt felie EINMAL nach und
+     ruft dafuer kein Modell. Erst die Antwort waehlt aus; ohne Antwort
+     gibt es keinen Rueckblick (F22, F23). Die Rueckfrage kostet nichts
+     und behauptet nichts — der Fehlerfall ist ein normales Gespraech. */
+  var rb = null;
+  try { rb = opts.hidden ? null : felieRueckblickAnfrage(userMessage); } catch (e) {}
+  if (rb && rb.modus === 'rueckfrage') {
+    chatHistory.push({ role: 'assistant', content: rb.frage });
+    try { addMsg(rb.frage, 'felie'); } catch (e) {}
+    return Promise.resolve(rb.frage);
+  }
+  window._felieRueckblickAuswahl = rb && rb.modus === 'rueckblick' ? rb.gespraeche : null;
 
 
   // Der Chat wählt seine Rückfrage nach dem Anliegen. Ein Stichwort wie
@@ -13790,6 +14074,21 @@ function felieSnipSchliessen(host) {
 
 
 
+/* „So stimmt es jetzt" gegenueber „Nur anders formuliert". Zwei echte
+   Wege, kein Bestaetigen-Abbrechen: der zweite Knopf verwirft nichts,
+   er sagt nur, dass sich am Inhalt nichts geaendert hat. */
+function felieBearbeitungsartFragen(weiter) {
+  felieConfirm({
+    title: 'Was hat sich geändert?',
+    message: 'Stimmt die Angabe jetzt inhaltlich anders — oder ist es derselbe Inhalt, nur anders gesagt? '
+      + 'Bei einer inhaltlichen Änderung merke ich mir den früheren Stand als überholt.',
+    confirmText: 'Stimmt jetzt so',
+    cancelText: 'Nur anders gesagt',
+    onConfirm: function () { weiter('inhalt'); },
+    onCancel: function () { weiter('formulierung'); }
+  });
+}
+
 function felieSnipSchreiben(host, wert) {
   var art = host.dataset.snip;
   if (art === 'notiz') {
@@ -13810,7 +14109,17 @@ function felieSnipSchreiben(host, wert) {
      Im Gedaechtnis existieren sie schon und haben eine id. Korrekturen
      gehen hier also direkt in den Store bzw. ins Archiv — es gibt keinen
      spaeteren Bestaetigungsschritt, der sie noch schreiben koennte. */
-  if (art === 'fakt' || art === 'faden') return felieErinnerungBearbeiten(art, host.dataset.snipId, wert);
+  if (art === 'fakt' || art === 'faden') {
+    /* Eine Rueckfrage, und nur dort, wo sie etwas entscheidet: hat sich
+       der Inhalt geaendert oder nur die Formulierung? Bei unveraendertem
+       Text gibt es sie nicht — das ist eine Bestaetigung und braucht
+       keinen Knopf (Pruefall F38). */
+    felieBearbeitungsartFragen(function (wie) {
+      felieErinnerungBearbeiten(art, host.dataset.snipId, wert, wie);
+      try { gedRender(); } catch (e) {}
+    });
+    return true;
+  }
 
   if (art === 'chatlernt') {
     /* Der Satz gehoert zu einem archivierten Gespraech. Nur dieses eine
@@ -13844,7 +14153,7 @@ function felieChatFeldSetzen(id, patch) {
   if (keys.length === 1 && keys[0] !== 'thema') return felieChatNotizSetzen(id, keys[0], patch[keys[0]]);
   return felieDatenAendern(function(s, chats) {
     var c = chats.find(function(x) { return (x.id || x.timestamp) === id; });
-    if (!c) throw new Error('Gespräch fehlt');
+    if (!c) throw felieStandFehler('Gespräch fehlt');
     keys.forEach(function(k) {
       var neu = felieNotizText(patch[k]).slice(0, FELIE_SNIP_MAX[k] || 240);
       if (k !== 'thema') {
@@ -14681,8 +14990,19 @@ function felieRepoResolveConflict(d, b) {
 function felieRepoForget(d, b) {
   var entry = felieRepoFind(d.entries, b.entryId);
   if (!entry) felieRepoWerfen('eintrag_fehlt');
+  /* Der Inhalt geht. Was bleibt, ist ein Grabstein: ein Schluessel, an
+     dem dieselbe Aussage spaeter wiedererkannt wird, ohne dass ihr Text
+     weiter gehalten wird. Ohne ihn koennte eine erneute Auswertung
+     desselben Gespraechs die geloeschte Angabe woertlich neu anlegen —
+     eine Loeschung, die nur bis zum naechsten Durchlauf haelt, ist
+     keine (E15, Pruefall F14). */
+  entry.forgottenKeys = entry.forgottenKeys || [];
   d.revisions.forEach(function (r) {
     if (r.entryId !== entry.id) return;
+    if (r.text) {
+      var k = felieNotizSchluessel(r.text);
+      if (k && entry.forgottenKeys.indexOf(k) < 0) entry.forgottenKeys.push(k);
+    }
     felieRepoQuellenSperren(d, r, 'forgotten');
     r.text = null; r.status = 'withdrawn'; r.historicalUse = 'blocked';
   });
@@ -15075,9 +15395,150 @@ function felieBrueckeZaehlerNachbilden(d, set, anzahl) {
   return raus;
 }
 
+/* ── Der Datensatz bleibt — M6 ────────────────────────────────────────
+   Bis M5 war die Bruecke je Speichervorgang zustandslos: saeen, Befehle
+   anwenden, zurueckprojizieren, verwerfen. Was der Vertrag traegt und die
+   Altform nicht kennt — Revisionen, Belege, Sperren, Hinweise — entstand
+   dabei jedes Mal neu aus zwei flachen Listen und war danach wieder weg.
+   Genau das machte die Sperre nachrichtengenau statt aussagegenau: ohne
+   dauerhafte Revisionen gibt es nichts, woran eine Ableitung haengen
+   koennte (Pruefaelle F06, F13, F14).
+
+   Jetzt bleibt der GEDAECHTNISTEIL des Datensatzes bestehen. Gespraeche
+   und Nachrichten werden weiterhin je Vorgang aus felie_saved_chats
+   gesaet: dort liegt der Bestand, den das Archiv anzeigt, und zwei
+   Wahrheiten darueber waere genau der Fehler, den dieses Paket
+   beseitigt. Belege zeigen auf Nachrichten-Kennungen, die sich aus
+   Gespraechskennung und Position ergeben — verschiebt sich eine
+   Position, faellt der Beleg weg, statt ueber Textgleichheit neu
+   zugeordnet zu werden (F45). */
+
+function felieDatensatzTeile() {
+  return ['entries', 'revisions', 'evidence', 'exclusions', 'conflicts',
+    'changeNotices', 'mutationReceipts', 'importRecords', 'legacyHerkunft'];
+}
+
+/* Was nach einem Vorgang bestehen bleibt. Bewusst ohne Gespraeche,
+   Nachrichten und Zusammenfassungen. */
+function felieDatensatzMerken(d) {
+  if (!d) return null;
+  var k = { meta: d.meta, profileBase: d.profileBase, referents: d.referents };
+  felieDatensatzTeile().forEach(function (t) { k[t] = d[t]; });
+  window._felieDatensatz = felieRepoKlon(k);
+  return window._felieDatensatz;
+}
+
+/* Der dauerhafte Teil wird SYNCHRON geschrieben, im selben Block wie die
+   Projektion. Damit gilt fuer beide dasselbe Alles-oder-nichts: der
+   vorhandene catch stellt im Fehlerfall alle Schluessel zurueck. Ein
+   asynchroner Schreibweg daneben koennte genau hier auseinanderlaufen —
+   sichtbarer Stand geschrieben, Datensatz nicht — und der naechste Start
+   wuerde stillschweigend mit dem aelteren Gedaechtnis weiterarbeiten. */
+/* Fingerabdruck der Projektion, die zu diesem Datensatz gehoert. Er
+   beantwortet eine einzige Frage beim Start: hat seither jemand die
+   flachen Listen geschrieben, der den Datensatz nicht kennt? Das kann ein
+   aelterer Client sein, eine zurueckgespielte Sicherung aus der Zeit
+   davor oder ein Eingriff von Hand. In all diesen Faellen waere es
+   falsch, den gehaltenen Datensatz weiter als Wahrheit zu nehmen: er
+   wuerde die neueren sichtbaren Angaben stillschweigend verdraengen
+   (Pruefaelle F32, F34, F42). */
+function felieProjektionAbdruck() {
+  try {
+    var st = felieStore();
+    var kurz = function (liste) {
+      return (liste || []).map(function (e) {
+        return [e.id, e.text, e.bestaetigtAm || '', e.quelle || ''].join('~'); }).sort().join('|');
+    };
+    return kurz(st.fakten) + '#' + kurz(st.episoden);
+  } catch (e) { return null; }
+}
+
+function felieDatensatzSpeichern() {
+  var k = felieDatensatzStand();
+  if (!k) return false;
+  k.projektionsAbdruck = felieProjektionAbdruck();
+  localStorage.setItem(FELIE_DATENSATZ_KEY, JSON.stringify(k));
+  return true;
+}
+
+function felieDatensatzLaden() {
+  try {
+    var roh = localStorage.getItem(FELIE_DATENSATZ_KEY);
+    if (!roh) return false;
+    var k = JSON.parse(roh);
+    if (!k || !k.meta || k.meta.schemaVersion !== 2 || !Array.isArray(k.entries)) return false;
+    /* Neuer als der Datensatz heisst: der Datensatz ist nicht mehr die
+       Wahrheit. Dann wird er verworfen und beim naechsten Vorgang aus dem
+       sichtbaren Stand neu aufgebaut — die Angaben der Nutzerin bleiben,
+       die Revisionshistorie geht verloren. Das ist der ehrliche Preis;
+       das Gegenteil waere, ihre neueren Angaben stillschweigend zu
+       ueberschreiben. */
+    if (k.projektionsAbdruck != null && k.projektionsAbdruck !== felieProjektionAbdruck()) {
+      window._felieDatensatz = null;
+      window._felieDatensatzVerworfen = true;
+      return false;
+    }
+    window._felieDatensatz = k;
+    window._felieDatensatzVerworfen = false;
+    return true;
+  } catch (e) { return false; }
+}
+
+function felieDatensatzStand() {
+  return (typeof window !== 'undefined' && window._felieDatensatz) || null;
+}
+
+/* Setzt den bestehenden Gedaechtnisteil in eine frische Saat ein. Kopiert
+   wird dabei: der gehaltene Stand darf von einem laufenden Vorgang nicht
+   veraendert werden, solange dieser nicht abgeschlossen ist. */
+function felieDatensatzUebernehmen(d) {
+  var k = felieDatensatzStand();
+  if (!k) return false;
+  var kopie = felieRepoKlon(k);
+  d.meta = kopie.meta;
+  d.meta.ownerId = felieBrueckeOwner();
+  d.profileBase = kopie.profileBase;
+  d.referents = kopie.referents;
+  felieDatensatzTeile().forEach(function (t) { d[t] = kopie[t] || []; });
+  return true;
+}
+
+/* Solange die Altform daneben besteht, wird eine Gespraechszuordnung
+   weiterhin dort gesetzt (felieErinnerungVerknuepfen schreibt in die
+   flache Liste). Ohne diese Angleichung erreichte sie den dauerhaften
+   Datensatz nicht mehr, und ein daraus stammender Eintrag ueberlebte das
+   Loeschen seines Gespraechs (E09, v6-Regression). Die Zuordnung wird
+   vereinigt, nie entfernt: was der Datensatz beim Loeschen aufgegeben
+   hat, steht in der Altliste ohnehin nicht mehr. */
+function felieBrueckeAltlinksNachziehen(d, store) {
+  var alle = ((store && store.fakten) || []).concat((store && store.episoden) || []);
+  alle.forEach(function (f) {
+    var ids = (f.gespraechIds || []).map(String);
+    if (!ids.length) return;
+    var eintrag = felieRepoFind(d.entries, String(f.id));
+    if (!eintrag) return;
+    var link = (d.legacyHerkunft || []).filter(function (l) { return l.entryId === eintrag.id; })[0];
+    if (!link) {
+      link = { entryId: eintrag.id, belege: Array.isArray(f.belege) ? f.belege : [],
+        conversationIds: [], unklarFest: f.herkunftUnklar === true };
+      (d.legacyHerkunft = d.legacyHerkunft || []).push(link);
+    }
+    ids.forEach(function (id) {
+      if (link.conversationIds.indexOf(id) < 0) link.conversationIds.push(id); });
+  });
+}
+
 function felieBrueckeSaat(store, chats) {
   var d = felieRepoLeer(felieBrueckeOwner());
   felieBrueckeGespraecheSaen(d, chats);
+  /* Liegt ein dauerhafter Stand vor, ist ER die Wahrheit ueber das
+     Gedaechtnis — nicht die beiden flachen Altlisten. Sonst wuerde jeder
+     Vorgang die Revisionen wieder auf eine einzige einebnen. */
+  if (felieDatensatzUebernehmen(d)) {
+    felieBrueckeAltlinksNachziehen(d, store);
+    felieRepoNeubewerten(d);
+    return d;
+  }
   ((store && store.fakten) || []).forEach(function (f) { felieBrueckeEintragSaen(d, f, 'personal', chats); });
   ((store && store.episoden) || []).forEach(function (e) { felieBrueckeEintragSaen(d, e, 'topic', chats); });
   felieRepoNeubewerten(d);
@@ -15280,12 +15741,48 @@ function felieBrueckeZiel(d, art, f) {
   return null;
 }
 
+/* Sucht einen Eintrag, bei dem GENAU DIESER Wortlaut schon einmal galt
+   und abgeloest wurde. Vor dem dauerhaften Datensatz gab es das nicht zu
+   finden: frueher Fassungen lebten nur innerhalb eines Vorgangs. Dass
+   F35 trotzdem bestand, lag an den textabgeleiteten Alt-IDs — dieselbe
+   Formulierung ergab dieselbe Kennung. Das war ein Zufall, kein Schutz,
+   und mit opaken Kennungen waere er ersatzlos weg. */
+function felieBrueckeUeberholt(d, art, f) {
+  var schluessel = felieNotizSchluessel(f.text);
+  for (var i = 0; i < d.entries.length; i++) {
+    var e = d.entries[i];
+    if (e.kind !== art) continue;
+    /* Geloescht heisst geloescht — auch wenn derselbe Satz aus derselben
+       Quelle noch einmal gewonnen wird. */
+    if ((e.forgottenKeys || []).indexOf(schluessel) >= 0) return { entry: e, revision: null };
+    var kopf = felieRepoKopf(d, e.id);
+    if (kopf && kopf.text && felieNotizSchluessel(kopf.text) === schluessel) return null;
+    var treffer = d.revisions.filter(function (r) {
+      return r.entryId === e.id && r.status !== 'current' && r.text
+        && felieNotizSchluessel(r.text) === schluessel; })[0];
+    if (treffer) return { entry: e, revision: treffer };
+  }
+  return null;
+}
+
 function felieBrueckeAnlegen(art, f, gespraechId) {
   var d = window._felieRepoAktiv;
   var quellen = felieBrueckeQuellenAus(d, f, gespraechId);
   var sets = quellen.length ? [quellen.map(function (q) { return q.id; })] : [];
   var ziel = felieBrueckeZiel(d, art, f);
   var kopf = ziel ? felieRepoKopf(d, ziel.id) : null;
+
+  if (!ziel) {
+    /* Derselbe Wortlaut galt hier schon einmal und wurde abgeloest. Eine
+       erneute Auswertung auf dieser alten Grundlage darf die spaetere
+       Fassung nicht ueberschreiben und auch keinen zweiten,
+       widersprechenden Eintrag anlegen (E17, I08, Pruefall F35). Der
+       aktuelle Wert bleibt unberuehrt; zurueckgegeben wird der Eintrag,
+       um den es geht — eine Kennung auf nichts waere der Fehler aus
+       Pruefall F49. */
+    var ueberholt = felieBrueckeUeberholt(d, art, f);
+    if (ueberholt) return ueberholt.entry.id;
+  }
 
   if (ziel && kopf) {
     var gleich = felieNotizSchluessel(kopf.text || '') === felieNotizSchluessel(f.text);
@@ -15435,13 +15932,20 @@ function felieBrueckeEintragZuAltId(d, art, altId) {
 /* Schreibt die Sperren des Datensatzes in die Altform zurueck. Eine
    Sperre auf einer Quelle ist dort eine Sperre auf der Nachricht —
    feiner kann die Altablage es nicht. */
+/* Die Sperre traegt jetzt die STELLE mit, an der die berichtigte Aussage
+   stand — nicht mehr nur die Nachrichtennummer. Eine Nachricht, die
+   mehrere Aussagen enthaelt, wird dadurch nicht mehr als Ganzes
+   unbrauchbar: gesperrt ist der Bereich, nicht der Satz drumherum
+   (E15, Pruefaelle F06, F14). Deckt der Bereich die ganze Nachricht,
+   bleibt zusaetzlich die alte Nachrichtensperre stehen — daran haengen
+   Anzeige und Archiv unveraendert weiter. */
 function felieBrueckeSperrenZurueck(d, chats) {
   (d.exclusions || []).forEach(function (x) {
-    var mid = null;
+    var mid = null, bereich = null;
     if (x.target.kind === 'message') mid = x.target.messageId;
     else {
       var ev = felieRepoFind(d.evidence, x.target.evidenceId);
-      if (ev && ev.locator.kind === 'message') mid = ev.locator.messageId;
+      if (ev && ev.locator.kind === 'message') { mid = ev.locator.messageId; bereich = ev.locator.range; }
     }
     if (!mid) return;
     var m = felieRepoFind(d.messages, mid);
@@ -15449,10 +15953,35 @@ function felieBrueckeSperrenZurueck(d, chats) {
     var chat = (chats || []).filter(function (c) {
       return felieBrueckeGespraechId(c) === m.conversationId; })[0];
     if (!chat) return;
-    chat.kontextNachrichtenAuslassen = chat.kontextNachrichtenAuslassen || [];
-    if (chat.kontextNachrichtenAuslassen.indexOf(m.ordinal) < 0)
-      chat.kontextNachrichtenAuslassen.push(m.ordinal);
+
+    var ganz = !bereich || (bereich.start <= 0 && bereich.end >= (m.content || '').length);
+    if (ganz) {
+      chat.kontextNachrichtenAuslassen = chat.kontextNachrichtenAuslassen || [];
+      if (chat.kontextNachrichtenAuslassen.indexOf(m.ordinal) < 0)
+        chat.kontextNachrichtenAuslassen.push(m.ordinal);
+      return;
+    }
+    chat.kontextStellenAuslassen = chat.kontextStellenAuslassen || [];
+    var schon = chat.kontextStellenAuslassen.some(function (st) {
+      return st.nachricht === m.ordinal && st.start === bereich.start && st.end === bereich.end; });
+    if (!schon) chat.kontextStellenAuslassen.push({ nachricht: m.ordinal,
+      start: bereich.start, end: bereich.end });
   });
+}
+
+/* Der Text einer Nachricht ohne die gesperrten Stellen. Gibt null
+   zurueck, wenn nichts Tragfaehiges uebrig bleibt. */
+function felieStelleBereinigt(chat, index, text) {
+  if ((chat.kontextNachrichtenAuslassen || []).indexOf(index) >= 0) return null;
+  var stellen = (chat.kontextStellenAuslassen || []).filter(function (st) {
+    return st.nachricht === index; });
+  if (!stellen.length) return text;
+  var raus = String(text || '');
+  stellen.slice().sort(function (a, b) { return b.start - a.start; }).forEach(function (st) {
+    raus = raus.slice(0, st.start) + raus.slice(st.end);
+  });
+  raus = raus.replace(/\s{2,}/g, ' ').trim();
+  return raus.length > 3 ? raus : null;
 }
 
 /* Entfernt Alteintraege, deren einzige Herkunftsangabe dieses Gespraech
@@ -15490,6 +16019,14 @@ function felieBrueckeAltlinksLoeschen(cid) {
     if (l.conversationIds.length) return;
     var eintrag = felieRepoFind(window._felieRepoAktiv.entries, l.entryId);
     if (!eintrag || !eintrag.headRevisionId) return;
+    /* Der Altlink ist die Herkunftsangabe des Altbestands, kein Beleg.
+       Hat der Eintrag inzwischen eine eigene Stuetzung — etwa weil die
+       Nutzerin ihn von Hand bestaetigt oder geaendert hat —, dann traegt
+       er sich selbst und geht mit dem Gespraech NICHT unter (E18,
+       Pruefall F30). Vor dem dauerhaften Datensatz konnte das nicht
+       auffallen: die Stuetzung entstand je Vorgang neu. */
+    var kopf = felieRepoFind(window._felieRepoAktiv.revisions, eintrag.headRevisionId);
+    if (kopf && felieRepoBelegzustand(window._felieRepoAktiv, kopf) === 'supported') return;
     felieBrueckeBefehl({ kind: 'forgetEntry', entryId: l.entryId,
       expectedHeadRevisionId: eintrag.headRevisionId });
   });
@@ -15501,6 +16038,9 @@ function felieBrueckeAbschluss(s, chats) {
   if (!window._felieRepoBeruehrt) return false;
   felieBrueckeSperrenZurueck(window._felieRepoAktiv, chats);
   try { felieNeuHinweiseNachziehen(window._felieRepoAktiv); } catch (e) {}
+  /* Erst hier, nach allen Befehlen: was ein abgebrochener Vorgang
+     angerichtet haette, wird nie gemerkt. */
+  felieDatensatzMerken(window._felieRepoAktiv);
   return true;
 }
 
@@ -15593,7 +16133,8 @@ function felieSpeicherArt() {
 }
 
 function felieSpeicherSchluessel() {
-  return [FELIE_STORE_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
+  return [FELIE_STORE_KEY, FELIE_DATENSATZ_KEY, 'felie_saved_chats',
+    'felie_onboarding_v1', 'felie_neue_snippets'];
 }
 
 /* ── Fremdänderung erkennen (aktiv) ───────────────────────────────── */

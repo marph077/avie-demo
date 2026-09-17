@@ -12289,6 +12289,36 @@ function felieRueckblickAuswahlLesen(text, kandidaten) {
 /* Fassungen, die zu diesem Gespraech gehoeren und damals zutrafen.
    Berichtigtes bleibt draussen: historicalUse entscheidet, nicht der
    Zeitstempel (E17). */
+/* Gehoert diese Fassung zu diesem Gespraech? Zwei Wege, und beide
+   werden gebraucht:
+
+     ueber die Belege — der Normalfall bei allem, was sauber belegt ist.
+       Nachrichten-Kennungen entstehen als "<Gespraech>-m<Position>";
+       daraus laesst sich das Gespraech ablesen, ohne Nachrichten im
+       dauerhaften Datensatz zu halten.
+     ueber den Altlink — fuer Eintraege ohne aufloesbaren Beleg. Das ist
+       die einzige Herkunftsangabe, die der Altbestand hat.
+
+   Der erste Weg fehlte zunaechst, und zwar genau dort, wo alles richtig
+   lief: eine gut belegte Angabe hat KEINEN Altlink (der entsteht nur,
+   wenn sich der Beleg nicht aufloesen laesst). Der Rueckblick lieferte
+   dadurch nur die eigenen Worte und keine einzige Fassung. */
+function felieRueckblickGehoert(d, r, cid) {
+  var treffer = false;
+  (r.supportSets || []).forEach(function (set) {
+    (set || []).forEach(function (id) {
+      var ev = felieRepoFind(d.evidence, id);
+      if (!ev || !ev.locator || ev.locator.kind !== 'message') return;
+      var mid = String(ev.locator.messageId || '');
+      var i = mid.lastIndexOf('-m');
+      if (i > 0 && mid.slice(0, i) === cid) treffer = true;
+    });
+  });
+  if (treffer) return true;
+  var link = (d.legacyHerkunft || []).filter(function (l) { return l.entryId === r.entryId; })[0];
+  return !!(link && link.conversationIds.indexOf(cid) >= 0);
+}
+
 function felieRueckblickAussagen(cid) {
   var d = window._felieDatensatz;
   if (!d || !Array.isArray(d.revisions)) return [];
@@ -12296,9 +12326,7 @@ function felieRueckblickAussagen(cid) {
   d.revisions.forEach(function (r) {
     if (!r.text || r.historicalUse !== 'allowed') return;
     if (r.status !== 'current' && r.status !== 'superseded') return;
-    var link = (d.legacyHerkunft || []).filter(function (l) { return l.entryId === r.entryId; })[0];
-    var gehoert = !!(link && link.conversationIds.indexOf(cid) >= 0);
-    if (!gehoert) return;
+    if (!felieRueckblickGehoert(d, r, cid)) return;
     if (raus.indexOf(r.text) < 0) raus.push(r.text);
   });
   return raus;

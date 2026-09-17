@@ -958,6 +958,9 @@ html.native-app .phone {
   border-color: var(--apricot);
   background: linear-gradient(0deg, rgba(225, 234, 125,0.16), rgba(225, 234, 125,0.16)), #FFFFFF;
 }
+.ged-aend { font-size: 11px; color: var(--text-muted); margin-top: 5px; line-height: 1.45; }
+.ged-aend .ged-aend-vor { text-decoration: line-through; opacity: 0.75; }
+.ged-aend .ged-aend-pfeil { margin: 0 5px; }
 .ged-neu-hinweis { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--lila); display: flex; align-items: center; gap: 6px; margin: 2px 0 8px; }
 .ged-neu-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--apricot);
@@ -3153,42 +3156,20 @@ function felieMuster(key, phase) {
                        Verfaellt nie durch Nichterwaehnung.
            'volatil' — Wohnsituation, Beziehungsstatus, aktuelle Last.
                        Verfaellt 365 Tage nach der letzten Bestaetigung. */
+/* Umgestellt auf das Repository (M2b). Der frueher hier stehende
+   Kategorie-Ersatz ist damit endgueltig weg: er traf den ERSTEN Eintrag
+   einer Kategorie und konnte aus „Sie hat zwei Kinder." eine Wohnangabe
+   machen. Ziel ist jetzt entweder die mitgegebene Alt-ID oder
+   wortgleicher Inhalt — beides ohne Raten.
+
+   gespraechId sagt, auf welches Gespraech sich die Belege beziehen. Im
+   Vertrag ist der Beleg Teil des Anlegens und kein Nachtrag; ohne ihn
+   entsteht ein ausdruecklich unklarer Eintrag statt eines scheinbar
+   belegten. */
 function felieFaktSetzen(f) {
   if (!f || !f.text) return null;
-  var jetzt = Date.now();
-  var liste = felieStore().fakten;
-  var id = f.id || (f.kategorie || 'allgemein') + ':' + felieNotizSchluessel(f.text);
-  var vorhanden = null;
-  for (var i = 0; i < liste.length; i++) {
-    if (liste[i].id === id || (!f.id && liste[i].kategorie === (f.kategorie || 'allgemein') &&
-      felieNotizSchluessel(liste[i].text) === felieNotizSchluessel(f.text)) ||
-      (f.kategorie && liste[i].kategorie === f.kategorie && f.ersetzt)) {
-      vorhanden = liste[i]; break;
-    }
-  }
-  if (vorhanden) {
-    id = vorhanden.id;
-    /* Widerspruch ist Aktualisierung, nicht zweiter Eintrag. Veraltete
-       Fakten sind schlimmer als fehlende. */
-    vorhanden.text        = f.text;
-    vorhanden.klasse      = f.klasse || vorhanden.klasse || 'volatil';
-    vorhanden.bestaetigtAm = jetzt;
-    vorhanden.quelle      = f.quelle || vorhanden.quelle || 'gespraech';
-    if (Array.isArray(f.belege)) vorhanden.belege = f.belege;
-  } else {
-    liste.push({
-      id: id,
-      text: f.text,
-      kategorie: f.kategorie || 'allgemein',
-      klasse: f.klasse || 'volatil',
-      erfasstAm: jetzt,
-      bestaetigtAm: jetzt,
-      quelle: f.quelle || 'gespraech',
-      belege: Array.isArray(f.belege) ? f.belege : []
-    });
-  }
-  felieRevision(true);
-  return id;
+  return felieBrueckeSchreiben('personal', f,
+    f.gespraechId != null ? f.gespraechId : window._letzteChatId);
 }
 
 /* Bestaetigung heisst aufgegriffen, nicht bloss mitgeschickt. Sonst
@@ -3217,40 +3198,14 @@ function felieFakten(opts) {
 
 /* ── Episoden ─────────────────────────────────────────────────────── */
 
+/* Umgestellt auf das Repository (M2b). Eine erneute Erwaehnung ist eine
+   Bestaetigung, kein zweiter Eintrag — und sie verlaengert die Frist
+   nicht von selbst. Der Zaehler „3x erwaehnt" ergibt sich aus der Zahl
+   unabhaengiger Stuetzungen. Die Befoerderung zum Fakt entfaellt (E19). */
 function felieEpisode(ep) {
   if (!ep || !ep.text) return null;
-  var jetzt = Date.now();
-  var liste = felieStore().episoden;
-  var id = ep.id || 'ep:' + felieNotizSchluessel(ep.text);
-  var vorhanden = null;
-  for (var i = 0; i < liste.length; i++) if (liste[i].id === id ||
-    (!ep.id && felieNotizSchluessel(liste[i].text) === felieNotizSchluessel(ep.text))) { vorhanden = liste[i]; break; }
-
-  if (vorhanden) {
-    id = vorhanden.id;
-    /* Nicht verlaengern. Wiederkehr wird gezaehlt: wer mehrfach ueber
-       lange Zeit auftaucht, ist keine Episode mehr, sondern ein Fakt.
-       Befoerderung statt Fristverlaengerung. */
-    vorhanden.erwaehnungen = (vorhanden.erwaehnungen || 1) + 1;
-    vorhanden.zuletztAm    = jetzt;
-    var spanneTage = Math.floor((jetzt - vorhanden.erfasstAm) / 86400000);
-    vorhanden.befoerderungKandidat = (vorhanden.erwaehnungen >= 3 && spanneTage >= 60);
-    felieRevision(true);
-    return id;
-  }
-  liste.push({
-    id: id,
-    text: ep.text,
-    status: 'offen',
-    erfasstAm: jetzt,
-    zuletztAm: jetzt,
-    faelligBis: ep.faelligBis || (jetzt + 21 * 86400000),
-    erwaehnungen: 1,
-    befoerderungKandidat: false,
-    belege: Array.isArray(ep.belege) ? ep.belege : []
-  });
-  felieRevision(true);
-  return id;
+  return felieBrueckeSchreiben('topic', ep,
+    ep.gespraechId != null ? ep.gespraechId : window._letzteChatId);
 }
 
 /* Text einer Episode nachtraeglich korrigieren. Eigene Funktion, weil
@@ -3277,16 +3232,25 @@ function felieEpisode(ep) {
    mitlaeuft. zuletztAm wandert mit, sonst wuerde die Aufbewahrungsfrist
    weiter auf dem alten Datum rechnen. */
 function felieEpisodeVerlaengern(id, tage) {
-  var liste = felieStore().episoden;
-  for (var i = 0; i < liste.length; i++) {
-    if (liste[i].id !== id) continue;
-    liste[i].faelligBis = Date.now() + (tage || FELIE_FADEN_VERLAENGERUNG) * 86400000;
-    liste[i].zuletztAm = Date.now();
-    liste[i].status = 'offen';
-    felieRevision(true);
-    return true;
-  }
-  return false;
+  var frist = Date.now() + (tage || FELIE_FADEN_VERLAENGERUNG) * 86400000;
+  var gefunden = false;
+  var ok = felieDatenAendern(function () {
+    var d = window._felieRepoAktiv;
+    var eintrag = felieBrueckeEintragZuAltId(d, 'topic', id);
+    var kopf = eintrag ? felieRepoKopf(d, eintrag.id) : null;
+    if (!kopf) return;
+    gefunden = true;
+    /* „Noch aktuell?" — „Ja" ist eine ausdrueckliche Bestaetigung der
+       Nutzerin: eine eigene Quelle, die die Frist weiterreicht. Der
+       Inhalt aendert sich nicht, also entsteht keine neue Fassung. */
+    felieBrueckeBefehl({ kind: 'confirm', entryId: eintrag.id,
+      expectedHeadRevisionId: kopf.id, expiresAt: felieBrueckeZeit(frist),
+      evidence: [{ id: felieRepoId('ev'), recordedAt: felieRepoJetzt(), assertion: 'explicit',
+        locator: { kind: 'direct', sourceEventId: felieRepoId('src'), fieldKey: 'noch_aktuell',
+          authoredValue: true, confirmedRevisionId: kopf.id } }],
+      supportSets: [] });
+  });
+  return ok && gefunden;
 }
 
 function felieEpisoden(opts) {
@@ -3314,28 +3278,108 @@ var FELIE_NEU_KEY = 'felie_neue_snippets';
 function felieNeueSnippets() {
   try {
     var o = JSON.parse(localStorage.getItem(FELIE_NEU_KEY) || 'null');
-    if (o && Array.isArray(o.ids)) return { ids: o.ids, gesehen: o.gesehen === true };
+    if (o && Array.isArray(o.ids)) return { ids: o.ids, gesehen: o.gesehen === true,
+      hinweise: Array.isArray(o.hinweise) ? o.hinweise : [] };
   } catch (e) {}
-  return { ids: [], gesehen: true };
+  return { ids: [], gesehen: true, hinweise: [] };
+}
+
+function felieNeueSnippetsSchreiben(stand) {
+  try {
+    if (!stand.ids.length && !stand.hinweise.length) localStorage.removeItem(FELIE_NEU_KEY);
+    else localStorage.setItem(FELIE_NEU_KEY, JSON.stringify(stand));
+  } catch (e) {}
+  return stand;
+}
+
+/* Vorher/Nachher einer Aktualisierung.
+
+   Der Vorher-Text ist eine Ableitung, keine zweite Wahrheit: er wird
+   allein fuer diesen einen Hinweis gehalten. Deshalb faellt er mit der
+   Kenntnisnahme weg, und ein Hinweis verschwindet ganz, sobald sein
+   Eintrag nicht mehr tragfaehig ist — etwa weil die Quelle geloescht
+   wurde. Ein geloeschter Inhalt darf nicht im Aenderungshinweis
+   weiterleben (Pruefaelle F28, F30, F44). */
+function felieNeuHinweiseNachziehen(d) {
+  var stand = felieNeueSnippets();
+  /* Zur Kenntnis genommene Hinweise tragen keinen Vorher-Text mehr und
+     haben damit nichts mehr zu zeigen. Sie fallen zuerst weg — sonst
+     wuerde eine spaetere Aenderung derselben Angabe in einen leeren
+     Hinweis hineinlaufen und ihr eigenes Vorher verlieren. */
+  var hinweise = stand.hinweise.filter(function (x) { return x.vorher != null; });
+
+  felieRepoNeuHinweise(d).forEach(function (h) {
+    if (h.art === 'new' || h.nachher == null) return;
+    var da = hinweise.filter(function (x) { return x.id === h.entryId; })[0];
+    /* Mehrere ungelesene Aenderungen derselben Angabe ergeben EINEN
+       Hinweis: vom ersten noch zulaessigen Vorherstand bis zum
+       neuesten Nachherstand. Keine Kette, keine doppelte Zaehlung. */
+    if (da) { da.nachher = h.nachher; da.art = h.art; return; }
+    /* Woraus der Vorher-Text stammt, wird mitgeschrieben. Der Datensatz
+       wird je Vorgang neu gesaet, kennt die frueheren Revisionen also
+       spaeter nicht mehr — ohne diese Notiz koennte niemand mehr sagen,
+       welches Gespraech den alten Wortlaut getragen hat. */
+    var vorRev = h.vorherRevisionId ? felieRepoFind(d.revisions, h.vorherRevisionId) : null;
+    hinweise.push({ id: h.entryId, vorher: h.vorher, nachher: h.nachher, art: h.art,
+      quellen: vorRev ? felieBrueckeGespraecheLesen(d, vorRev) : [] });
+  });
+
+  /* Wird das Gespraech geloescht, aus dem der alte Wortlaut stammt, faellt
+     er mit. Die Angabe selbst kann eigenstaendig bestaetigt weiterleben
+     (E18) — ihr frueherer Wortlaut aber ist eine Ableitung aus genau
+     diesem Gespraech und darf es nicht ueberdauern (Pruefall F44). */
+  var lebend = {};
+  (d.conversations || []).forEach(function (c) { lebend[String(c.id)] = true; });
+  hinweise.forEach(function (x) {
+    var q = x.quellen || [];
+    if (!q.length) return;
+    if (q.some(function (id) { return lebend[String(id)]; })) return;
+    delete x.vorher; x.quellen = [];
+  });
+
+  var tragfaehig = {};
+  felieRepoAktuell(d, { einschliesslichUnklar: true, ohneFristpruefung: true })
+    .forEach(function (x) { tragfaehig[x.entryId] = x.text; });
+  hinweise = hinweise.filter(function (x) { return tragfaehig[x.id] != null; });
+  hinweise.forEach(function (x) { x.nachher = tragfaehig[x.id]; });
+  hinweise = hinweise.filter(function (x) { return x.vorher != null; });
+
+  stand.hinweise = hinweise;
+  if (hinweise.length) stand.gesehen = false;
+  return felieNeueSnippetsSchreiben(stand);
+}
+
+/* Der Hinweis zu einer Angabe, solange er ungelesen ist. */
+function felieNeuHinweis(id) {
+  var stand = felieNeueSnippets();
+  if (stand.gesehen) return null;
+  return stand.hinweise.filter(function (x) { return x.id === id; })[0] || null;
 }
 
 function felieNeueSnippetsSetzen(ids) {
   var liste = (ids || []).filter(Boolean);
+  var vorhandene = felieNeueSnippets().hinweise;
   try {
-    if (!liste.length) localStorage.removeItem(FELIE_NEU_KEY);
+    if (!liste.length && !vorhandene.length) localStorage.removeItem(FELIE_NEU_KEY);
     /* gesehen:false ist der Ausloeser fuer den Puls. Ein neuer Schwung
        ersetzt den alten vollstaendig: hervorgehoben wird immer nur das
        ZULETZT gespeicherte Gespraech, sonst waechst die Liste mit jedem
        Gespraech und "neu" verliert seine Bedeutung. */
-    else localStorage.setItem(FELIE_NEU_KEY, JSON.stringify({ ids: liste, gesehen: false }));
+    else localStorage.setItem(FELIE_NEU_KEY,
+      JSON.stringify({ ids: liste, gesehen: false, hinweise: vorhandene }));
   } catch (e) {}
   return liste.length;
 }
 
 function felieNeueSnippetsGesehen() {
   var n = felieNeueSnippets();
-  if (!n.ids.length || n.gesehen) return false;
-  try { localStorage.setItem(FELIE_NEU_KEY, JSON.stringify({ ids: n.ids, gesehen: true })); } catch (e) {}
+  if ((!n.ids.length && !n.hinweise.length) || n.gesehen) return false;
+  /* Nach der Kenntnisnahme faellt der Vorher-Text weg: er wurde allein
+     fuer diesen Hinweis gehalten. Das aktuelle Snippet bleibt. */
+  n.gesehen = true;
+  n.hinweise = n.hinweise.map(function (x) {
+    return { id: x.id, nachher: x.nachher, art: x.art }; });
+  felieNeueSnippetsSchreiben(n);
   return true;
 }
 
@@ -5272,12 +5316,12 @@ function klV2VerbindungenNachziehen() {
         var id = 'aufnahme:' + state.id + ':leben' + choice[1];
         if (store.fakten.some(function(f) { return f.id === id; })) return;
         var ix = (chat.messages || []).findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === 'leben'; });
+        // A migration must not turn an old statement into a new confirmation:
+        // die historische Zeit geht mit dem Aufruf, nicht als Nachbesserung.
         felieFaktSetzen({ id:id, text:choice[2], kategorie:'familie', klasse:'volatil', quelle:'selbst',
+          erfasstAm: life.ts || chat.timestamp, bestaetigtAm: life.ts || chat.timestamp,
+          gespraechId: chat.id || chat.timestamp,
           belege:ix >= 0 ? [{nachricht:ix,beleg:chat.messages[ix].content}] : [] });
-        var f = store.fakten.find(function(f) { return f.id === id; });
-        // A migration must not turn an old statement into a new confirmation.
-        f.erfasstAm = f.bestaetigtAm = life.ts || chat.timestamp;
-        felieErinnerungVerknuepfen(f, chat.id || chat.timestamp);
       });
     }
     store.zusatz.onboardingVerbindungenV6 = store.zusatz.onboardingVerbindungenV6 || {};
@@ -6044,19 +6088,14 @@ function felieHomeKontext(besuch, anlass) {
   var jetzt = Date.now(), d = new Date(jetzt), chat = null;
   var chats = getSavedChats().filter(function(c) { return Number.isFinite(c.timestamp) && c.timestamp <= jetzt; });
   chats.sort(function(a, b) { return b.timestamp - a.timestamp; });
-  // Ausschließlich das letzte Gespräch. Nicht auf ein älteres ausweichen,
-  // nur weil dessen Notizen leichter nutzbar wären. Keine Rohverläufe übergeben.
-  if (chats.length) {
-    var c = chats[0];
-    var notizen = felieNotizenLesen(c).filter(function(n) {
-      return felieArchivNotizNutzbar(c, n);
-    }).map(function(n) {
-      return { text: n.text, quelle: n.nachweis && n.nachweis.quelle === 'selbst'
-        ? 'von der Nutzerin bearbeitet; ersetzt die frühere Fassung' : 'belegte Gesprächsnotiz' };
-    });
-    chat = { datum: new Date(c.timestamp).toLocaleDateString('de-DE'), notizen: notizen,
-      zeitbezug: 'damaliges Gespräch; kein Beleg für Fortdauer' };
-  }
+  /* Die Startseite bekam bis M4 die Notizen des zuletzt gespeicherten
+     Gespraechs mit. Sie faellt unter dieselbe Regel wie der normale Chat:
+     aktueller Kontext ja, Archiv nein (E11, Pruefall F21). Uebrig bleibt
+     das Datum — damit felie weiss, wann zuletzt gesprochen wurde, ohne
+     den Inhalt von damals als heutigen Stand zu behandeln. */
+  if (chats.length)
+    chat = { datum: new Date(chats[0].timestamp).toLocaleDateString('de-DE'),
+      zeitbezug: 'letztes Gespräch; nur der Zeitpunkt, kein Inhalt' };
   var offen = felieEpisoden({ nurAktuell: true }).filter(function(e) {
     return e.text && Number.isFinite(e.faelligBis) && e.faelligBis > jetzt;
   }).map(function(e) {
@@ -6182,10 +6221,23 @@ function felieHomeEreignis(art) {
 /* DATA CONTRACT v6: origin and display location are separate. Keep legacy
    archive exclusions readable, but apply one predicate to every AI selector.
    Expo: move these operations to repositories with a real DB transaction. */
+/* Eine Notiz ist nur nutzbar, solange die Stellen, auf die sie sich
+   stuetzt, nutzbar sind. Bisher wurde nur die Notiz selbst gesperrt —
+   eine Sperre auf der Ursprungsnachricht lief ins Leere, und eine
+   anders formulierte Ableitung derselben Aussage ging weiter mit
+   (Altlast A3, Pruefall F45). */
+function felieArchivBelegGesperrt(chat, notiz) {
+  var aus = chat.kontextNachrichtenAuslassen || [];
+  if (!aus.length) return false;
+  var belege = (notiz && notiz.nachweis && notiz.nachweis.belege) || [];
+  return belege.some(function (b) { return aus.indexOf(b.nachricht) >= 0; });
+}
+
 function felieArchivNotizNutzbar(chat, notiz) {
   return !!(notiz && notiz.merken !== false &&
     (chat.kontextAuslassen || []).indexOf(notiz.id) < 0 &&
     (chat.begruessungAuslassen || []).indexOf(notiz.id) < 0 &&
+    !felieArchivBelegGesperrt(chat, notiz) &&
     felieArchivNotizQuelle(chat, notiz));
 }
 function felieBelegeGleich(a, b) {
@@ -6251,13 +6303,31 @@ function felieArchivQuelleSperren(chats, vorher) {
 // Rollback on synchronous storage errors; localStorage is not crash-atomic.
 // Native migration: use a single database transaction (Supervisor Gate 2).
 function felieDatenAendern(mutator) {
+  felieSpeicherHorchen();
   var keys = [FELIE_STORE_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
   var raw = {}, before = JSON.stringify(felieStore());
   var state = window._klState ? JSON.stringify(window._klState) : null;
   try {
     keys.forEach(function(k) { raw[k] = localStorage.getItem(k); });
+    /* Hat ein anderer Tab seit dem Laden geschrieben, gewann bisher
+       stillschweigend der letzte Schreiber — die Arbeit des anderen Tabs
+       war weg. Jetzt bricht der Vorgang ab, der Stand wird neu geladen
+       und die Nutzerin sieht, was passiert ist. */
+    var fremd = felieSpeicherFremdAenderung();
+    if (fremd.length) {
+      felieStoreLaden();
+      felieSpeicherStandMerken();
+      felieRevision(true);
+      felieAlert('Deine Angaben wurden in einem anderen Fenster geändert. Der aktuelle Stand ist jetzt geladen — bitte prüfe kurz und mach die Änderung noch einmal.');
+      return false;
+    }
     var chats = getSavedChats();
+    /* Ein Vorgang, ein Datensatz: alle umgestellten Schreibwege wenden
+       ihre Befehle auf denselben Stand an und werden gemeinsam
+       uebernommen oder gemeinsam verworfen. */
+    felieBrueckeStart(felieStore(), chats);
     mutator(felieStore(), chats);
+    felieBrueckeAbschluss(felieStore(), chats);
     if (window._klState) window._klState.contextChanged = true;
     localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore()));
     localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
@@ -6266,31 +6336,56 @@ function felieDatenAendern(mutator) {
     felieAktivenKontextAbgleichen(chats);
     window._felieSessionGeneration = (window._felieSessionGeneration || 0) + 1;
     felieAutosave();
+    felieSpeicherStandMerken();
+    window._felieRepoAktiv = null;
     return true;
   } catch (e) {
+    window._felieRepoAktiv = null;
     window._felieStore = JSON.parse(before);
     if (state) window._klState = JSON.parse(state);
     Object.keys(raw).forEach(function(k) { try {
       if (raw[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, raw[k]);
     } catch (restoreError) {} });
+    felieSpeicherStandMerken();
     felieRevision(true);
     felieAlert('Die Änderung konnte nicht gespeichert werden. Deine bisherige Angabe bleibt erhalten. Bitte prüfe den freien Speicher und versuche es erneut.');
     return false;
   }
 }
+/* Umgestellt auf das Repository (M2b).
+
+   Loeschen ist forgetEntry: Inhalt und texttragende Ableitungen gehen,
+   der sichtbare Verlauf bleibt, die Ursprungsstellen werden gesperrt.
+
+   Ein Textwechsel ist manualUpdate. Die Nutzerin bestaetigt damit
+   ausdruecklich den sichtbaren Inhalt — das ist eine eigenstaendige
+   Quelle. Frueher setzte dieselbe Bedienung still bestaetigtAm neu und
+   verlaengerte die Aufbewahrungsfrist, ohne dass jemand das so gewaehlt
+   haette. Neu ist nur, dass die vorige Fassung nicht mehr als damaliger
+   Stand erzaehlt wird, solange die zeitliche Einordnung fehlt. */
 function felieErinnerungBearbeiten(art, id, text) {
   var ok = felieDatenAendern(function(s, chats) {
     var liste = art === 'fakt' ? s.fakten : s.episoden;
     var e = liste.find(function(x) { return x.id === id; });
     if (!e) throw new Error('Erinnerung fehlt');
     felieArchivQuelleSperren(chats, e);
+    var d = window._felieRepoAktiv;
+    var eintrag = felieBrueckeEintragZuAltId(d, art === 'fakt' ? 'personal' : 'topic', id);
+    if (!eintrag) throw new Error('Erinnerung im Datensatz nicht gefunden');
+    var kopf = felieRepoKopf(d, eintrag.id);
     if (text === null) {
-      if (art === 'fakt') s.fakten = liste.filter(function(x) { return x.id !== id; });
-      else s.episoden = liste.filter(function(x) { return x.id !== id; });
+      felieBrueckeBefehl({ kind: 'forgetEntry', entryId: eintrag.id,
+        expectedHeadRevisionId: kopf ? kopf.id : null });
     } else {
-      e.text = text; e.bearbeitetAm = Date.now(); e.bearbeitetVon = 'selbst';
-      if (art === 'fakt') e.bestaetigtAm = Date.now();
-      // Keep origin, evidence and category: editing must not move the card.
+      var quelle = { id: felieRepoId('ev'), recordedAt: felieRepoJetzt(), assertion: 'explicit',
+        locator: { kind: 'direct', sourceEventId: felieRepoId('edit'), fieldKey: null,
+          authoredValue: text, confirmedRevisionId: kopf ? kopf.id : null } };
+      felieBrueckeBefehl({ kind: 'manualUpdate', entryId: eintrag.id,
+        expectedHeadRevisionId: kopf ? kopf.id : null,
+        candidate: { text: text, supportSets: [[quelle.id]],
+          retention: kopf ? kopf.retention : 'volatileDefault',
+          expiresAt: kopf ? kopf.expiresAt : null },
+        evidence: [quelle] });
     }
   });
   if (ok) felieHomeEreignis(text === null ? 'gedaechtnis_geloescht' : 'gedaechtnis_geaendert');
@@ -10125,8 +10220,7 @@ function showGedaechtnis() {
      gesehen. Die Hervorhebung bleibt fuer DIESE Ansicht stehen — sie
      waehrend des Hinsehens verschwinden zu lassen waere die schlechteste
      aller Varianten. Beim naechsten Oeffnen ist sie weg. */
-  var neu = felieNeueSnippets();
-  window._gedNeuIds = neu.gesehen ? [] : neu.ids.slice();
+  gedNeuIdsSetzen();
   /* Erst nach _gedNeuIds bestimmen — liegt etwas Neues vor, ist das
      Register "Neu" der Einstieg. */
   window._gedTab = gedStartTab();
@@ -10182,6 +10276,20 @@ function gedSchliessen() {
   try { felieGedPulsAktualisieren(); } catch (e) {}
 }
 
+/* Was beim Oeffnen unter „Neu" steht: was hinzugekommen ist UND was sich
+   geaendert hat. Eine Angabe, die neu ist und sich seither geaendert hat,
+   steht genau einmal da — die Vereinigung zaehlt sie nicht doppelt
+   (Pruefall F28). Eigene Funktion, damit die Regel ohne Oberflaeche
+   pruefbar ist. */
+function gedNeuIdsSetzen() {
+  var neu = felieNeueSnippets();
+  var ids = neu.gesehen ? [] : neu.ids.slice();
+  if (!neu.gesehen) neu.hinweise.forEach(function (h) {
+    if (ids.indexOf(h.id) < 0) ids.push(h.id); });
+  window._gedNeuIds = ids;
+  return ids;
+}
+
 /* Ist dieser Eintrag neu aus dem zuletzt gespeicherten Gespraech? */
 function gedIstNeu(id) {
   var liste = window._gedNeuIds;
@@ -10214,9 +10322,9 @@ function gedTabZahlen() {
   try { z.aktuell = felieEpisoden({ status: 'offen' }).length; } catch (e) {}
   try {
     /* Die Gespraechs-Zahl zaehlt Notizen UND die daraus gewonnenen
-       Angaben — beides steht jetzt in diesem Register. */
-    z.gespraeche = gedLerntDaten().total
-      + felieFakten().filter(function (f) { return !gedIstSelbstauskunft(f); }).length;
+       Angaben — beides steht jetzt in diesem Register. Gerechnet wird das
+       an einer Stelle, in gedLerntDaten. */
+    z.gespraeche = gedLerntDaten().total;
   } catch (e) {}
   z.neu = gedNeueEintraege().length;
   return z;
@@ -10475,7 +10583,17 @@ function gedLerntDaten() {
      und zurueckgesetzt werden. */
   if (window._gedLerntFilter !== 'all' && window._gedLerntFilter !== 'ueberdich'
       && !groups[window._gedLerntFilter]) window._gedLerntFilter = 'all';
-  return { groups: groups, order: order, total: mit.length };
+  /* EINE Zahl fuer diese Karte. Bis M5 rechneten der Registerreiter, der
+     Chip „Alle" und der Kartenkopf getrennt: der Reiter zaehlte Notizen
+     UND Angaben, die beiden anderen nur die Notizen. Dieselbe Ansicht
+     zeigte dadurch zwei verschiedene Zahlen (Altlast A4, Pruefall F29).
+     'total' ist jetzt, was die Karte enthaelt; 'notizen' und 'fakten'
+     stehen daneben, falls die Aufteilung gebraucht wird. */
+  var fakten = 0;
+  try { fakten = felieFakten().filter(function (f) { return !gedIstSelbstauskunft(f); }).length; }
+  catch (e) {}
+  return { groups: groups, order: order, notizen: mit.length, fakten: fakten,
+    total: mit.length + fakten };
 }
 
 /* Register "Gespräche": Notizen und die daraus gewonnenen Angaben in
@@ -10495,12 +10613,13 @@ function gedLerntHtml() {
     + (d.total ? '<span class="ged-zahl">' + d.total + '</span>' : '') + '</div>'
     + '<div class="ged-sub">Was ich mir aus unseren Gesprächen gemerkt habe.</div>';
 
-  if (!d.total && !fakten.length) {
+  if (!d.total) {
     return '<div class="ged-karte" id="ged-card-lernt">' + kopf
       + '<div class="ged-leer">Noch nichts. Je öfter wir sprechen, desto mehr sammelt sich hier.</div></div>';
   }
 
   var chips = '<button class="ged-chip' + (sel === 'all' ? ' aktiv' : '') + '" onclick="gedLerntFilter(\'all\')">Alle'
+    /* „Alle" zaehlt, was das Register zaehlt — dieselbe Rechnung. */
     + '<span class="ged-chip-n">' + d.total + '</span></button>'
     + d.order.map(function (k) {
         var g = d.groups[k];
@@ -10522,6 +10641,11 @@ function gedLerntHtml() {
   }
 
   var eintraege = [];
+  /* Unter „Alle" stehen die Angaben mit in der Liste. Fuer die Nutzerin
+     ist beides dasselbe — was felie sich gemerkt hat. Die interne
+     Unterscheidung zwischen Notiz und Angabe ist kein Bedienkonzept
+     (E03). */
+  var alleFakten = sel === 'all' ? fakten : [];
   if (sel === 'all') {
     d.order.forEach(function (k) {
       d.groups[k].entries.forEach(function (c) { eintraege.push({ c: c, icon: d.groups[k].icon }); });
@@ -10534,6 +10658,7 @@ function gedLerntHtml() {
   var gesamt = eintraege.length;
   var zeigen = window._gedLerntAlle ? eintraege : eintraege.slice(0, GED_LERNT_SICHTBAR);
 
+  var faktenListe = alleFakten.map(gedFaktZeile).join('');
   var liste = zeigen.map(function (e) {
     var c = e.c;
     var id = c.id || c.timestamp;
@@ -10562,7 +10687,7 @@ function gedLerntHtml() {
 
   return '<div class="ged-karte" id="ged-card-lernt">' + kopf
     + '<div class="ged-chips">' + chips + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px;">' + liste + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px;">' + liste + faktenListe + '</div>'
     + mehr + '</div>';
 }
 
@@ -10612,6 +10737,17 @@ function gedFaktZeile(f) {
   var kat = GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein';
   var marken = '<span class="ged-badge">' + GED_KAT_LABEL[kat] + '</span>'
     + (f.alterTage > 180 ? '<span class="ged-badge warn"> · lange nicht erwähnt</span>' : '');
+  /* Was sich geaendert hat, steht an der Angabe selbst — mit dem alten
+     Wortlaut daneben, nicht als zweiter Eintrag. Nach der Kenntnisnahme
+     bleibt die Angabe, der alte Wortlaut faellt weg (Pruefall F28). */
+  var aend = '';
+  try {
+    var hw = felieNeuHinweis(f.id);
+    if (hw && hw.vorher) aend = '<div class="ged-aend">'
+      + (hw.art === 'corrected' ? 'Berichtigt' : 'Aktualisiert') + ': '
+      + '<span class="ged-aend-vor">' + gedEsc(hw.vorher) + '</span>'
+      + '<span class="ged-aend-pfeil">→</span>' + gedEsc(hw.nachher || f.text) + '</div>';
+  } catch (e) {}
   return '<div class="ged-zeile' + (gedIstNeu(f.id) ? ' ged-neu' : '') + ' snip" data-snip="fakt" data-snip-max="' + FELIE_SNIP_MAX.fakt + '"'
     + ' data-snip-id="' + felieSnipAttr(f.id) + '"'
     + ' data-snip-kat="' + felieSnipAttr(f.kategorie) + '"'
@@ -10621,7 +10757,7 @@ function gedFaktZeile(f) {
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
     + '<div class="snip-text">' + gedEsc(f.text) + '</div>'
-    + marken
+    + marken + aend
     + '</div>'
     + '<div class="ged-akt">' + felieSnipStiftHtml('„' + f.text + '" bearbeiten') + '</div>'
     + '</div></div>';
@@ -11335,17 +11471,19 @@ function closeConfirmDelete() {
   if (ov) ov.remove();
 }
 
+/* Umgestellt auf das Repository (M2b). deleteConversation entfernt
+   Nachrichten, Zusammenfassung und die daran gebundenen Belege; was
+   danach unbelegt ist, faellt in der Neubewertung weg. Unabhaengig
+   bestaetigte Angaben und strukturierte Onboardingquellen bleiben (E18).
+   Anders als bisher entscheidet nicht mehr eine Gespraechsverknuepfung
+   ueber Erhalt oder Verlust, sondern die verbleibende Stuetzung. */
 function confirmDeleteSavedChat(id) {
   var ok = felieDatenAendern(function(s, chats) {
     var c = chats.find(function(x) { return (x.id || x.timestamp) == id; });
     if (!c) throw new Error('Gespräch fehlt');
-    ['fakten','episoden'].forEach(function(k) { s[k] = s[k].filter(function(e) { return !felieErinnerungAusChat(e, c, chats); }); });
-    // Keep uncertainty stable: deleting one of several matching old chats must
-    // not make the last remaining chat look like a proven source afterwards.
-    ['fakten','episoden'].forEach(function(k) { s[k].forEach(function(e) {
-      if (!Array.isArray(e.gespraechIds) && e.quelle !== 'selbst' &&
-          !chats.some(function(x) { return felieErinnerungAusChat(e,x,chats); })) e.herkunftUnklar = true;
-    }); });
+    var cid = felieBrueckeGespraechId(c);
+    felieBrueckeAltlinksLoeschen(cid);
+    felieBrueckeBefehl({ kind: 'deleteConversation', conversationId: cid });
     var behalten = chats.filter(function(x) { return x !== c; });
     chats.splice.apply(chats, [0, chats.length].concat(behalten));
     if (c.onboardingId && window._klState && window._klState.id === c.onboardingId) {
@@ -11748,13 +11886,27 @@ function felieChatAntwortRegeln() {
    Nutzerin jetzt im Kennenlerngespraech in eigenen Worten und landet
    ueber klExtract() als belegter Fakt im Gedaechtnis — also an einer
    Stelle, an der sie es auch wieder loeschen kann. */
+/* Die Profilbasis im Modellkontext: Name und Alter. Sonst nichts.
+
+   Bis M4 gingen hier zusaetzlich kinder, alltag, wuensche und notiz mit —
+   direkt aus klAnswers, also aus der Antwortablage des Kennenlernens.
+   Dieselben Angaben stehen laengst als Eintraege im Gedaechtnis, weil
+   klV2Sichern sie dort anlegt. Das Modell bekam sie damit zweimal, aus
+   zwei Quellen, die sich unabhaengig voneinander aendern koennen: eine
+   Korrektur im Gedaechtnis erreichte die klAnswers-Kopie nie, und felie
+   sprach danach weiter auf dem alten Stand (I15, Pruefall F40).
+
+   Die Angaben verschwinden dadurch nicht — die Profilansicht liest
+   klAnswers unveraendert weiter. Sie sind nur keine zweite
+   Modellquelle mehr. Altbestaende, die nie zu Eintraegen wurden, holt
+   die Migration in M6 nach; bis dahin stehen sie sichtbar im Profil,
+   aber felie stuetzt sich nicht mehr darauf. */
 function felieProfilDaten() {
   var a = typeof klAnswers === 'object' ? klAnswers : {};
-  return { name: userName || null, alter: Number.isInteger(a.alterExact) ? a.alterExact : null, alterErfasstAm: a.alterErfasstAm || null, altersband: a.alterExact == null ? a.alter || null : null,
-    kinder: a.kinder || null, alltag: a.lifestyle || null,
-    wuensche: a.zielText || a.wunsch || [],
-    notiz: a.notiz ? { text: a.notiz, quelle: a.notizQuelle === 'selbst'
-      ? 'persönliche Mitgabe der Nutzerin' : 'Profilnotiz; Herkunft bei Altbestand ungeprüft' } : null };
+  return { name: userName || null,
+    alter: Number.isInteger(a.alterExact) ? a.alterExact : null,
+    alterErfasstAm: a.alterErfasstAm || null,
+    altersband: a.alterExact == null ? a.alter || null : null };
 }
 
 function felieSignalDaten() {
@@ -11849,6 +12001,46 @@ function felieArchivZitat(text, messages) {
   });
 }
 
+/* ── Ein Zugang, vier Zwecke ───────────────────────────────────────────
+   Bisher gab es genau einen Kontextweg, und der hing sich das Archiv
+   immer mit an. Ob die Nutzerin gerade erzaehlt, die Startseite oeffnet,
+   ausdruecklich zurueckblickt oder ein altes Gespraech fortsetzt, war
+   fuer die Datenauswahl dasselbe — obwohl es vier verschiedene Fragen
+   sind. Jetzt sagt der Aufrufer, was er will, und bekommt genau das.
+
+   Die Reihenfolge ist in jedem Zweck dieselbe: Sperren und Loeschregeln
+   zuerst, Auswahl danach. Eine spaetere Kuerzung darf nie eine vorher
+   ausgeschlossene Quelle zurueckholen. */
+function felieKontextFuer(zweck, opts) {
+  opts = opts || {};
+  if (zweck === 'startseite') return felieHomeKontext(opts.besuch, opts.anlass);
+  if (zweck === 'rueckblick') return felieRueckblickDaten(opts.gespraeche);
+  /* fortsetzung teilt sich die Auswahl mit dem aktuellen Gespraech: der
+     bereinigte Originalverlauf kommt ueber apiMsgs, das Gedaechtnis ist
+     dasselbe. Eine zusaetzliche Zusammenfassung waere eine Dublette. */
+  return felieKontextDaten();
+}
+
+/* Ausdruecklicher Rueckblick auf ausgewaehlte Gespraeche. Nichts wird
+   automatisch beigelegt: ohne Auswahl gibt es keinen Rueckblick. */
+function felieRueckblickDaten(gespraechIds) {
+  var ids = (gespraechIds || []).map(String);
+  if (!ids.length) return { zweck: 'rueckblick', gespraeche: [], hinweis: 'Ohne ausgewähltes Gespräch kein Rückblick.' };
+  var chats = getSavedChats().filter(function (c) {
+    return ids.indexOf(String(c.id || c.timestamp)) >= 0; });
+  var raus = [];
+  chats.forEach(function (c) {
+    var notizen = felieNotizenLesen(c).filter(function (n) {
+      return felieArchivNotizNutzbar(c, n); }).map(function (n) { return n.text; });
+    if (!notizen.length) return;
+    raus.push({ datum: new Date(c.timestamp).toLocaleDateString('de-DE'),
+      thema: c.thema || 'Unser Gespräch', notizen: notizen,
+      zeitbezug: 'damaliger Stand; kein Beleg für Fortdauer' });
+  });
+  return { zweck: 'rueckblick', gespraeche: raus,
+    hinweis: 'Ausdrücklich ausgewählter Rückblick. Historischen Stand mit Datum benennen und vom aktuellen Stand getrennt halten.' };
+}
+
 function felieKontextDaten() {
   var fakten = felieFakten().map(function(f) {
     /* Kategorie und Herkunft gehen jetzt als eigene Felder mit. Vorher
@@ -11872,7 +12064,16 @@ function felieKontextDaten() {
   try { var km = felieKombiMuster(); muster = (km.muster || []).slice(0, 2); } catch (e) {}
   return { datum: new Date().toLocaleDateString('de-DE'), profil: felieProfilDaten(),
     signale: felieSignalDaten(), zyklus: felieZyklusDaten(), geraeteVergleiche: felieGeraeteVergleiche(),
-    merknotizen: fakten, offeneEpisoden: episoden, archiv: felieArchivDaten(),
+    merknotizen: fakten, offeneEpisoden: episoden,
+    /* Kein Archiv mehr. Bis M4 hingen an jeder gewoehnlichen Anfrage die
+       Notizen der letzten sechs Gespraeche — auch an einer Frage, die
+       nichts damit zu tun hatte. Das war die Stelle, an der eine
+       korrigierte Angabe in ihrer alten Fassung weiterlebte, weil die
+       Korrektur den Fakt erreichte und die anders formulierte
+       Archivnotiz nicht (E11, Pruefaelle F20, F21, F25).
+         Fuer einen ausdruecklichen Rueckblick gibt es jetzt
+       felieRueckblickDaten mit ausgewaehlten Gespraechen. */
+    zweck: 'aktuelles_gespraech',
     berechneteMuster: { quelle: 'App-Berechnung; Beobachtung, keine Ursache', eintraege: muster } };
 }
 
@@ -12083,6 +12284,14 @@ function felieNotizText(text) {
   return typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : '';
 }
 
+/* Zustimmungswoerter ohne eigenen Inhalt. Bewusst eine kurze, feste
+   Liste statt einer Laengenheuristik: „Ja, wir wohnen zusammen" traegt
+   sehr wohl Inhalt und darf nicht hier landen. */
+function felieZustimmungOhneInhalt(text) {
+  return /^(ja+|nein|genau|stimmt|richtig|okay|ok|jap|jep|klar|eben|doch|jo|joa|mhm|hm+)[\s.!?,;:]*$/i
+    .test(felieNotizText(text));
+}
+
 function felieNotizPruefen(item, source, max) {
   if (!item || typeof item !== 'object') return null;
   var text = felieNotizText(item.text);
@@ -12095,11 +12304,23 @@ function felieNotizPruefen(item, source, max) {
     var m = source.find(function(s) { return s.id === b.nachricht && s.rolle === 'user'; });
     var zitat = felieNotizText(b.beleg);
     if (!m || !zitat || !felieNotizText(m.text).includes(zitat)) return null;
+    /* Eine blosse Zustimmung traegt den Inhalt nicht allein: „Ja" belegt
+       gar nichts, solange nicht feststeht, worauf es sich bezieht. Der
+       Beleg braucht dann die Frage, auf die er antwortet — und die muss
+       tatsaechlich von felie stammen und vor der Antwort liegen (F43). */
+    if (felieZustimmungOhneInhalt(zitat)) {
+      if (!Number.isInteger(b.frage)) return null;
+      var f = source.find(function(x) { return x.id === b.frage; });
+      if (!f || f.rolle !== 'assistant' || f.id >= m.id) return null;
+    }
     // Das Beleglimit ist unabhängig vom knappen Anzeigetext. Der komplette
     // Nutzerbeitrag bleibt als Kontext erhalten, inklusive Verneinungen.
     if (m.text.length > 12000) return null;
-    if (!belege.some(function(e) { return e.nachricht === m.id; }))
-      belege.push({ nachricht: m.id, beleg: m.text });
+    if (!belege.some(function(e) { return e.nachricht === m.id; })) {
+      var eintrag = { nachricht: m.id, beleg: m.text };
+      if (Number.isInteger(b.frage)) eintrag.frage = b.frage;
+      belege.push(eintrag);
+    }
   }
   return { text: text, belege: belege };
 }
@@ -12126,6 +12347,8 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
     gemerkt.fakten = felieFakten().map(function(f) { return f.text; });
     gemerkt.faeden = felieEpisoden({ nurAktuell: true }).map(function(e) { return e.text; });
   } catch (e) {}
+  var bestand = [];
+  try { bestand = felieExtraktionsBestand(); } catch (e) {}
   function unvollstaendig() {
     out.notizenStatus = 'unvollstaendig';
     out.hinweis = 'Die Notizen sind noch nicht vollständig. Du kannst sie im Archiv ergänzen; bereits erfasste Einträge bleiben erhalten.';
@@ -12134,7 +12357,14 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
     var page;
     try {
       page = await felieRequest(mode || 'zusammenfassung', [{ role: 'user', content: felieDatenBlock('gespraech', {
-        gespraech: source, bereits_erfasst: {
+        gespraech: source,
+        /* Der Bestand mit Kennung: erst damit kann die Extraktion sagen,
+           WELCHEN Eintrag ein Vorschlag meint. bereits_erfasst geht
+           waehrend der Uebergangszeit weiter mit, damit ein noch nicht
+           ausgelieferter Worker mit dem alten Auftrag nicht ohne
+           Dublettenhinweis dasteht; mit Paket S2 faellt es weg. */
+        bestand: bestand,
+        bereits_erfasst: {
           notizen: bekannt.concat(out.notizen.map(function(n) { return n.text; })),
           fakten: gemerkt.fakten.concat(out.fakten.map(function(n) { return n.text; })),
           faeden: gemerkt.faeden.concat(out.faeden.map(function(n) { return n.text; }))
@@ -12142,7 +12372,7 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
         antwortpaket: { maximalNeueEintraege: groesse, hinweis: 'Nur die Größe dieser Antwort ist begrenzt. weitere_notizen=true, solange noch wichtige neue Informationen fehlen. Keine bereits erfassten Inhalte wiederholen.' },
         formathinweis: fehlerOhneFortschritt ? 'Prüfe text, Nutzer-ID und Originalauszug. Formuliere fehlende Notizen mit passenden Belegen. Keine ausdrückliche Selbsterkenntnis erforderlich.' : null
       }) }], { context: false, json: true, maxTokens: FELIE_ANFRAGE.maxAusgabe });
-      page = felieZusammenfassungPruefen(felieJSON(page), source);
+      page = felieZusammenfassungPruefen(felieJSON(page), source, bestand);
     } catch (e) {
       if (++fehlerOhneFortschritt < 2) { groesse = Math.max(1, Math.floor(groesse / 2)); continue; }
       if (!out.notizen.length && !out.fakten.length && !out.faeden.length) throw e;
@@ -12153,7 +12383,11 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
     ['notizen', 'fakten', 'faeden'].forEach(function(k) {
       page[k].forEach(function(n) {
         if (k === 'notizen' && bekannt.some(function(t) { return felieNotizSchluessel(t) === felieNotizSchluessel(n.text); })) return;
-        if (out[k].some(function(e) { return felieNotizSchluessel(e.text) === felieNotizSchluessel(n.text); })) return;
+        /* Ein Vorschlag mit Bezug auf einen vorhandenen Eintrag darf
+           nicht an der Textgleichheit haengenbleiben: eine Bestaetigung
+           wiederholt die Angabe absichtlich woertlich. */
+        if (!n.zielId && out[k].some(function(e) { return felieNotizSchluessel(e.text) === felieNotizSchluessel(n.text); })) return;
+        if (n.zielId && out[k].some(function(e) { return e.zielId === n.zielId && e.bezug === n.bezug; })) return;
         if (k === 'notizen') n.id = 'notiz:' + out.notizen.length;
         out[k].push(n); zuwachs++;
       });
@@ -12297,7 +12531,82 @@ function felieBeleg(item, source, max) {
   return quote;
 }
 
-function felieZusammenfassungPruefen(o, source) {
+/* Prueft die Vorschlagsliste des neuen Extraktionsauftrags. Die Ausgabe
+   eines Modells ist ein Vorschlag, keine Schreibanweisung: alles, was
+   nicht vollstaendig aufloest, wird herabgestuft oder verworfen — nie
+   halbfertig uebernommen.
+
+   Die Rueckgabe behaelt die Form, die Archiv und Notizkarte lesen
+   (notizen/fakten/faeden). Neu ist, dass jeder Eintrag seinen Bezug zum
+   Bestand mitbringt. */
+function felieVorschlaegePruefen(o, source, bestand) {
+  var out = { thema: felieNotizText(o.thema).slice(0, 60) || 'Unser Gespräch',
+    notizen: [], erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], feldQuelle: {}, version: 6,
+    weitere_notizen: o.weitere_notizen === true, listenformat: true, verworfen: 0 };
+  var kat = ['familie', 'arbeit', 'gesundheit', 'beziehung', 'wohnen', 'allgemein'];
+  var index = {};
+  (bestand || []).forEach(function (b) { if (b && b.id) index[b.id] = b; });
+
+  (Array.isArray(o.vorschlaege) ? o.vorschlaege : []).forEach(function (v) {
+    if (!v || typeof v !== 'object') { out.verworfen++; return; }
+    var art = ['notiz', 'angabe', 'thema'].indexOf(v.art) >= 0 ? v.art : null;
+    var bezug = ['neu', 'bestaetigung', 'aktualisierung', 'widerspruch'].indexOf(v.bezug) >= 0 ? v.bezug : null;
+    if (!art || !bezug) { out.verworfen++; return; }
+
+    var n = felieNotizPruefen(v, source, art === 'notiz' ? 240 : 90);
+    if (!n) { out.verworfen++; return; }
+
+    var ziel = null;
+    if (bezug !== 'neu') {
+      /* Eine Ziel-ID, die es nicht gibt, ist kein Grund, auf
+         Textaehnlichkeit auszuweichen — der Vorschlag faellt weg. */
+      ziel = v.zielId ? index[v.zielId] : null;
+      if (!ziel) { out.verworfen++; return; }
+      /* Veraltete Ausgangsrevision: der Vorschlag beruht auf einem
+         Stand, den die Nutzerin inzwischen geaendert hat. Keine stille
+         Uebernahme, sondern zur Klaerung. */
+      if (v.ausgangsRevision !== ziel.revision) bezug = 'widerspruch';
+    }
+    /* Eine Veraenderung zu behaupten heisst, eine Vergangenheit zu
+       behaupten. Ohne erkennbare zeitliche Einordnung wird daraus eine
+       Klaerung statt einer Ueberschreibung. */
+    if (bezug === 'aktualisierung' && !(typeof v.zeitbezug === 'string' && v.zeitbezug.trim()))
+      bezug = 'widerspruch';
+
+    var gemeinsam = { text: n.text, belege: n.belege, bezug: bezug,
+      zielId: ziel ? ziel.id : null, ausgangsRevision: ziel ? ziel.revision : null,
+      zeitbezug: typeof v.zeitbezug === 'string' ? v.zeitbezug.slice(0, 60) : null };
+
+    if (art === 'notiz') {
+      out.notizen.push({ id: 'notiz:' + out.notizen.length,
+        thema: felieNotizText(v.thema).slice(0, 60) || out.thema,
+        text: n.text, merken: true, bezug: bezug, zielId: gemeinsam.zielId,
+        nachweis: { quelle: 'zusammenfassung', text: n.text, belege: n.belege } });
+      return;
+    }
+    if (art === 'angabe') {
+      if (kat.indexOf(v.kategorie) < 0 || ['stabil', 'volatil'].indexOf(v.klasse) < 0) { out.verworfen++; return; }
+      var f = {};
+      for (var k in gemeinsam) f[k] = gemeinsam[k];
+      f.kategorie = v.kategorie; f.klasse = v.klasse; f.belegt = true;
+      out.fakten.push(f);
+      return;
+    }
+    var t = {};
+    for (var k2 in gemeinsam) t[k2] = gemeinsam[k2];
+    t.tage = 7; t.belegt = true;
+    out.faeden.push(t);
+  });
+
+  felieNotizVorschau(out);
+  return out;
+}
+
+function felieZusammenfassungPruefen(o, source, bestand) {
+  /* Neues Format erkannt: eine Liste von Vorschlaegen mit Bezug. Der
+     alte Weg bleibt lesbar, solange ein Worker mit dem alten Auftrag
+     antwortet — dort ist jeder Eintrag zwangslaeufig „neu". */
+  if (o && Array.isArray(o.vorschlaege)) return felieVorschlaegePruefen(o, source, bestand);
   var out = { thema: felieNotizText(o.thema).slice(0, 60) || 'Unser Gespräch',
     notizen: [], erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], feldQuelle: {}, version: 5,
     weitere_notizen: o.weitere_notizen === true, listenformat: Array.isArray(o.notizen), verworfen: 0 };
@@ -13111,18 +13420,25 @@ function saveChat(summary, messages) {
    lieber nichts vorschlagen als etwas erfinden, denn ein falscher Fakt
    wirkt dauerhaft und ist schlimmer als ein fehlender. */
 function felieMerkPromptTeil() {
-  return 'Nur JSON: {"thema":"kurzer Gesamttitel","notizen":[],"fakten":[],"faeden":[],"weitere_notizen":false}. '
-    + 'VOLLSTÄNDIGKEIT: Es gibt KEINE feste Höchstzahl an Notizen, Fakten oder offenen Themen pro Gespräch. Erfasse alle wichtigen neuen Nutzerangaben, Anliegen, Wünsche, Entscheidungen und Veränderungen aus sämtlichen besprochenen Themen. Je mehr relevante neue Informationen, desto mehr Einträge. Nicht auf zwei Kernaussagen verdichten; unabhängige Punkte einzeln festhalten. Keine ausdrückliche Selbsterkenntnis erforderlich. '
-    + 'notizen: Liste von {"thema":"kurze passende Themenüberschrift","text":"sinngemäße, gut lesbare Notiz, höchstens 240 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"wörtlicher Originalauszug"}]}. Die Länge gilt für EINEN Eintrag, nie für das gesamte Gespräch. Bei Bedarf weitere Einträge anlegen. '
-    + 'fakten: Liste von {"text":"höchstens 90 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"Originalauszug"}],"kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil"}. Nur ausdrücklich berichtete längerfristige Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. '
-    + 'faeden: Liste von {"text":"höchstens 90 Zeichen je Eintrag","belege":[{"nachricht":ID,"beleg":"Originalauszug"}]}. Nur aktuell offene, zeitlich begrenzte Themen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. '
-    + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und bereits_erfasst erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits erfasste Punkte weder umformulieren noch wiederholen. '
-    + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. bereits_erfasst ist nach notizen, fakten und faeden getrennt und enthält bei fakten und faeden auch das, was bereits dauerhaft gemerkt ist — etwa aus dem Kennenlernen oder früheren Gesprächen. Nichts davon erneut vorschlagen, auch nicht umformuliert, gekürzt oder als Stichwort. Ein neuer Eintrag ist nur richtig, wenn er eine Angabe ergänzt, verändert oder ihr widerspricht; dann muss der Unterschied im text stehen. Dopplungen innerhalb derselben Liste vermeiden. Eine Aussage kann zusätzlich zu einer Gesprächsnotiz als dauerhafter Fakt oder offenes Thema vorgeschlagen werden. Ohne relevante Angaben sind leere Listen und weitere_notizen=false richtig. '
+  return 'Nur JSON: {"thema":"kurzer Gesamttitel","vorschlaege":[],"weitere_notizen":false}. '
+    + 'VOLLSTÄNDIGKEIT: Es gibt KEINE feste Höchstzahl an Vorschlägen pro Gespräch. Erfasse alle wichtigen neuen Nutzerangaben, Anliegen, Wünsche, Entscheidungen und Veränderungen aus sämtlichen besprochenen Themen. Je mehr relevante neue Informationen, desto mehr Einträge. Nicht auf zwei Kernaussagen verdichten; unabhängige Punkte einzeln festhalten. Keine ausdrückliche Selbsterkenntnis erforderlich. '
+    + 'vorschlaege: Liste von {"bezug":"neu|bestaetigung|aktualisierung|widerspruch","zielId":null,"ausgangsRevision":null,"art":"notiz|angabe|thema","thema":"kurze Themenüberschrift, nur bei art=notiz","text":"sinngemäße, gut lesbare Formulierung","kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil","zeitbezug":null,"belege":[{"nachricht":ID,"beleg":"wörtlicher Originalauszug","frage":null}]}. '
+    + 'BEZUG: Der mitgelieferte bestand enthält die bereits gemerkten Angaben mit id, revision, art, text und kategorie. Jeder Vorschlag sagt, wie er dazu steht. '
+    + 'neu: kein Eintrag des bestands deckt diesen Inhalt; zielId und ausgangsRevision bleiben null. '
+    + 'bestaetigung: derselbe Sachverhalt mit demselben Wert, nur neu belegt oder anders formuliert; text wiederholt die Angabe, zielId und ausgangsRevision benennen den Eintrag. '
+    + 'aktualisierung: derselbe Sachverhalt, veränderter Wert, und die Nutzerin hat die Veränderung erkennbar zeitlich eingeordnet; zeitbezug enthält ihre eigene Zeitangabe, etwa "seit gestern". Ohne solche Einordnung ist es kein aktualisierung. '
+    + 'widerspruch: passt nicht zum bestand und die Auflösung ist unklar; zielId benennt den betroffenen Eintrag. Lieber widerspruch als eine geratene aktualisierung. '
+    + 'Die Kategorie entscheidet NIE über die Zuordnung: dieselbe Angabe darf in einer anderen Kategorie stehen, und eine gemeinsame Kategorie macht zwei Angaben nicht zum selben Sachverhalt. Ein anders formulierter, inhaltlich vollständig gedeckter Vorschlag ist eine bestaetigung, kein neuer Eintrag. Zusätzliche Information — ein Gefühl, ein Anliegen, ein offenes Thema neben der Angabe — bleibt ein eigener Vorschlag. '
+    + 'ART: notiz erzählt das Gespräch, höchstens 240 Zeichen je Eintrag, mit thema. angabe hält einen längerfristigen Zustand, höchstens 90 Zeichen, mit kategorie und klasse; nur ausdrücklich berichtete Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. thema ist ein aktuell offenes, zeitlich begrenztes Anliegen, höchstens 90 Zeichen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. Die Länge gilt für EINEN Eintrag, nie für das gesamte Gespräch. '
+    + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und dem bestand erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits vorgeschlagene Punkte weder umformulieren noch wiederholen. '
+    + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. Ohne relevante Angaben ist eine leere Liste mit weitere_notizen=false richtig. '
     + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze oder verständliche Satzfragmente, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Belastung durch ein krankes Kind; fühlt sich selbst erschöpft.“ '
     + '„Ne niemand hat Zeit“ wird nur bei klarem Gesprächskontext zu „Aktuell keine verfügbare Unterstützung.“ Ohne Kontext weglassen. '
     + 'Keine neuen Tatsachen ergänzen, Verneinungen und Unsicherheit bewahren, spätere Korrekturen berücksichtigen. Symptome nicht zu Diagnosen machen. Vermutungen und selbst berichtete Diagnosen ausdrücklich als solche kennzeichnen. Angaben der Assistentin sind keine Belege für persönliche Fakten. '
-    + 'BELEGE: Ein bis sechs Nutzerbelege je Eintrag; IDs aus den gelieferten Daten unverändert übernehmen. Der Originalauszug darf länger als der Anzeigetext sein, auch umgangssprachlich und ohne Satzzeichen. Belege dienen nur der Zuordnung und werden nicht als sichtbarer Snippettext verwendet. Führe einen abschließenden Abgleich durch: Jede Aussage in text muss aus den Belegen und ihrem Gesprächskontext folgen. Keine Mindestzahl an Fakten oder Fäden.';
+    + 'BELEGE: Ein bis sechs Nutzerbelege je Eintrag; IDs aus den gelieferten Daten unverändert übernehmen. Der Originalauszug darf länger als der Anzeigetext sein, auch umgangssprachlich und ohne Satzzeichen. Belege dienen nur der Zuordnung und werden nicht als sichtbarer Snippettext verwendet. Ist der Beleg nur eine Zustimmung wie „Ja“ oder „Genau“, trägt er den Inhalt nicht allein: dann muss frage die ID der Nachricht nennen, auf die sich die Zustimmung bezieht. Führe einen abschließenden Abgleich durch: Jede Aussage in text muss aus den Belegen und ihrem Gesprächskontext folgen. Keine Mindestzahl an Vorschlägen. '
+    + 'Es gibt keinen Vorschlagstyp zum Löschen. Was die Nutzerin entfernt haben möchte, sagt sie der App, nicht dir.';
 }
+
 
 /* ── Abgleich mit dem, was schon gemerkt ist ──────────────────────────
    Der Fall aus der Praxis: das Kennenlernen legt "Koerperlicher /
@@ -13205,6 +13521,19 @@ function felieMerkVorschlaege(summary) {
     if (!f || f.belegt !== true || typeof f.text !== 'string') return;
     var text = f.text.trim();
     if (!text || text.length > 90) return;
+    /* Traegt der Vorschlag einen belegten Bezug auf einen vorhandenen
+       Eintrag, entscheidet dieser Bezug — nicht mehr der Textvergleich.
+       Eine Bestaetigung wiederholt die Angabe absichtlich woertlich und
+       darf nicht als Dublette wegfallen. */
+    if (f.bezug && f.bezug !== 'neu') {
+      out.fakten.push({ text: text, belege: f.belege || [],
+        kategorie: kat.indexOf(f.kategorie) >= 0 ? f.kategorie : 'allgemein',
+        klasse: f.klasse === 'stabil' ? 'stabil' : 'volatil',
+        bezug: f.bezug, zielId: f.zielId, ausgangsRevision: f.ausgangsRevision,
+        zeitbezug: f.zeitbezug || null,
+        bekannt: false, klaerung: f.bezug === 'widerspruch' });
+      return;
+    }
     var stand = pruefen(text, bestand.fakten);
     if (stand === 'gleich') return;
     out.fakten.push({
@@ -13212,6 +13541,7 @@ function felieMerkVorschlaege(summary) {
       belege: f.belege || [],
       kategorie: kat.indexOf(f.kategorie) >= 0 ? f.kategorie : 'allgemein',
       klasse: f.klasse === 'stabil' ? 'stabil' : 'volatil',
+      bezug: 'neu',
       bekannt: stand === 'bekannt'
     });
   });
@@ -13222,9 +13552,17 @@ function felieMerkVorschlaege(summary) {
     if (!text || text.length > 90) return;
     var tage = parseInt(e.tage, 10);
     if (!(tage > 0) || tage > 120) tage = 21;
+    if (e.bezug && e.bezug !== 'neu') {
+      out.faeden.push({ text: text, tage: tage, belege: e.belege || [],
+        bezug: e.bezug, zielId: e.zielId, ausgangsRevision: e.ausgangsRevision,
+        zeitbezug: e.zeitbezug || null,
+        bekannt: false, klaerung: e.bezug === 'widerspruch' });
+      return;
+    }
     var stand = pruefen(text, bestand.faeden);
     if (stand === 'gleich') return;
-    out.faeden.push({ text: text, tage: tage, belege: e.belege || [], bekannt: stand === 'bekannt' });
+    out.faeden.push({ text: text, tage: tage, belege: e.belege || [],
+      bezug: 'neu', bekannt: stand === 'bekannt' });
   });
 
   return out;
@@ -13536,13 +13874,17 @@ function felieMerkUebernehmen(v) {
     if (!chats.some(function(c) { return (c.id || c.timestamp) === cid; })) throw new Error('Gespräch nicht gespeichert');
     (v.fakten || []).forEach(function(f) {
       if (!f || f.bekannt) return;
-      var id = felieFaktSetzen({ text:f.text, kategorie:f.kategorie, klasse:f.klasse, quelle:'gespraech', belege:f.belege || [] });
-      if (id) { ids.push(id); felieErinnerungVerknuepfen(store.fakten.find(function(e) { return e.id === id; }), cid); }
+      var id = felieBrueckeVorschlag('personal', { text:f.text, kategorie:f.kategorie,
+        klasse:f.klasse, quelle:'gespraech', belege:f.belege || [],
+        bezug:f.bezug, zielId:f.zielId }, cid);
+      if (id) ids.push(id);
     });
     (v.faeden || []).forEach(function(e) {
       if (!e || e.bekannt) return;
-      var id = felieEpisode({ text:e.text, faelligBis:Date.now() + (e.tage || 7) * 86400000, belege:e.belege || [] });
-      if (id) { ids.push(id); felieErinnerungVerknuepfen(store.episoden.find(function(e) { return e.id === id; }), cid); }
+      var id = felieBrueckeVorschlag('topic', { text:e.text, quelle:'gespraech',
+        faelligBis:Date.now() + (e.tage || 7) * 86400000, belege:e.belege || [],
+        bezug:e.bezug, zielId:e.zielId }, cid);
+      if (id) ids.push(id);
     });
   });
   return ok ? ids : [];
@@ -13929,6 +14271,1570 @@ initApp();
     }
   } catch (e) {}
 })();
+</script>
+<script>
+/* ══ Gedächtnis-Repository — M2a ═══════════════════════════════════════
+   Fachvertrag memory-v2-draft-2 (reports/2026-09-17-m0/DATENVERTRAG.md).
+
+   Dieser Block ist bewusst abgeschlossen: keine DOM-Zugriffe, kein
+   localStorage, kein Netzwerk, keine Abhaengigkeit auf den uebrigen
+   Code der Datei. Er nimmt einen Datensatz und einen Befehl entgegen
+   und gibt einen neuen Datensatz zurueck. Damit laesst er sich fuer den
+   nativen Umbau woertlich herausloesen; der Speicheradapter (M2c) und
+   die Anbindung der heutigen Einstiegspunkte (M2b) sind eigene Pakete.
+
+   Stand M2a: die Operationen und die Quellen-/Loeschlogik. NICHT
+   angeschlossen — felieFaktSetzen und die uebrigen Schreibwege laufen
+   unveraendert weiter. Die Projektionen der fuenf Kontextzwecke
+   gehoeren zu M4; hier stehen nur die Auswahlfunktionen, die die
+   Operationen selbst brauchen.
+
+   Zwei Nahtstellen sind absichtlich austauschbar: felieRepoJetzt und
+   felieRepoZufall. Tests setzen sie, damit Zeit und IDs bestimmbar
+   sind. Im Betrieb bleiben sie, wie sie hier stehen. */
+
+/* ── Nahtstellen ──────────────────────────────────────────────────── */
+
+function felieRepoJetzt() {
+  if (typeof window !== 'undefined' && typeof window._felieRepoJetzt === 'function')
+    return window._felieRepoJetzt();
+  return new Date().toISOString();
+}
+
+/* IDs sind opak. Kein Name, kein Erinnerungstext und kein Hash eines
+   niedrig-entropischen persoenlichen Wertes darf hineingeraten — genau
+   das ist der Fehler der heutigen Fakt-IDs (kategorie + ':' + Text). */
+function felieRepoZufall() {
+  if (typeof window !== 'undefined' && typeof window._felieRepoZufall === 'function')
+    return window._felieRepoZufall();
+  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+}
+
+function felieRepoId(art) { return art + '-' + felieRepoZufall(); }
+
+/* ── Datensatz ────────────────────────────────────────────────────── */
+
+function felieRepoLeer(ownerId) {
+  return {
+    meta: { schemaVersion: 2, contractVersion: 'memory-v2-draft-2', ownerId: ownerId || 'lokal',
+      datasetRevision: 0, contextEpoch: 0, activeGenerationId: 'gen-1' },
+    profileBase: { displayName: { value: null, evidenceIds: [] },
+      age: { value: null, recordedAt: null, evidenceIds: [] },
+      legacyAgeBand: { value: null, recordedAt: null, evidenceIds: [] } },
+    referents: [{ id: 'ref-self', kind: 'self', createdAt: null }],
+    entries: [], revisions: [], evidence: [], conversations: [], messages: [],
+    summarySegments: [], changeNotices: [], conflicts: [], exclusions: [],
+    mutationReceipts: [], importRecords: []
+  };
+}
+
+function felieRepoKlon(d) { return JSON.parse(JSON.stringify(d)); }
+function felieRepoFind(liste, id) {
+  var l = liste || [];
+  for (var i = 0; i < l.length; i++) if (l[i] && l[i].id === id) return l[i];
+  return null;
+}
+function felieRepoKopf(d, entryId) {
+  var e = felieRepoFind(d.entries, entryId);
+  return e && e.headRevisionId ? felieRepoFind(d.revisions, e.headRevisionId) : null;
+}
+
+/* ── Quellen ──────────────────────────────────────────────────────── */
+
+/* Ein Beleg ist durch seine Fundstelle bestimmt, nicht durch die ID,
+   die ein Aufrufer mitschickt. Zweimal dieselbe Stelle ist EIN Beleg —
+   sonst liesse sich eine Bestaetigung durch blosses Wiederholen der
+   Auswertung erzeugen (I09, Pruefall F11). */
+function felieRepoQuelleSchluessel(ev) {
+  var l = ev && ev.locator;
+  if (!l) return null;
+  if (l.kind === 'message') return 'm|' + l.messageId + '|' + l.range.start + '|' + l.range.end;
+  if (l.kind === 'onboarding') return 'o|' + l.sourceEventId + '|' + l.fieldKey;
+  return 'd|' + l.sourceEventId + '|' + (l.fieldKey || '') + '|' + (l.confirmedRevisionId || '');
+}
+
+/* Nimmt Belege auf und liefert die Abbildung der mitgeschickten IDs auf
+   die tatsaechlich gueltigen. Ein bereits bekannter Beleg behaelt seine
+   urspruengliche Erfassungszeit. */
+function felieRepoQuellenAufnehmen(d, liste) {
+  var map = {};
+  (liste || []).forEach(function (ev) {
+    var schluessel = felieRepoQuelleSchluessel(ev);
+    var vorhanden = null;
+    for (var i = 0; i < d.evidence.length; i++)
+      if (felieRepoQuelleSchluessel(d.evidence[i]) === schluessel) { vorhanden = d.evidence[i]; break; }
+    if (vorhanden) { map[ev.id] = vorhanden.id; return; }
+    var neu = { id: ev.id || felieRepoId('ev'), recordedAt: ev.recordedAt || felieRepoJetzt(),
+      assertion: ev.assertion || 'explicit', locator: ev.locator };
+    d.evidence.push(neu);
+    map[ev.id] = neu.id;
+  });
+  return map;
+}
+
+function felieRepoBereichTrifft(sperre, beleg) {
+  if (!sperre || !beleg) return true;
+  return !(beleg.end <= sperre.start || beleg.start >= sperre.end);
+}
+
+/* Gesperrt wird ausschliesslich ueber Exclusion. Kein zweites Kennzeichen
+   an der Evidence, am Eintrag oder an der Nachricht (I17). */
+function felieRepoQuelleGesperrt(d, evidenceId) {
+  var ev = felieRepoFind(d.evidence, evidenceId);
+  if (!ev) return true;
+  return (d.exclusions || []).some(function (x) {
+    var t = x.target;
+    if (!t) return false;
+    if (t.kind === 'evidence') return t.evidenceId === evidenceId;
+    if (t.kind === 'message') return ev.locator.kind === 'message'
+      && ev.locator.messageId === t.messageId
+      && felieRepoBereichTrifft(t.range, ev.locator.range);
+    return false;
+  });
+}
+
+function felieRepoQuellenSperren(d, rev, grund) {
+  var gesehen = {};
+  (rev.supportSets || []).forEach(function (set) {
+    set.forEach(function (id) {
+      if (gesehen[id]) return;
+      gesehen[id] = true;
+      var schon = (d.exclusions || []).some(function (x) {
+        return x.target && x.target.kind === 'evidence' && x.target.evidenceId === id; });
+      if (!schon) d.exclusions.push({ id: felieRepoId('exc'),
+        target: { kind: 'evidence', evidenceId: id }, purpose: 'allModelUse', reason: grund });
+    });
+  });
+}
+
+/* Die aeussere Liste ist ODER, jede innere UND. Eine einzige Restquelle
+   erhaelt niemals den unbelegten Rest eines Satzes (I16). */
+function felieRepoSetVollstaendig(d, set) {
+  return Array.isArray(set) && set.length > 0 && set.every(function (id) {
+    return !felieRepoQuelleGesperrt(d, id); });
+}
+
+function felieRepoBelegzustand(d, rev) {
+  if ((rev.supportSets || []).some(function (s) { return felieRepoSetVollstaendig(d, s); })) return 'supported';
+  if (rev.evidence === 'ambiguous') return 'ambiguous';
+  return 'unsupported';
+}
+
+/* Versand an das Modell, Lesen, Umformulieren, Migration und
+   KI-Wiederholung aktualisieren die Bestaetigungszeit nicht. Sie ergibt
+   sich ausschliesslich aus den verbleibenden gueltigen Belegen. */
+function felieRepoBestaetigung(d, rev) {
+  var ids = [];
+  (rev.supportSets || []).forEach(function (s) {
+    if (felieRepoSetVollstaendig(d, s)) s.forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+  });
+  var zeiten = ids.map(function (id) {
+    var e = felieRepoFind(d.evidence, id); return e && e.recordedAt; }).filter(Boolean).sort();
+  return { at: zeiten.length ? zeiten[zeiten.length - 1] : null, evidenceIds: ids };
+}
+
+/* ── Neubewertung nach jeder Mutation ─────────────────────────────── */
+
+/* Der einzige Ort, an dem Beleglage, Kopfzeiger und abgeleitete Texte
+   nachgezogen werden. Alles, was eine Operation kaputtmachen koennte,
+   wird hier einheitlich beurteilt — nicht in jedem Befehl einzeln. */
+function felieRepoNeubewerten(d) {
+  d.revisions.forEach(function (rev) {
+    rev.evidence = felieRepoBelegzustand(d, rev);
+    rev.confirmation = felieRepoBestaetigung(d, rev);
+    if (rev.evidence === 'unsupported' && rev.status !== 'invalidated') {
+      rev.text = null;
+      rev.status = 'withdrawn';
+      rev.historicalUse = 'blocked';
+    }
+  });
+
+  /* Ein gelöschter Kopf wird niemals durch die letzte vorhandene
+     Revision ersetzt (I08, Pruefall F15). */
+  d.entries.forEach(function (e) {
+    var kopf = e.headRevisionId ? felieRepoFind(d.revisions, e.headRevisionId) : null;
+    if (!kopf || kopf.status !== 'current' || kopf.text === null) e.headRevisionId = null;
+  });
+
+  /* Ein Hinweis ohne tragfaehigen Nachher-Stand hat keinen Inhalt mehr.
+     Vorher-Texte sind Ableitungen und duerfen nicht liegenbleiben. */
+  d.changeNotices = d.changeNotices.filter(function (n) {
+    var nach = felieRepoFind(d.revisions, n.afterRevisionId);
+    return !!(nach && nach.text !== null);
+  });
+
+  d.summarySegments.forEach(function (seg) {
+    var dep = seg.dependencies || { supportSets: [], revisionIds: [], messageIds: [] };
+    var getragen = (dep.supportSets || []).some(function (s) { return felieRepoSetVollstaendig(d, s); });
+    var quellenDa = (dep.messageIds || []).every(function (mid) { return !!felieRepoFind(d.messages, mid); });
+    var revisionenOk = (dep.revisionIds || []).every(function (rid) {
+      var r = felieRepoFind(d.revisions, rid);
+      return !!(r && r.text !== null && r.status !== 'invalidated'); });
+    if (!getragen || !quellenDa || !revisionenOk) { seg.status = 'blocked'; seg.text = null; }
+  });
+
+  d.conflicts.forEach(function (c) {
+    var offeneKandidaten = (c.candidateRevisionIds || []).some(function (rid) {
+      var r = felieRepoFind(d.revisions, rid);
+      return !!(r && r.status === 'candidate'); });
+    if (!offeneKandidaten && c.status === 'open') c.status = 'resolved';
+  });
+}
+
+/* ── Befehlsprüfung ───────────────────────────────────────────────── */
+
+function felieRepoWerfen(code, meldung) {
+  var e = new Error(meldung || code);
+  e.felieRepoFehler = code;
+  throw e;
+}
+
+/* Als Funktion, nicht als Konstante: die bestehenden Regressionen laden
+   nur eine feste Liste von Variablendeklarationen in ihren Kontext. Eine
+   neue Konstante waere dort undefiniert und das Repository stillschweigend
+   kaputt. */
+function felieRepoIstWertaenderung(kind) {
+  return kind === 'transition' || kind === 'correct' || kind === 'manualUpdate' || kind === 'reword';
+}
+
+function felieRepoBefehlPruefen(d, b) {
+  if (!b || typeof b !== 'object') return 'befehl_fehlt';
+  if (b.ownerId !== d.meta.ownerId) return 'fremder_owner';
+  if (!b.operationId) return 'operationId_fehlt';
+  if (b.expectedDatasetRevision !== d.meta.datasetRevision) return 'datensatz_veraltet';
+  if (felieRepoIstWertaenderung(b.kind) || b.kind === 'confirm') {
+    var e = felieRepoFind(d.entries, b.entryId);
+    if (!e) return 'eintrag_fehlt';
+    /* Eine Auswertung, die auf einem ueberholten Stand beruht, darf eine
+       zwischenzeitliche Korrektur nicht stillschweigend ueberschreiben
+       (Pruefall F35). */
+    if (b.expectedHeadRevisionId !== e.headRevisionId) return 'kopf_veraltet';
+  }
+  return null;
+}
+
+/* Ueber IDs, Arten und Struktur — nicht ueber den Text. Ein Fingerabdruck
+   des Textes bliebe als Tombstone liegen und waere bei kurzen Angaben
+   erratbar; die Textlaenge genuegt als strukturelle Unterscheidung. */
+function felieRepoFingerabdruck(b) {
+  var k = b.candidate || null;
+  var teile = [b.kind, b.entryId || '', b.conversationId || '', b.expectedHeadRevisionId || '',
+    (b.evidence || []).map(felieRepoQuelleSchluessel).sort().join(','),
+    (b.noticeIds || []).slice().sort().join(','),
+    (b.supportSets || []).map(function (s) { return s.slice().sort().join('+'); }).sort().join(','),
+    k ? [k.changeReason || '', k.retention || '', (k.text || '').length,
+      (k.supportSets || []).map(function (s) { return s.slice().sort().join('+'); }).sort().join(',')].join('~') : '',
+    b.coverage ? [b.coverage.verdict, b.coverage.coveredByEntryId || '',
+      (b.coverage.examinedEntryIds || []).slice().sort().join(',')].join('~') : ''];
+  var s = teile.join('|'), h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return 'fp:' + h.toString(36);
+}
+
+/* ── Revision bauen ───────────────────────────────────────────────── */
+
+function felieRepoSetsAbbilden(sets, map) {
+  return (sets || []).map(function (s) {
+    return s.map(function (id) { return map && map[id] ? map[id] : id; });
+  });
+}
+
+function felieRepoRevisionBauen(kandidat, feste, map) {
+  var k = kandidat || {};
+  return {
+    id: feste.id, entryId: feste.entryId, number: feste.number,
+    text: typeof k.text === 'string' ? k.text : null,
+    recordedAt: feste.recordedAt,
+    validFrom: k.validFrom || null, validTo: k.validTo || null, expiresAt: k.expiresAt || null,
+    retention: k.retention || 'volatileDefault',
+    status: feste.status,
+    evidence: k.evidence === 'ambiguous' ? 'ambiguous' : 'supported',
+    historicalUse: k.historicalUse === 'blocked' ? 'blocked' : 'allowed',
+    confirmation: { at: null, evidenceIds: [] },
+    supportSets: felieRepoSetsAbbilden(k.supportSets, map),
+    replacesRevisionId: feste.replacesRevisionId || null,
+    changeReason: feste.changeReason
+  };
+}
+
+/* ── Operationen ──────────────────────────────────────────────────── */
+
+/* Ohne Deckungsentscheidung entsteht kein Eintrag. Text- oder
+   Kategorievergleich ist Kandidatensucher, nie das Urteil (I18). */
+function felieRepoCreate(d, b) {
+  if (!b.coverage) felieRepoWerfen('deckung_fehlt');
+  if (b.coverage.verdict === 'covered')
+    felieRepoWerfen('gedeckt', 'Vollständig gedeckt von ' + b.coverage.coveredByEntryId + ': als confirm ausführen');
+  if (b.coverage.verdict === 'unclear')
+    felieRepoWerfen('deckung_unklar', 'Zuordnung unklar: openConflict statt create');
+  if (!b.entry || !b.entry.semanticRef) felieRepoWerfen('sachbezug_fehlt');
+  var jetzt = felieRepoJetzt();
+  var map = felieRepoQuellenAufnehmen(d, b.evidence || []);
+  var entryId = b.entry.id || felieRepoId('ent');
+  var revId = felieRepoId('rev');
+  d.entries.push({ id: entryId, kind: b.entry.kind || 'personal', semanticRef: b.entry.semanticRef,
+    category: b.entry.category || 'allgemein', profileVisible: !!b.entry.profileVisible,
+    headRevisionId: revId, nextRevisionNumber: 2, createdAt: jetzt });
+  d.revisions.push(felieRepoRevisionBauen(b.candidate,
+    { id: revId, entryId: entryId, number: 1, status: 'current', changeReason: 'created', recordedAt: jetzt }, map));
+  d.changeNotices.push({ id: felieRepoId('chg'), entryId: entryId, beforeRevisionId: null,
+    afterRevisionId: revId, reason: 'new', seenAt: null, createdAt: jetzt });
+  return { entryIds: [entryId] };
+}
+
+function felieRepoConfirm(d, b) {
+  var kopf = felieRepoKopf(d, b.entryId);
+  if (!kopf) felieRepoWerfen('kein_kopf');
+  /* Eine ausdrueckliche Bestaetigung darf die Frist eines aktuellen
+     Themas neu setzen („Noch aktuell?" — „Ja"). Der Wert aendert sich
+     dabei nicht, also entsteht keine Revision und kein Aenderungshinweis;
+     nur die Gueltigkeit reicht weiter. */
+  if (b.expiresAt !== undefined) kopf.expiresAt = b.expiresAt;
+  var map = felieRepoQuellenAufnehmen(d, b.evidence || []);
+  var neue = felieRepoSetsAbbilden(b.supportSets, map);
+  neue.forEach(function (set) {
+    var schluessel = set.slice().sort().join(',');
+    var schon = kopf.supportSets.some(function (s) { return s.slice().sort().join(',') === schluessel; });
+    if (!schon) kopf.supportSets.push(set.slice());
+  });
+  return { entryIds: [b.entryId] };
+}
+
+function felieRepoWertaenderung(d, b) {
+  var entry = felieRepoFind(d.entries, b.entryId);
+  var kopf = felieRepoKopf(d, b.entryId);
+  if (!kopf) felieRepoWerfen('kein_kopf');
+  var jetzt = felieRepoJetzt();
+  var map = felieRepoQuellenAufnehmen(d, b.evidence || []);
+  var grund = b.kind === 'correct' ? 'correction' : b.kind;
+  var neuId = felieRepoId('rev');
+  var neu = felieRepoRevisionBauen(b.candidate, { id: neuId, entryId: entry.id,
+    number: entry.nextRevisionNumber, status: 'current', changeReason: grund,
+    recordedAt: jetzt, replacesRevisionId: kopf.id }, map);
+
+  if (b.kind === 'reword') {
+    /* Reine Darstellungsaenderung: Quellen, Gueltigkeit und Bestaetigung
+       bleiben, wie sie waren. Keine neue unabhaengige Quelle. */
+    neu.supportSets = kopf.supportSets.map(function (s) { return s.slice(); });
+    neu.validFrom = kopf.validFrom; neu.validTo = kopf.validTo;
+    neu.expiresAt = kopf.expiresAt; neu.retention = kopf.retention;
+  }
+
+  entry.nextRevisionNumber += 1;
+  entry.headRevisionId = neuId;
+  d.revisions.push(neu);
+
+  if (b.kind === 'correct') {
+    /* Als falsch berichtigt heisst: war nie wahr. Die Ursprungsstellen
+       duerfen die Behauptung auch nicht erneut tragen. */
+    kopf.status = 'invalidated';
+    kopf.historicalUse = 'blocked';
+    felieRepoQuellenSperren(d, kopf, 'corrected');
+  } else {
+    kopf.status = 'superseded';
+    /* Zeitlich nicht eingeordnete manuelle Aenderung behauptet keine
+       falsche Vergangenheit, aber auch keine zutreffende. */
+    kopf.historicalUse = (b.kind === 'manualUpdate') ? 'blocked' : 'allowed';
+  }
+
+  if (b.kind !== 'reword')
+    d.changeNotices.push({ id: felieRepoId('chg'), entryId: entry.id, beforeRevisionId: kopf.id,
+      afterRevisionId: neuId, reason: b.kind === 'correct' ? 'corrected' : 'updated',
+      seenAt: null, createdAt: jetzt });
+
+  return { entryIds: [entry.id] };
+}
+
+function felieRepoOpenConflict(d, b) {
+  var jetzt = felieRepoJetzt();
+  var map = felieRepoQuellenAufnehmen(d, b.evidence || []);
+  var ids = [];
+  (b.candidates || []).forEach(function (k) {
+    var rev = felieRepoRevisionBauen(k, { id: k.id || felieRepoId('rev'), entryId: k.entryId,
+      number: 0, status: 'candidate', changeReason: k.changeReason || 'created', recordedAt: jetzt }, map);
+    rev.historicalUse = 'blocked';
+    d.revisions.push(rev);
+    ids.push(rev.id);
+  });
+  var c = b.conflict || {};
+  d.conflicts.push({ id: c.id || felieRepoId('cfl'), entryIds: c.entryIds || [],
+    candidateRevisionIds: ids, sourceEvidenceIds: Object.keys(map).map(function (k) { return map[k]; }),
+    status: 'open', createdAt: jetzt });
+  return { entryIds: c.entryIds || [] };
+}
+
+function felieRepoResolveConflict(d, b) {
+  var c = felieRepoFind(d.conflicts, b.conflictId);
+  if (!c) felieRepoWerfen('konflikt_fehlt');
+  (c.candidateRevisionIds || []).forEach(function (rid) {
+    var r = felieRepoFind(d.revisions, rid);
+    if (r && r.status === 'candidate') { r.status = 'withdrawn'; r.text = null; }
+  });
+  c.status = 'resolved';
+  return { entryIds: c.entryIds || [] };
+}
+
+/* „Aus dem Gedaechtnis entfernen": Inhalte und texttragende Ableitungen
+   verschwinden, der sichtbare Originalverlauf bleibt. Die Ursprungsstellen
+   werden fuer die automatische Nutzung gesperrt, damit dieselbe Angabe
+   nicht beim naechsten Lauf erneut entsteht. */
+function felieRepoForget(d, b) {
+  var entry = felieRepoFind(d.entries, b.entryId);
+  if (!entry) felieRepoWerfen('eintrag_fehlt');
+  d.revisions.forEach(function (r) {
+    if (r.entryId !== entry.id) return;
+    felieRepoQuellenSperren(d, r, 'forgotten');
+    r.text = null; r.status = 'withdrawn'; r.historicalUse = 'blocked';
+  });
+  entry.headRevisionId = null;
+  d.changeNotices = d.changeNotices.filter(function (n) { return n.entryId !== entry.id; });
+  return { entryIds: [entry.id] };
+}
+
+/* „Gespraech loeschen": Nachrichten, Zusammenfassung und die daran
+   gebundenen Belege gehen. Strukturierte Onboarding- und Direktquellen
+   bleiben — sie sind eigene Eingabeereignisse, keine Gespraechsinhalte
+   (E18). Was danach unbelegt ist, faellt in der Neubewertung weg. */
+function felieRepoDeleteConversation(d, b) {
+  var cid = b.conversationId;
+  var nachrichten = d.messages.filter(function (m) { return m.conversationId === cid; })
+    .map(function (m) { return m.id; });
+  d.messages = d.messages.filter(function (m) { return m.conversationId !== cid; });
+  d.summarySegments = d.summarySegments.filter(function (s) { return s.conversationId !== cid; });
+  d.conversations = d.conversations.filter(function (c) { return c.id !== cid; });
+  d.evidence = d.evidence.filter(function (ev) {
+    return !(ev.locator.kind === 'message' && nachrichten.indexOf(ev.locator.messageId) >= 0); });
+  d.exclusions = d.exclusions.filter(function (x) {
+    if (x.target.kind === 'message') return nachrichten.indexOf(x.target.messageId) < 0;
+    return !!felieRepoFind(d.evidence, x.target.evidenceId); });
+  return { entryIds: [] };
+}
+
+/* Kenntnisnahme aendert nichts an Wahrheit oder Bestaetigung. Sie
+   entfernt aber den Vorher-Text einer berichtigten Fassung: er wurde
+   allein fuer diesen Hinweis noch gehalten (Pruefall F48). */
+function felieRepoMarkSeen(d, b) {
+  var jetzt = felieRepoJetzt();
+  (b.noticeIds || []).forEach(function (id) {
+    var n = felieRepoFind(d.changeNotices, id);
+    if (!n || n.seenAt) return;
+    n.seenAt = jetzt;
+    if (n.reason === 'corrected' && n.beforeRevisionId) {
+      var vor = felieRepoFind(d.revisions, n.beforeRevisionId);
+      if (vor && vor.status === 'invalidated') vor.text = null;
+    }
+  });
+  return { entryIds: [], kontextBeruehrt: false };
+}
+
+function felieRepoAusfuehren(d, b) {
+  if (b.kind === 'create') return felieRepoCreate(d, b);
+  if (b.kind === 'confirm') return felieRepoConfirm(d, b);
+  if (felieRepoIstWertaenderung(b.kind)) return felieRepoWertaenderung(d, b);
+  if (b.kind === 'openConflict') return felieRepoOpenConflict(d, b);
+  if (b.kind === 'resolveConflict') return felieRepoResolveConflict(d, b);
+  if (b.kind === 'forgetEntry') return felieRepoForget(d, b);
+  if (b.kind === 'deleteConversation') return felieRepoDeleteConversation(d, b);
+  if (b.kind === 'markSeen') return felieRepoMarkSeen(d, b);
+  felieRepoWerfen('unbekannter_befehl', b.kind);
+}
+
+/* ── Einziger Schreibzugang ───────────────────────────────────────── */
+
+/* Arbeitet auf einer Kopie und gibt sie erst bei Erfolg heraus. Ein
+   abgelehnter oder fehlgeschlagener Befehl laesst den uebergebenen
+   Datensatz unberuehrt — es gibt keinen halben Erfolg (I10). Die
+   echte Speichertransaktion kommt mit M2c; diese Ebene stellt sicher,
+   dass es fachlich nichts Halbes zu speichern gibt. */
+function felieRepoAnwenden(datensatz, befehl) {
+  if (!befehl || typeof befehl !== 'object')
+    return { ok: false, fehler: 'befehl_fehlt', datensatz: datensatz, receipt: null };
+  if (befehl.ownerId !== datensatz.meta.ownerId)
+    return { ok: false, fehler: 'fremder_owner', datensatz: datensatz, receipt: null };
+  if (!befehl.operationId)
+    return { ok: false, fehler: 'operationId_fehlt', datensatz: datensatz, receipt: null };
+
+  /* Die Wiederholungspruefung steht VOR der Revisionspruefung. Ein Retry
+     traegt zwangslaeufig den Stand von vor dem ersten Versuch; wuerde er
+     zuerst als veraltet abgewiesen, waere Idempotenz nicht erreichbar —
+     der Aufrufer koennte nach einem Verbindungsabbruch nie sicher
+     feststellen, ob sein Vorgang gewirkt hat. */
+  var abdruck = felieRepoFingerabdruck(befehl);
+  var frueher = null;
+  for (var i = 0; i < datensatz.mutationReceipts.length; i++)
+    if (datensatz.mutationReceipts[i].operationId === befehl.operationId) { frueher = datensatz.mutationReceipts[i]; break; }
+  if (frueher) {
+    /* Derselbe Vorgang zaehlt einmal. Dieselbe Kennung mit anderem
+       Inhalt ist kein Retry, sondern ein Fehler des Aufrufers. */
+    if (frueher.payloadFingerprint !== abdruck)
+      return { ok: false, fehler: 'wiederholung_mit_anderem_inhalt', datensatz: datensatz, receipt: null };
+    return { ok: true, fehler: null, datensatz: datensatz, receipt: frueher, wiederholt: true };
+  }
+
+  var fehler = felieRepoBefehlPruefen(datensatz, befehl);
+  if (fehler) return { ok: false, fehler: fehler, datensatz: datensatz, receipt: null };
+
+  var d = felieRepoKlon(datensatz), ergebnis;
+  try { ergebnis = felieRepoAusfuehren(d, befehl); }
+  catch (e) {
+    return { ok: false, fehler: (e && e.felieRepoFehler) || 'abgelehnt',
+      meldung: e && e.message, datensatz: datensatz, receipt: null };
+  }
+
+  felieRepoNeubewerten(d);
+  d.meta.datasetRevision = datensatz.meta.datasetRevision + 1;
+  if (ergebnis.kontextBeruehrt !== false) d.meta.contextEpoch = datensatz.meta.contextEpoch + 1;
+  var receipt = { operationId: befehl.operationId, commandKind: befehl.kind,
+    payloadFingerprint: abdruck, resultEntryIds: ergebnis.entryIds || [],
+    committedRevision: d.meta.datasetRevision, createdAt: felieRepoJetzt() };
+  d.mutationReceipts.push(receipt);
+  return { ok: true, fehler: null, datensatz: d, receipt: receipt };
+}
+
+/* ── Auswahl ──────────────────────────────────────────────────────── */
+
+function felieRepoStrittig(d) {
+  var raus = {};
+  (d.conflicts || []).forEach(function (c) {
+    if (c.status !== 'open') return;
+    (c.entryIds || []).forEach(function (id) { raus[id] = true; });
+  });
+  return raus;
+}
+
+/* Was sicher als aktuell gilt: ein Kopf, vollstaendig belegt, nicht
+   strittig. Eine Ansicht, kein zweiter Speicher — Profil und Gedaechtnis
+   lesen dieselbe Liste und koennen deshalb nicht auseinanderlaufen. */
+function felieRepoAktuell(d, opts) {
+  opts = opts || {};
+  var strittig = felieRepoStrittig(d);
+  var jetzt = opts.jetzt || felieRepoJetzt();
+  var raus = [];
+  d.entries.forEach(function (e) {
+    if (strittig[e.id]) return;
+    var k = e.headRevisionId ? felieRepoFind(d.revisions, e.headRevisionId) : null;
+    if (!k || k.status !== 'current' || k.text === null) return;
+    if (k.evidence === 'unsupported') return;
+    /* Eine Angabe mit unklarer Herkunft ist sichtbar und bearbeitbar,
+       aber keine belegte Gewissheit: die Oberflaeche zeigt sie als
+       „Bitte pruefen", der Modellkontext laesst sie weg (I04, I14). */
+    var unklar = k.evidence === 'ambiguous';
+    if (unklar && !opts.einschliesslichUnklar) return;
+    if (!opts.ohneFristpruefung && k.expiresAt && k.expiresAt <= jetzt) return;
+    if (opts.kategorie && e.category !== opts.kategorie) return;
+    if (opts.nurProfil && !e.profileVisible) return;
+    raus.push({ entryId: e.id, revisionId: k.id, text: k.text, kategorie: e.category,
+      art: e.kind, profileVisible: e.profileVisible, bestaetigtAm: k.confirmation.at,
+      retention: k.retention, gueltigAb: k.validFrom, laeuftAbAm: k.expiresAt, unklar: unklar });
+  });
+  return raus;
+}
+
+/* Einheitliche Snippets: eine Liste, ein Eintrag je Sachverhalt. Die
+   Nutzerin sieht keine Unterscheidung zwischen Fakt und Notiz (E03),
+   und dieselbe Angabe kann gar nicht zweimal erscheinen (E04). */
+function felieRepoSichtbar(d, opts) { return felieRepoAktuell(d, opts); }
+
+/* Zaehler und Listen stammen aus derselben gefilterten Projektion —
+   „Alle" kann nicht anders zaehlen als das Register (I13). */
+function felieRepoZaehler(d) {
+  var alle = felieRepoAktuell(d);
+  var nach = {};
+  alle.forEach(function (s) { nach[s.kategorie] = (nach[s.kategorie] || 0) + 1; });
+  return { alle: alle.length, kategorien: nach,
+    profil: alle.filter(function (s) { return s.profileVisible; }).length,
+    neu: felieRepoNeuHinweise(d).length };
+}
+
+function felieRepoNeuHinweise(d) {
+  return (d.changeNotices || []).filter(function (n) { return !n.seenAt; }).map(function (n) {
+    var vor = n.beforeRevisionId ? felieRepoFind(d.revisions, n.beforeRevisionId) : null;
+    var nach = felieRepoFind(d.revisions, n.afterRevisionId);
+    return { id: n.id, entryId: n.entryId, art: n.reason,
+      vorherRevisionId: n.beforeRevisionId || null,
+      vorher: vor && vor.text !== null ? vor.text : null,
+      nachher: nach ? nach.text : null, ungueltig: !!(vor && vor.status === 'invalidated') };
+  });
+}
+
+/* Historisch zutreffende Fassungen fuer einen ausdruecklichen Rueckblick.
+   Berichtigtes und zeitlich nicht eingeordnetes bleibt draussen. */
+function felieRepoHistorisch(d, entryId) {
+  return d.revisions.filter(function (r) {
+    return r.entryId === entryId && r.status === 'superseded'
+      && r.historicalUse === 'allowed' && r.evidence === 'supported' && r.text !== null;
+  }).sort(function (a, b) { return a.number - b.number; });
+}
+</script>
+<script>
+/* ══ Brücke: Altbestand ↔ Repository — M2b ═════════════════════════════
+   Die heutige Ablage kennt zwei flache Listen (fakten, episoden) und
+   keine Revisionen, Quellen oder Sperren. Das Repository kennt genau
+   das. Diese Bruecke uebersetzt in beide Richtungen:
+
+     felieBrueckeSaat       Altbestand  →  Datensatz
+     felieBrueckeProjektion Datensatz   →  fakten/episoden fuer die alte Oberflaeche
+
+   Damit kann die vorhandene Oberflaeche unveraendert weiterlesen,
+   waehrend die Entscheidungen durch das Repository laufen. Die Bruecke
+   ist ausdruecklich ein Uebergang: M6 ersetzt die Saat durch die
+   geprueste, wiederholbare Migration und entfernt die Rueckprojektion.
+
+   Was hier NICHT passiert: kein Modellaufruf, kein Raten. Ein Alteintrag,
+   dessen Herkunft sich nicht eindeutig aufloesen laesst, wird als
+   'ambiguous' gefuehrt — sichtbar, bearbeitbar, aber nicht als belegte
+   Gewissheit (I14). Er wird weder geloescht noch zu einer Bestaetigung
+   erfunden. */
+
+/* Bewusst eine Funktion und keine Konstante: die bestehenden
+   Regressionen laden nur eine feste Liste von Variablendeklarationen in
+   ihren Ausfuehrungskontext. Eine neue Konstante waere dort nicht
+   definiert und die Bruecke stillschweigend kaputt — genau die Art
+   Fehler, die eine gruene Suite verschweigen wuerde. */
+function felieBrueckeOwner() { return 'lokal'; }
+
+/* ── Zeit: die Altablage rechnet in Millisekunden, der Vertrag in ISO ─ */
+
+function felieBrueckeZeit(ms) {
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
+}
+function felieBrueckeMs(iso) {
+  var t = iso ? Date.parse(iso) : NaN;
+  return Number.isFinite(t) ? t : null;
+}
+
+/* ── Saat: Altbestand einlesen ────────────────────────────────────── */
+
+function felieBrueckeGespraechId(c) { return String(c.id || c.timestamp); }
+
+function felieBrueckeGespraecheSaen(d, chats) {
+  (chats || []).forEach(function (c) {
+    if (!c) return;
+    var cid = felieBrueckeGespraechId(c);
+    d.conversations.push({ id: cid, kind: c.onboardingId ? 'onboardingArchive' : 'chat',
+      createdAt: felieBrueckeZeit(c.timestamp), updatedAt: null, extractionState: 'complete' });
+    (c.messages || []).forEach(function (m, i) {
+      if (!m || typeof m.content !== 'string') return;
+      d.messages.push({ id: cid + '-m' + i, conversationId: cid,
+        role: m.role === 'user' ? 'user' : 'assistant', content: m.content,
+        occurredAt: null, ordinal: i, originalMessageId: null, authoredInputEvidenceId: null });
+    });
+    /* Bestehende Sperren gehen nie durch die Uebersetzung verloren. */
+    (c.kontextNachrichtenAuslassen || []).forEach(function (i) {
+      if (!c.messages || !c.messages[i]) return;
+      d.exclusions.push({ id: felieRepoId('exc'),
+        target: { kind: 'message', messageId: cid + '-m' + i, range: null },
+        purpose: 'allModelUse', reason: 'forgotten' });
+    });
+  });
+}
+
+/* Loest die alten Belege gegen den gespeicherten Verlauf auf. Eine
+   Fundstelle zaehlt nur, wenn sie eindeutig ist: ein Gespraech, eine
+   Nutzernachricht, der Belegtext tatsaechlich darin enthalten. Sonst
+   null — und der Eintrag wird 'ambiguous' (Pruefall F45, I14). */
+function felieBrueckeAltbelege(d, e, chats) {
+  var ids = Array.isArray(e.gespraechIds) ? e.gespraechIds : null;
+  if (e.herkunftUnklar) return null;
+
+  if (e.quelle === 'selbst')
+    return [felieBrueckeQuelleAnlegen(d, { kind: 'direct', sourceEventId: 'import:' + e.id,
+      fieldKey: null, authoredValue: null, confirmedRevisionId: null }, e)];
+
+  if (e.quelle === 'kennenlernen')
+    return [felieBrueckeQuelleAnlegen(d, { kind: 'onboarding', sourceEventId: 'import:' + e.id,
+      fieldKey: String(e.id).indexOf('aufnahme:') === 0 ? String(e.id).split(':')[2] || 'kennenlernen' : 'kennenlernen',
+      authoredValue: null, displayConversationIds: (ids || []).map(String) }, e)];
+
+  if (!ids || ids.length !== 1) return null;
+  if (!Array.isArray(e.belege) || !e.belege.length) return null;
+  var cid = String(ids[0]);
+  var chat = (chats || []).filter(function (c) { return felieBrueckeGespraechId(c) === cid; })[0];
+  if (!chat) return null;
+
+  var set = [];
+  for (var i = 0; i < e.belege.length; i++) {
+    var b = e.belege[i];
+    var m = chat.messages && chat.messages[b.nachricht];
+    if (!m || m.role !== 'user' || typeof m.content !== 'string' || !b.beleg) return null;
+    var pos = m.content.indexOf(b.beleg);
+    if (pos < 0) return null;
+    set.push(felieBrueckeQuelleAnlegen(d, { kind: 'message', messageId: cid + '-m' + b.nachricht,
+      sourceEventId: 'import:' + e.id + ':' + b.nachricht,
+      range: { start: pos, end: pos + b.beleg.length }, contextMessageIds: [] }, e));
+  }
+  return set;
+}
+
+/* Die Erfassungszeit des Belegs ist die urspruengliche Bestaetigungszeit
+   des Alteintrags. Eine Migration erfindet keine frische Bestaetigung. */
+function felieBrueckeQuelleAnlegen(d, locator, e) {
+  var ev = { id: felieRepoId('ev'),
+    recordedAt: felieBrueckeZeit(e.bestaetigtAm || e.zuletztAm || e.erfasstAm),
+    assertion: 'explicit', locator: locator };
+  d.evidence.push(ev);
+  return ev.id;
+}
+
+/* Kurze Marke ueber den Inhalt, damit die Revisionskennung auch dann
+   wandert, wenn zwei Aenderungen in dieselbe Millisekunde fallen.
+
+   Ein Texthash waere als dauerhafter Loeschmarker verboten — er liesse
+   geloeschten Inhalt erraten. Hier ist er keiner: die Marke entsteht bei
+   jedem Saeen neu, wird nirgends gespeichert und geht nur zusammen mit
+   dem Text selbst an das Modell. Sie verraet also nichts, was nicht
+   ohnehin danebensteht. */
+function felieBrueckeInhaltsmarke(text) {
+  var t = typeof text === 'string' ? text : '', h = 5381;
+  for (var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+function felieBrueckeEintragSaen(d, e, art, chats) {
+  if (!e || typeof e.text !== 'string') return;
+  var set = felieBrueckeAltbelege(d, e, chats);
+  /* Die Alt-ID bleibt die Identitaet des Eintrags, solange die Altablage
+     die Persistenz ist. Sie steht im Merker der neuen Snippets, in den
+     DOM-Knoten der Gedaechtnisansicht und in offenen Bearbeitungsfeldern;
+     wuerde die Bruecke bei jedem Speichervorgang neu nummerieren, waeren
+     alle diese Verweise nach der ersten Aenderung tot.
+       Das heisst: die transiente Uebersetzung traegt vorerst die alten,
+     textfuehrenden IDs weiter. Sie durch opake zu ersetzen ist genau die
+     Aufgabe der Migration in M6 — dort einmal, mit Abbildung und
+     Nachweis, statt hier bei jedem Schreibvorgang neu. */
+  var entryId = String(e.id);
+  /* Die Revisionskennung wird aus dem Eintrag abgeleitet statt gewuerfelt.
+     Der Grund ist die Extraktion: sie bekommt diese Kennung mitgeschickt
+     und gibt sie als ausgangsRevision zurueck. Bei einer gewuerfelten
+     Kennung waere jede Rueckgabe sofort „veraltet", weil die Bruecke
+     zwischendurch neu gesaet hat. Abgeleitet heisst: aendert sich der
+     Inhalt oder die Bestaetigungszeit, aendert sich die Kennung — und
+     genau dann ist eine Auswertung tatsaechlich ueberholt. */
+  var revId = 'rev:' + entryId + ':' + (e.bestaetigtAm || e.erfasstAm || 0)
+    + ':' + felieBrueckeInhaltsmarke(e.text);
+  var erfasst = felieBrueckeZeit(e.erfasstAm);
+
+  d.entries.push({ id: entryId, kind: art,
+    /* Ohne geprueften Sachbezug bleibt der Eintrag frei. Einen
+       strukturierten Bezug zu erfinden waere geraten — die Zuordnung
+       gehoert zur Migration in M6, nicht in die Uebergangsbruecke. */
+    semanticRef: { type: 'free', subjectId: 'ref-self', scopeId: null },
+    category: art === 'topic' ? 'allgemein' : (e.kategorie || 'allgemein'),
+    /* profileVisible ist die Ansichtszuordnung, nicht die Beleglage: in
+       der Altform entscheidet genau sie, ob ein Eintrag unter „Ueber
+       dich" oder unter „Aus unseren Gespraechen" steht. Sie bleibt bei
+       einer Bearbeitung unberuehrt — eine Textkorrektur darf eine Karte
+       nicht in einen anderen Bereich schieben (UI-ABLAEUFE 2). */
+    profileVisible: art !== 'topic' && (e.quelle === 'selbst' || e.quelle === 'kennenlernen'),
+    headRevisionId: revId, nextRevisionNumber: 2,
+    createdAt: erfasst });
+
+  d.revisions.push({ id: revId, entryId: entryId, number: 1, text: e.text,
+    /* recordedAt traegt die letzte bekannte Bestaetigungszeit, nicht die
+       Ersterfassung: sonst wuerde ein Alteintrag mit unklarer Herkunft,
+       der keine belegte confirmation bekommt, in der Rueckprojektion
+       ploetzlich aelter aussehen und frueher verfallen. */
+    recordedAt: felieBrueckeZeit(e.bestaetigtAm || e.zuletztAm || e.erfasstAm) || erfasst,
+    validFrom: null, validTo: null,
+    expiresAt: art === 'topic' ? felieBrueckeZeit(e.faelligBis) : null,
+    retention: art === 'topic' ? 'explicitDeadline' : (e.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
+    status: 'current', evidence: set ? 'supported' : 'ambiguous',
+    historicalUse: 'allowed',
+    confirmation: { at: null, evidenceIds: [] },
+    supportSets: set ? [set] : [],
+    replacesRevisionId: null, changeReason: 'import' });
+
+  d.importRecords.push({ sourceDatasetId: 'felie_store_v1', sourceRecordKey: art + '#' + e.id,
+    targetIds: [entryId], disposition: set ? 'migrated' : 'review' });
+
+  /* Ein Gespraechslink ohne aufloesbares Zitat ist kein Beleg — er
+     legitimiert keinen Satz und geht deshalb NICHT in die Support-Sets.
+     Er ist aber die einzige Herkunftsangabe, die der Altbestand hat, und
+     die Nutzerin erwartet beim Loeschen des Gespraechs, dass ein daraus
+     stammender Eintrag mitgeht (E09). Deshalb haelt die Bruecke ihn als
+     ausdrueckliche Loeschabhaengigkeit fest, getrennt von der Beleglage. */
+  if (!set)
+    (d.legacyHerkunft = d.legacyHerkunft || []).push({ entryId: entryId,
+      belege: Array.isArray(e.belege) ? e.belege : [],
+      conversationIds: (e.gespraechIds || []).map(String),
+      unklarFest: e.herkunftUnklar === true });
+
+  /* Der Zaehler „3× erwaehnt" bleibt als Anzeige erhalten; die
+     Befoerderung zum Fakt entfaellt (E19). Er wird nicht mitgeschleppt,
+     sondern aus der Zahl unabhaengiger Stuetzungen gelesen — eine
+     eigenstaendige Bestaetigung IST eine erneute Erwaehnung. */
+  if (art === 'topic' && (e.erwaehnungen || 1) > 1)
+    d.revisions[d.revisions.length - 1].supportSets =
+      felieBrueckeZaehlerNachbilden(d, set, e.erwaehnungen);
+}
+
+function felieBrueckeZaehlerNachbilden(d, set, anzahl) {
+  if (!set) return [];
+  var raus = [set];
+  for (var i = 1; i < anzahl; i++) raus.push(set);
+  return raus;
+}
+
+function felieBrueckeSaat(store, chats) {
+  var d = felieRepoLeer(felieBrueckeOwner());
+  felieBrueckeGespraecheSaen(d, chats);
+  ((store && store.fakten) || []).forEach(function (f) { felieBrueckeEintragSaen(d, f, 'personal', chats); });
+  ((store && store.episoden) || []).forEach(function (e) { felieBrueckeEintragSaen(d, e, 'topic', chats); });
+  felieRepoNeubewerten(d);
+  return d;
+}
+
+/* ── Projektion: zurück in die Form, die die Oberfläche liest ─────── */
+
+/* Die Altform kennt nur ein Feld fuer Herkunft UND Anzeigeort. Der
+   Anzeigeort steht im Vertrag als profileVisible und bleibt bei einer
+   Bearbeitung stehen; die Belegart entscheidet nur noch, welche der
+   beiden Selbstauskunftsformen gemeint ist. */
+function felieBrueckeQuelleLesen(d, entry, rev) {
+  if (!entry.profileVisible) return 'gespraech';
+  var arten = {};
+  (rev.supportSets || []).forEach(function (s) {
+    s.forEach(function (id) {
+      var ev = felieRepoFind(d.evidence, id);
+      if (ev) arten[ev.locator.kind] = true;
+    });
+  });
+  if (arten.direct) return 'selbst';
+  if (arten.onboarding) return 'kennenlernen';
+  return 'selbst';
+}
+
+function felieBrueckeAltbelegeLesen(d, rev) {
+  var raus = [];
+  (rev.supportSets || []).forEach(function (s) {
+    s.forEach(function (id) {
+      var ev = felieRepoFind(d.evidence, id);
+      if (!ev || ev.locator.kind !== 'message') return;
+      var m = felieRepoFind(d.messages, ev.locator.messageId);
+      if (!m) return;
+      var index = m.ordinal;
+      var text = m.content.slice(ev.locator.range.start, ev.locator.range.end);
+      if (raus.some(function (b) { return b.nachricht === index && b.beleg === text; })) return;
+      var eintrag = { nachricht: index, beleg: text };
+      var frage = (ev.locator.contextMessageIds || [])[0];
+      if (frage) {
+        var fm = felieRepoFind(d.messages, frage);
+        if (fm) eintrag.frage = fm.ordinal;
+      }
+      raus.push(eintrag);
+    });
+  });
+  return raus;
+}
+
+function felieBrueckeGespraecheLesen(d, rev) {
+  var raus = [];
+  (rev.supportSets || []).forEach(function (s) {
+    s.forEach(function (id) {
+      var ev = felieRepoFind(d.evidence, id);
+      if (!ev) return;
+      var cid = null;
+      if (ev.locator.kind === 'message') {
+        var m = felieRepoFind(d.messages, ev.locator.messageId);
+        cid = m && m.conversationId;
+      } else if (ev.locator.kind === 'onboarding') {
+        cid = (ev.locator.displayConversationIds || [])[0] || null;
+      }
+      if (cid == null) return;
+      var zahl = Number(cid);
+      var wert = Number.isFinite(zahl) && String(zahl) === String(cid) ? zahl : cid;
+      if (raus.indexOf(wert) < 0) raus.push(wert);
+    });
+  });
+  return raus;
+}
+
+/* Liefert genau die beiden Listen, die felieStore() heute haelt. Die
+   Oberflaeche, felieFakten(), felieEpisoden() und die bestehenden
+   Regressionen bleiben dadurch unveraendert lesbar. */
+/* ── Schreibzugang: ein Vorgang, ein Commit ───────────────────────────
+   Die Bruecke ist bewusst zustandslos je Speichervorgang: sie saet aus
+   dem Altstand, wendet die Befehle an und projiziert zurueck. Es gibt
+   keinen zweiten dauerhaften Speicher neben felie_store_v1.
+
+   Der Grund ist die Umstellung selbst. Solange nicht alle Schreibwege
+   umgelegt sind, wuerde ein dauerhafter Repositoriumsstand neben der
+   Altablage auseinanderlaufen, sobald ein noch nicht umgestellter
+   Schreiber die Altlisten anfasst. Zustandslos kann das nicht passieren:
+   was die Altablage traegt, ist in jedem Vorgang die Ausgangslage.
+
+   Was die Altform nicht ausdruecken kann — abgeloeste Fassungen und ihre
+   Historie — lebt deshalb nur innerhalb eines Vorgangs. Das ist kein
+   Verlust gegenueber heute: die Altform kennt gar keine Historie. Der
+   dauerhafte Datensatz kommt mit M2c, die geprueffte Migration mit M6. */
+
+function felieBrueckeStart(s, chats) {
+  window._felieRepoAktiv = felieBrueckeSaat(s, chats);
+  window._felieBrueckeStore = s;
+  window._felieBrueckeChats = chats;
+  window._felieRepoBeruehrt = false;
+  return window._felieRepoAktiv;
+}
+
+/* Nach jedem Befehl zurueckprojizieren. Vorhandener Code liest den
+   gerade geschriebenen Eintrag direkt aus store.fakten wieder heraus —
+   ein Muster, das an vielen Stellen steht. Wuerde die Projektion erst
+   am Ende des Speichervorgangs laufen, waere jede dieser Stellen
+   stillschweigend kaputt. */
+function felieBrueckeNachziehen() {
+  var s = window._felieBrueckeStore;
+  if (!s) return;
+  var p = felieBrueckeProjektion(window._felieRepoAktiv);
+  s.fakten = p.fakten;
+  s.episoden = p.episoden;
+}
+
+function felieBrueckeBefehl(teil) {
+  var d = window._felieRepoAktiv;
+  if (!d) throw new Error('Brücke: kein aktiver Datensatz');
+  var befehl = { ownerId: d.meta.ownerId, operationId: felieRepoId('op'),
+    expectedDatasetRevision: d.meta.datasetRevision };
+  for (var k in teil) if (Object.prototype.hasOwnProperty.call(teil, k)) befehl[k] = teil[k];
+  var r = felieRepoAnwenden(d, befehl);
+  if (!r.ok) {
+    var e = new Error('Brücke abgelehnt: ' + r.fehler + (r.meldung ? ' — ' + r.meldung : ''));
+    e.repoFehler = r.fehler;
+    throw e;
+  }
+  window._felieRepoAktiv = r.datensatz;
+  window._felieRepoBeruehrt = true;
+  felieBrueckeNachziehen();
+  return r;
+}
+
+/* Baut die Belege eines Altaufrufs in Vertragsquellen um. Kann eine
+   Fundstelle nicht eindeutig aufgeloest werden, entsteht KEINE Quelle —
+   der Eintrag wird dann ausdruecklich unklar statt scheinbar belegt. */
+function felieBrueckeQuellenAus(d, f, gespraechId) {
+  /* Ein Aufrufer, der eine historische Zeit mitgibt, meint sie auch:
+     eine Nachmigration darf aus einer alten Aussage keine frische
+     Bestaetigung machen. */
+  var jetzt = f.bestaetigtAm != null || f.erfasstAm != null
+    ? felieBrueckeZeit(f.bestaetigtAm != null ? f.bestaetigtAm : f.erfasstAm)
+    : felieRepoJetzt();
+  if (f.quelle === 'selbst')
+    return [{ id: felieRepoId('ev'), recordedAt: jetzt, assertion: 'explicit',
+      locator: { kind: 'direct', sourceEventId: felieRepoId('src'), fieldKey: null,
+        authoredValue: f.text, confirmedRevisionId: null } }];
+  if (f.quelle === 'kennenlernen') {
+    var feld = String(f.id || '').indexOf('aufnahme:') === 0
+      ? (String(f.id).split(':')[2] || 'kennenlernen') : 'kennenlernen';
+    return [{ id: felieRepoId('ev'), recordedAt: jetzt, assertion: 'explicit',
+      locator: { kind: 'onboarding', sourceEventId: felieRepoId('src'), fieldKey: feld,
+        authoredValue: f.text, displayConversationIds: gespraechId == null ? [] : [String(gespraechId)] } }];
+  }
+  if (!Array.isArray(f.belege) || !f.belege.length) return [];
+
+  /* Kennt der Aufrufer das Gespraech nicht, wird es aus den Belegen
+     bestimmt — aber nur, wenn die Zuordnung eindeutig ist. Passen die
+     Zitate auf mehrere Gespraeche, entsteht keine Quelle: eine gleiche
+     Zeichenfolge beweist nicht dieselbe Aussage. Dieselbe Regel wendet
+     die Altform in felieErinnerungAusChat an. */
+  var kandidaten = gespraechId != null ? [String(gespraechId)]
+    : d.conversations.map(function (c) { return c.id; });
+  var treffer = [];
+  kandidaten.forEach(function (cid) {
+    var quellen = [];
+    for (var i = 0; i < f.belege.length; i++) {
+      var b = f.belege[i];
+      var m = felieRepoFind(d.messages, cid + '-m' + b.nachricht);
+      if (!m || m.role !== 'user' || !b.beleg) return;
+      var pos = m.content.indexOf(b.beleg);
+      if (pos < 0) return;
+      /* Eine gebundene Bestaetigung traegt die Frage mit, auf die sie
+         sich bezieht — im Vertrag ist das contextMessageIds. Entfaellt
+         die Frage, entfaellt die Stuetzung. */
+      var gebunden = Number.isInteger(b.frage) ? [cid + '-m' + b.frage] : [];
+      quellen.push({ id: felieRepoId('ev'), recordedAt: jetzt,
+        assertion: gebunden.length ? 'boundConfirmation' : 'explicit',
+        locator: { kind: 'message', messageId: m.id, sourceEventId: felieRepoId('src'),
+          range: { start: pos, end: pos + b.beleg.length }, contextMessageIds: gebunden } });
+    }
+    treffer.push(quellen);
+  });
+  return treffer.length === 1 ? treffer[0] : [];
+}
+
+/* Sucht den Eintrag, den ein Altaufruf meint. Zwei Wege, beide ohne
+   Raten: die mitgegebene Alt-ID, oder wortgleicher Inhalt. Gleicher
+   Wortlaut ist vollstaendige Deckung — unabhaengig von der Kategorie,
+   denn ein gemeinsames Kategorielabel rechtfertigt kein Ueberschreiben
+   und ein Kategoriewechsel verhindert keine Aktualisierung (E06). */
+function felieBrueckeZiel(d, art, f) {
+  if (f.id) {
+    var ueberId = felieBrueckeEintragZuAltId(d, art, f.id);
+    if (ueberId) return ueberId;
+  }
+  var schluessel = felieNotizSchluessel(f.text);
+  for (var i = 0; i < d.entries.length; i++) {
+    var e = d.entries[i];
+    if (e.kind !== art) continue;
+    var kopf = felieRepoKopf(d, e.id);
+    if (kopf && kopf.text && felieNotizSchluessel(kopf.text) === schluessel) return e;
+  }
+  return null;
+}
+
+function felieBrueckeAnlegen(art, f, gespraechId) {
+  var d = window._felieRepoAktiv;
+  var quellen = felieBrueckeQuellenAus(d, f, gespraechId);
+  var sets = quellen.length ? [quellen.map(function (q) { return q.id; })] : [];
+  var ziel = felieBrueckeZiel(d, art, f);
+  var kopf = ziel ? felieRepoKopf(d, ziel.id) : null;
+
+  if (ziel && kopf) {
+    var gleich = felieNotizSchluessel(kopf.text || '') === felieNotizSchluessel(f.text);
+    if (gleich) {
+      /* Vollstaendig gedeckt: eine Bestaetigung, kein zweites Snippet.
+         Ist der Beleg derselbe wie beim ersten Mal, aendert sich auch
+         die Bestaetigungszeit nicht — das entscheidet das Repository. */
+      var teil = { kind: 'confirm', entryId: ziel.id, expectedHeadRevisionId: kopf.id,
+        evidence: quellen, supportSets: sets };
+      if (art === 'topic' && f.faelligBis != null) teil.expiresAt = felieBrueckeZeit(f.faelligBis);
+      felieBrueckeBefehl(teil);
+      return ziel.id;
+    }
+    /* Anderer Wortlaut bei bekanntem Ziel: die Nutzerin oder ein
+       strukturiertes Formular bestaetigt ausdruecklich den neuen Inhalt.
+       Ohne zeitliche Einordnung wird die vorige Fassung nicht als
+       damaliger Stand erzaehlt. */
+    felieBrueckeBefehl({ kind: f.ersetzt ? 'transition' : 'manualUpdate', entryId: ziel.id,
+      expectedHeadRevisionId: kopf.id,
+      candidate: { text: f.text, supportSets: sets,
+        evidence: quellen.length ? 'supported' : 'ambiguous',
+        retention: art === 'topic' ? 'explicitDeadline' : (f.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
+        expiresAt: art === 'topic' ? felieBrueckeZeit(f.faelligBis) : null },
+      evidence: quellen });
+    return ziel.id;
+  }
+
+  var r = felieBrueckeBefehl({ kind: 'create',
+    entry: { id: f.id ? String(f.id) : felieRepoId('ent'), kind: art,
+      semanticRef: { type: 'free', subjectId: 'ref-self', scopeId: null },
+      category: art === 'topic' ? 'allgemein' : (f.kategorie || 'allgemein'),
+      profileVisible: art !== 'topic' && (f.quelle === 'selbst' || f.quelle === 'kennenlernen') },
+    candidate: { text: f.text, supportSets: sets,
+      evidence: quellen.length ? 'supported' : 'ambiguous',
+      retention: art === 'topic' ? 'explicitDeadline' : (f.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
+      expiresAt: art === 'topic' ? felieBrueckeZeit(f.faelligBis) : null },
+    evidence: quellen,
+    /* Kein Ziel gefunden heisst: kein vorhandener Eintrag deckt diesen
+       Inhalt wortgleich. Eine anders formulierte Dublette laesst sich
+       hier nicht erkennen — diese Entscheidung braucht die Ziel-ID aus
+       der Extraktion und gehoert nach M3. */
+    coverage: { examinedEntryIds: d.entries.map(function (e) { return e.id; }),
+      verdict: 'independent', coveredByEntryId: null, decidedBy: 'extraction' } });
+  var neuId = r.receipt.resultEntryIds[0];
+  var dd = window._felieRepoAktiv;
+  if (f.erfasstAm != null) {
+    var neuerEintrag = felieRepoFind(dd.entries, neuId);
+    if (neuerEintrag) neuerEintrag.createdAt = felieBrueckeZeit(f.erfasstAm);
+  }
+  dd.importRecords.push({ sourceDatasetId: 'laufend',
+    sourceRecordKey: art + '#' + neuId, targetIds: [neuId],
+    disposition: quellen.length ? 'migrated' : 'review' });
+  /* Liessen sich die Belege nicht aufloesen — etwa weil das Gespraech
+     noch gar nicht gespeichert ist —, duerfen sie nicht verlorengehen.
+     Die Bruecke haelt sie fest und projiziert sie zurueck; ist das
+     Gespraech spaeter da, entsteht beim naechsten Saeen eine echte
+     Quelle daraus. Bis dahin bleibt der Eintrag ausdruecklich unklar. */
+  if (!quellen.length)
+    (dd.legacyHerkunft = dd.legacyHerkunft || []).push({ entryId: neuId,
+      belege: Array.isArray(f.belege) ? f.belege : [],
+      conversationIds: gespraechId == null ? [] : [String(gespraechId)] });
+  /* createdAt und die Herkunftsreste stehen erst nach dem Befehl fest —
+     also noch einmal nachziehen, damit ein Aufrufer, der den Eintrag
+     gleich wieder aus store.fakten liest, den fertigen Stand sieht. */
+  felieBrueckeNachziehen();
+  return neuId;
+}
+
+/* Wendet einen geprueften Vorschlag nach seinem Bezug an.
+
+   widerspruch wird hier ausdruecklich NICHT angewendet. Das Repository
+   koennte einen Konflikt festhalten, aber die Bruecke ist je
+   Speichervorgang zustandslos — er waere beim naechsten Saeen weg. Ein
+   Widerspruch gehoert deshalb der Nutzerin vorgelegt, nicht still
+   verbucht; er kommt als Klaerung in die Vorschlagsliste. Der dauerhaft
+   gespeicherte Konflikt folgt, wenn der Vertragsdatensatz die Persistenz
+   ist (M6). */
+function felieBrueckeVorschlag(art, v, gespraechId) {
+  if (!v || !v.text) return null;
+  if (v.bezug === 'widerspruch') return null;
+  var d = window._felieRepoAktiv;
+  if (!d) return felieBrueckeSchreiben(art, v, gespraechId);
+
+  if (v.bezug === 'bestaetigung' || v.bezug === 'aktualisierung') {
+    var eintrag = felieRepoFind(d.entries, v.zielId);
+    var kopf = eintrag ? felieRepoKopf(d, eintrag.id) : null;
+    if (!kopf) return null;
+    var quellen = felieBrueckeQuellenAus(d, v, gespraechId);
+    var sets = quellen.length ? [quellen.map(function (q) { return q.id; })] : [];
+    if (v.bezug === 'bestaetigung') {
+      felieBrueckeBefehl({ kind: 'confirm', entryId: eintrag.id, expectedHeadRevisionId: kopf.id,
+        evidence: quellen, supportSets: sets });
+      return eintrag.id;
+    }
+    felieBrueckeBefehl({ kind: 'transition', entryId: eintrag.id, expectedHeadRevisionId: kopf.id,
+      candidate: { text: v.text, supportSets: sets,
+        evidence: quellen.length ? 'supported' : 'ambiguous',
+        retention: art === 'topic' ? 'explicitDeadline' : (v.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
+        expiresAt: art === 'topic' ? felieBrueckeZeit(v.faelligBis) : null },
+      evidence: quellen });
+    return eintrag.id;
+  }
+  return felieBrueckeAnlegen(art, v, gespraechId);
+}
+
+/* Oeffnet nur dann selbst einen Speichervorgang, wenn noch keiner laeuft:
+   felieMerkUebernehmen und klV2Sichern rufen mehrfach hintereinander auf
+   und sollen einen einzigen Commit ergeben. */
+function felieBrueckeSchreiben(art, f, gespraechId) {
+  if (!f || !f.text) return null;
+  if (window._felieRepoAktiv) return felieBrueckeAnlegen(art, f, gespraechId);
+  var id = null;
+  var ok = felieDatenAendern(function () {
+    id = felieBrueckeAnlegen(art, f, gespraechId);
+  });
+  return ok ? id : null;
+}
+
+/* Der Bestand, wie ihn die Extraktion sieht: Kennung, aktuelle Revision,
+   Text, Art und Kategorie. Keine Belege und keine Historie — das Modell
+   soll zuordnen, nicht Quellen bewerten. Die Kennungen sind opak und
+   tragen keinen Inhalt; es geht nichts Persoenliches zusaetzlich mit,
+   was nicht ohnehin als Text mitginge. */
+function felieExtraktionsBestand() {
+  var s = felieStore();
+  var chats = [];
+  try { chats = getSavedChats(); } catch (e) {}
+  var d = felieBrueckeSaat(s, chats);
+  return felieRepoAktuell(d, { einschliesslichUnklar: true }).map(function (x) {
+    return { id: x.entryId, revision: x.revisionId,
+      art: x.art === 'topic' ? 'thema' : 'angabe',
+      text: x.text, kategorie: x.kategorie };
+  });
+}
+
+/* Findet den Eintrag zu einer Alt-ID über das Importprotokoll. */
+function felieBrueckeEintragZuAltId(d, art, altId) {
+  var schluessel = art + '#' + altId;
+  for (var i = 0; i < d.importRecords.length; i++)
+    if (d.importRecords[i].sourceRecordKey === schluessel) {
+      var e = felieRepoFind(d.entries, d.importRecords[i].targetIds[0]);
+      if (e) return e;
+    }
+  return null;
+}
+
+/* Schreibt die Sperren des Datensatzes in die Altform zurueck. Eine
+   Sperre auf einer Quelle ist dort eine Sperre auf der Nachricht —
+   feiner kann die Altablage es nicht. */
+function felieBrueckeSperrenZurueck(d, chats) {
+  (d.exclusions || []).forEach(function (x) {
+    var mid = null;
+    if (x.target.kind === 'message') mid = x.target.messageId;
+    else {
+      var ev = felieRepoFind(d.evidence, x.target.evidenceId);
+      if (ev && ev.locator.kind === 'message') mid = ev.locator.messageId;
+    }
+    if (!mid) return;
+    var m = felieRepoFind(d.messages, mid);
+    if (!m) return;
+    var chat = (chats || []).filter(function (c) {
+      return felieBrueckeGespraechId(c) === m.conversationId; })[0];
+    if (!chat) return;
+    chat.kontextNachrichtenAuslassen = chat.kontextNachrichtenAuslassen || [];
+    if (chat.kontextNachrichtenAuslassen.indexOf(m.ordinal) < 0)
+      chat.kontextNachrichtenAuslassen.push(m.ordinal);
+  });
+}
+
+/* Entfernt Alteintraege, deren einzige Herkunftsangabe dieses Gespraech
+   war. Bleibt ein weiterer Link, bleibt der Eintrag — und bleibt
+   ausdruecklich unklar (I14). */
+/* Lassen sich die Zitate eines Alteintrags auf genau ein Gespraech
+   zuruecklegen? Dieselbe Eindeutigkeitsregel wie in der Altform. */
+function felieBrueckeEindeutig(d, belege, ausser) {
+  if (!Array.isArray(belege) || !belege.length) return false;
+  var treffer = 0;
+  d.conversations.forEach(function (c) {
+    if (ausser && c.id === ausser) return;
+    for (var i = 0; i < belege.length; i++) {
+      var m = felieRepoFind(d.messages, c.id + '-m' + belege[i].nachricht);
+      if (!m || m.role !== 'user' || !belege[i].beleg) return;
+      if (m.content.indexOf(belege[i].beleg) < 0) return;
+    }
+    treffer++;
+  });
+  return treffer === 1;
+}
+
+function felieBrueckeAltlinksLoeschen(cid) {
+  var d = window._felieRepoAktiv;
+  var links = (d && d.legacyHerkunft) || [];
+  links.forEach(function (l) {
+    /* Eine einmal verlorene Zuordnung bleibt verloren: das Loeschen
+       eines von mehreren passenden Gespraechen darf das letzte
+       verbliebene nicht nachtraeglich zur bewiesenen Quelle machen
+       (E10, I14). Deshalb wird die Unklarheit hier festgeschrieben. */
+    if (!l.conversationIds.length && !l.unklarFest
+        && !felieBrueckeEindeutig(d, l.belege)) l.unklarFest = true;
+    if (l.conversationIds.indexOf(cid) < 0) return;
+    l.conversationIds = l.conversationIds.filter(function (x) { return x !== cid; });
+    if (l.conversationIds.length) return;
+    var eintrag = felieRepoFind(window._felieRepoAktiv.entries, l.entryId);
+    if (!eintrag || !eintrag.headRevisionId) return;
+    felieBrueckeBefehl({ kind: 'forgetEntry', entryId: l.entryId,
+      expectedHeadRevisionId: eintrag.headRevisionId });
+  });
+}
+
+function felieBrueckeAbschluss(s, chats) {
+  window._felieBrueckeStore = null;
+  window._felieBrueckeChats = null;
+  if (!window._felieRepoBeruehrt) return false;
+  felieBrueckeSperrenZurueck(window._felieRepoAktiv, chats);
+  try { felieNeuHinweiseNachziehen(window._felieRepoAktiv); } catch (e) {}
+  return true;
+}
+
+function felieBrueckeProjektion(d) {
+  var fakten = [], episoden = [];
+  felieRepoAktuell(d, { einschliesslichUnklar: true, ohneFristpruefung: true }).forEach(function (s) {
+    var entry = felieRepoFind(d.entries, s.entryId);
+    var rev = felieRepoFind(d.revisions, s.revisionId);
+    var belege = felieBrueckeAltbelegeLesen(d, rev);
+    var gespraeche = felieBrueckeGespraecheLesen(d, rev);
+    /* Was der Vertrag (noch) nicht traegt, geht trotzdem nicht verloren:
+       nicht aufloesbare Zitate und Gespraechslinks werden unveraendert
+       zurueckgereicht. Sind sie spaeter aufloesbar, entsteht beim
+       naechsten Saeen eine echte Quelle daraus. */
+    var rest = (d.legacyHerkunft || []).filter(function (x) { return x.entryId === entry.id; })[0];
+    if (!belege.length || !gespraeche.length) {
+      if (rest) {
+        if (!belege.length) belege = rest.belege || [];
+        if (!gespraeche.length) gespraeche = (rest.conversationIds || []).map(function (cid) {
+          var z = Number(cid);
+          return Number.isFinite(z) && String(z) === cid ? z : cid; });
+      }
+    }
+    /* herkunftUnklar heisst in der Altform: diesem Eintrag laesst sich
+       kein Gespraech mehr zuordnen. Eine noch nicht aufloesbare Quelle
+       ist etwas anderes — solange Zitate oder ein Gespraechslink
+       vorliegen, kann die Altform ihre Zuordnung selbst leisten. */
+    /* Nicht attribuierbar heisst: gar keine Herkunftsangabe mehr, oder
+       eine Zuordnung, die durch eine Loeschung verlorengegangen ist.
+       Ein frisch angelegter Eintrag, dessen Gespraech noch gar nicht
+       gespeichert ist, ist keins von beidem. */
+    var ohneHerkunft = s.unklar
+      && ((rest && rest.unklarFest)
+        || (!gespraeche.length && d.conversations.length > 0
+            && !felieBrueckeEindeutig(d, belege)));
+    var erfasst = felieBrueckeMs(entry.createdAt) || felieBrueckeMs(rev.recordedAt);
+    var bestaetigt = felieBrueckeMs(rev.confirmation.at) || felieBrueckeMs(rev.recordedAt) || erfasst;
+
+    if (entry.kind === 'topic') {
+      var ep = { id: entry.id, text: rev.text, status: 'offen',
+        erfasstAm: erfasst, zuletztAm: bestaetigt,
+        faelligBis: felieBrueckeMs(rev.expiresAt),
+        erwaehnungen: Math.max(1, (rev.supportSets || []).length),
+        belege: belege };
+      if (gespraeche.length) ep.gespraechIds = gespraeche;
+      if (ohneHerkunft) ep.herkunftUnklar = true;
+      episoden.push(ep);
+    } else {
+      var f = { id: entry.id, text: rev.text, kategorie: entry.category,
+        klasse: rev.retention === 'stable' ? 'stabil' : 'volatil',
+        erfasstAm: erfasst, bestaetigtAm: bestaetigt,
+        quelle: felieBrueckeQuelleLesen(d, entry, rev), belege: belege };
+      if (gespraeche.length) f.gespraechIds = gespraeche;
+      if (ohneHerkunft) f.herkunftUnklar = true;
+      /* bearbeitetAm ist in der Altform das Zeichen dafuer, dass die
+         Nutzerin selbst Hand angelegt hat. Im Vertrag steht dieselbe
+         Tatsache als Aenderungsgrund. */
+      if (rev.changeReason === 'manualUpdate' || rev.changeReason === 'correction') {
+        f.bearbeitetAm = felieBrueckeMs(rev.recordedAt);
+        f.bearbeitetVon = 'selbst';
+      }
+      fakten.push(f);
+    }
+  });
+  return { fakten: fakten, episoden: episoden };
+}
+</script>
+<script>
+/* ══ Speicheradapter — M2c ═════════════════════════════════════════════
+   Zwei Ablagen, ein Vertrag.
+
+   Aktiv ist bis M6 die Altablage: mehrere localStorage-Schluessel, wie
+   bisher. Neu daran ist nur eine Pruefung — ob seit dem Laden ein
+   anderer Tab geschrieben hat. Bisher gewann stillschweigend der letzte
+   Schreiber, und die Arbeit des anderen Tabs war weg.
+
+   Gebaut, aber nicht eingeschaltet ist die IndexedDB-Ablage: getrennte
+   Object Stores fuer Gespraeche und Nachrichten, eine Transaktion je
+   fachlicher Mutation, Revisionspruefung je Aggregat. Sie ist absichtlich
+   asynchron — das ist die Eigenschaft, die beim Einschalten die
+   Aufrufer mitziehen muss, und genau deshalb steht sie hier schon
+   vollstaendig und geprueft, statt in M6 nebenbei zu entstehen.
+
+   Umgeschaltet wird mit window._felieSpeicherArt = 'indexedDB'. Das
+   allein reicht NICHT fuer den Produktivbetrieb: dafuer braucht es die
+   Migration, die Ruecksicherung und den Rollback aus M6. */
+
+function felieSpeicherArt() {
+  return (typeof window !== 'undefined' && window._felieSpeicherArt) || 'localStorage';
+}
+
+function felieSpeicherSchluessel() {
+  return [FELIE_STORE_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
+}
+
+/* ── Fremdänderung erkennen (aktiv) ───────────────────────────────── */
+
+/* Fremd heisst: aus einem ANDEREN Fenster. Genau dafuer gibt es das
+   storage-Ereignis — es feuert nie fuer den eigenen Tab. Ein Vergleich
+   der rohen Werte taugt dafuer nicht: die App schreibt dieselben
+   Schluessel auch ausserhalb eines Speichervorgangs (felieStoreSpeichern,
+   saveChat, klV2Sichern), und jeder dieser Wege saehe wie eine
+   Fremdaenderung aus. Ein Fehlalarm waere schlimmer als die Luecke: er
+   wuerde eine gerade getippte Aenderung verwerfen. */
+function felieSpeicherFremdMerker() {
+  return window._felieSpeicherFremd || (window._felieSpeicherFremd = {});
+}
+
+function felieSpeicherHorchen() {
+  if (window._felieSpeicherHorcht) return false;
+  if (typeof window.addEventListener !== 'function') return false;
+  window._felieSpeicherHorcht = true;
+  window.addEventListener('storage', function (e) {
+    if (!e || !e.key) return;
+    if (felieSpeicherSchluessel().indexOf(e.key) < 0) return;
+    felieSpeicherFremdMerker()[e.key] = true;
+  });
+  return true;
+}
+
+/* Liefert die Schluessel, die ein anderes Fenster veraendert hat, und
+   vergisst sie danach — der Aufrufer hat sie behandelt. */
+function felieSpeicherFremdAenderung() {
+  var merker = felieSpeicherFremdMerker();
+  var raus = Object.keys(merker);
+  window._felieSpeicherFremd = {};
+  return raus;
+}
+
+/* Beibehalten fuer Aufrufer, die den Stand nach einem Schreibvorgang
+   quittieren wollen; der Merker wird dabei geleert. */
+function felieSpeicherStandMerken() {
+  window._felieSpeicherFremd = {};
+  return true;
+}
+
+/* ── IndexedDB-Ablage (gebaut, bis M6 nicht aktiv) ─────────────────── */
+
+/* Wieder Funktionen statt Konstanten: die bestehenden Regressionen
+   laden nur eine feste Variablenliste in ihren Kontext. */
+function felieIdbName() { return 'felie'; }
+function felieIdbVersion() { return 1; }
+
+function felieIdbStores() {
+  return ['control', 'meta', 'memory', 'conversations', 'messages', 'journal'];
+}
+
+function felieIdbUmgebung() {
+  return (typeof window !== 'undefined' && window.indexedDB) || null;
+}
+
+function felieIdbOeffnen() {
+  return new Promise(function (erfuellen, ablehnen) {
+    var idb = felieIdbUmgebung();
+    if (!idb) return ablehnen(new Error('IndexedDB steht hier nicht zur Verfügung'));
+    var anfrage = idb.open(felieIdbName(), felieIdbVersion());
+    anfrage.onupgradeneeded = function (e) {
+      var db = e.target.result;
+      felieIdbStores().forEach(function (name) {
+        if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
+      });
+    };
+    anfrage.onsuccess = function (e) { erfuellen(e.target.result); };
+    anfrage.onerror = function (e) { ablehnen(e.target.error || new Error('IndexedDB öffnete nicht')); };
+  });
+}
+
+function felieIdbHolen(store, id) {
+  return new Promise(function (erfuellen, ablehnen) {
+    var a = store.get(id);
+    a.onsuccess = function () { erfuellen(a.result || null); };
+    a.onerror = function () { ablehnen(a.error); };
+  });
+}
+
+function felieIdbAlle(store) {
+  return new Promise(function (erfuellen, ablehnen) {
+    var a = store.getAll();
+    a.onsuccess = function () { erfuellen(a.result || []); };
+    a.onerror = function () { ablehnen(a.error); };
+  });
+}
+
+/* Der Zuschnitt: alles, was zu einem Gespraech gehoert, liegt bei
+   diesem Gespraech. Ein „gesehen" am Gedaechtnis fasst die Nachrichten
+   gar nicht erst an — deshalb kollidieren unabhaengige Vorgaenge nicht
+   (Pruefall F46). */
+function felieIdbAufteilen(d) {
+  var gen = d.meta.ownerId + '|' + d.meta.activeGenerationId;
+  var teile = {
+    control: [{ id: d.meta.ownerId, activeGenerationId: d.meta.activeGenerationId,
+      schemaVersion: d.meta.schemaVersion, datasetRevision: d.meta.datasetRevision }],
+    meta: [{ id: gen, meta: d.meta, profileBase: d.profileBase, referents: d.referents }],
+    memory: [{ id: gen, entries: d.entries, revisions: d.revisions, evidence: d.evidence,
+      conflicts: d.conflicts, exclusions: d.exclusions, changeNotices: d.changeNotices }],
+    conversations: [], messages: [],
+    journal: [{ id: gen, mutationReceipts: d.mutationReceipts, importRecords: d.importRecords }]
+  };
+  (d.conversations || []).forEach(function (c) {
+    teile.conversations.push({ id: c.id, conversation: c,
+      summarySegments: (d.summarySegments || []).filter(function (s) { return s.conversationId === c.id; }) });
+    teile.messages.push({ id: c.id,
+      messages: (d.messages || []).filter(function (m) { return m.conversationId === c.id; }) });
+  });
+  return teile;
+}
+
+function felieIdbZusammensetzen(teile) {
+  var meta = teile.meta[0], memory = teile.memory[0], journal = teile.journal[0];
+  if (!meta || !memory) return null;
+  var d = {
+    meta: meta.meta, profileBase: meta.profileBase, referents: meta.referents,
+    entries: memory.entries, revisions: memory.revisions, evidence: memory.evidence,
+    conflicts: memory.conflicts, exclusions: memory.exclusions, changeNotices: memory.changeNotices,
+    conversations: [], messages: [], summarySegments: [],
+    mutationReceipts: (journal && journal.mutationReceipts) || [],
+    importRecords: (journal && journal.importRecords) || []
+  };
+  (teile.conversations || []).forEach(function (c) {
+    d.conversations.push(c.conversation);
+    d.summarySegments = d.summarySegments.concat(c.summarySegments || []);
+  });
+  (teile.messages || []).forEach(function (m) { d.messages = d.messages.concat(m.messages || []); });
+  return d;
+}
+
+function felieIdbLesen(ownerId) {
+  return felieIdbOeffnen().then(function (db) {
+    var t = db.transaction(felieIdbStores(), 'readonly');
+    return Promise.all(felieIdbStores().map(function (name) {
+      return felieIdbAlle(t.objectStore(name)).then(function (liste) { return [name, liste]; });
+    })).then(function (paare) {
+      var teile = {};
+      paare.forEach(function (p) { teile[p[0]] = p[1]; });
+      db.close();
+      var steuer = (teile.control || []).filter(function (c) { return c.id === ownerId; })[0];
+      if (!steuer) return null;
+      return felieIdbZusammensetzen(teile);
+    });
+  });
+}
+
+/* Eine fachliche Mutation ist EINE Transaktion ueber alle beteiligten
+   Stores. Vor dem Schreiben wird je Aggregat geprueft, ob es seit dem
+   Lesen veraendert wurde; bei Abweichung bricht die Transaktion ab und
+   es steht nichts Halbes in der Datenbank. */
+/* Inhaltsgleich? Die Revision selbst bleibt dabei aussen vor — sie ist
+   Buchhaltung, kein Inhalt. */
+function felieIdbGleich(a, b) {
+  var x = {}, y = {}, k;
+  for (k in a) if (Object.prototype.hasOwnProperty.call(a, k) && k !== 'rev') x[k] = a[k];
+  for (k in b) if (Object.prototype.hasOwnProperty.call(b, k) && k !== 'rev') y[k] = b[k];
+  return JSON.stringify(x) === JSON.stringify(y);
+}
+
+function felieIdbSchreiben(d, erwartet) {
+  return felieIdbOeffnen().then(function (db) {
+    return new Promise(function (erfuellen) {
+      var teile = felieIdbAufteilen(d);
+      var t = db.transaction(felieIdbStores(), 'readwrite');
+      var abgebrochen = null;
+
+      t.oncomplete = function () { db.close(); erfuellen({ ok: !abgebrochen, fehler: abgebrochen }); };
+      t.onabort = function () { db.close(); erfuellen({ ok: false, fehler: abgebrochen || 'abgebrochen' }); };
+      t.onerror = function () { abgebrochen = abgebrochen || 'schreibfehler'; };
+
+      function abbrechen(grund) {
+        abgebrochen = abgebrochen || grund;
+        try { t.abort(); } catch (e) {}
+      }
+
+      /* Lesen und Schreiben bleiben im selben Ereignisschritt: eine
+         IndexedDB-Transaktion endet, sobald die Ereignisschleife ohne
+         offene Anfrage weiterlaeuft. Ein put in einem nachgelagerten
+         Promise-Schritt faellt aus der Transaktion heraus — und genau
+         das wuerde die Zusicherung „ganz oder gar nicht" aushebeln. */
+      Object.keys(teile).forEach(function (name) {
+        var store = t.objectStore(name);
+        teile[name].forEach(function (satz) {
+          var a = store.get(satz.id);
+          a.onsuccess = function () {
+            if (abgebrochen) return;
+            var vorhanden = a.result || null;
+            /* Geschrieben wird nur, was sich geaendert hat. Sonst wuerde
+               jede Mutation jedes Aggregat anfassen, und zwei voellig
+               unabhaengige Vorgaenge — ein „gesehen" am Gedaechtnis und
+               eine neue Nachricht — wuerden sich gegenseitig abweisen.
+               Genau das war der Grund gegen den Ein-Block-Zuschnitt. */
+            if (vorhanden && felieIdbGleich(vorhanden, satz)) return;
+            var erwarteteRev = erwartet && erwartet[name] && erwartet[name][satz.id];
+            var istRev = vorhanden ? vorhanden.rev : null;
+            if (erwarteteRev !== undefined && erwarteteRev !== istRev)
+              return abbrechen('aggregat_veraltet:' + name + '/' + satz.id);
+            satz.rev = (istRev || 0) + 1;
+            store.put(satz);
+          };
+          a.onerror = function () { abbrechen('lesefehler'); };
+        });
+      });
+    });
+  });
+}
+
+/* Die Revisionen, die ein spaeterer Schreibvorgang erwarten muss. */
+function felieIdbRevisionen(ownerId) {
+  return felieIdbOeffnen().then(function (db) {
+    var t = db.transaction(felieIdbStores(), 'readonly');
+    return Promise.all(felieIdbStores().map(function (name) {
+      return felieIdbAlle(t.objectStore(name)).then(function (liste) { return [name, liste]; });
+    })).then(function (paare) {
+      var raus = {};
+      paare.forEach(function (p) {
+        raus[p[0]] = {};
+        p[1].forEach(function (satz) { raus[p[0]][satz.id] = satz.rev || null; });
+      });
+      db.close();
+      return raus;
+    });
+  });
+}
+
+/* Vollstaendiges Loeschen muss die neue Ablage mit erfassen. Reset und
+   Widerruf duerfen nicht die Haelfte stehenlassen — genau dieser Fehler
+   ist in der Altablage schon einmal passiert. */
+function felieIdbLoeschen() {
+  return felieIdbOeffnen().then(function (db) {
+    return new Promise(function (erfuellen) {
+      var t = db.transaction(felieIdbStores(), 'readwrite');
+      felieIdbStores().forEach(function (name) { t.objectStore(name).clear(); });
+      t.oncomplete = function () { db.close(); erfuellen(true); };
+      t.onabort = function () { db.close(); erfuellen(false); };
+    });
+  });
+}
 </script>
 </body>
 </html>

@@ -6452,6 +6452,15 @@ function felieAktivenKontextAbgleichen(chats) {
 function felieArchivQuelleSperren(chats, vorher) {
   if (!vorher || !vorher.text) return;
   chats.forEach(function(c) {
+    /* Zuerst die Ursprungsstelle der berichtigten Aussage selbst. Bisher
+       geschah das nur INNERHALB der Notizschleife - gab es zu dem
+       Gespraech keine passende Notiz, wurde gar nichts gesperrt.
+       Solange nur Notizen ins Modell gingen, fiel das nicht auf. Seit
+       M10 geht die Gespraechszusammenfassung mit, und die steht auf
+       genau dieser Stelle: ohne diese Zeile kaeme die berichtigte
+       Aussage ueber den Gespraechsrueckblick zurueck - der Fehler, den
+       M4 durch Weglassen geloest hatte. */
+    if (felieErinnerungAusChat(vorher, c, chats)) felieArchivVerlaufSperren(c, vorher.belege);
     felieNotizenLesen(c).forEach(function(n) {
       var gleich = felieNotizSchluessel(n.text) === felieNotizSchluessel(vorher.text);
       var verwandt = felieErinnerungAusChat(vorher, c, chats) &&
@@ -12205,7 +12214,7 @@ function felieChatKern() {
     "MEDIZINISCHE FUNKTIONSGRENZE: Keine persönliche Diagnose oder Differentialdiagnose, Befundbewertung, Dosierung, Therapieentscheidung oder Behandlungsempfehlung. Keine Erkennung, Vorbeugung, Überwachung, Vorhersage, Prognose, Behandlung oder Linderung von Krankheiten; keine medizinische Beurteilung oder Behandlung von Verletzungen oder Behinderungen. Keine medizinische Untersuchung, Bestimmung oder Steuerung anatomischer, physiologischer oder pathologischer Vorgänge und Zustände. Keine persönliche Bestimmung von Hormonlage, Nervensystemzustand, Blutzuckerverlauf, Eisprung, fruchtbaren Tagen oder Empfängniswahrscheinlichkeit und keine individuelle Steuerung von Empfängnisförderung oder -verhütung. Ernährung, Bewegung oder Stressübungen zur persönlichen Krankheitsbehandlung bleiben Therapie, auch unter dem Namen Lifestyle.",
     "WAS DU LEISTEST: Allgemeine Gesundheitsbegriffe und gesichertes Hintergrundwissen verständlich erklären; daraus keine persönliche Ursache, Eignung, Prognose oder Therapie ableiten. Genannte Diagnosen sind Kontext, kein automatischer Ablehnungsgrund. Gewöhnliche Mahlzeiten-, Bewegungs- und Pausenideen sowie Alltagsorganisation sind möglich. Passe sie an genannte Wünsche, Allergien, Möglichkeiten und ärztliche Vorgaben an, ohne medizinische Eignung selbst zu bestätigen. Bei einer entscheidenden ungeklärten Einschränkung gezielt nachfragen oder einen unabhängigen Alltagsschritt wählen. Eine normale Alltagsfrage braucht keinen Nicht-Ärztin-Hinweis. Eine betroffene Grenze knapp benennen und mit dem zulässigen Teil konkret weiterhelfen.",
     "BESCHWERDEN UND KRISE: Anhaltende, neue besorgniserregende oder zunehmende Beschwerden ärztlich abklären lassen. Bereits vereinbarte Abklärung ohne neuen Anlass nicht wiederholen. Bei unmittelbarer Gefahr ist der nächste Schritt menschliche Notfallhilfe: In Deutschland jetzt 112 anrufen oder eine erreichbare Person bitten, den Anruf zu übernehmen. Keine eigene Anreise oder andere Telefonnummer als gleichwertige Alternative. Bei unmittelbarer Selbstgefährdung zusätzlich eine vertraute Person hinzuholen und nicht allein bleiben; den Notruf nicht von einer weiteren Verschlechterung abhängig machen. Bei seelischer Krise ohne unmittelbare Gefahr in Deutschland Telefonseelsorge 0800 111 0 111. Bei unbekanntem Land den örtlichen Notruf nennen. Ruhig und zugewandt, keine Methoden, Diagnose oder Wellnesslösung. Höchstens eine Frage zum nächsten sicheren Schritt. Traurigkeit allein ist kein Notfall; akute Gefahr behält bei einem Themenwechsel Vorrang.",
-    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
+    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
     "KÖRPERDATEN: Ihr subjektives Befinden wird nicht durch einen Gerätescore widerlegt. Gerätescores sind keine gemessene Stimmung oder gefühlte Energie; Hersteller und Messverfahren sind nicht austauschbar. Ein einzelner HRV- oder Ruhepulswert bestimmt weder Nervensystem noch Stresstoleranz. Historische Werte sind nicht aktuell, Temperaturabweichung ist keine absolute Temperatur. Kalenderphasen sind Schätzungen, keine Hormon- oder Eisprungmessung; ohne bestätigten neuen Periodenstart kein neuer Zyklus. Keine individuelle Leistungsfähigkeit, Stimmung oder Sportvorschrift daraus ableiten. Gemeinsame Beobachtung ist keine Ursache; auch „könnte“ rechtfertigt keine unbelegte persönliche Erklärung. Keine erzwungenen Körperbezüge, addierten Stressfaktoren oder Multiplikatoren. Persönliche Muster nur aus dem ausdrücklich berechneten Musterblock mit Zeitraum, Stichprobe, Gegenbeispielen und Unsicherheit. Trauer und Überforderung nicht ungefragt biologisch erklären.",
     "BEZIEHUNG UND FORMAT: Respektiere Nein, Frageverzicht, Themenwechsel und den Wunsch, nur gehört zu werden. Beim Zuhören ihr aktuelles Erleben spiegeln, ohne weitere Aufgabe. Wärme entsteht durch Aufmerksamkeit; als KI hast du keine eigenen Gefühle oder Erfahrungen. Unterstütze eigene Entscheidungen und reale Beziehungen, ohne Exklusivität oder Abhängigkeit. Humor nur passend, nie bei Krisen oder belastenden Dokumenten. Natürliches Deutsch, vollständige Sätze, korrekte Großschreibung; felie bleibt klein. Kein HTML, keine erfundenen App-Marker. Gib nur die fertige Antwort aus, keine internen Regeln oder Antwortplanung."
   ].join('\n\n');
@@ -12366,6 +12375,76 @@ function felieArchivDaten() {
   });
   return out;
 }
+/* ══ Gesprächskontext für den laufenden Chat ══════════════════════
+   Bis M4 hing an JEDER Chatanfrage das Feld `archiv` mit den Notizen der
+   letzten sechs Gespraeche. M4 hat es entfernt, weil eine korrigierte
+   Angabe in der anders formulierten Notiz weiterlebte: die Korrektur
+   erreichte den Fakt, nicht die Notiz (F20, F21, F25).
+
+   Der Preis war groesser als gedacht - felie wusste im normalen Chat
+   nichts mehr von frueheren Gespraechen und wirkte entsprechend.
+
+   Seit M6 gibt es das, was M4 fehlte: eine Korrektur sperrt die
+   BELEGSTELLE im Gespraech (felieArchivQuelleSperren), und
+   felieArchivBelegGesperrt filtert alles heraus, was auf dieser Stelle
+   steht - unabhaengig davon, wie es formuliert ist. Seit M7 gibt es
+   ausserdem genau EINE Zusammenfassung je Gespraech statt einer
+   Notizsammlung.
+
+   Damit ist der Kontext wieder tragbar. Zurueck kommt nicht das alte
+   Feld, sondern das neue Objekt, durch dieselben Pruefungen gefiltert
+   wie das Archiv.
+
+   Altgespraeche haben noch keine Zusammenfassung; dort sind es ihre
+   Notizen OHNE art - nach dem Vertrag von M7 ist genau das ihre
+   damalige Zusammenfassung. Notizen mit art='notiz' bleiben draussen:
+   die gehoeren ins Gedaechtnis, nicht in den Gespraechsrueckblick. */
+function felieGespraecheDaten(max, ohne) {
+  var grenze = max || 6;
+  var chats = [];
+  try { chats = getSavedChats() || []; } catch (e) { return []; }
+  /* Ein ausdruecklich gewaehlter Rueckblick liegt schon im Volltext bei.
+     Dasselbe Gespraech zweimal einzuspeisen waere Gewichtung durch
+     Wiederholung.
+       Dasselbe gilt fuer ein fortgesetztes Archivgespraech: sein Verlauf
+     IST der laufende Chat. Die Zusammenfassung daneben zu legen hiesse,
+     dem Modell dieselbe Sache zweimal zu sagen - einmal im Wortlaut und
+     einmal in felies Nacherzaehlung (Pruefall F25). */
+  var schon = (window._felieRueckblickAuswahl || []).map(String);
+  [window._felieAktiverArchivChat, window._letzteChatId].concat(ohne || []).forEach(function (id) {
+    if (id != null) schon.push(String(id));
+  });
+  var out = [];
+  for (var i = chats.length - 1; i >= 0 && out.length < grenze; i--) {
+    var c = chats[i];
+    var cid = String(c.id || c.timestamp);
+    if (schon.indexOf(cid) >= 0) continue;
+    var text = null, quelle = null;
+    if (c.zusammenfassung && c.zusammenfassung.text) {
+      var z = { id: 'zusammenfassung:' + cid, merken: true,
+        text: c.zusammenfassung.text, nachweis: c.zusammenfassung.nachweis };
+      if (felieArchivNotizNutzbar(c, z)) { text = z.text; quelle = felieArchivNotizQuelle(c, z); }
+    }
+    if (!text) {
+      var alt = [];
+      try {
+        alt = felieNotizenLesen(c).filter(function (n) {
+          return n.art !== 'notiz' && felieArchivNotizNutzbar(c, n);
+        });
+      } catch (e) { alt = []; }
+      if (alt.length) {
+        text = alt.map(function (n) { return n.text; }).join(' ');
+        quelle = felieArchivNotizQuelle(c, alt[0]);
+      }
+    }
+    if (!text) continue;
+    out.push({ datum: c.timestamp, thema: c.thema || 'Gespräch',
+      zusammenfassung: text, quelle: quelle,
+      zeitbezug: 'damaliger Stand; kein offener Auftrag und kein Beleg für Fortdauer' });
+  }
+  return out;
+}
+
 function felieArchivNotizQuelle(chat, notiz) {
   var text = notiz ? notiz.text : chat && chat.felie_lernt;
   if (!text || !text.trim()) return null;
@@ -12400,7 +12479,12 @@ function felieKontextFuer(zweck, opts) {
   if (zweck === 'rueckblick') return felieRueckblickDaten(opts.gespraeche);
   /* fortsetzung teilt sich die Auswahl mit dem aktuellen Gespraech: der
      bereinigte Originalverlauf kommt ueber apiMsgs, das Gedaechtnis ist
-     dasselbe. Eine zusaetzliche Zusammenfassung waere eine Dublette. */
+     dasselbe. Eine zusaetzliche Zusammenfassung waere eine Dublette
+     (Pruefall F25) - deshalb faellt genau dieses Gespraech heraus. */
+  if (zweck === 'fortsetzung') {
+    return felieKontextDaten([opts.gespraechId != null ? opts.gespraechId
+      : window._felieAktiverArchivChat]);
+  }
   return felieKontextDaten();
 }
 
@@ -12579,7 +12663,10 @@ function felieRueckblickAussagen(cid) {
   return raus;
 }
 
-function felieKontextDaten() {
+/* `ohne` nennt Gespraeche, deren Inhalt an dieser Anfrage schon haengt -
+   beim Fortsetzen der bereinigte Originalverlauf. Der Aufrufer sagt es,
+   statt dass die Funktion es aus einem globalen Merker erraet. */
+function felieKontextDaten(ohne) {
   var fakten = felieFakten().map(function(f) {
     /* Kategorie und Herkunft gehen jetzt als eigene Felder mit. Vorher
        stand die Einordnung als Praefix im Text ("Hormoneller Kontext nach
@@ -12612,6 +12699,10 @@ function felieKontextDaten() {
          Fuer einen ausdruecklichen Rueckblick gibt es jetzt
        felieRueckblickDaten mit ausgewaehlten Gespraechen. */
     zweck: 'aktuelles_gespraech',
+    /* Seit M10 wieder dabei - als Zusammenfassung je Gespraech, nicht als
+       Notizsammlung, und durch die Sperren aus M6 gefiltert. Siehe
+       felieGespraecheDaten. */
+    gespraeche: felieGespraecheDaten(6, ohne),
     /* Nur bei ausdruecklicher Auswahl, und dann sichtbar getrennt vom
        aktuellen Stand. Ohne Auswahl ist das Feld nicht da — der normale
        Chat bekommt weiterhin kein Archiv (E11). */

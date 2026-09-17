@@ -10622,6 +10622,11 @@ function gedRender() {
   box.innerHTML = tab === 'aktuell'    ? gedFaedenHtml()
                 : tab === 'gespraeche' ? gedLerntHtml() + backupHint()
                 : gedNeuHtml();
+  /* Der Scrollstand blieb beim Reiterwechsel stehen. Wer aus einer langen
+     Liste in eine andere wechselt, landete mitten drin — die Kopfzeile der
+     Karte („GERADE AKTUELL") war oberhalb des Sichtbaren, und die Ansicht
+     sah aus, als fehle sie. */
+  try { box.scrollTop = 0; } catch (e) {}
 }
 
 /* ── Block 1: Gerade offen (Episoden) ─────────────────────────────── */
@@ -10647,6 +10652,13 @@ function gedFaedenHtml() {
   } else {
     inner = offen.map(function (e) {
       var abgelaufen = e.faelligBis < jetzt;
+      /* Dieselbe Marke wie unter „Neu". Derselbe Eintrag sah an zwei
+         Stellen verschieden aus: im Register „Neu" mit Kennzeichnung,
+         hier ohne. Die Marke sagt der Nutzerin, warum dieses Thema
+         wieder verschwinden wird — sie darf nicht davon abhaengen, ueber
+         welches Register sie hereingekommen ist. */
+      var marke = '<span class="ged-badge">vorübergehend</span>'
+        + (abgelaufen ? '<span class="ged-badge warn"> · Frist abgelaufen</span>' : '');
       var wieder = (e.erwaehnungen || 1) > 1 ? '<span class="ged-badge leise">' + e.erwaehnungen + '× erwähnt</span>' : '';
       /* Bei einem abgelaufenen Thema treten Stift und × zurueck: die
          Nutzerin soll eine Frage beantworten, nicht zwischen vier
@@ -10660,7 +10672,7 @@ function gedFaedenHtml() {
         + '<div class="snip-view">'
         + '<div style="flex:1;min-width:0;">'
         + '<div class="snip-text">' + gedEsc(e.text) + '</div>'
-        + wieder
+        + marke + wieder
         + '</div>'
         + rechts
         + '</div></div>';
@@ -12768,6 +12780,14 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
       if (++fehlerOhneFortschritt >= 2) { unvollstaendig(); break; }
     } else fehlerOhneFortschritt = 0;
   }
+  /* Ein Gespraech ohne Notiz, aber mit Angaben oder Themen, ist nicht
+     fertig ausgewertet — es ist eines, bei dem die Zusammenfassung
+     gefehlt hat. Vorher wurde das als 'vollstaendig' verbucht: die
+     Archivkarte sah abgeschlossen aus und war leer, und die Nutzerin
+     bekam nicht einmal den Knopf zum Ergaenzen. Der Auftrag an das
+     Modell (felieMerkPromptTeil) verlangt die Notiz ausdruecklich; das
+     hier ist das Netz darunter. */
+  if (!out.notizen.length && (out.fakten.length || out.faeden.length)) unvollstaendig();
   felieNotizVorschau(out);
   return out;
 }
@@ -13803,7 +13823,7 @@ function saveChat(summary, messages) {
    wirkt dauerhaft und ist schlimmer als ein fehlender. */
 function felieMerkPromptTeil() {
   return 'Nur JSON: {"thema":"kurzer Gesamttitel","vorschlaege":[],"weitere_notizen":false}. '
-    + 'VOLLSTÄNDIGKEIT: Es gibt KEINE feste Höchstzahl an Vorschlägen pro Gespräch. Erfasse alle wichtigen neuen Nutzerangaben, Anliegen, Wünsche, Entscheidungen und Veränderungen aus sämtlichen besprochenen Themen. Je mehr relevante neue Informationen, desto mehr Einträge. Nicht auf zwei Kernaussagen verdichten; unabhängige Punkte einzeln festhalten. Keine ausdrückliche Selbsterkenntnis erforderlich. '
+    + 'VOLLSTÄNDIGKEIT: Es gibt KEINE feste Höchstzahl an Vorschlägen pro Gespräch. Erfasse das Gespräch als Notiz UND alle wichtigen neuen Nutzerangaben, Anliegen, Wünsche, Entscheidungen und Veränderungen aus sämtlichen besprochenen Themen. Je mehr relevante neue Informationen, desto mehr Einträge. Nicht auf zwei Kernaussagen verdichten; unabhängige Punkte einzeln festhalten. Keine ausdrückliche Selbsterkenntnis erforderlich. '
     + 'vorschlaege: Liste von {"bezug":"neu|bestaetigung|aktualisierung|widerspruch","zielId":null,"ausgangsRevision":null,"art":"notiz|angabe|thema","thema":"kurze Themenüberschrift, nur bei art=notiz","text":"sinngemäße, gut lesbare Formulierung","kategorie":"familie|arbeit|gesundheit|beziehung|wohnen|allgemein","klasse":"stabil|volatil","zeitbezug":null,"belege":[{"nachricht":ID,"beleg":"wörtlicher Originalauszug","frage":null}]}. '
     + 'BEZUG: Der mitgelieferte bestand enthält die bereits gemerkten Angaben mit id, revision, art, text und kategorie. Jeder Vorschlag sagt, wie er dazu steht. '
     + 'neu: kein Eintrag des bestands deckt diesen Inhalt; zielId und ausgangsRevision bleiben null. '
@@ -13811,7 +13831,7 @@ function felieMerkPromptTeil() {
     + 'aktualisierung: derselbe Sachverhalt, veränderter Wert, und die Nutzerin hat die Veränderung erkennbar zeitlich eingeordnet; zeitbezug enthält ihre eigene Zeitangabe, etwa "seit gestern". Ohne solche Einordnung ist es kein aktualisierung. '
     + 'widerspruch: passt nicht zum bestand und die Auflösung ist unklar; zielId benennt den betroffenen Eintrag. Lieber widerspruch als eine geratene aktualisierung. '
     + 'Die Kategorie entscheidet NIE über die Zuordnung: dieselbe Angabe darf in einer anderen Kategorie stehen, und eine gemeinsame Kategorie macht zwei Angaben nicht zum selben Sachverhalt. Ein anders formulierter, inhaltlich vollständig gedeckter Vorschlag ist eine bestaetigung, kein neuer Eintrag. Zusätzliche Information — ein Gefühl, ein Anliegen, ein offenes Thema neben der Angabe — bleibt ein eigener Vorschlag. '
-    + 'ART: notiz erzählt das Gespräch, höchstens 240 Zeichen je Eintrag, mit thema. angabe hält einen längerfristigen Zustand, höchstens 90 Zeichen, mit kategorie und klasse; nur ausdrücklich berichtete Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. thema ist ein aktuell offenes, zeitlich begrenztes Anliegen, höchstens 90 Zeichen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. Die Länge gilt für EINEN Eintrag, nie für das gesamte Gespräch. '
+    + 'ART: notiz erzählt das Gespräch, höchstens 240 Zeichen je Eintrag, mit thema. JEDES Gespräch, in dem die Nutzerin etwas erzählt hat, bekommt mindestens einen Vorschlag mit art=notiz — sie ist das, was die Nutzerin später im Archiv liest, und ohne sie bleibt das Gespräch dort ohne Zusammenfassung. Eine Notiz ist keine Angabe: sie darf Gefühle, Anlass und Verlauf benennen, auch wenn daraus keine dauerhafte Angabe wird. angabe hält einen längerfristigen Zustand, höchstens 90 Zeichen, mit kategorie und klasse; nur ausdrücklich berichtete Angaben, keine momentanen Gefühle, vermuteten Diagnosen oder Medikamentenempfehlungen. thema ist ein aktuell offenes, zeitlich begrenztes Anliegen, höchstens 90 Zeichen; keine bloßen Diagnosestichwörter, keine vermutete Dauer oder Prognose. Die Länge gilt für EINEN Eintrag, nie für das gesamte Gespräch. '
     + 'ANTWORTPAKETE: Die mitgelieferte Paketgröße begrenzt nur diese einzelne API-Antwort. Wenn weitere wichtige Einträge fehlen, setze weitere_notizen=true; du wirst mit dem vollständigen Gespräch und dem bestand erneut aufgerufen. Setze false erst, wenn alles Wichtige erfasst ist. Ausgabe als vollständiges JSON beenden, bevor das Ausgabelimit erreicht ist. Kein wichtiger Punkt darf wegen der Paketgröße entfallen. Bei Folgepaketen bereits vorgeschlagene Punkte weder umformulieren noch wiederholen. '
     + 'Dopplungen und Smalltalk weglassen, aber unterschiedliche wichtige Details nicht als Dopplung verwerfen. Ohne relevante Angaben ist eine leere Liste mit weitere_notizen=false richtig. '
     + 'FORMULIERUNG: text ist NICHT das Zitat. Kurze neutrale Sätze oder verständliche Satzfragmente, ohne Ich/Du-Anrede, Füllwörter, Chatfragen oder abgebrochene Wörter. Zum Beispiel aus „Joa Stress mit den Kindern. Einer ist krank und ich fühle mich auch schlapp“ wird „Belastung durch ein krankes Kind; fühlt sich selbst erschöpft.“ '

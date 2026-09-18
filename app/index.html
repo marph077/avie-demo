@@ -13314,7 +13314,23 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
   if (!source.some(function(m) { return m.rolle === 'user'; })) throw new Error('Kein archivfähiges Gespräch');
   var out = { thema: 'Unser Gespräch', zusammenfassung: null, notizen: [], fakten: [], faeden: [],
     feldQuelle: {}, version: 5, notizenStatus: 'vollstaendig' };
-  var groesse = 6, fehlerOhneFortschritt = 0, runden = 0, nachgefasst = 0;
+  /* Seitengroesse der Auswertung. Gemessen am 17.09. beim Speichern eines
+     normalen Gespraechs: 17,1 s + 18,9 s = 36 s fuer ZWEI Runden,
+     gleichmaessig lang. Die Zeit steckt also in der Zahl der Runden, nicht
+     in ihrer Laenge — und jede Runde schickt das ganze Gespraech plus rund
+     13.600 Zeichen Systemprompt erneut.
+
+     Das Tokenlimit ist dabei nicht der Hebel: der Client fordert bereits
+     4096 an, und der Worker deckelt bei ebenfalls 4096. Mehr Ausgabe waere
+     auch keine Beschleunigung, weil Token nacheinander erzeugt werden.
+     Der Hebel ist, wie viele Eintraege EINE Runde liefern darf.
+
+     Von 6 auf 12: ein ergiebiges Gespraech ist damit meist in einer Runde
+     fertig, rund 18 statt 36 Sekunden. Reisst die Antwort doch ab, halbiert
+     der Fehlerpfad weiter unten die Seite (12 → 6 → 3) und versucht es
+     erneut — das kostet dann die Runde, die wir sparen wollten, bleibt aber
+     die Ausnahme. */
+  var groesse = 12, fehlerOhneFortschritt = 0, runden = 0, nachgefasst = 0;
   var bekannt = (vorhanden || []).reduce(function(liste, n) {
     return liste.concat([n.ursprungstext, n.text].filter(Boolean));
   }, []);

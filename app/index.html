@@ -2673,6 +2673,9 @@ var FELIE_AUFBEWAHRUNG = 365 * 24 * 60 * 60 * 1000;
 /* Tage, um die ein offenes Thema verlaengert wird, wenn die Nutzerin
    "Noch aktuell?" bejaht. */
 var FELIE_FADEN_VERLAENGERUNG = 14;
+/* Frist eines neuen offenen Themas, wenn keine mitgegeben wurde. Dieselbe
+   Zahl, die felieMerkUebernehmen seit jeher als Rueckfall benutzt. */
+var FELIE_FADEN_TAGE = 7;
 var FELIE_STORE_KEY    = 'felie_store_v1';
 
 /* ── Alle localStorage-Schluessel an EINER Stelle ─────────────────────
@@ -3271,6 +3274,13 @@ function felieEpisoden(opts) {
   var jetzt = Date.now();
   return felieStore().episoden.filter(function(e) {
     if (opts.status && e.status !== opts.status) return false;
+    /* Anders als die ANZEIGE (M28) bleibt der Kontext streng: ohne
+       gueltiges Datum geht ein Thema nicht als aktuelles an das Modell.
+       Das ist eine Regel des v6-Vertrags und war gewollt — felie soll
+       nichts als laufend behaupten, dessen Frist sie nicht kennt. Die
+       Anzeige darf denselben Eintrag trotzdem zeigen: dort ist er ein
+       Datenfehler, den die Nutzerin sehen und bearbeiten koennen soll,
+       aber keine abgelaufene Frist. */
     if (opts.nurAktuell && (e.status !== 'offen' || !Number.isFinite(e.faelligBis) || e.faelligBis <= jetzt)) return false;
     return true;
   });
@@ -11037,14 +11047,24 @@ function gedFaedenHtml() {
   var offen = [];
   try { offen = felieEpisoden({ status: 'offen' }); } catch (e) {}
   var jetzt = Date.now();
-  offen = offen.slice().sort(function (a, b) { return a.faelligBis - b.faelligBis; });
+  var weit = Number.MAX_SAFE_INTEGER;
+  offen = offen.slice().sort(function (a, b) {
+    return (Number.isFinite(a.faelligBis) ? a.faelligBis : weit)
+         - (Number.isFinite(b.faelligBis) ? b.faelligBis : weit); });
 
   var inner;
   if (!offen.length) {
     inner = '<div class="ged-leer">Nichts Offenes. Hier kannst du zeitlich begrenzte Themen festhalten — ich frage später einmal nach, ob sie noch aktuell sind.</div>';
   } else {
     inner = offen.map(function (e) {
-      var abgelaufen = e.faelligBis < jetzt;
+      /* Kein Datum heisst NICHT abgelaufen. Vorher rechnete "null < jetzt"
+         gegen den 1.1.1970, und ein Thema aus dem gerade gefuehrten
+         Gespraech stand als abgelaufen da, mit "Noch aktuell?" daneben
+         (Befund 18.09.). Ein Thema ohne Frist ist ein Datenfehler — aber
+         einer, der die Nutzerin nichts angeht: sie soll es normal sehen
+         und bearbeiten koennen. Die naechste Beruehrung gibt ihm ueber
+         felieFristOderStandard wieder eine Frist. */
+      var abgelaufen = Number.isFinite(e.faelligBis) && e.faelligBis < jetzt;
       /* Dieselbe Marke wie unter „Neu". Derselbe Eintrag sah an zwei
          Stellen verschieden aus: im Register „Neu" mit Kennzeichnung,
          hier ohne. Die Marke sagt der Nutzerin, warum dieses Thema
@@ -16067,6 +16087,32 @@ function felieBrueckeOwner() { return 'lokal'; }
 
 /* ── Zeit: die Altablage rechnet in Millisekunden, der Vertrag in ISO ─ */
 
+/* Ein offenes Thema OHNE Frist gibt es nicht: "voruebergehend" ohne
+   Ende ist ein Widerspruch, und in der Anzeige wird daraus "Frist
+   abgelaufen" — gerechnet gegen den 1.1.1970. Genau so sah es am
+   18.09. aus: ein Thema aus dem gerade gefuehrten Gespraech stand als
+   abgelaufen da, mit "Noch aktuell?" daneben (rest_tage: -20714).
+
+   felieBrueckeZeit(undefined) liefert null, und null wandert
+   unveraendert in expiresAt. Welcher Aufrufer die Frist verloren hat,
+   liess sich nachtraeglich nicht mehr feststellen — deshalb wird sie
+   hier abgefangen, wo alle Wege zusammenlaufen:
+
+     - beim Anlegen faellt ein fehlender Wert auf die Standardfrist,
+     - beim Aendern bleibt die bisherige Frist stehen.
+
+   Eine Frist zu erben ist immer richtiger, als eine zu erfinden; und
+   eine Standardfrist ist immer richtiger, als das Thema im Jahr 1970
+   ablaufen zu lassen. */
+function felieFristOderStandard(ms) {
+  return Number.isFinite(ms) ? ms : Date.now() + FELIE_FADEN_TAGE * 86400000;
+}
+
+function felieFristBehalten(ms, bisher) {
+  if (Number.isFinite(ms)) return felieBrueckeZeit(ms);
+  return bisher || felieBrueckeZeit(felieFristOderStandard(ms));
+}
+
 function felieBrueckeZeit(ms) {
   return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
 }
@@ -16657,7 +16703,7 @@ function felieBrueckeAnlegen(art, f, gespraechId) {
       candidate: { text: f.text, supportSets: sets,
         evidence: quellen.length ? 'supported' : 'ambiguous',
         retention: art === 'topic' ? 'explicitDeadline' : (f.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
-        expiresAt: art === 'topic' ? felieBrueckeZeit(f.faelligBis) : null },
+        expiresAt: art === 'topic' ? felieFristBehalten(f.faelligBis, kopf && kopf.expiresAt) : null },
       evidence: quellen });
     return ziel.id;
   }
@@ -16670,7 +16716,7 @@ function felieBrueckeAnlegen(art, f, gespraechId) {
     candidate: { text: f.text, supportSets: sets,
       evidence: quellen.length ? 'supported' : 'ambiguous',
       retention: art === 'topic' ? 'explicitDeadline' : (f.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
-      expiresAt: art === 'topic' ? felieBrueckeZeit(f.faelligBis) : null },
+      expiresAt: art === 'topic' ? felieBrueckeZeit(felieFristOderStandard(f.faelligBis)) : null },
     evidence: quellen,
     /* Kein Ziel gefunden heisst: kein vorhandener Eintrag deckt diesen
        Inhalt wortgleich. Eine anders formulierte Dublette laesst sich
@@ -16733,7 +16779,7 @@ function felieBrueckeVorschlag(art, v, gespraechId) {
       candidate: { text: v.text, supportSets: sets,
         evidence: quellen.length ? 'supported' : 'ambiguous',
         retention: art === 'topic' ? 'explicitDeadline' : (v.klasse === 'stabil' ? 'stable' : 'volatileDefault'),
-        expiresAt: art === 'topic' ? felieBrueckeZeit(v.faelligBis) : null },
+        expiresAt: art === 'topic' ? felieFristBehalten(v.faelligBis, kopf && kopf.expiresAt) : null },
       evidence: quellen });
     return eintrag.id;
   }

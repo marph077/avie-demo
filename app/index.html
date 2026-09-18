@@ -2705,6 +2705,11 @@ var FELIE_LS_KEYS = [
      Liste, weil ein liegengebliebener Merker nach dem Loeschen einen
      Puls fuer Eintraege zeigen wuerde, die es nicht mehr gibt. */
   'felie_neue_snippets',
+  /* Ein Gespraech, das beim Archivieren gescheitert ist und auf den
+     naechsten Versuch wartet (M24). Gehoert in die Liste, weil es sonst
+     ein Zuruecksetzen ueberlebt und danach ein geloeschtes Gespraech
+     wieder im Archiv auftauchen wuerde. */
+  'felie_archiv_wartend',
   /* Markierung der Selbstreflexion nach dem Onboarding. Gehoert in diese
      Liste, weil sie sonst ein Zuruecksetzen ueberlebt und die frisch
      geleerte App die Markierung nicht mehr zeigt. */
@@ -6951,6 +6956,9 @@ function felieHomeBeobachten() {
 
 function homeInit(fromOnboarding) {
   if (!document.getElementById('home-question-bubble-wrap')) return;
+  /* Vor dem Aufbau: liegt ein Gespraech vom letzten Mal, muss es zuerst
+     ins Archiv — sonst baut die Startseite ihre Begruessung ohne es. */
+  try { felieArchivNachholen(); } catch (e) {}
   felieHomeBeobachten();
   fillHomeData(); fillHomeThemen();
   /* Hier und nicht in refreshHome(): der Startpfad der App ruft homeInit()
@@ -14967,13 +14975,66 @@ function felieMerkUebernehmen(v) {
    ist die Nutzungsfrequenz: eine Karte mit Auswahlliste nach jedem
    Gespraech ist bei woechentlicher Nutzung eine Huerde, keine Kontrolle —
    loeschen und aendern kann sie im Gedaechtnis jederzeit. */
+/* Ein gescheitertes Archivieren war bisher vollstaendig stumm: kein
+   Eintrag, keine Snippets, keine Meldung. Am 17.09. hat genau das einen
+   Datenverlust stundenlang wie eine Marotte aussehen lassen — die Ursache
+   (M23) lag woanders, aber gemerkt haette man sie sofort.
+
+   Drei Dinge fehlten: das Gespraech aufheben, es sagen, und es noch
+   einmal versuchen. Der Versuch laeuft still beim naechsten Aufbau der
+   Startseite; gelingt er, taucht das Gespraech einfach im Archiv auf. */
+function felieArchivWartendSetzen(summary, messages) {
+  window._felieArchivWartend = { summary: summary, messages: messages, ts: Date.now() };
+  /* Nur ein Versuch: scheitert das Archivieren an vollem Speicher,
+     scheitert auch das hier. Dann traegt der Arbeitsspeicher das
+     Gespraech wenigstens bis zum naechsten Versuch in dieser Sitzung. */
+  try { localStorage.setItem('felie_archiv_wartend', JSON.stringify(window._felieArchivWartend)); } catch (e) {}
+}
+
+function felieArchivWartend() {
+  if (window._felieArchivWartend) return window._felieArchivWartend;
+  try {
+    var roh = JSON.parse(localStorage.getItem('felie_archiv_wartend') || 'null');
+    if (roh && roh.summary && Array.isArray(roh.messages) && roh.messages.length) {
+      window._felieArchivWartend = roh; return roh;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function felieArchivWartendLoeschen() {
+  window._felieArchivWartend = null;
+  try { localStorage.removeItem('felie_archiv_wartend'); } catch (e) {}
+}
+
+/* true, wenn das aufgehobene Gespraech jetzt im Archiv liegt. Holt auch
+   die Snippets nach — die haengen am Beleg im Archiv und waren beim
+   ersten Versuch mit uebersprungen worden. */
+function felieArchivNachholen() {
+  var w = felieArchivWartend();
+  if (!w) return false;
+  var ok = false;
+  try { ok = saveChat(w.summary, w.messages) != null; } catch (e) { ok = false; }
+  if (!ok) return false;
+  felieArchivWartendLoeschen();
+  try { felieNeueSnippetsSetzen(felieMerkUebernehmen(felieMerkVorschlaege(w.summary))); } catch (e) {}
+  try { felieAutosave(); } catch (e) {}
+  return true;
+}
+
 function gespraechAbschliessen(summary, messages) {
   /* Archivieren darf den Rest nicht verhindern — bei vollem localStorage
      wirft saveChat. */
   var saved = true;
   try { saved = saveChat(summary, messages) != null; } catch (e) { saved = false; }
   if (saved) felieAutosave();
-  if (!saved) window._letzteChatId = null;
+  if (!saved) {
+    window._letzteChatId = null;
+    felieArchivWartendSetzen(summary, messages);
+    /* Kein Schuldzuweisen und kein Fachbegriff: sie soll wissen, dass ihr
+       Gespraech nicht weg ist und dass sie nichts tun muss. */
+    try { felieAlert('Dein Gespräch konnte ich gerade nicht ins Archiv schreiben. Ich habe es aufgehoben und versuche es beim nächsten Öffnen noch einmal.'); } catch (e) {}
+  }
 
   /* Merken nur, wenn das Gespraech auch wirklich im Archiv liegt. Sonst
      stuenden Fakten ohne den Beleg da, auf den sie sich berufen. */

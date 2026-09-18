@@ -2713,6 +2713,11 @@ var FELIE_LS_KEYS = [
      ein Zuruecksetzen ueberlebt und danach ein geloeschtes Gespraech
      wieder im Archiv auftauchen wuerde. */
   'felie_archiv_wartend',
+  /* Abschlussauftraege je Gespraech (A2, 18.09.): Verlauf, Auswertung
+     und Gedaechtnisuebernahme mit fester ID. Loest felie_archiv_wartend
+     ab; ein dort noch liegendes Gespraech wird beim ersten Zugriff
+     uebernommen. In dieser Liste aus demselben Grund wie der Vorgaenger. */
+  'felie_abschluss_wartend',
   /* Markierung der Selbstreflexion nach dem Onboarding. Gehoert in diese
      Liste, weil sie sonst ein Zuruecksetzen ueberlebt und die frisch
      geleerte App die Markierung nicht mehr zeigt. */
@@ -6783,9 +6788,19 @@ function felieAendernFehlertext(e) {
 
 function felieDatenAendern(mutator) {
   felieSpeicherHorchen();
-  var keys = [FELIE_STORE_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
+  /* Transaktionsgrenze: ALLES, was dieser Vorgang schreibt, wird vorher
+     gesichert und im Fehlerfall gemeinsam zurueckgesetzt. Bis zum 18.09.
+     fehlten der Vertragsdatensatz (felie_dataset_v2) und seine
+     Arbeitsspeicherkopie. Schlug das Speichern NACH
+     felieDatensatzSpeichern() fehl, meldete die App korrekt den
+     Fehlschlag und zeigte den alten Text — im Datensatz stand aber schon
+     die abgelehnte Aenderung, und die naechste erfolgreiche Aenderung
+     holte sie zurueck in die Oberflaeche (Supervisor-Abnahme, A1). */
+  var keys = [FELIE_STORE_KEY, FELIE_DATENSATZ_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
   var raw = {}, before = JSON.stringify(felieStore());
   var state = window._klState ? JSON.stringify(window._klState) : null;
+  var datensatzVorher = window._felieDatensatz ? JSON.stringify(window._felieDatensatz) : null;
+  var datensatzVerworfenVorher = window._felieDatensatzVerworfen;
   try {
     keys.forEach(function(k) { raw[k] = localStorage.getItem(k); });
     /* Hat ein anderer Tab seit dem Laden geschrieben, gewann bisher
@@ -6832,6 +6847,8 @@ function felieDatenAendern(mutator) {
   } catch (e) {
     window._felieRepoAktiv = null;
     window._felieStore = JSON.parse(before);
+    window._felieDatensatz = datensatzVorher ? JSON.parse(datensatzVorher) : null;
+    window._felieDatensatzVerworfen = datensatzVerworfenVorher;
     if (state) window._klState = JSON.parse(state);
     Object.keys(raw).forEach(function(k) { try {
       if (raw[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, raw[k]);
@@ -10667,6 +10684,10 @@ function doResetUserData() {
      felieStoreSpeichern()-Aufruf sonst die geloeschten Fakten sofort
      zurueckschreiben. */
   try { window._felieStore = { version: 1, signale: [], fakten: [], episoden: [] }; } catch(e) {}
+  /* Laufende Abschlussauftraege werden ungueltig (A2/B4): ein Ergebnis,
+     das nach dem Loeschen eintrifft, darf nichts wiederherstellen — auch
+     dann nicht, wenn der Reload ausbleibt. */
+  try { felieDatenEpocheErhoehen(); } catch(e) {}
   try { location.reload(); } catch(e) {
     var ov = document.getElementById('profile-overlay'); if (ov) ov.remove();
   }
@@ -11228,14 +11249,57 @@ function gedNotizGedeckt(chat, notiz, fakten, chats) {
      ihr entscheidet der Inhalt, und die Wortpruefung haelt offen, was
      E04 ausdruecklich schuetzt: ein Gefuehl oder Anliegen neben der
      Angabe bleibt eine eigene Information. */
-  if (notiz.art !== 'notiz') return true;
+  var offen = eigene.filter(function (w) { return !felieMerkWortDrin(w, worte); });
+  /* Altnotizen (ohne art): gedeckt, ES SEI DENN, ein nicht gedecktes
+     Inhaltswort traegt ein Gefuehl, eine Sorge oder ein Anliegen. Aus
+     „Ich lebe allein und fuehle mich damit einsam" verdraengte der
+     Wohnfakt sonst die Einsamkeit (Supervisor-Abnahme 18.09., A4) —
+     waehrend „einen Mann kennengelernt und lebt nun mit ihm zusammen"
+     neben „lebt mit ihrem Partner zusammen" derselbe Sachverhalt bleibt
+     (F04). Gleiche Quelle heisst nicht gleicher Informationsgehalt; bei
+     Unsicherheit bleibt die zusaetzliche Information erhalten. */
+  if (notiz.art !== 'notiz') return !offen.some(felieMerkWortEigenstaendig);
 
-  return eigene.every(function (w) { return felieMerkWortDrin(w, worte); });
+  return !offen.length;
 }
 
-function gedLerntDaten() {
-  var mit = [];
-  var alleChats = getSavedChats();
+/* Woerter, die eine eigene Information neben einer Angabe tragen: ein
+   Gefuehl, eine Belastung, eine Sorge oder ein Anliegen (E04). Nur fuer
+   die Migration von Altnotizen; neue Notizen tragen genau einen
+   Sachverhalt und werden vollstaendig am Inhalt geprueft. Praefixe in der
+   Schreibweise von felieMerkWorte (ohne Umlaute). */
+function felieMerkWortEigenstaendig(wort) {
+  var w = String(wort || '');
+  return ['einsam', 'angst', 'sorg', 'belast', 'traur', 'trauer', 'uberford', 'erschopf', 'stress',
+    'unsicher', 'hilflos', 'wut', 'wuten', 'schuld', 'scham', 'frust', 'verzweif', 'uberwalt',
+    'kummer', 'niedergeschl', 'antriebslos', 'hoffnungslos', 'unruh', 'nervos', 'panik',
+    'mochte', 'wunsch', 'wunscht', 'vorhaben', 'plant', 'hofft', 'klaren', 'frage', 'entscheid']
+    .some(function (p) { return w.indexOf(p) === 0; });
+}
+
+/* ── Zulaessige Erinnerungen: EINE Auswahl fuer Anzeige und Kontext ────
+   Bis zum 18.09. (Supervisor-Abnahme, A3) gab es zwei Wege: das sichtbare
+   Gedaechtnis las die Notizen aller Gespraeche, der Modellkontext bekam
+   nur die Fakten (merknotizen) und die Zusammenfassungen (gespraeche).
+   Eine Notiz, die weder Fakt noch Teil der Zusammenfassung war, stand
+   sichtbar im Gedaechtnis und erreichte felie nie.
+
+   Jetzt schoepfen beide aus dieser Funktion. Die Sichten:
+     'sichtbar'  Gedaechtnis-Karte: merken, nicht durch einen Fakt gedeckt
+                 (E04/E08; gedNotizGedeckt).
+     'kontext'   normaler Chat: zusaetzlich die Sperren aus Korrekturen
+                 und Loeschungen (E15; felieArchivNotizNutzbar) und ohne das
+                 gerade fortgesetzte Gespraech — dessen Verlauf IST der
+                 Chat. Groessenbegrenzung erledigt der Aufrufer ueber die
+                 juengsten Eintraege, nie ueber den internen Typ.
+   Begruessung und Rueckblick haben eigene, engere Sichten: die
+   Begruessung greift genau EINEN Bezug auf (felieBegruessungBezug), der
+   Rueckblick ausgewaehlte Gespraeche im Volltext (felieRueckblickDaten).
+   Beides ist dort dokumentiert. */
+function felieGedaechtnisNotizen(sicht, ohne) {
+  var out = [];
+  var alleChats = [];
+  try { alleChats = getSavedChats() || []; } catch (e) { return out; }
   /* Aus dem Speicher, nicht aus der abgeleiteten Sicht: Belege und
      Gespraechszuordnung stehen nur dort. Beruecksichtigt werden nur
      Angaben, die auch sichtbar sind. */
@@ -11245,12 +11309,45 @@ function gedLerntDaten() {
     felieFakten().forEach(function (f) { sichtbar[f.id] = true; });
     alleFakten = felieStore().fakten.filter(function (f) { return sichtbar[f.id]; });
   } catch (e) {}
-  alleChats.forEach(function(c) {
-    felieNotizenLesen(c).filter(function(n) {
-      return n.merken !== false && !gedNotizGedeckt(c, n, alleFakten, alleChats); }).forEach(function(n) {
-      mit.push({ id: c.id || c.timestamp, timestamp: c.timestamp, thema: n.feld ? c.thema : n.thema || c.thema,
-        notizId: n.id, felie_lernt: n.text, feldQuelle: { felie_lernt: n.nachweis }, messages: c.messages });
+  var schon = [];
+  if (sicht === 'kontext') {
+    schon = (window._felieRueckblickAuswahl || []).map(String);
+    [window._felieAktiverArchivChat].concat(ohne || []).forEach(function (id) {
+      if (id != null) schon.push(String(id));
     });
+  }
+  alleChats.forEach(function(c) {
+    if (schon.indexOf(String(c.id || c.timestamp)) >= 0) return;
+    felieNotizenLesen(c).filter(function(n) {
+      if (n.merken === false) return false;
+      if (gedNotizGedeckt(c, n, alleFakten, alleChats)) return false;
+      if (sicht === 'kontext' && !felieArchivNotizNutzbar(c, n)) return false;
+      return true;
+    }).forEach(function(n) { out.push({ chat: c, notiz: n }); });
+  });
+  return out;
+}
+
+/* Die Notizen fuer den Modellkontext: juengste zuerst, hoechstens max.
+   Gleiche Form wie ein Eintrag in gespraeche, damit der Prompt sie gleich
+   behandelt: damaliger Stand, kein Beleg fuer Fortdauer. */
+function felieNotizenDaten(max, ohne) {
+  var grenze = max || 12;
+  var liste = felieGedaechtnisNotizen('kontext', ohne);
+  liste.sort(function (a, b) { return (b.chat.timestamp || 0) - (a.chat.timestamp || 0); });
+  return liste.slice(0, grenze).map(function (e) {
+    return { datum: e.chat.timestamp, thema: e.notiz.feld ? e.chat.thema : e.notiz.thema || e.chat.thema,
+      text: e.notiz.text, quelle: felieArchivNotizQuelle(e.chat, e.notiz),
+      zeitbezug: 'damaliger Stand; kein offener Auftrag und kein Beleg für Fortdauer' };
+  });
+}
+
+function gedLerntDaten() {
+  var mit = [];
+  felieGedaechtnisNotizen('sichtbar').forEach(function(e) {
+    var c = e.chat, n = e.notiz;
+    mit.push({ id: c.id || c.timestamp, timestamp: c.timestamp, thema: n.feld ? c.thema : n.thema || c.thema,
+      notizId: n.id, felie_lernt: n.text, feldQuelle: { felie_lernt: n.nachweis }, messages: c.messages });
   });
   var groups = {}, order = [];
   mit.forEach(function(c) {
@@ -12404,7 +12501,13 @@ var FELIE_FRAGEN = {
 
    Deshalb ein eigener Zaehler, den NUR ein echter Gespraechswechsel
    hochzaehlt. _felieSessionGeneration bleibt unveraendert, damit der
-   Chatpfad (callFelie) sich nicht mitaendert. */
+   Chatpfad (callFelie) sich nicht mitaendert.
+
+   Seit A2 (18.09.) bewacht dieser Zaehler den Gespraechsabschluss NICHT
+   mehr: ein Wechsel der sichtbaren Unterhaltung darf einen abgeschlossenen
+   Verlauf nicht loeschen — er gehoert in dasselbe Archiv. Der Abschluss
+   ist ein Auftrag mit fester ID (felieAbschlussAnlegen); nur ein
+   Datenreset (felieDatenEpocheErhoehen) macht ihn ungueltig. */
 function felieGespraechGeneration() { return window._felieGespraechGeneration || 0; }
 
 function felieSessionZuruecksetzen() {
@@ -12534,7 +12637,7 @@ function felieChatKern() {
     "MEDIZINISCHE FUNKTIONSGRENZE: Keine persönliche Diagnose oder Differentialdiagnose, Befundbewertung, Dosierung, Therapieentscheidung oder Behandlungsempfehlung. Keine Erkennung, Vorbeugung, Überwachung, Vorhersage, Prognose, Behandlung oder Linderung von Krankheiten; keine medizinische Beurteilung oder Behandlung von Verletzungen oder Behinderungen. Keine medizinische Untersuchung, Bestimmung oder Steuerung anatomischer, physiologischer oder pathologischer Vorgänge und Zustände. Keine persönliche Bestimmung von Hormonlage, Nervensystemzustand, Blutzuckerverlauf, Eisprung, fruchtbaren Tagen oder Empfängniswahrscheinlichkeit und keine individuelle Steuerung von Empfängnisförderung oder -verhütung. Ernährung, Bewegung oder Stressübungen zur persönlichen Krankheitsbehandlung bleiben Therapie, auch unter dem Namen Lifestyle.",
     "WAS DU LEISTEST: Allgemeine Gesundheitsbegriffe und gesichertes Hintergrundwissen verständlich erklären; daraus keine persönliche Ursache, Eignung, Prognose oder Therapie ableiten. Genannte Diagnosen sind Kontext, kein automatischer Ablehnungsgrund. Gewöhnliche Mahlzeiten-, Bewegungs- und Pausenideen sowie Alltagsorganisation sind möglich. Passe sie an genannte Wünsche, Allergien, Möglichkeiten und ärztliche Vorgaben an, ohne medizinische Eignung selbst zu bestätigen. Bei einer entscheidenden ungeklärten Einschränkung gezielt nachfragen oder einen unabhängigen Alltagsschritt wählen. Eine normale Alltagsfrage braucht keinen Nicht-Ärztin-Hinweis. Eine betroffene Grenze knapp benennen und mit dem zulässigen Teil konkret weiterhelfen. IHRE LETZTE NACHRICHT WIRD NICHT ZURÜCKGESPIEGELT: Steig bei der Sache ein. Keine Einleitung, die referiert, was sie gerade geschrieben hat — kein „Da du … erzählt hast“, kein „Du hast gerade gesagt, dass …“, kein „Wie du schreibst“. Sie weiß, was sie geschrieben hat. Die Zuschreibung gilt nur für ÄLTERES: für das Kennenlernen und frühere Gespräche, wo sonst offenbliebe, woher du es hast. BEI EINER GENANNTEN DIAGNOSE ODER BESCHWERDE: Erkläre die Erkrankung nur, wenn sie ausdrücklich danach fragt. DIE GRENZE IST EINE BRÜCKE, KEINE TÜR: Nenne sie NUR, wenn sie etwas verlangt, was außerhalb liegt — eine Einschätzung ihres Befundes, eine Bewertung ihrer Werte, eine Behandlung oder eine Dosierung. Sonst kommt sie nicht vor. Kommt sie vor, steht sie als NEBENSATZ vor dem, was du geben kannst — nie als eigener Absatz, nie als erster Satz der Antwort: „Ich kann dir zwar keine individuelle Einschätzung zu deinen Beschwerden oder zur Behandlung geben, aber …“. Nie „das darf ich nicht“, nie „dafür bin ich nicht zuständig“. Ist eine Ärztin im Spiel, bleibst du trotzdem da: du trittst nicht zurück, stellst dich nicht daneben und schickst sie nicht weg. ALLGEMEINES SO, DASS ES TRÄGT: Du darfst allgemein Bekanntes aus dem Alltag nennen — worauf Frauen bei sich achten, was sie für sich ausprobieren, was ihnen den Tag leichter macht. Nur, wenn es tatsächlich gesichert ist: erfinde keine Erfahrung, keine Studie und keine Mehrheit, und gib nichts als verbreitet aus, was du nicht sicher weißt. Und nie als Wirkung auf eine Erkrankung oder auf Beschwerden — nicht „hilft gegen“, nicht „lindert“, nicht „dann geht es dir besser“, sondern als etwas, das sie für sich ausprobieren kann. Dann NIMM BEZUG IN IHREN ALLTAG: frage, was davon bei ihr schon vorkommt, wie es sich für sie anfühlt, was in ihren Tag passt — Bewegung, Essen, Pausen, Schlaf, Unterstützung. Biete Unterstützung an. Eine Antwort, die mit der Grenze oder mit dem Verweis auf die Praxis endet, ist unfertig — sie endet mit etwas, das sie heute tun oder erzählen kann.",
     "BESCHWERDEN UND KRISE: Anhaltende, neue besorgniserregende oder zunehmende Beschwerden ärztlich abklären lassen. Bereits vereinbarte Abklärung ohne neuen Anlass nicht wiederholen. Bei unmittelbarer Gefahr ist der nächste Schritt menschliche Notfallhilfe: In Deutschland jetzt 112 anrufen oder eine erreichbare Person bitten, den Anruf zu übernehmen. Keine eigene Anreise oder andere Telefonnummer als gleichwertige Alternative. Bei unmittelbarer Selbstgefährdung zusätzlich eine vertraute Person hinzuholen und nicht allein bleiben; den Notruf nicht von einer weiteren Verschlechterung abhängig machen. Bei seelischer Krise ohne unmittelbare Gefahr in Deutschland Telefonseelsorge 0800 111 0 111. Bei unbekanntem Land den örtlichen Notruf nennen. Ruhig und zugewandt, keine Methoden, Diagnose oder Wellnesslösung. Höchstens eine Frage zum nächsten sicheren Schritt. Traurigkeit allein ist kein Notfall; akute Gefahr behält bei einem Themenwechsel Vorrang.",
-    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. WER MIT WEM: Jedes Gespraech in gespraeche, letztesGespraech oder rueckblick ist EURES — deines mit ihr. Sprich davon in der Wir-Form („als wir zuletzt gesprochen haben“), nie mit „ihr habt“: „ihr“ meint sie und eine andere Person und ist hier falsch. IHR AKTUELLES WORT: Was sie in dieser Nachricht sagt, hat Vorrang vor allem Gespeicherten. Widerspricht das Gespeicherte, folge der Nachricht — ohne Richtigstellung und ohne Nachfrage, warum es jetzt anders ist. KENNENLERNEN: Das Feld kennenlernen enthält den Verlauf einer Aufnahme, die sie unmittelbar vor diesem Gespräch ausgefüllt hat, und fehlt in späteren Gesprächen. Es ist frisch: du darfst ausdrücklich daran anknüpfen — als etwas, das SIE gesagt hat („beim Kennenlernen hast du erzählt …“), nie als etwas, das sie gerade sagt. Bereits beantwortete Profilfragen nicht wiederholen. OFFENE THEMEN: Das Feld offeneEpisoden nennt Anliegen, die sie FRÜHER angesprochen hat, mit einer Frist. Es ist kein Bericht darüber, wovon sie gerade spricht — auch dann nicht, wenn der Eintrag selbst „gerade“ oder „aktuell“ sagt. Sage niemals auf dieser Grundlage, sie erzähle gerade von etwas, und leite daraus keinen heutigen Zustand ab. Was sie JETZT beschäftigt, steht ausschließlich in ihren Nachrichten in diesem Gespräch. Du darfst höchstens EIN offenes Thema aufgreifen, und nur wenn es zu ihrer Bitte passt. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
+    "EVIDENZ UND DATEN: Trenne berichtetes Erleben, Messwerte mit Quelle und Zeitpunkt, ausdrücklich berechnete Beobachtungen und allgemeines Wissen. Fehlendes ist unbekannt, kein Normalbefund. Keine erfundenen Werte, Studien, Quellen, Ereignisse, Gewohnheiten, Erinnerungen oder Mechanismen. Aktuelle Korrekturen gehen vor älteren Angaben. Assistentenantworten und Zusammenfassungen sind keine Belege für persönliche Fakten. Keine Fortdauer vergangener oder erledigter Beschwerden unterstellen; bei Widersprüchen Unsicherheit erhalten. Erinnerungen nur relevant und ohne erfundene Vertrautheit verwenden; bearbeitete Gedächtnisnotizen ersetzen frühere Fassungen. WER MIT WEM: Jedes Gespraech in gespraeche, letztesGespraech oder rueckblick ist EURES — deines mit ihr. Sprich davon in der Wir-Form („als wir zuletzt gesprochen haben“), nie mit „ihr habt“: „ihr“ meint sie und eine andere Person und ist hier falsch. IHR AKTUELLES WORT: Was sie in dieser Nachricht sagt, hat Vorrang vor allem Gespeicherten. Widerspricht das Gespeicherte, folge der Nachricht — ohne Richtigstellung und ohne Nachfrage, warum es jetzt anders ist. KENNENLERNEN: Das Feld kennenlernen enthält den Verlauf einer Aufnahme, die sie unmittelbar vor diesem Gespräch ausgefüllt hat, und fehlt in späteren Gesprächen. Es ist frisch: du darfst ausdrücklich daran anknüpfen — als etwas, das SIE gesagt hat („beim Kennenlernen hast du erzählt …“), nie als etwas, das sie gerade sagt. Bereits beantwortete Profilfragen nicht wiederholen. OFFENE THEMEN: Das Feld offeneEpisoden nennt Anliegen, die sie FRÜHER angesprochen hat, mit einer Frist. Es ist kein Bericht darüber, wovon sie gerade spricht — auch dann nicht, wenn der Eintrag selbst „gerade“ oder „aktuell“ sagt. Sage niemals auf dieser Grundlage, sie erzähle gerade von etwas, und leite daraus keinen heutigen Zustand ab. Was sie JETZT beschäftigt, steht ausschließlich in ihren Nachrichten in diesem Gespräch. Du darfst höchstens EIN offenes Thema aufgreifen, und nur wenn es zu ihrer Bitte passt. GESPRÄCHE: Das Feld gespraeche trägt je früherem Gespräch eine Zusammenfassung mit Datum. Sie beschreibt den DAMALIGEN Stand, nicht heute: keine Fortdauer, keinen offenen Auftrag und keinen aktuellen Zustand daraus ableiten. Widerspricht sie den aktuellen Angaben, gelten die Angaben. Du darfst daran anknüpfen, wenn es zur Bitte passt — ungefragt nichts davon nacherzählen und keine Vertrautheit behaupten, die über das Zusammengefasste hinausgeht. NOTIZEN: Das Feld notizen trägt einzelne Erinnerungen aus früheren Gesprächen mit Datum — dieselben, die sie in ihrem Gedächtnis sieht. Für sie gilt dasselbe wie für gespraeche: damaliger Stand, keine Fortdauer und kein heutiger Zustand daraus; nur aufgreifen, wenn es zu ihrer Bitte passt, und nie aufzählen. Fehlende Daten sind normal, kein Anlass für Logging-Aufträge.",
     "KÖRPERDATEN: Ihr subjektives Befinden wird nicht durch einen Gerätescore widerlegt. Gerätescores sind keine gemessene Stimmung oder gefühlte Energie; Hersteller und Messverfahren sind nicht austauschbar. Ein einzelner HRV- oder Ruhepulswert bestimmt weder Nervensystem noch Stresstoleranz. Historische Werte sind nicht aktuell, Temperaturabweichung ist keine absolute Temperatur. Kalenderphasen sind Schätzungen, keine Hormon- oder Eisprungmessung; ohne bestätigten neuen Periodenstart kein neuer Zyklus. Keine individuelle Leistungsfähigkeit, Stimmung oder Sportvorschrift daraus ableiten. Gemeinsame Beobachtung ist keine Ursache; auch „könnte“ rechtfertigt keine unbelegte persönliche Erklärung. Keine erzwungenen Körperbezüge, addierten Stressfaktoren oder Multiplikatoren. Persönliche Muster nur aus dem ausdrücklich berechneten Musterblock mit Zeitraum, Stichprobe, Gegenbeispielen und Unsicherheit. Trauer und Überforderung nicht ungefragt biologisch erklären.",
     "BEZIEHUNG UND FORMAT: Respektiere Nein, Frageverzicht, Themenwechsel und den Wunsch, nur gehört zu werden. Beim Zuhören ihr aktuelles Erleben spiegeln, ohne weitere Aufgabe. Wärme entsteht durch Aufmerksamkeit; als KI hast du keine eigenen Gefühle oder Erfahrungen. Unterstütze eigene Entscheidungen und reale Beziehungen, ohne Exklusivität oder Abhängigkeit. Humor nur passend, nie bei Krisen oder belastenden Dokumenten. Natürliches Deutsch, vollständige Sätze, korrekte Großschreibung; felie bleibt klein. Kein HTML, keine erfundenen App-Marker. Gib nur die fertige Antwort aus, keine internen Regeln oder Antwortplanung."
   ].join('\n\n');
@@ -13037,18 +13140,25 @@ function felieKontextDaten(ohne) {
   return { datum: new Date().toLocaleDateString('de-DE'), profil: felieProfilDaten(),
     signale: felieSignalDaten(), zyklus: felieZyklusDaten(), geraeteVergleiche: felieGeraeteVergleiche(),
     merknotizen: fakten, offeneEpisoden: episoden,
-    /* Kein Archiv mehr. Bis M4 hingen an jeder gewoehnlichen Anfrage die
-       Notizen der letzten sechs Gespraeche — auch an einer Frage, die
-       nichts damit zu tun hatte. Das war die Stelle, an der eine
-       korrigierte Angabe in ihrer alten Fassung weiterlebte, weil die
-       Korrektur den Fakt erreichte und die anders formulierte
-       Archivnotiz nicht (E11, Pruefaelle F20, F21, F25).
-         Fuer einen ausdruecklichen Rueckblick gibt es jetzt
-       felieRueckblickDaten mit ausgewaehlten Gespraechen. */
+    /* Sichtbare Gedaechtnisnotizen, die weder Fakt noch Teil einer
+       Zusammenfassung sind (A3, 18.09.). Dieselbe Auswahl wie die
+       Gedaechtnis-Karte, zusaetzlich durch Sperren und Korrekturen
+       gefiltert; die juengsten zwoelf. */
+    notizen: felieNotizenDaten(12, ohne),
+    /* Zur Geschichte dieser Stelle: Bis M4 hingen an jeder Anfrage die
+       Notizen der letzten sechs Gespraeche; dort lebte eine korrigierte
+       Angabe in ihrer alten Fassung weiter, weil die Korrektur den Fakt
+       erreichte und die anders formulierte Archivnotiz nicht (Pruefaelle
+       F20, F21, F25). M4 loeste das durch Weglassen (E11). Seit M10 sind
+       die Gespraeche wieder dabei — als Zusammenfassung je Gespraech,
+       durch die Sperren aus M6/M10 gefiltert, mit Zeitbezug.
+         Entscheidung B1 vom 18.09. (Supervisor-Abnahme): E11 gilt als
+       fortgeschrieben, dieser Stand ist der Zielzustand. Was E11 schuetzt,
+       bleibt geprueft: keine berichtigte oder geloeschte Aussage erreicht
+       den Kontext (felieArchivNotizNutzbar), aktueller Stand und
+       Vergangenheit sind getrennt (zeitbezug), und ein ausdruecklicher
+       Rueckblick bleibt ein eigener Zweck (felieRueckblickDaten). */
     zweck: 'aktuelles_gespraech',
-    /* Seit M10 wieder dabei - als Zusammenfassung je Gespraech, nicht als
-       Notizsammlung, und durch die Sperren aus M6 gefiltert. Siehe
-       felieGespraecheDaten. */
     gespraeche: felieGespraecheDaten(6, ohne),
     /* Nur bei ausdruecklicher Auswahl, und dann sichtbar getrennt vom
        aktuellen Stand. Ohne Auswahl ist das Feld nicht da — der normale
@@ -14403,7 +14513,6 @@ function discardChatAndClose() {
 
 function generateChatSummary(historySnapshot) {
   felieHomeEreignis('gespraech_beendet');
-  var generation = felieGespraechGeneration();
   var history = felieSichererVerlauf(historySnapshot || chatHistory);
   if (!history.some(function(m) { return m.role === 'user'; })) {
     window._letzteChatId = null; hideFelieLoader();
@@ -14411,16 +14520,23 @@ function generateChatSummary(historySnapshot) {
       felieAlert('Das Gespräch über dein Dokument bleibt flüchtig und wurde nicht archiviert.');
     return Promise.resolve();
   }
+  /* Der Verlauf wird VOR der Auswertung als Auftrag gesichert (A2). Bis
+     zum 18.09. entschied hier der Gespraechszaehler: begann die Nutzerin
+     waehrend der rund 36 Sekunden Auswertung ein neues Gespraech, wurde
+     das Ergebnis stumm verworfen — kein Archiveintrag, kein wartender
+     Auftrag. Ein Gespraechswechsel darf einen abgeschlossenen Verlauf
+     nicht loeschen; er gehoert in dasselbe Archiv. Was verspaetete
+     Ergebnisse tatsaechlich unzulaessig macht, ist ein Datenreset — dafuer
+     traegt der Auftrag die Datenepoche. */
+  var auftrag = felieAbschlussAnlegen(history);
   return felieNotizErzeugen(history).then(function(summary) {
-    if (generation !== felieGespraechGeneration()) { hideFelieLoader(); return; }
-    gespraechAbschliessen(summary, history);
+    gespraechAbschliessen(summary, history, auftrag);
   }).catch(function() {
-    if (generation !== felieGespraechGeneration()) { hideFelieLoader(); return; }
     /* Fehlgeschlagene Notiz: das Gespraech wird trotzdem archiviert und
        traegt notizenStatus 'unvollstaendig' — die Archivkarte zeigt das
        an und bietet dort das erneute Erzeugen. Ohne Pop-up ist die
        Archivkarte die einzige Stelle, an der das sichtbar wird. */
-    gespraechAbschliessen({ thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5 }, history);
+    gespraechAbschliessen(felieAbschlussNotlaufNotiz(), history, auftrag);
   });
 }
 
@@ -14431,7 +14547,7 @@ function getSavedChats() {
   } catch(e) { return []; }
 }
 
-function saveChat(summary, messages) {
+function saveChat(summary, messages, auftragId) {
   try {
     /* Zweite Sicherung: selbst wenn ein Aufrufer den Verlauf ungefiltert
        uebergibt, wird hier kein Befund geschrieben. */
@@ -14466,7 +14582,12 @@ function saveChat(summary, messages) {
       felie_lernt: summary.felie_lernt,
       koerper: bodySnapshotText(),
       messages: messages.map(function(m) { return Object.assign({}, m); }),
-      timestamp: ts
+      timestamp: ts,
+      /* Der Abschlussauftrag, aus dem dieser Eintrag stammt (A2). Damit
+         erkennt eine Wiederholung, dass das Gespraech schon im Archiv
+         liegt — auch wenn der Auftrag selbst nicht mehr aktualisiert
+         werden konnte. */
+      auftragId: auftragId || undefined
     });
     // Keine stillschweigende Löschung früherer Gespräche wegen einer Mengenregel.
     localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
@@ -15011,10 +15132,17 @@ function felieChatFeldSetzen(id, patch) {
    ueberschreiben und dabei als "neu" markiert im Gedaechtnis aufleuchten,
    obwohl sich nichts geaendert hat. */
 function felieMerkUebernehmen(v) {
-  if (!v) return [];
+  return felieMerkUebernehmenFuer(window._letzteChatId, v).ids;
+}
+
+/* Wie felieMerkUebernehmen, aber fuer ein benanntes Gespraech und mit
+   ehrlichem Ergebnis: ok=false heisst, die Uebernahme ist gescheitert und
+   muss wiederholt werden. Der Abschlussauftrag (A2) haengt daran; die
+   alte Form gab in beiden Faellen [] zurueck und verschluckte den Fehler. */
+function felieMerkUebernehmenFuer(cid, v) {
+  if (!v) return { ok: true, ids: [] };
   var ids = [];
   var ok = felieDatenAendern(function(store, chats) {
-    var cid = window._letzteChatId;
     if (!chats.some(function(c) { return (c.id || c.timestamp) === cid; })) throw new Error('Gespräch nicht gespeichert');
     (v.fakten || []).forEach(function(f) {
       if (!f || f.bekannt) return;
@@ -15031,7 +15159,7 @@ function felieMerkUebernehmen(v) {
       if (id) ids.push(id);
     });
   });
-  return ok ? ids : [];
+  return { ok: !!ok, ids: ok ? ids : [] };
 }
 
 /* ── Kontext fuer den Prompt ──────────────────────────────────────────
@@ -15052,74 +15180,220 @@ function felieMerkUebernehmen(v) {
    ist die Nutzungsfrequenz: eine Karte mit Auswahlliste nach jedem
    Gespraech ist bei woechentlicher Nutzung eine Huerde, keine Kontrolle —
    loeschen und aendern kann sie im Gedaechtnis jederzeit. */
-/* Ein gescheitertes Archivieren war bisher vollstaendig stumm: kein
-   Eintrag, keine Snippets, keine Meldung. Am 17.09. hat genau das einen
-   Datenverlust stundenlang wie eine Marotte aussehen lassen — die Ursache
-   (M23) lag woanders, aber gemerkt haette man sie sofort.
+/* ══════════════════════════════════════════════════════════════════════
+   ABSCHLUSSAUFTRAG — ein Gespraech kommt sicher ins Archiv (A2, 18.09.)
+   ──────────────────────────────────────────────────────────────────────
+   Ein gescheitertes Archivieren war bis M24 vollstaendig stumm; M24 hob
+   EIN Gespraech auf und holte es nach. Die Supervisor-Abnahme vom 18.09.
+   fand drei Luecken: ein Gespraechswechsel waehrend der Auswertung warf
+   das Ergebnis weg; scheiterten zwei Archivierungen, ueberschrieb die
+   zweite die erste; und der Auftrag wurde VOR der Gedaechtnisuebernahme
+   geloescht, ihr Fehler verschluckt.
 
-   Drei Dinge fehlten: das Gespraech aufheben, es sagen, und es noch
-   einmal versuchen. Der Versuch laeuft still beim naechsten Aufbau der
-   Startseite; gelingt er, taucht das Gespraech einfach im Archiv auf. */
-function felieArchivWartendSetzen(summary, messages) {
-  window._felieArchivWartend = { summary: summary, messages: messages, ts: Date.now() };
-  /* Nur ein Versuch: scheitert das Archivieren an vollem Speicher,
-     scheitert auch das hier. Dann traegt der Arbeitsspeicher das
-     Gespraech wenigstens bis zum naechsten Versuch in dieser Sitzung. */
-  try { localStorage.setItem('felie_archiv_wartend', JSON.stringify(window._felieArchivWartend)); } catch (e) {}
+   Jetzt ist jeder Abschluss ein Auftrag mit fester ID, der den
+   Originalverlauf VOR der Modell-Auswertung sichert und drei Schritte
+   durchlaeuft:
+
+     auswertung   Verlauf gesichert, Notiz wird erzeugt
+     archiv       Notiz liegt vor, Gespraech muss ins Archiv
+     gedaechtnis  Gespraech liegt im Archiv (chatId), Snippets fehlen
+
+   Ein Schritt, der gelingt, wird am Auftrag festgehalten; ein Schritt,
+   der scheitert, laesst den Auftrag liegen — der naechste Aufbau der
+   Startseite versucht es erneut, mit demselben Gespraech, ohne Dublette:
+   der Archiveintrag traegt die Auftrags-ID.
+
+   Ungueltig wird ein Auftrag nur durch einen Datenreset. Der erhoeht die
+   Datenepoche; ein Auftrag aus einer frueheren Epoche wird verworfen, auch
+   wenn sein Ergebnis erst spaeter eintrifft und der Reload ausblieb.
+
+   Fuer Expo: dieselbe Auftragsliste gehoert in den dauerhaften Speicher
+   (SQLite, Transaktion), Hintergrundwechsel und Prozessende lassen sie
+   bestehen. Der Web-Stand hier ist die Referenz fuer den Ablauf, nicht
+   fuer die Speicherform. */
+/* Als Funktion, nicht als Konstante: die Pruefumgebung laedt nur eine feste
+   Liste oberster Deklarationen (tests/helpers/felie-runtime.cjs). */
+function felieAbschlussKey() { return 'felie_abschluss_wartend'; }
+
+function felieDatenEpoche() { return window._felieDatenEpoche || 0; }
+
+/* Ein Datenreset macht alles ungueltig, was noch unterwegs ist. */
+function felieDatenEpocheErhoehen() {
+  window._felieDatenEpoche = felieDatenEpoche() + 1;
+  window._felieAbschlussWartend = [];
+  window._felieAbschlussLaufend = {};
 }
 
-function felieArchivWartend() {
-  if (window._felieArchivWartend) return window._felieArchivWartend;
+function felieAbschlussListe() {
+  if (Array.isArray(window._felieAbschlussWartend)) return window._felieAbschlussWartend;
+  var liste = [];
   try {
-    var roh = JSON.parse(localStorage.getItem('felie_archiv_wartend') || 'null');
-    if (roh && roh.summary && Array.isArray(roh.messages) && roh.messages.length) {
-      window._felieArchivWartend = roh; return roh;
-    }
+    var roh = JSON.parse(localStorage.getItem(felieAbschlussKey()) || '[]');
+    if (Array.isArray(roh)) liste = roh.filter(felieAbschlussGueltig);
   } catch (e) {}
-  return null;
+  /* Migration von M24: ein einzelnes aufgehobenes Gespraech wird zum
+     Auftrag im Schritt 'archiv'. */
+  try {
+    var altRoh = JSON.parse(localStorage.getItem('felie_archiv_wartend') || 'null');
+    if (altRoh && altRoh.summary && Array.isArray(altRoh.messages) && altRoh.messages.length) {
+      liste.push({ id: 'ab-alt-' + (altRoh.ts || Date.now()), epoche: felieDatenEpoche(), ts: altRoh.ts || Date.now(),
+        status: 'archiv', messages: altRoh.messages, summary: altRoh.summary, chatId: null });
+    }
+    localStorage.removeItem('felie_archiv_wartend');
+  } catch (e) {}
+  window._felieAbschlussWartend = liste;
+  return liste;
+}
+
+function felieAbschlussGueltig(a) {
+  return !!(a && typeof a === 'object' && a.id && Array.isArray(a.messages) && a.messages.length
+    && (a.status === 'auswertung' || a.status === 'archiv' || a.status === 'gedaechtnis'));
+}
+
+/* Nur ein Versuch: scheitert das Schreiben an vollem Speicher, traegt der
+   Arbeitsspeicher die Liste wenigstens bis zum naechsten Versuch in
+   dieser Sitzung. Dublette droht deshalb nicht — der Archiveintrag
+   traegt die Auftrags-ID. */
+function felieAbschlussSpeichern() {
+  var liste = felieAbschlussListe();
+  try {
+    if (!liste.length) localStorage.removeItem(felieAbschlussKey());
+    else localStorage.setItem(felieAbschlussKey(), JSON.stringify(liste));
+  } catch (e) {}
+}
+
+function felieAbschlussAnlegen(messages) {
+  var liste = felieAbschlussListe();
+  var ts = Date.now();
+  var auftrag = { id: 'ab-' + ts + '-' + Math.random().toString(36).slice(2, 8), epoche: felieDatenEpoche(), ts: ts,
+    status: 'auswertung', messages: messages.map(function(m) { return Object.assign({}, m); }), summary: null, chatId: null };
+  liste.push(auftrag);
+  window._felieAbschlussLaufend = window._felieAbschlussLaufend || {};
+  window._felieAbschlussLaufend[auftrag.id] = true;
+  felieAbschlussSpeichern();
+  return auftrag;
+}
+
+function felieAbschlussAktualisieren(auftrag, patch) {
+  Object.keys(patch).forEach(function(k) { auftrag[k] = patch[k]; });
+  var liste = felieAbschlussListe();
+  if (!liste.some(function(a) { return a.id === auftrag.id; })) liste.push(auftrag);
+  felieAbschlussSpeichern();
+}
+
+function felieAbschlussEntfernen(id) {
+  var liste = felieAbschlussListe();
+  for (var i = liste.length - 1; i >= 0; i--) if (liste[i].id === id) liste.splice(i, 1);
+  if (window._felieAbschlussLaufend) delete window._felieAbschlussLaufend[id];
+  felieAbschlussSpeichern();
+}
+
+/* Die Notiz, wenn die Auswertung ausfaellt: das Gespraech wird trotzdem
+   archiviert und traegt notizenStatus 'unvollstaendig' — die Archivkarte
+   zeigt das an und bietet dort das erneute Erzeugen. */
+function felieAbschlussNotlaufNotiz() {
+  return { thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5 };
+}
+
+/* Fuehrt einen Auftrag so weit wie moeglich. true, wenn er abgeschlossen
+   und entfernt ist; false, wenn er liegen bleibt und spaeter erneut
+   versucht wird. Wiederholbar: jeder Schritt prueft zuerst, ob er schon
+   erledigt ist. */
+function felieAbschlussAusfuehren(auftrag) {
+  if (auftrag.epoche !== felieDatenEpoche()) { felieAbschlussEntfernen(auftrag.id); return false; }
+  if (auftrag.status === 'auswertung') {
+    /* Hier kommt nur ein Auftrag an, dessen Auswertung nicht mehr laeuft
+       — die App wurde waehrenddessen beendet. Der Verlauf ist da; er
+       wird ohne Notiz archiviert, die Karte bietet das Nacherzeugen. */
+    felieAbschlussAktualisieren(auftrag, { summary: felieAbschlussNotlaufNotiz(), status: 'archiv' });
+  }
+  if (auftrag.status === 'archiv') {
+    var vorhanden = getSavedChats().filter(function(c) { return c.auftragId === auftrag.id; })[0];
+    var chatId = vorhanden ? (vorhanden.id || vorhanden.timestamp) : null;
+    if (chatId == null) {
+      try { chatId = saveChat(auftrag.summary, auftrag.messages, auftrag.id); } catch (e) { chatId = null; }
+    }
+    if (chatId == null) return false;
+    felieAbschlussAktualisieren(auftrag, { chatId: chatId, status: 'gedaechtnis' });
+  }
+  if (auftrag.status === 'gedaechtnis') {
+    /* Merken nur, wenn das Gespraech auch wirklich im Archiv liegt. Sonst
+       stuenden Fakten ohne den Beleg da, auf den sie sich berufen. */
+    var ergebnis;
+    try { ergebnis = felieMerkUebernehmenFuer(auftrag.chatId, felieMerkVorschlaege(auftrag.summary)); }
+    catch (e) { ergebnis = { ok: false, ids: [] }; }
+    if (!ergebnis.ok) return false;
+    window._letzteChatId = auftrag.chatId;
+    felieNeueSnippetsSetzen(ergebnis.ids);
+    felieAbschlussEntfernen(auftrag.id);
+    return true;
+  }
+  return false;
+}
+
+/* true, wenn mindestens ein liegengebliebenes Gespraech jetzt vollstaendig
+   erledigt ist. Auftraege, deren Auswertung in dieser Sitzung noch
+   laeuft, werden nicht angefasst. */
+function felieArchivNachholen() {
+  var laufend = window._felieAbschlussLaufend || {};
+  var offen = felieAbschlussListe().slice().filter(function(a) { return !laufend[a.id]; });
+  var erledigt = false;
+  offen.sort(function(a, b) { return (a.ts || 0) - (b.ts || 0); }).forEach(function(a) {
+    try { if (felieAbschlussAusfuehren(a)) erledigt = true; } catch (e) {}
+  });
+  if (erledigt) { try { felieAutosave(); } catch (e) {} }
+  return erledigt;
+}
+
+/* Vertraeglichkeit mit M24: das aelteste wartende Gespraech in der alten
+   Form, oder null. */
+function felieArchivWartend() {
+  var liste = felieAbschlussListe().filter(function(a) { return a.status !== 'auswertung' || !(window._felieAbschlussLaufend || {})[a.id]; });
+  if (!liste.length) return null;
+  var a = liste.slice().sort(function(x, y) { return (x.ts || 0) - (y.ts || 0); })[0];
+  return { summary: a.summary || felieAbschlussNotlaufNotiz(), messages: a.messages, ts: a.ts, auftragId: a.id, status: a.status };
+}
+
+function felieArchivWartendSetzen(summary, messages) {
+  var a = felieAbschlussAnlegen(messages);
+  delete window._felieAbschlussLaufend[a.id];
+  felieAbschlussAktualisieren(a, { summary: summary, status: 'archiv' });
+  return a;
 }
 
 function felieArchivWartendLoeschen() {
-  window._felieArchivWartend = null;
+  window._felieAbschlussWartend = [];
+  window._felieAbschlussLaufend = {};
+  try { localStorage.removeItem(felieAbschlussKey()); } catch (e) {}
   try { localStorage.removeItem('felie_archiv_wartend'); } catch (e) {}
 }
 
-/* true, wenn das aufgehobene Gespraech jetzt im Archiv liegt. Holt auch
-   die Snippets nach — die haengen am Beleg im Archiv und waren beim
-   ersten Versuch mit uebersprungen worden. */
-function felieArchivNachholen() {
-  var w = felieArchivWartend();
-  if (!w) return false;
-  var ok = false;
-  try { ok = saveChat(w.summary, w.messages) != null; } catch (e) { ok = false; }
-  if (!ok) return false;
-  felieArchivWartendLoeschen();
-  try { felieNeueSnippetsSetzen(felieMerkUebernehmen(felieMerkVorschlaege(w.summary))); } catch (e) {}
-  try { felieAutosave(); } catch (e) {}
-  return true;
-}
+function gespraechAbschliessen(summary, messages, auftrag) {
+  if (!auftrag) {
+    auftrag = felieAbschlussAnlegen(messages);
+  }
+  if (window._felieAbschlussLaufend) delete window._felieAbschlussLaufend[auftrag.id];
+  /* Ergebnis aus einer frueheren Datenepoche: die Nutzerin hat inzwischen
+     alles geloescht. Nichts davon darf wieder auftauchen (B4). */
+  if (auftrag.epoche !== felieDatenEpoche()) { felieAbschlussEntfernen(auftrag.id); hideFelieLoader(); return; }
+  felieAbschlussAktualisieren(auftrag, { summary: summary, status: 'archiv' });
 
-function gespraechAbschliessen(summary, messages) {
-  /* Archivieren darf den Rest nicht verhindern — bei vollem localStorage
-     wirft saveChat. */
-  var saved = true;
-  try { saved = saveChat(summary, messages) != null; } catch (e) { saved = false; }
-  if (saved) felieAutosave();
-  if (!saved) {
+  var fertig = false;
+  try { fertig = felieAbschlussAusfuehren(auftrag); } catch (e) { fertig = false; }
+  var archiviert = auftrag.chatId != null;
+  if (archiviert) { try { felieAutosave(); } catch (e) {} }
+  if (!archiviert) {
     window._letzteChatId = null;
-    felieArchivWartendSetzen(summary, messages);
     /* Kein Schuldzuweisen und kein Fachbegriff: sie soll wissen, dass ihr
        Gespraech nicht weg ist und dass sie nichts tun muss. */
     try { felieAlert('Dein Gespräch konnte ich gerade nicht ins Archiv schreiben. Ich habe es aufgehoben und versuche es beim nächsten Öffnen noch einmal.'); } catch (e) {}
   }
-
-  /* Merken nur, wenn das Gespraech auch wirklich im Archiv liegt. Sonst
-     stuenden Fakten ohne den Beleg da, auf den sie sich berufen. */
-  var ids = [];
-  if (saved) {
-    try { ids = felieMerkUebernehmen(felieMerkVorschlaege(summary)); } catch (e) {}
+  if (archiviert && !fertig) {
+    /* Archiv ja, Gedaechtnis nein: der Auftrag bleibt im Schritt
+       'gedaechtnis' liegen und wird beim naechsten Aufbau der Startseite
+       nachgeholt. Bis dahin keine Snippets — sie haetten keinen Beleg. */
+    felieNeueSnippetsSetzen([]);
   }
-  felieNeueSnippetsSetzen(ids);
 
   window._felieNotizSummary = null;
   refreshHome();

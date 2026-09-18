@@ -986,6 +986,17 @@ html.native-app .phone {
   #home-nav-gedaechtnis.hat-neues .ged-puls-punkt { animation: none; }
 }
 
+/* Platzhalterkarte fuer ein Gespraech, dessen Auswertung noch laeuft
+   (M30). Gleiche Form wie eine fertige Karte, gedaempft, mit dem
+   Gedaechtnis-Puls — sie IST der Hinweis, dass felie gerade liest. */
+.gespraech-laeuft { opacity: 0.85; }
+.gespraech-laeuft .laeuft-punkt {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--lila); margin-right: 6px; vertical-align: middle;
+  animation: felieGedPuls 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .gespraech-laeuft .laeuft-punkt { animation: none; } }
+
 /* Gesprächseintrag: nur der Satz. Das Themen-Icon links ist am 17.09.
    entfallen — es kostete 38px Breite je Zeile und sagte nichts, was die
    Kategorie unter dem Satz und der Filterknopf darüber nicht schon
@@ -6152,18 +6163,59 @@ function fillHomeData() {
   }
 }
 
+/* Gespraeche, deren Abschluss noch nicht im Archiv liegt (M30): laufende
+   Auswertung oder ein liegengebliebener Auftrag. Sie erscheinen sofort
+   als Karte — die Nutzerin sieht ihr Gespraech, bevor felie fertig
+   gelesen hat. Ohne chatId, denn sobald der Eintrag im Archiv liegt,
+   zeigt die normale Liste ihn. */
+function felieGespraecheInArbeit() {
+  var liste = [];
+  try { liste = felieAbschlussListe().filter(function (a) { return a.chatId == null; }); } catch (e) { return []; }
+  return liste.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+}
+
+function felieGespraechInArbeitTitel(a) {
+  /* Laeuft die Auswertung gerade, ist es „von eben" — die Uhrzeit sagt
+     der Nutzerin nichts, was sie nicht weiss. Nur ein liegengebliebener
+     Auftrag (nach Neustart) traegt seine Zeit. */
+  if ((window._felieAbschlussLaufend || {})[a.id]) return 'Gespräch von eben';
+  var t = '';
+  try { t = new Date(a.ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); } catch (e) {}
+  return 'Gespräch von ' + t;
+}
+
+/* Was der Platzhalter sagt: waehrend die Auswertung laeuft, dass felie
+   liest; liegt der Auftrag ohne laufende Auswertung, dass es nachgeholt
+   wird. Kein Fachbegriff, keine Schuldzuweisung. */
+function felieGespraechInArbeitText(a) {
+  var laeuft = !!((window._felieAbschlussLaufend || {})[a.id]);
+  if (laeuft) return 'felie liest gerade nach …';
+  return 'Wird beim nächsten Öffnen fertig verarbeitet.';
+}
+
+function felieGespraechInArbeitKarteHome(a) {
+  return '<div class="gespraech-laeuft" style="background:#CFC0E6;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:default;">' +
+    '<div style="width:34px;height:34px;border-radius:50%;background:#180430;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">' + themeIcon('') + '</div>' +
+    '<div style="flex:1;min-width:0;"><div style="font-size:14px;color:#180430;">' + felieGespraechInArbeitTitel(a) + '</div>' +
+    '<div style="font-size:12px;color:#6B5A88;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span class="laeuft-punkt"></span>' + felieGespraechInArbeitText(a) + '</div></div></div>';
+}
+
 function fillHomeThemen() {
   var el = document.getElementById('home-themen');
   if (!el) return;
   var chats;
   try { chats = getSavedChats(); } catch(e) { chats = []; }
-  if (!chats || !chats.length) {
+  var inArbeit = felieGespraecheInArbeit();
+  if ((!chats || !chats.length) && !inArbeit.length) {
     el.innerHTML = '<div style="background:#CFC0E6;border-radius:14px;padding:16px;text-align:center;font-size:12px;color:#6B5A88;">Noch keine Themen — euer erstes Gespräch erscheint hier.</div>';
     return;
   }
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  var recent = chats.slice(-3).reverse();
-  el.innerHTML = recent.map(function(c) {
+  /* Zuerst, was gerade entsteht; danach die fertigen. Zusammen hoechstens
+     drei Karten wie bisher. */
+  var vorne = inArbeit.slice(0, 3).map(felieGespraechInArbeitKarteHome).join('');
+  var recent = (chats || []).slice(-Math.max(0, 3 - Math.min(3, inArbeit.length))).reverse();
+  el.innerHTML = vorne + recent.map(function(c) {
     var id = c.id || c.timestamp;
     var d = '';
     try { d = new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }); } catch(e) {}
@@ -10036,11 +10088,22 @@ function showVerlauf() {
   /* Dummy-Beispielkarte zeigt sich, solange das Archiv leer ist — unabhaengig
      davon, ob der Rundgang je gesehen wurde. Der Rundgang startet jetzt nur
      noch manuell ueber den Erklaerung-Marker im Header. */
-  const showDummy = savedChats.length === 0;
-  let cardsHTML = '';
-  if (savedChats.length === 0) {
+  const inArbeit = felieGespraecheInArbeit();
+  const showDummy = savedChats.length === 0 && inArbeit.length === 0;
+  let cardsHTML = inArbeit.map(function (a) {
+    const date = new Date(a.ts || Date.now());
+    const dateStr = date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    return '<div class="gespraech-laeuft" data-auftrag="' + htmlEsc(a.id) + '" style="background:white;border-radius:16px;border:1px dashed rgba(143, 91, 189,0.35);padding:16px;">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+        '<div style="font-size:14px;font-weight:600;color:#180430;">' + icoSvg('i-box', 14, '#8F5BBD') + ' ' + felieGespraechInArbeitTitel(a) + '</div>' +
+        '<div style="font-size:11px;color:#6B5A88;">' + dateStr + ' · ' + timeStr + '</div></div>' +
+      '<div class="ged-sub"><span class="laeuft-punkt"></span>' + felieGespraechInArbeitText(a) + '</div></div>';
+  }).join('');
+  if (savedChats.length === 0 && inArbeit.length === 0) {
     cardsHTML = showDummy ? archivDummyCardHtml() : archivEmptyHtml();
-  } else {
+  } else if (savedChats.length) {
+    cardsHTML += 
     cardsHTML = savedChats.slice().reverse().map(function(chat) {
       const date = new Date(chat.timestamp);
       const dateStr = date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -14494,9 +14557,13 @@ function saveChatAndClose() {
   var historySnapshot = chatHistory.slice();
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
   showFelieLoader();
-  setTimeout(hideFelieLoader, 8000); // Sicherheitsnetz, falls der Abschluss haengen bleibt
-  // Generate summary with snapshot
+  /* Die Auswertung dauert 15–20 s (ein Modellaufruf). Bis M29 lief der
+     Loader bis zu 8 s und danach stand die Startseite ohne das Gespraech
+     da. Seit M30 sichert generateChatSummary den Verlauf sofort als
+     Auftrag; die Startseite zeigt ihn als Karte „felie liest gerade
+     nach". Der Loader deckt deshalb nur noch den Wechsel (1,5 s). */
   generateChatSummary(historySnapshot);
+  setTimeout(function () { try { refreshHome(); } catch (e) {} hideFelieLoader(); }, 1500);
   armFeedback(historySnapshot);
 }
 
@@ -15396,7 +15463,13 @@ function gespraechAbschliessen(summary, messages, auftrag) {
   }
 
   window._felieNotizSummary = null;
+  /* Reihenfolge nach M30: zuerst das Gedaechtnis (der Puls auf „Neu" ist
+     das, wonach die Nutzerin schaut), dann die Startseite mit der
+     fertigen Karte an Stelle des Platzhalters, zuletzt das Archiv, falls
+     es gerade offen ist. */
+  try { felieGedPulsAktualisieren(); } catch (e) {}
   refreshHome();
+  try { if (document.getElementById('verlauf-overlay')) showVerlauf(); } catch (e) {}
   /* Der Loader laeuft mindestens 1,5 s, damit der Wechsel nicht zuckt. */
   var elapsed = Date.now() - (window._loaderStart || 0);
   setTimeout(hideFelieLoader, Math.max(0, 1500 - elapsed));

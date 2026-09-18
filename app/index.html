@@ -6276,11 +6276,32 @@ function felieBezugKlFeld(e) {
 
    Der Wortlaut steht in der APP und nicht im Prompt, weil er an der Art
    des Punktes haengt, die die App ohnehin schon kennt. */
-function felieBezugNachfrage(feld) {
-  if (feld === 'beschwerden')
+/* M20 hat die Sonderfrage am Kennenlern-Feld `beschwerden` festgemacht.
+   Das war zu eng: T9 hat sie am 18.09. mit einem Thema geprueft, das im
+   GESPRAECH entstanden war — "Lu spuert seit mehreren Wochen Kribbeln in
+   den Beinen." Dessen Kennung ist `ent-...`, nicht `aufnahme:...`, also
+   griff die Sonderfrage nicht, und felie fragte wieder "Ist das Thema
+   noch aktuell fuer dich?".
+
+   Das richtige Merkmal steht im Punkt selbst: nennt er seine eigene
+   DAUER, ist "ist das noch so?" eine Bestandsabfrage. Woher der Punkt
+   kommt, spielt dafuer keine Rolle. */
+function felieBezugDauer(text) {
+  var t = String(text || '');
+  if (/\bseit\s+[^.,;]{0,24}\b(tag|tage|tagen|woche|wochen|monat|monate|monaten|jahr|jahre|jahren)\b/i.test(t)) return true;
+  if (/\bseit\s+(l[äa]ngerem|einiger zeit|geraumer zeit|einer weile|ewigkeiten)\b/i.test(t)) return true;
+  /* "..., das seit mehreren Wochen anhaelt" faellt schon oben; das hier
+     faengt "haelt weiter an" und "haelt schon lange an". */
+  if (/\bh[äa]lt\s+[^.,;]{0,20}\ban\b/i.test(t)) return true;
+  return false;
+}
+
+function felieBezugNachfrage(feld, text) {
+  if (feld === 'beschwerden' || felieBezugDauer(text))
     return 'Frage NICHT, ob es das noch gibt — das protokolliert nur einen Zustand. '
-      + 'Frage stattdessen, ob sie inzwischen Klarheit darüber hat, in dieser Art: '
+      + 'Der Punkt nennt seine Dauer selbst; frage stattdessen, ob sie inzwischen Klarheit darüber hat, in dieser Art: '
       + '„Hast du Klarheit über das körperliche Thema, das dich seit drei Wochen beschäftigt?" '
+      + 'Nimm dabei IHRE Worte für die Sache, nicht diese Beispielworte. '
       + 'Der Ausweg auf ein anderes Thema bleibt auch hier.';
   return '';
 }
@@ -6299,10 +6320,10 @@ function felieBegruessungBezug(chats, offen) {
   var t = (offen || []).find(function (e) {
     return e.id && frei('thema:' + e.id) && felieBezugTauglich(e); });
   if (t) {
-    var feld = felieBezugKlFeld(t), nachfrage = felieBezugNachfrage(feld);
+    var feld = felieBezugKlFeld(t), nachfrage = felieBezugNachfrage(feld, t.text);
     var b = { art: 'thema', schluessel: 'thema:' + t.id, text: t.text,
-      hinweis: feld === 'beschwerden'
-        ? 'ein koerperliches Thema von ihr, das laenger laeuft — keine Tageslage'
+      hinweis: nachfrage
+        ? 'ein Thema von ihr, das laenger laeuft — keine Tageslage und kein Beleg fuer Fortdauer'
         : 'ein offenes Thema von ihr; zeitlich begrenzt und deshalb wahrscheinlich noch aktuell' };
     if (nachfrage) b.nachfrage = nachfrage;
     return b;
@@ -6311,10 +6332,17 @@ function felieBegruessungBezug(chats, offen) {
   /* (2) Das juengste Gespraech mit Zusammenfassung. */
   var g = (chats || []).find(function (c) {
     return c.zusammenfassung && frei('gespraech:' + (c.id || c.timestamp)); });
-  if (g) return { art: 'gespraech', schluessel: 'gespraech:' + (g.id || g.timestamp),
-    text: g.zusammenfassung.text, thema: g.thema || null,
-    datum: new Date(g.timestamp).toLocaleDateString('de-DE'),
-    hinweis: 'euer Gespraech von diesem Tag; damaliger Stand, kein Beleg fuer Fortdauer' };
+  if (g) {
+    var gb = { art: 'gespraech', schluessel: 'gespraech:' + (g.id || g.timestamp),
+      text: g.zusammenfassung.text, thema: g.thema || null,
+      datum: new Date(g.timestamp).toLocaleDateString('de-DE'),
+      hinweis: 'euer Gespraech von diesem Tag; damaliger Stand, kein Beleg fuer Fortdauer' };
+    /* Auch eine Zusammenfassung kann eine Dauer nennen — dann gilt
+       dieselbe Regel wie beim offenen Thema. */
+    var gn = felieBezugNachfrage('', g.zusammenfassung.text);
+    if (gn) gb.nachfrage = gn;
+    return gb;
+  }
 
   /* (3) Zuletzt eine dauerhafte Angabe. */
   var f = null;
@@ -6596,9 +6624,22 @@ function felieHomeEreignis(art, detail) {
   s.erneuern = nachGespraech;
   s.anlassOffen = nachGespraech ? art : null;
   felieHomeZeitMerken();
+  /* Ausnahme fuer den Einstiegstext nach dem Kennenlernen: er ist die
+     Anleitung fuer den allerersten Besuch und sagt als Einziges, WOMIT
+     sie anfangen kann ("... schreib mir, was du an deinem Koerper konkret
+     wahrnimmst", M21). "Hier ist Raum fuer das, was dir gerade wichtig
+     ist" ist an genau dieser Stelle strikt weniger.
+
+     Bisher fiel er weg, sobald die Nutzerin vor dem ersten Schreiben die
+     Selbstreflexion machte — also gerade bei der, die sich Zeit nimmt
+     (Befund 18.09.). Die Reflexion ERGAENZT den Einstieg, sie ersetzt
+     ihn nicht: ihre eigene Rueckmeldung steht ohnehin in der zweiten
+     Bubble. Deshalb bleibt auch der Anlass 'kennenlernen' stehen, sonst
+     verwuerfe die naechste Runde den Text doch noch. */
+  var einstiegBehalten = art === 'selbstreflexion' && s.anlass === 'kennenlernen' && !!s.text;
   if (art === 'selbstreflexion') {
     // Die vorhandene zweite Bubble übernimmt die Rückmeldung zur Reflexion.
-    if (!s.text || s.anlass !== 'oeffnen') felieHomeTextZeigen('Hier ist Raum für das, was dir gerade wichtig ist.');
+    if (!einstiegBehalten && (!s.text || s.anlass !== 'oeffnen')) felieHomeTextZeigen('Hier ist Raum für das, was dir gerade wichtig ist.');
   } else {
     window._felieRitualEchoText = null;
     renderRitualEcho(false);
@@ -6609,7 +6650,7 @@ function felieHomeEreignis(art, detail) {
     s.fluechtigGesehen = false;
     felieHomeTextZeigen(felieHomeAenderungssatz(detail) || texte[art]);
   }
-  s.anlass = art;
+  s.anlass = einstiegBehalten ? 'kennenlernen' : art;
 }
 
 

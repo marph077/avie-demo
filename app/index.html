@@ -6415,6 +6415,19 @@ function felieBegruessungBezug(chats, offen) {
   var f = null;
   try { f = felieFakten().find(function (x) { return x.id && frei('angabe:' + x.id); }); } catch (e) {}
   if (f) return { art: 'angabe', schluessel: 'angabe:' + f.id, text: f.text,
+    /* Datum und Alter gehoeren mit (AL-06). Die willkommen-Regel sagt ueber
+       merknotizen ausdruecklich "mit Herkunft und Alter" — ausgerechnet der
+       eine Eintrag, auf den sich die Begruessung stuetzen soll, kam bisher
+       ohne beides an. Der gespraech-Bezug traegt sein datum seit jeher, in
+       derselben Schreibweise.
+         Nicht geaendert wurde die Formulierung der gespeicherten Texte
+       selbst: sie stehen absichtlich in der Gegenwart, weil dieselben Saetze
+       in der Gedaechtnis-Karte stehen. "Sie erzaehlte am 12.09., dass sie
+       ein Kind hat" waere dort falsch. Der Zeitbezug gehoert daneben, nicht
+       hinein. */
+    datum: Number.isFinite(f.bestaetigtAm || f.erfasstAm)
+      ? new Date(f.bestaetigtAm || f.erfasstAm).toLocaleDateString('de-DE') : null,
+    alterTage: f.alterTage,
     hinweis: 'eine dauerhafte Angabe; gilt laenger und ist selten das, was sie gerade bewegt' };
 
   return null;

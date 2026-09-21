@@ -9880,16 +9880,13 @@ function populateZyklusCard(data) {
     if (ns) ns.textContent = data.stale ? (data.nextStr || 'Kein neuer Start bestätigt') : 'Kein Zyklus-Tracking';
     if (hv) hv.textContent = data.hormoneVal || '—';
     if (hs) hs.textContent = data.hormoneSub || '';
-  } else if (data.estimated) {
-    if (t)  t.textContent  = '≈ ' + data.phase;
-    if (ph) { ph.textContent = 'geschätzt · Sicherheit: ' + (data.confidence || 'niedrig'); ph.style.display = ''; }
-    if (fi) { fi.style.width = (data.fillPct || 0) + '%'; }
-    const barWrapE = fi ? fi.parentElement : null;
-    if (barWrapE) barWrapE.style.opacity = '0.55';
-    if (nv) nv.textContent = '—';
-    if (ns) ns.textContent = 'geschätzt aus Körperwerten';
-    if (hv) hv.textContent = data.hormoneVal;
-    if (hs) hs.textContent = data.hormoneSub;
+  /* Hier stand bis zum 21.09.2026 ein Zweig fuer data.estimated (AL-12):
+     "≈ Lutealphase", "geschätzt · Sicherheit: niedrig", "geschätzt aus
+     Körperwerten". Das Feld wurde nie gesetzt - der Zweig war seit jeher
+     tot. Er kommt auch nicht zurueck: eine Zyklusphase aus Koerperwerten zu
+     schaetzen ist die Vorhersage eines koerperlichen Vorgangs (Art. 2 Nr. 1
+     Spiegelstrich 3 MDR), und das Strategie-Sheet sagt es selbst - die Phase
+     erscheint ausschliesslich als grobe Orientierung aus dem Kalender. */
   } else {
     /* Im Kulanzfenster waere "Tag 30 von ~28" eine stille Ungereimtheit:
        die Zahl steht ueber der Laenge, und die Karte sagt nicht warum.
@@ -12190,13 +12187,19 @@ var TOPICS = [
     hint: 'Bewegung, die in deinen Tag passt',
     msg: 'Ich möchte über Bewegung und Energie sprechen' },
   { key: 'stress',     icon: 'calm',  bg: 'rgba(123,168,224,0.34)',   name: 'Stress & Mental Load',
-    hint: 'Nervensystem & Erholung',
+    /* Hinweis war "Nervensystem & Erholung" (AL-48): physiologische Rahmung
+       fuer ein Alltagsthema. K6 nennt die Woerter, die hier passen -
+       Erschoepfung, Ueberlastung, am Limit. */
+    hint: 'Belastung & Erholung',
     msg: 'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
   { key: 'zyklus',     icon: 'bloom', bg: 'rgba(143, 91, 189,0.48)',  name: 'Zyklus & Hormone',
     hint: 'Zyklus verstehen',
     msg: 'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
   { key: 'schlaf',     icon: 'moon',  bg: 'rgba(107,143,212,0.34)',   name: 'Schlaf & Erholung',
-    hint: 'Schlafqualität verbessern',
+    /* Hinweis war "Schlafqualitaet verbessern" (AL-48): ein Wirkversprechen
+       ueber eine Koerperfunktion. Die Kachel nennt jetzt das Thema, nicht
+       sein Ergebnis. */
+    hint: 'Abende, Nächte, Routinen',
     msg: 'Ich möchte über meinen Schlaf sprechen' },
   { key: 'ernaehrung', icon: 'bowl',  bg: 'rgba(225, 234, 125,0.16)', name: 'Ernährung & Körper',
     /* Hinweis war "Zyklusbasiert essen" (AL-47), gleiche Begruendung. */
@@ -12831,7 +12834,9 @@ function felieSignalDaten() {
 function felieZyklusDaten() {
   var cd = cycleRefresh();
   if (!cd) return { status: 'unbekannt', grund: 'Kein bestätigter Periodenstart' };
-  if (cd.unknown || cd.estimated || cd.stale || !cd.lastPeriod || cd.cycleDay == null)
+  /* cd.estimated ist mit dem Zweig in populateZyklusCard entfallen (AL-12):
+     das Feld wird nirgends gesetzt. */
+  if (cd.unknown || cd.stale || !cd.lastPeriod || cd.cycleDay == null)
     return { status: 'unbekannt', grund: cd.unknown ? 'Lebensphase oder Zyklus bewusst unbekannt' : 'Keine belastbare aktuelle Kalenderzuordnung',
       /* Die Lebensphase gehoert in den Kontext: sonst fragt felie nach dem
          Zyklus einer Nutzerin, die ihre Schwangerschaft gerade angegeben
@@ -17067,7 +17072,13 @@ function felieBrueckeAnlegen(art, f, gespraechId) {
        strukturiertes Formular bestaetigt ausdruecklich den neuen Inhalt.
        Ohne zeitliche Einordnung wird die vorige Fassung nicht als
        damaliger Stand erzaehlt. */
-    felieBrueckeBefehl({ kind: f.ersetzt ? 'transition' : 'manualUpdate', entryId: ziel.id,
+    /* Bis zum 21.09.2026 stand hier "f.ersetzt ? 'transition' : 'manualUpdate'"
+       (AL-07). Kein Aufrufer hat je ein Feld ersetzt gesetzt, der Zweig lief
+       also immer auf manualUpdate. Ein transition - die vorige Fassung wird
+       als damaliger Stand erzaehlt - entsteht an der dafuer vorgesehenen
+       Stelle weiter unten, wo die zeitliche Einordnung tatsaechlich vorliegt.
+       Die Verzweigung hier war ein Rest von davor. */
+    felieBrueckeBefehl({ kind: 'manualUpdate', entryId: ziel.id,
       expectedHeadRevisionId: kopf.id,
       candidate: { text: f.text, supportSets: sets,
         evidence: quellen.length ? 'supported' : 'ambiguous',

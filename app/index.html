@@ -1225,7 +1225,7 @@ html.native-app .phone {
 .dash-zyklus-bar { height: 6px; border-radius: 3px; background: var(--lav-light); margin-bottom: 6px; overflow: hidden; }
 .dash-zyklus-fill { height: 100%; border-radius: 3px; background: linear-gradient(to right, var(--lila), var(--apricot)); width: 68%; }
 .dash-zyklus-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); margin-bottom: 10px; }
-.dash-zyklus-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 10px; border-top: 1px solid var(--lav-light); }
+.dash-zyklus-info { display: grid; grid-template-columns: 1fr; gap: 8px; padding-top: 10px; border-top: 1px solid var(--lav-light); }
 .dash-zyklus-item-label { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
 .dash-zyklus-item-val   { font-size: 13px; font-weight: 500; color: var(--plum); }
 .dash-zyklus-item-sub   { font-size: 11px; color: var(--text-muted); font-weight: 300; }
@@ -5249,7 +5249,6 @@ function klV2ZyklusVoreinstellen(a) {
     selectedLen: cd && cd.selectedLen || null,
     phaseAb: Date.now(),
     cycleDay: null, daysLeft: null,
-    hormoneVal: p.hormoneVal,
     unknown: true, unknownType: val, lebensphase: p.phase, quelle: 'kennenlernen'
   };
   try { saveBodyData(); } catch (e) {}
@@ -8227,19 +8226,26 @@ function showOuraConnect() { showWearableSync(); }
      Schwangerschaft und "Keine Periode aktuell" bleiben ausgenommen: dort
    gibt es per Definition keinen Start einzutragen, und ein Feld dafuer
    waere eine Einladung zu einer erfundenen Angabe. */
+/* Die Hormonangabe je Lebensphase ist am 21.09.2026 entfallen (AL-51). Die
+   Tabelle trug je Phase eine Behauptung ueber ihren Hormonstatus - hCG und
+   Progesteron hoch, Prolaktin hoch, Oestrogen dauerhaft niedrig -, die auf
+   der Zykluskarte in einem eigenen Feld erschien. Damit behauptete die App
+   einen Hormonstatus, abgeleitet aus einer Auswahl in einem Dropdown, im
+   Layout eines Messwerts. Die Phase selbst bleibt: die ist ihre eigene
+   Angabe. */
 var FELIE_LEBENSPHASEN = [
   { val: 'schwangerschaft', label: 'Schwangerschaft',              sub: 'Hormone verändern sich stark',
-    phase: 'Schwangerschaft',        hormoneVal: 'hCG + Progesteron hoch',        zyklus: false },
+    phase: 'Schwangerschaft',        zyklus: false },
   { val: 'stillzeit',       label: 'Stillzeit',                    sub: 'Zyklus setzt oft noch aus',
-    phase: 'Stillzeit',              hormoneVal: 'Prolaktin hoch',                zyklus: true },
+    phase: 'Stillzeit',              zyklus: true },
   { val: 'wechseljahre',    label: 'Wechseljahre / Perimenopause', sub: 'Östrogen und Progesteron sinken',
-    phase: 'Wechseljahre',           hormoneVal: 'Östrogen + Progesteron sinken', zyklus: true },
+    phase: 'Wechseljahre',           zyklus: true },
   { val: 'postmenopause',   label: 'Postmenopause',                sub: 'Nach den Wechseljahren',
-    phase: 'Postmenopause',          hormoneVal: 'Östrogen dauerhaft niedrig',    zyklus: true },
+    phase: 'Postmenopause',          zyklus: true },
   { val: 'unregelmaessig',  label: 'Unregelmäßiger Zyklus',        sub: 'Keine klare Periode',
-    phase: 'Unregelmäßiger Zyklus',  hormoneVal: 'Keine klare Phase',             zyklus: true },
+    phase: 'Unregelmäßiger Zyklus',  zyklus: true },
   { val: 'keine-periode',   label: 'Keine Periode aktuell',        sub: 'Z.B. durch Pille, Stress oder anderes',
-    phase: 'Keine Periode',          hormoneVal: 'Hormonstatus unbekannt',        zyklus: false }
+    phase: 'Keine Periode',          zyklus: false }
 ];
 
 function felieLebensphase(val) {
@@ -8533,7 +8539,6 @@ function cycleCompute(lastPeriod, len, refDate) {
        unterscheidet daran, ob sie "ueberfaellig" texten darf. */
     ueberfaellig: spaet ? ueber : null,
     letzterStartStr: lpStr,
-    hormoneVal: 'Nicht gemessen', hormoneSub: 'Kalenderangaben bestimmen keine Hormonwerte',
     /* Im Kulanzfenster steht der Balken voll, statt ueber 100 Prozent
        hinauszuwachsen — er zeigt dann "Zyklus rechnerisch abgelaufen". */
     fillPct: stale ? 0 : Math.min(100, Math.round(day / L * 100)),
@@ -8542,7 +8547,9 @@ function cycleCompute(lastPeriod, len, refDate) {
       : next.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' }),
     daysLeftStr: stale ? 'Unbekannt'
       : spaet ? (ueber === 0 ? 'heute erwartet' : 'seit ' + ueber + (ueber === 1 ? ' Tag' : ' Tagen') + ' überfällig')
-      : 'geschätzt in ~' + (L - daysSince) + ' Tagen' };
+      /* Ohne "geschätzt" (Entscheidung 21.09.): die Tilde sagt bereits
+         ungefaehr, und die Zahl beruht auf ihrer eigenen Angabe. */
+      : 'in ~' + (L - daysSince) + ' Tagen' };
 }
 
 /* Frischt window.cycleData aus den gespeicherten Rohwerten auf.
@@ -8552,7 +8559,7 @@ function cycleRefresh() {
   if (!cd || cd.unknown || !cd.lastPeriod) return cd;
   var fresh = cycleCompute(cd.lastPeriod, cd.selectedLen);
   if (!fresh) fresh = { stale: true, ueberfaellig: null, cycleDay: null, daysLeft: null, phase: 'Aktuelle Phase unbekannt',
-    hormoneVal: 'Nicht gemessen', hormoneSub: '', fillPct: 0, nextStr: '', daysLeftStr: 'Unbekannt' };
+    fillPct: 0, nextStr: '', daysLeftStr: 'Unbekannt' };
   Object.keys(fresh).forEach(function(k) { cd[k] = fresh[k]; });
   return cd;
 }
@@ -8769,7 +8776,6 @@ function showCycleInput(onDone) {
         selectedLen: vorher.selectedLen || null,
         phaseAb: Date.now(),
         cycleDay: null, daysLeft: null,
-        hormoneVal: p.hormoneVal,
         unknown: true, unknownType: p.val, lebensphase: p.phase, quelle: 'selbst'
       };
     }
@@ -9859,8 +9865,6 @@ function populateZyklusCard(data) {
   const fi = dash.querySelector('#zy-fill');
   const nv = dash.querySelector('#zy-next-val');
   const ns = dash.querySelector('#zy-next-sub');
-  const hv = dash.querySelector('#zy-hormone-val');
-  const hs = dash.querySelector('#zy-hormone-sub');
 
   if (data.unknown || data.stale) {
     /* Bei stale traegt data.phase nur "Aktuelle Phase unbekannt". Steht
@@ -9878,8 +9882,6 @@ function populateZyklusCard(data) {
        ist die einzige Angabe, die hier noch stimmt — und die einzige, mit
        der die Nutzerin erkennt, WARUM keine Phase mehr steht. */
     if (ns) ns.textContent = data.stale ? (data.nextStr || 'Kein neuer Start bestätigt') : 'Kein Zyklus-Tracking';
-    if (hv) hv.textContent = data.hormoneVal || '—';
-    if (hs) hs.textContent = data.hormoneSub || '';
   /* Hier stand bis zum 21.09.2026 ein Zweig fuer data.estimated (AL-12):
      "≈ Lutealphase", "geschätzt · Sicherheit: niedrig", "geschätzt aus
      Körperwerten". Das Feld wurde nie gesetzt - der Zweig war seit jeher
@@ -9908,8 +9910,6 @@ function populateZyklusCard(data) {
     if (barWrap) barWrap.style.opacity = spaet ? '0.6' : '1';
     if (nv) nv.textContent = data.daysLeftStr;
     if (ns) ns.textContent = data.nextStr;
-    if (hv) hv.textContent = data.hormoneVal;
-    if (hs) hs.textContent = data.hormoneSub;
   }
 
   /* Platzhalter gegen die echte Karte tauschen.
@@ -11845,7 +11845,7 @@ function consentSummaryHtml() {
 }
 
 function profilZyklusHtml() {
-  return "<section id=\"profile-card-zyklus\" aria-label=\"Zyklus\" style=\"background:white;border-radius:16px;border:1px solid rgba(143, 91, 189,0.15);padding:16px;box-shadow:0 2px 10px rgba(24, 4, 48,0.07);display:flex;flex-direction:column;gap:12px;\"><div class=\"profil-fakt-titel\" style=\"margin:0;\">Zyklus</div>      <!-- Zyklus locked -->\n      <div id=\"zyklus-locked\" onclick=\"showCycleInput()\" style=\"background:white;border-radius:14px;border:1px dashed rgba(143, 91, 189,0.35);flex-shrink:0;cursor:pointer;transition:background 0.15s;\" onmouseover=\"this.style.background='#E6E0EE'\" onmouseout=\"this.style.background='white'\">\n        <div style=\"padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;\">\n          <div style=\"opacity:0.35;color:#8F5BBD;\"><svg class=\"ico\" style=\"width:28px;height:28px\"><use href=\"#i-bloom\"/></svg></div>\n          <div style=\"font-size:13px;font-weight:500;color:#6B5A88;\">Kein Zyklus eingetragen</div>\n          <div style=\"font-size:11px;color:#8F5BBD;line-height:1.5;\">Tippe hier um deinen Zyklus einzutragen</div>\n        </div>\n      </div>\n\n      <!-- Zyklus real (hidden until data entered) -->\n      <div id=\"zyklus-real\" style=\"display:none;padding:0;border:0;box-shadow:none;background:transparent;\" class=\"dash-zyklus-card\">\n        <div class=\"dash-zyklus-top\">\n          <div class=\"dash-zyklus-title\" id=\"zy-title\">Tag — von —</div>\n          <div style=\"display:flex;align-items:center;gap:8px;\">\n            <div class=\"dash-zyklus-phase\" id=\"zy-phase\">—</div>\n            <button style=\"font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(143, 91, 189,0.3);background:transparent;color:#8F5BBD;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;\" onclick=\"showCycleInput()\"><svg class=\"ico\" style=\"width:12px;height:12px\"><use href=\"#i-pencil\"/></svg>bearbeiten</button>\n          </div>\n        </div>\n        <div class=\"dash-zyklus-bar\"><div class=\"dash-zyklus-fill\" id=\"zy-fill\"></div></div>\n        <div class=\"dash-zyklus-labels\"><span>Menstruation</span><span>Follikel</span><span>Luteal</span></div>\n        <div class=\"dash-zyklus-info\">\n          <div>\n            <div class=\"dash-zyklus-item-label\">Nächste Periode</div>\n            <div class=\"dash-zyklus-item-val\" id=\"zy-next-val\">—</div>\n            <div class=\"dash-zyklus-item-sub\" id=\"zy-next-sub\">—</div>\n          </div>\n          <div>\n            <div class=\"dash-zyklus-item-label\">Aktuelle Hormone</div>\n            <div class=\"dash-zyklus-item-val\" id=\"zy-hormone-val\">—</div>\n            <div class=\"dash-zyklus-item-sub\" id=\"zy-hormone-sub\">—</div>\n          </div>\n        </div>\n      </div>\n</section>";
+  return "<section id=\"profile-card-zyklus\" aria-label=\"Zyklus\" style=\"background:white;border-radius:16px;border:1px solid rgba(143, 91, 189,0.15);padding:16px;box-shadow:0 2px 10px rgba(24, 4, 48,0.07);display:flex;flex-direction:column;gap:12px;\"><div class=\"profil-fakt-titel\" style=\"margin:0;\">Zyklus</div>      <!-- Zyklus locked -->\n      <div id=\"zyklus-locked\" onclick=\"showCycleInput()\" style=\"background:white;border-radius:14px;border:1px dashed rgba(143, 91, 189,0.35);flex-shrink:0;cursor:pointer;transition:background 0.15s;\" onmouseover=\"this.style.background='#E6E0EE'\" onmouseout=\"this.style.background='white'\">\n        <div style=\"padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;\">\n          <div style=\"opacity:0.35;color:#8F5BBD;\"><svg class=\"ico\" style=\"width:28px;height:28px\"><use href=\"#i-bloom\"/></svg></div>\n          <div style=\"font-size:13px;font-weight:500;color:#6B5A88;\">Kein Zyklus eingetragen</div>\n          <div style=\"font-size:11px;color:#8F5BBD;line-height:1.5;\">Tippe hier um deinen Zyklus einzutragen</div>\n        </div>\n      </div>\n\n      <!-- Zyklus real (hidden until data entered) -->\n      <div id=\"zyklus-real\" style=\"display:none;padding:0;border:0;box-shadow:none;background:transparent;\" class=\"dash-zyklus-card\">\n        <div class=\"dash-zyklus-top\">\n          <div class=\"dash-zyklus-title\" id=\"zy-title\">Tag — von —</div>\n          <div style=\"display:flex;align-items:center;gap:8px;\">\n            <div class=\"dash-zyklus-phase\" id=\"zy-phase\">—</div>\n            <button style=\"font-size:10px;padding:3px 8px;border-radius:8px;border:1px solid rgba(143, 91, 189,0.3);background:transparent;color:#8F5BBD;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;vertical-align:middle;line-height:1;\" onclick=\"showCycleInput()\"><svg class=\"ico\" style=\"width:12px;height:12px\"><use href=\"#i-pencil\"/></svg>bearbeiten</button>\n          </div>\n        </div>\n        <div class=\"dash-zyklus-bar\"><div class=\"dash-zyklus-fill\" id=\"zy-fill\"></div></div>\n        <div class=\"dash-zyklus-labels\"><span>Menstruation</span><span>Follikel</span><span>Luteal</span></div>\n        <div class=\"dash-zyklus-info\">\n          <div>\n            <div class=\"dash-zyklus-item-label\">Nächste Periode</div>\n            <div class=\"dash-zyklus-item-val\" id=\"zy-next-val\">—</div>\n            <div class=\"dash-zyklus-item-sub\" id=\"zy-next-sub\">—</div>\n          </div>\n        </div>\n      </div>\n</section>";
 }
 
 function profilBasisSpeichern(key, wert) {

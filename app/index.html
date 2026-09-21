@@ -6546,6 +6546,28 @@ function felieHomeBegruessen() {
      Begruessung darauf beziehen und nicht klingen, als hole die App die
      Nutzerin frisch von der Tuer ab. */
   var anlassOffen = s.anlassOffen; s.anlassOffen = null;
+  /* Nach einem Gespraech fragt die Startseite das Modell NICHT (AL-01).
+     Sie hat gerade alles gesagt, was anlag; die Auswertung laeuft noch rund
+     18 Sekunden, und der Kontext kennt das eben beendete Gespraech deshalb
+     noch gar nicht. Frueher lief hier trotzdem eine willkommen-Anfrage gegen
+     genau diesen unvollstaendigen Kontext: die Begruessung kannte das
+     Gespraech nie (M33), verbrauchte dabei einen Bezug und lief dem
+     Abschlussauftrag in die Quere.
+       Verworfen wurde die naheliegende Alternative, die Anfrage hinter den
+     Abschlussauftrag zu haengen. Das haette den Wettlauf nur sequenziert und
+     der Nutzerin den Text 18 Sekunden spaeter unter den Augen ausgetauscht.
+     Eine Anfrage, die es nicht gibt, kann mit nichts kollidieren.
+       Stehen bleibt der feste Satz aus felieHomeEreignis(). erneuern wird
+     bewusst zurueckgesetzt, sonst zieht der Sichtbarkeitspfad (homeInit)
+     sofort eine Anfrage nach. Die naechste echte Begruessung kommt beim
+     naechsten Besuch - dann ist das Gespraech archiviert und im Kontext. */
+  if (anlassOffen === 'gespraech_beendet' || anlassOffen === 'gespraech_verlassen') {
+    s.erneuern = false;
+    s.anlass = anlassOffen;
+    ++s.revision;
+    s.pending = null;
+    return Promise.resolve();
+  }
   var ctx = felieHomeKontext(besuch, anlassOffen);
   /* Verbraucht wird beim ANBIETEN, nicht beim Beantworten: ob sie
      geantwortet hat, ist nicht zuverlaessig feststellbar, und zweimal
@@ -6662,10 +6684,33 @@ function felieHomeFluechtigSchritt(s, sichtbar) {
   return true;
 }
 
+/* Drei Fassungen des Abschieds nach einem Gespraech, REIHUM statt zufaellig:
+   Zufall wiederholt sich, und zweimal derselbe Satz hintereinander liest sich
+   wie ein Fehler der App. Der Zeiger liegt in localStorage, damit die Reihe
+   einen Neustart ueberlebt und nicht immer bei derselben Fassung beginnt.
+     Die Liste steht IN der Funktion: die Pruefumgebung laedt nur eine feste
+   Liste oberster Deklarationen (tests/helpers/felie-runtime.cjs), eine neue
+   Konstante daneben waere dort still undefined. */
+function felieAbschiedssatz() {
+  var saetze = [
+    'Liegt dir sonst gerade noch etwas auf dem Herzen, über das du mit mir sprechen möchtest?',
+    'Falls dir noch ein Thema auf dem Herzen liegt, über das du mit mir sprechen möchtest, bin ich für dich da.',
+    'Ich bin für dich da, falls dir noch ein Thema einfällt, über das du mit mir sprechen möchtest.'
+  ];
+  var i = 0;
+  try { i = Number(localStorage.getItem('felie_abschied_index')) || 0; } catch (e) {}
+  if (!Number.isFinite(i) || i < 0) i = 0;
+  i = i % saetze.length;
+  try { localStorage.setItem('felie_abschied_index', String((i + 1) % saetze.length)); } catch (e) {}
+  return saetze[i];
+}
+
 function felieHomeEreignis(art, detail) {
   var s = felieHomeZustand();
   var texte = {
-    gespraech_beendet: 'Danke für unser Gespräch. Lass es in Ruhe nachklingen.',
+    /* Nur Rueckfallwert fuer die Pruefung unten; angezeigt wird die
+       reihum gewaehlte Fassung aus felieAbschiedssatz(). */
+    gespraech_beendet: 'Liegt dir sonst gerade noch etwas auf dem Herzen, über das du mit mir sprechen möchtest?',
     gespraech_verlassen: 'Du kannst hier in Ruhe weitermachen, wenn du möchtest.',
     gedaechtnis_geaendert: 'Deine Änderungen im Gedächtnis sind gespeichert.',
     /* 'thema_erledigt' ist entfallen: ein offenes Thema wird jetzt
@@ -6715,7 +6760,8 @@ function felieHomeEreignis(art, detail) {
        abgeloest (erneuern=true oben). */
     s.fluechtig = !nachGespraech;
     s.fluechtigGesehen = false;
-    felieHomeTextZeigen(felieHomeAenderungssatz(detail) || texte[art]);
+    var fest = art === 'gespraech_beendet' ? felieAbschiedssatz() : texte[art];
+    felieHomeTextZeigen(felieHomeAenderungssatz(detail) || fest);
   }
   s.anlass = einstiegBehalten ? 'kennenlernen' : art;
 }
@@ -7183,7 +7229,7 @@ function homeUserReply() {
     addMsg(reply, 'felie');
   }).catch(function() {
     removeTyping();
-    addMsg('Ich bin gleich für dich da. 💜', 'felie');
+    addMsg('Ich bin gleich für dich da.', 'felie');
   });
 }
 
@@ -7226,7 +7272,7 @@ function scrollHomeToEl(el, align) {
 
 
 
-function homeStartChat(msg) {
+function homeStartChat(wahl) {
   felieSessionZuruecksetzen();
   /* Auch die anderen Wege in den Chat verbrauchen die Quittung — sonst
      steht sie nach der Rueckkehr auf der Startseite noch da, obwohl das
@@ -7235,10 +7281,17 @@ function homeStartChat(msg) {
   // Thema + Icon im Chat-Header setzen
   var topicLabel = document.getElementById('chat-topic-label');
   var topicIconWrap = document.getElementById('chat-topic-icon-wrap');
+  /* Gesucht wird ueber den KEY, nicht mehr ueber den Nachrichtentext
+     (AL-46). Der Abgleich ueber den Text koppelte den Kopf des Chats an
+     die Formulierung des versteckten Einstiegs: ein Zeichen Abweichung
+     zwischen den beiden Themenlisten, und der Kopf fiel still auf
+     "Deine Begleiterin" zurueck. Andere Einstiege (dashStartChat) geben
+     weiter einen freien Satz - der wird unveraendert durchgereicht. */
   var hit = null;
   try {
-    hit = TOPICS.filter(function(t) { return t.msg === msg; })[0] || null;
+    hit = TOPICS.filter(function(t) { return t.key === wahl; })[0] || null;
   } catch (e) {}
+  var msg = hit ? hit.msg : wahl;
   if (topicLabel) topicLabel.textContent = hit ? hit.name : 'Deine Begleiterin';
   if (topicIconWrap) {
     var iconName = hit ? hit.icon : 'chat';
@@ -7256,13 +7309,29 @@ function homeStartChat(msg) {
      selbst noch kein Wort geschrieben hat. Gesetzt wird das Flag erst in
      send() bzw. sendQR(). */
   window._hasNewUserMsg = false;
+  /* "Mein Thema" hat keinen versteckten Einstieg mehr (AL-45). Frueher stand
+     dort 'Ich moechte etwas mit dir besprechen. Was liegt mir auf dem
+     Herzen?' - eine Frage, die die App im Namen der Nutzerin stellte und die
+     felie nicht beantworten KANN: WAS DU WEISST, UND WOHER verbietet ihr,
+     Gedanken zu behaupten, die niemand genannt hat. Sie antwortete also
+     korrekt, sie habe darauf keinen Zugriff - und weil die Frage versteckt
+     ist, las sich das wie ein kaputter Einstieg.
+       Statt die Frage umzuformulieren, faellt der Modellaufruf hier ganz
+     weg: wo nichts zu wissen ist, ist nichts zu fragen. Der feste Satz geht
+     bewusst NICHT in chatHistory - er ist Text der App, nicht etwas, das
+     felie gesagt hat; der Verlauf beginnt sauber mit dem ersten Satz der
+     Nutzerin. */
+  if (hit && !msg) {
+    addMsg(hit.eroeffnung, 'felie');
+    return;
+  }
   showTyping();
   callFelie(msg, { hidden: true }).then(function(reply) {
     removeTyping();
     addMsg(reply, 'felie');
   }).catch(function() {
     removeTyping();
-    addMsg('Ich bin gleich für dich da. 💜', 'felie');
+    addMsg('Ich bin gleich für dich da.', 'felie');
   });
 }
 
@@ -12184,17 +12253,31 @@ function homeFabTapped() {
    — das lief bei jedem Chat-Start still in den catch-Block, das Thema im
    Header blieb deshalb immer auf "Deine Begleiterin" stehen. */
 var TOPICS = [
+  /* Eine einzige Themenliste (AL-46). Der Sheet baut daraus, der Kopf des
+     Chats sucht darin ueber den key. "msg" ist der versteckte Einstieg, den
+     felie beantwortet; "eroeffnung" ist ein fester Satz der App fuer die
+     Faelle, in denen es nichts zu fragen gibt. */
   { key: 'eigenes',    icon: 'chat',  bg: 'rgba(255,255,255,0.16)',   name: 'Mein Thema',
-    msg: 'Ich möchte etwas mit dir besprechen. Was liegt mir auf dem Herzen?' },
+    hint: 'Ich möchte etwas besprechen', msg: null,
+    eroeffnung: 'Erzähl einfach, was gerade los ist.' },
   { key: 'bewegung',   icon: 'run',   bg: 'rgba(225, 234, 125,0.16)', name: 'Bewegung & Energie',
+    /* Hinweis war "Training & Zyklusphase" (AL-47): aus einer Zyklusphase
+       folgt laut K7 keine Leistungsfaehigkeit und keine Sportvorgabe - die
+       Kachel versprach genau das, was der Prompt felie verbietet. */
+    hint: 'Bewegung, die in deinen Tag passt',
     msg: 'Ich möchte über Bewegung und Energie sprechen' },
   { key: 'stress',     icon: 'calm',  bg: 'rgba(123,168,224,0.34)',   name: 'Stress & Mental Load',
+    hint: 'Nervensystem & Erholung',
     msg: 'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
   { key: 'zyklus',     icon: 'bloom', bg: 'rgba(143, 91, 189,0.48)',  name: 'Zyklus & Hormone',
+    hint: 'Zyklus verstehen',
     msg: 'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
   { key: 'schlaf',     icon: 'moon',  bg: 'rgba(107,143,212,0.34)',   name: 'Schlaf & Erholung',
+    hint: 'Schlafqualität verbessern',
     msg: 'Ich möchte über meinen Schlaf sprechen' },
   { key: 'ernaehrung', icon: 'bowl',  bg: 'rgba(225, 234, 125,0.16)', name: 'Ernährung & Körper',
+    /* Hinweis war "Zyklusbasiert essen" (AL-47), gleiche Begruendung. */
+    hint: 'Essen im Alltag',
     msg: 'Ich möchte über Ernährung und meinen Körper sprechen' }
 ];
 
@@ -12209,21 +12292,21 @@ function openTopicSheetNew() {
   var mb = window.manualBodyData;
   var phase = cd ? cd.phase : null;
 
-  var topics = [
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-chat"/></svg>', bg:'rgba(255,255,255,0.16)', name:'Mein Thema', hint:'Ich möchte etwas besprechen', msg:'Ich möchte etwas mit dir besprechen. Was liegt mir auf dem Herzen?' },
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-run"/></svg>', bg:'rgba(225, 234, 125,0.16)', name:'Bewegung & Energie', hint: 'Training & Zyklusphase', msg:'Ich möchte über Bewegung und Energie sprechen' },
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-calm"/></svg>', bg:'rgba(123,168,224,0.34)', name:'Stress & Mental Load', hint:'Nervensystem & Erholung', msg:'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-bloom"/></svg>', bg:'rgba(143, 91, 189,0.48)', name:'Zyklus & Hormone', hint: (cd && !cd.stale) ? (phase + cycleDayPart(cd, ' · ')) : 'Zyklus verstehen', msg:'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-moon"/></svg>', bg:'rgba(107,143,212,0.34)', name:'Schlaf & Erholung', hint: (mb && mb.sleepStr) ? mb.sleepStr + ' letzte Nacht' : 'Schlafqualität verbessern', msg:'Ich möchte über meinen Schlaf sprechen' },
-    { icon:'<svg class="ico" style="color:#e1ea7d"><use href="#i-bowl"/></svg>', bg:'rgba(225, 234, 125,0.16)', name:'Ernährung & Körper', hint:'Zyklusbasiert essen', msg:'Ich möchte über Ernährung und meinen Körper sprechen' },
-  ];
+  /* Dynamisch sind nur die beiden Hinweiszeilen, die von Live-Daten
+     abhaengen; alles andere kommt aus TOPICS. Bis hierher stand die
+     komplette Liste ein zweites Mal in dieser Funktion. */
+  var hinweis = {};
+  if (cd && !cd.stale) hinweis.zyklus = phase + cycleDayPart(cd, ' · ');
+  if (mb && mb.sleepStr) hinweis.schlaf = mb.sleepStr + ' letzte Nacht';
 
-  list.innerHTML = topics.map(function(t) {
-    return '<button class="topic-btn" onclick="closeTopicSheet();homeStartChat(\'' + t.msg.replace(/'/g,"\\'") + '\')">' +
-      '<div style="width:40px;height:40px;border-radius:12px;background:' + t.bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' + t.icon + '</div>' +
+  list.innerHTML = TOPICS.map(function(t) {
+    return '<button class="topic-btn" onclick="closeTopicSheet();homeStartChat(\'' + t.key + '\')">' +
+      '<div style="width:40px;height:40px;border-radius:12px;background:' + t.bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' +
+        '<svg class="ico" style="color:#e1ea7d"><use href="#i-' + t.icon + '"/></svg>' +
+      '</div>' +
       '<div style="flex:1;text-align:left;">' +
         '<div class="topic-name">' + t.name + '</div>' +
-        '<div class="topic-hint">' + t.hint + '</div>' +
+        '<div class="topic-hint">' + (hinweis[t.key] || t.hint) + '</div>' +
       '</div>' +
       '<div class="topic-arrow">→</div>' +
     '</button>';

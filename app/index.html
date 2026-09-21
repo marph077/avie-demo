@@ -5795,32 +5795,12 @@ function personalizeApp() {
   // Store greeting builder for later re-use when dashboard data changes
   window.buildGreeting = buildGreeting;
 
-  // Personalize MOOD_TIPS felieMsg with real data
-  const cd = (function(){ try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
-  const mb = window.manualBodyData;
-  const phase = cd ? cd.phase : 'Lutealphase';
-
-  if (MOOD_TIPS['müde']) {
-    let msg = '';
-    if (mb && mb.sleepMins < 360) msg = `Dein Schlaf war heute nur ${mb.sleepStr} — kein Wunder dass du müde bist. Das ist eine echte Erschöpfung, kein Einbildung.`;
-    else if (kinder === 'ja-klein') msg = `Mit kleinen Kindern und ${phase} gleichzeitig — das ist wirklich viel. 😴 Dein Körper kämpft gerade auf mehreren Fronten.`;
-    else msg = `Müdigkeit in der ${phase} ist völlig normal 😴 — dein Körper arbeitet gerade auf Hochtouren.`;
-    MOOD_TIPS['müde'].felieMsg = msg;
-  }
-  if (MOOD_TIPS['gestresst']) {
-    let msg = '';
-    if (mb && mb.stressScore > 70) msg = `Dein Stresslevel war heute schon erhöht — das spürt dein Körper. Was zieht gerade am meisten?`;
-    else if (lifestyle === 'job-intensiv') msg = `Bei einem intensiven Job und ${phase}: deine Stresstoleranz ist hormonell gerade niedriger als sonst. Das erklärt vieles.`;
-    else msg = `Stress in der ${phase} trifft härter — dein Nervensystem hat weniger Puffer. Das ist Biologie, keine Schwäche.`;
-    MOOD_TIPS['gestresst'].felieMsg = msg;
-  }
-  if (MOOD_TIPS['gut drauf']) {
-    const mb = window.manualBodyData;
-    let msg = '';
-    if (mb && mb.energyScore >= 70) msg = `Das freut mich! 🌸 Deine Energie und deine Stimmung zeigen heute in die gleiche Richtung — nutze das.`;
-    else msg = `Das freut mich! 🌸 Dein Körper fühlt sich heute besser an als die Daten vermuten lassen — das ist wichtige Info.`;
-    MOOD_TIPS['gut drauf'].felieMsg = msg;
-  }
+  /* Hier stand bis zum 21.09.2026 eine Personalisierung der MOOD_TIPS
+     (AL-13). Sie lief ins Leere: die Struktur wurde nirgends gerendert, und
+     einer der drei Zweige sprach 'gut drauf' an - ein Feld, das es in
+     MOOD_TIPS nie gab. Inhaltlich war es dieselbe Hormonerklaerung wie in
+     den Info-Sheets ("dein Nervensystem hat weniger Puffer, das ist
+     Biologie"), dazu Emojis, die der Prompt felie verbietet. */
 }
 
 // Re-run personalizeApp when dashboard data changes
@@ -7889,60 +7869,59 @@ function startDashAnalysis() {
 
 
 // ── Zyklus & Körperdaten Info Popups ──
+/* Die Info-Sheets hinter den Karten erklaeren NUR, was ein Wert IST — woher
+   er kommt, in welcher Einheit, wie sicher er ist. Keine Deutung, keine
+   Hormonerklaerung, keine Empfehlung.
+
+   Vorher stand hier das Gegenteil (AL-13, 21.09.): "Progesteron am hoechsten
+   macht muedet, sensibler, kann PMS-Symptome ausloesen", "Kein intensives
+   Training bei niedriger HRV", "Magnesium abends stabilisiert die Stimmung",
+   "Progesteron ist dein natuerliches Schlafmittel". Die App sagte damit in
+   ihrer eigenen Stimme genau das, was der Systemprompt felie verbietet — und
+   Art. 2 Nr. 1 Spiegelstrich 3 MDR braucht dafuer nicht einmal einen
+   Krankheitsbezug: Ueberwachung oder Vorhersage koerperlicher Vorgaenge
+   genuegt. Der Kommentar zu bodyInfoTemp() sagt es seit dem 17.09.: die
+   KI-Leitplanken greifen bei fest verdrahtetem UI-Text nicht.
+
+   Zweitens standen in den Titeln und Texten ERFUNDENE Werte — "HRV: 42 ms",
+   "42 ms liegt 6 ms unter deinem 7-Tage-Schnitt", "Ruhepuls: 58 bpm",
+   "Lutealphase - Tag 19". Die sah jede Nutzerin, unabhaengig von ihren
+   eigenen Daten. Der Titel nennt jetzt nur noch den Wert selbst; die echte
+   Zahl steht ohnehin auf der Karte, die das Sheet oeffnet.
+
+   Der Abschnitt "Tipps fuer heute" ist ersatzlos entfallen. Was sie heute
+   ausprobieren kann, bietet felie im Gespraech an — dort gelten die Regeln. */
 const BODY_INFO = {
   zyklus: {
     icon: '<svg class="ico"><use href="#i-bloom"/></svg>', iconBg: 'rgba(143, 91, 189,0.12)',
-    title: 'Lutealphase · Tag 19',
+    title: 'Zyklusphase',
     components: [
-      { dot: '#8F5BBD', text: '<strong>Progesteron am höchsten</strong> — das "Beruhigungshormon" macht müder, sensibler, kann PMS-Symptome auslösen.' },
-      { dot: '#180430', text: '<strong>Östrogen sinkt</strong> — damit sinkt Stresstoleranz und emotionale Pufferkapazität. Kleinigkeiten fühlen sich größer an.' },
-      { dot: '#180430', text: '<strong>Am Ende der Phase</strong> sinkt Progesteron bei den meisten Frauen wieder ab — darauf folgt die Menstruation.' },
-    ],
-    tips: [
-      { dot: '#8F5BBD', text: '<strong>Heute ist ein Erholungstag</strong> — nicht wegen Schwäche, sondern wegen Biologie.' },
-      { dot: '#180430', text: '<strong>Wärme hilft</strong> — Wärmflasche, warmes Essen, warmes Bad. Wärme signalisiert Sicherheit.' },
-      { dot: '#180430', text: '<strong>Magnesium abends</strong> — unterstützt Schlaf und stabilisiert die Stimmung in der Lutealphase.' },
+      { dot: '#8F5BBD', text: '<strong>Die Phase ist geschätzt</strong> — aus dem Abstand deiner letzten Periodenstarts, nicht gemessen.' },
+      { dot: '#180430', text: '<strong>Sie ist eine grobe Orientierung</strong>, keine Aussage über Hormone. Wie es dir heute geht, weißt nur du.' },
     ]
   },
   hrv: {
     icon: '<svg class="ico"><use href="#i-pulse"/></svg>', iconBg: 'rgba(225, 234, 125,0.1)',
-    title: 'HRV: 42 ms',
+    title: 'HRV',
     components: [
-      { dot: '#180430', text: '<strong>HRV</strong> misst die Variation zwischen Herzschlägen. Höhere HRV = besser erholt und belastbarer.' },
-      { dot: '#8F5BBD', text: '<strong>42 ms</strong> liegt 6 ms unter deinem 7-Tage-Schnitt (48 ms) — dein Körper ist noch im Erholungsmodus.' },
-      { dot: '#6B5A88', text: '<strong>Einflüsse:</strong> Schlaf, Stress, Zyklus, Training. In der Lutealphase ist HRV natürlicherweise etwas niedriger.' },
-    ],
-    tips: [
-      { dot: '#180430', text: '<strong>Kein intensives Training</strong> — bei niedriger HRV kostet Sport mehr als er bringt.' },
-      { dot: '#8F5BBD', text: '<strong>Früh schlafen</strong> — jede zusätzliche Stunde Schlaf hebt die HRV morgen messbar.' },
-      { dot: '#180430', text: '<strong>4-7-8 Atemübung</strong> aktiviert den Parasympathikus und verbessert HRV direkt.' },
+      { dot: '#180430', text: '<strong>HRV</strong> ist die Variation der Zeit zwischen zwei Herzschlägen, in Millisekunden.' },
+      { dot: '#8F5BBD', text: '<strong>Der Wert kommt von deinem Gerät.</strong> Geräte verschiedener Hersteller messen unterschiedlich, und ein einzelner Tag sagt wenig.' },
     ]
   },
   'schlaf-detail': {
     icon: '<svg class="ico"><use href="#i-moon"/></svg>', iconBg: 'rgba(143, 91, 189,0.12)',
-    title: 'Schlaf: 6h 48m',
+    title: 'Schlaf',
     components: [
-      { dot: '#8F5BBD', text: '<strong>Tiefschlaf 1h 12m</strong> — körperliche Regeneration, Immunsystem. Unterer Normalbereich.' },
-      { dot: '#180430', text: '<strong>REM 1h 44m</strong> — emotionale Verarbeitung, Gedächtnis, Kreativität. Heute gut.' },
-      { dot: '#180430', text: '<strong>6h 48m gesamt</strong> — knapp unter 7–8h ideal. In der Lutealphase oft schwerer, tief zu schlafen.' },
-    ],
-    tips: [
-      { dot: '#8F5BBD', text: '<strong>Kein Koffein nach 14 Uhr</strong> — in der Lutealphase bist du empfindlicher.' },
-      { dot: '#180430', text: '<strong>Raum kühler</strong> — 17–19°C. Dein Körper ist wärmer als sonst, das stört den Tiefschlaf.' },
-      { dot: '#180430', text: '<strong>10 Min. Stille</strong> vor dem Schlafen — Progesteron ist dein natürliches Schlafmittel.' },
+      { dot: '#8F5BBD', text: '<strong>Angezeigt wird, was dein Gerät aufgezeichnet hat</strong> — die Gesamtdauer und, wenn vorhanden, die Aufteilung in Schlafphasen.' },
+      { dot: '#180430', text: '<strong>Die Aufteilung ist eine Schätzung des Geräts</strong>, keine Messung im Schlaflabor.' },
     ]
   },
   puls: {
     icon: '<svg class="ico"><use href="#i-heart"/></svg>', iconBg: 'rgba(225, 234, 125,0.12)',
-    title: 'Ruhepuls: 58 bpm',
+    title: 'Ruhepuls',
     components: [
-      { dot: '#180430', text: '<strong>58 bpm</strong> — im normalen Bereich. Unter 60 ist gut trainiert.' },
-      { dot: '#8F5BBD', text: '<strong>Lutealphase-Effekt:</strong> Progesteron erhöht Körpertemperatur und damit den Puls leicht.' },
-      { dot: '#180430', text: '<strong>Mehrere Tage steigend?</strong> Das ist oft ein frühes Zeichen für Erkältung oder Übertraining.' },
-    ],
-    tips: [
-      { dot: '#180430', text: '<strong>Dein Puls sieht gut aus</strong> — kein Handlungsbedarf heute.' },
-      { dot: '#8F5BBD', text: '<strong>Regelmäßige Bewegung</strong> senkt langfristig den Ruhepuls — auch 20 Min. Gehen wirkt.' },
+      { dot: '#180430', text: '<strong>Der Ruhepuls</strong> ist deine Herzfrequenz in Ruhe, in Schlägen pro Minute.' },
+      { dot: '#8F5BBD', text: '<strong>Der Wert kommt von deinem Gerät</strong> und schwankt von Tag zu Tag.' },
     ]
   },
   temp: {
@@ -7951,9 +7930,7 @@ const BODY_INFO = {
     components: [
       { dot: '#8F5BBD', text: '<strong>Angezeigt wird die Abweichung</strong> von deinem persönlichen Durchschnitt, nicht die absolute Temperatur.' },
       { dot: '#180430', text: '<strong>Der Wert schwankt im Zyklus</strong> — in der zweiten Zyklushälfte liegt er bei vielen Frauen etwas höher.' },
-    ],
-    tips: [
-      { dot: '#8F5BBD', text: '<strong>Einzelne Nächte sagen wenig</strong> — erst über mehrere Tage wird ein Muster sichtbar.' },
+      { dot: '#180430', text: '<strong>Einzelne Nächte sagen wenig</strong> — erst über mehrere Tage wird ein Muster sichtbar.' },
     ]
   }
 };
@@ -7973,8 +7950,11 @@ function bodyInfoTemp() {
   var vorz = wert > 0 ? '+' : '';
   basis.title = 'Körpertemperatur: ' + vorz + wert + '°C';
   if (wert >= 0.2) {
-    basis.components.unshift({ dot: '#180430', text: '<strong>' + vorz + wert + '°C über deinem Schnitt.</strong> Eine leicht erhöhte Temperatur kann viele Gründe haben — Zyklusphase, Schlafumgebung, Alkohol am Vorabend oder ein beginnender Infekt.' });
-    basis.tips.push({ dot: '#180430', text: '<strong>Kühler schlafen und mehr trinken</strong> — beides tut gut, wenn dein Körper wärmer läuft als sonst.' });
+    /* "oder ein beginnender Infekt" ist entfallen (AL-13): aus einem
+       Koerpermesswert auf eine Erkrankung zu deuten ist genau die Aussage,
+       die felie nicht treffen darf. Der Tipp ebenso - was sie ausprobieren
+       kann, bietet felie im Gespraech an. */
+    basis.components.unshift({ dot: '#180430', text: '<strong>' + vorz + wert + '°C über deinem Schnitt.</strong> Der Wert schwankt aus vielen Gründen — Zyklusphase, Schlafumgebung, was du am Vorabend getrunken hast.' });
   } else if (wert <= -0.2) {
     basis.components.unshift({ dot: '#180430', text: '<strong>' + wert + '°C unter deinem Schnitt.</strong> Auch das ist normal und schwankt unter anderem mit Zyklusphase und Schlafumgebung.' });
   } else {
@@ -7993,9 +7973,6 @@ function showBodyInfo(key) {
   const compsHTML = info.components.map(r =>
     `<div class="score-popup-row"><div class="score-popup-dot" style="background:${r.dot};"></div><div class="score-popup-text">${r.text}</div></div>`
   ).join('');
-  const tipsHTML = info.tips.map(r =>
-    `<div class="score-popup-row"><div class="score-popup-dot" style="background:${r.dot};"></div><div class="score-popup-text">${r.text}</div></div>`
-  ).join('');
   backdrop.innerHTML = `<div class="score-popup">
     <div class="score-popup-handle"></div>
     <div class="score-popup-header">
@@ -8003,7 +7980,6 @@ function showBodyInfo(key) {
       <div class="score-popup-title">${info.title}</div>
     </div>
     <div class="score-popup-section">Was das bedeutet</div>${compsHTML}
-    <div class="score-popup-section">Tipps für heute</div>${tipsHTML}
     <button class="score-popup-close" onclick="this.closest('.score-popup-backdrop').remove()">Verstanden</button>
   </div>`;
   phone.appendChild(backdrop);
@@ -8014,42 +7990,24 @@ const SCORE_INFO = {
     icon: '<svg class="ico"><use href="#i-bolt"/></svg>', iconBg: 'rgba(225, 234, 125,0.12)',
     title: 'Energie-Score',
     components: [
-      { dot: '#180430', text: '<strong>Energie-Score</strong> — deine selbst eingeschätzte Energie auf einer Skala von 1–5, umgerechnet auf 100.' },
-      { dot: '#8F5BBD', text: '<strong>In der Lutealphase</strong> ist niedrige Energie normal — Progesteron erhöht den Schlafbedarf und senkt den Antrieb.' },
-      { dot: '#6B5A88', text: '<strong>Kombination zählt</strong> — Energie + HRV + Schlaf zusammen geben felie das beste Bild.' },
-    ],
-    tips: [
-      { dot: '#180430', text: '<strong>Energie schützen</strong> — heute nur das Nötigste. Unnötige Entscheidungen kosten mehr als du denkst.' },
-      { dot: '#8F5BBD', text: '<strong>Kurze Pausen</strong> alle 90 Minuten laden die Energie besser auf als Koffein.' },
-      { dot: '#180430', text: '<strong>Proteinreiches Frühstück</strong> stabilisiert den Blutzucker und verhindert den Mittags-Einbruch.' },
+      { dot: '#180430', text: '<strong>Der Energie-Score</strong> ist deine eigene Einschätzung von 1 bis 5, umgerechnet auf 100.' },
+      { dot: '#8F5BBD', text: '<strong>Er ist keine Messung</strong> — er hält fest, wie du es selbst eingeschätzt hast.' },
     ]
   },
   schlaf: {
     icon: '<svg class="ico"><use href="#i-moon"/></svg>', iconBg: 'rgba(143, 91, 189,0.12)',
     title: 'Schlaf',
     components: [
-      { dot: '#8F5BBD', text: '<strong>Schlafdauer</strong> — wie viele Stunden du geschlafen hast. Ideal sind 7–9 Stunden.' },
-      { dot: '#180430', text: '<strong>Lutealphase-Effekt</strong> — Progesteron macht schläfriger, stört aber oft den Tiefschlaf.' },
-      { dot: '#180430', text: '<strong>Qualität über Quantität</strong> — 7h mit viel Tiefschlaf sind besser als 9h mit vielen Unterbrechungen.' },
-    ],
-    tips: [
-      { dot: '#8F5BBD', text: '<strong>Schlafenszeit vorziehen</strong> — in der Lutealphase 30–60 Min. früher als sonst.' },
-      { dot: '#180430', text: '<strong>Kein Koffein nach 14 Uhr</strong> — in dieser Phase bist du empfindlicher.' },
-      { dot: '#180430', text: '<strong>Raum kühler</strong> — 17–19°C, dein Körper ist jetzt wärmer als sonst.' },
+      { dot: '#8F5BBD', text: '<strong>Angezeigt wird deine Schlafdauer</strong> für die letzte Nacht — aus deinem Gerät oder deiner eigenen Eingabe.' },
+      { dot: '#180430', text: '<strong>Eine Nacht ist eine Nacht.</strong> Über mehrere Tage wird eher sichtbar, was sich verändert.' },
     ]
   },
   stress: {
     icon: '<svg class="ico"><use href="#i-wind"/></svg>', iconBg: 'rgba(107,143,212,0.12)',
     title: 'Stress-Score',
     components: [
-      { dot: '#6B8FD4', text: '<strong>Stress-Score</strong> — dein selbst eingeschätztes Stresslevel von 1–5, umgerechnet auf 100.' },
-      { dot: '#8F5BBD', text: '<strong>Lutealphase-Effekt</strong> — die Stresstoleranz ist hormonell niedriger. Dasselbe fühlt sich mehr an.' },
-      { dot: '#180430', text: '<strong>Chronischer Stress</strong> senkt HRV, stört Schlaf und verschlimmert PMS-Symptome.' },
-    ],
-    tips: [
-      { dot: '#6B8FD4', text: '<strong>4-7-8 Atemübung</strong> — 3 Runden, aktiviert sofort den Parasympathikus.' },
-      { dot: '#8F5BBD', text: '<strong>Reize reduzieren</strong> — Nachrichten, Social Media heute auf Minimum.' },
-      { dot: '#180430', text: '<strong>Spazieren ohne Podcast</strong> — 20 Minuten unstrukturierte Bewegung senkt Cortisol.' },
+      { dot: '#6B8FD4', text: '<strong>Der Stress-Score</strong> ist deine eigene Einschätzung von 1 bis 5, umgerechnet auf 100.' },
+      { dot: '#8F5BBD', text: '<strong>Er ist keine Messung</strong> — er hält fest, wie du es selbst eingeschätzt hast.' },
     ]
   }
 };
@@ -8064,66 +8022,18 @@ function showScoreInfo(key) {
   const compsHTML = info.components.map(function(r) {
     return '<div class="score-popup-row"><div class="score-popup-dot" style="background:' + r.dot + ';"></div><div class="score-popup-text">' + r.text + '</div></div>';
   }).join('');
-  const tipsHTML = info.tips.map(function(r) {
-    return '<div class="score-popup-row"><div class="score-popup-dot" style="background:' + r.dot + ';"></div><div class="score-popup-text">' + r.text + '</div></div>';
-  }).join('');
-  backdrop.innerHTML = '<div class="score-popup"><div class="score-popup-handle"></div><div class="score-popup-header"><div class="score-popup-icon" style="background:' + info.iconBg + ';">' + info.icon + '</div><div class="score-popup-title">' + info.title + '</div></div><div class="score-popup-section">Was das bedeutet</div>' + compsHTML + '<div class="score-popup-section">Tipps für heute</div>' + tipsHTML + '<button class="score-popup-close" onclick="this.closest(\'.score-popup-backdrop\').remove()">Verstanden</button></div>';
+  backdrop.innerHTML = '<div class="score-popup"><div class="score-popup-handle"></div><div class="score-popup-header"><div class="score-popup-icon" style="background:' + info.iconBg + ';">' + info.icon + '</div><div class="score-popup-title">' + info.title + '</div></div><div class="score-popup-section">Was das bedeutet</div>' + compsHTML + '<button class="score-popup-close" onclick="this.closest(\'.score-popup-backdrop\').remove()">Verstanden</button></div>';
   phone.appendChild(backdrop);
 }
 
 
 
-  // ── Mood tips data (global) ──
-const MOOD_TIPS = {
-  'gut drauf': {
-    felieMsg: 'Das freut mich! 🌸 Dein Körper fühlt sich heute besser an als die Daten vermuten lassen — das ist wichtige Info.',
-    tips: [
-      { type: 'tip-good',    icon: icoSvg('i-bolt', 20), cat: 'Energie nutzen',     title: 'Heute ist ein guter Tag für Herausforderungen',  body: 'Deine Stimmung übertrumpft die Scores — nutze das Fenster für Dinge die sonst schwerer fallen. <strong>Kreativer Output, Gespräche, neue Projekte</strong> passen heute gut.' },
-      { type: 'tip-good',    icon: icoSvg('i-run', 20), cat: 'Bewegung',          title: 'Moderates Training heute möglich',               body: 'Wenn du dich gut fühlst trotz Lutealphase, kannst du <strong>etwas aktiver</strong> sein — aber höre auf deinen Körper, nicht auf den Ehrgeiz.' },
-      { type: 'tip-gentle',  icon: icoSvg('i-mind', 20), cat: 'Reflektieren',        title: 'Notier dir wie du dich fühlst',                  body: 'Gute Tage in der Lutealphase sind wertvoll. <strong>Was hat heute geholfen?</strong> Schlaf, Ernährung, Pausen? felie lernt daraus.' },
-    ]
-  },
-  'müde': {
-    felieMsg: 'Müdigkeit in der Lutealphase ist völlig normal 😴 — dein Körper arbeitet gerade auf Hochtouren.',
-    tips: [
-      { type: 'tip-rest',    icon: icoSvg('i-moon', 20), cat: 'Schlaf & Erholung',   title: 'Früher ins Bett — ohne Schuldgefühle',          body: 'Progesteron macht müder. <strong>30–60 Min. früher schlafen</strong> als sonst ist heute das Klügste was du tun kannst.' },
-      { type: 'tip-gentle',  icon: icoSvg('i-bowl', 20), cat: 'Energie sanft stützen', title: 'Koffein ja — aber mit Bedacht',               body: 'Maximal <strong>1–2 Tassen vor 12 Uhr</strong>. Danach besser: Matcha oder warmes Wasser mit Zitrone.' },
-      { type: 'tip-caution', icon: icoSvg('i-box', 20), cat: 'Pensum anpassen',      title: 'Prioritäten heute radikal kürzen',              body: '<strong>Was muss heute wirklich sein?</strong> Alles andere darf warten. Müdigkeit ignorieren kostet morgen mehr.' },
-    ]
-  },
-  'gestresst': {
-    felieMsg: 'Ich höre dich 💙 Stress in der Lutealphase trifft doppelt — dein Nervensystem ist gerade empfindlicher.',
-    tips: [
-      { type: 'tip-rest',    icon: icoSvg('i-calm', 20), cat: 'Sofort-Hilfe',       title: '4-7-8 Atemübung — jetzt',                      body: '<strong>4 Sek. einatmen, 7 halten, 8 ausatmen.</strong> 3 Runden. Aktiviert sofort den Parasympathikus und senkt Cortisol.' },
-      { type: 'tip-caution', icon: icoSvg('i-eye', 20), cat: 'Reize reduzieren',      title: 'Weniger Input — mehr Stille',                   body: 'Stress entsteht oft durch <strong>zu viele Reize gleichzeitig</strong>. Nachrichten, Social Media, laute Räume: heute auf Minimum.' },
-      { type: 'tip-gentle',  icon: icoSvg('i-calm', 20), cat: 'Körper beruhigen',      title: 'Wärme hilft wirklich',                          body: 'Wärmflasche, warmes Bad, warmes Essen — <strong>Wärme signalisiert Sicherheit</strong> dem Nervensystem und senkt die Stressreaktion.' },
-    ]
-  },
-  'nachdenklich': {
-    felieMsg: 'Nachdenklichkeit in dieser Phase hat einen Grund 💭 — dein Gehirn verarbeitet gerade viel.',
-    tips: [
-      { type: 'tip-gentle',  icon: icoSvg('i-mind', 20), cat: 'Gedanken ordnen',      title: 'Schreib es raus — Brain Dump',                  body: 'Alles was im Kopf kreist <strong>5 Minuten lang aufschreiben</strong> — ohne Filter. Das Gehirn gibt los, wenn es sieht dass nichts vergessen wird.' },
-      { type: 'tip-rest',    icon: icoSvg('i-run', 20), cat: 'Bewegte Stille',       title: 'Spazieren ohne Podcast',                       body: 'Allein spazieren ohne Input lässt Gedanken <strong>sich selbst sortieren</strong>. 15–20 Minuten reichen.' },
-      { type: 'tip-good',    icon: icoSvg('i-chat', 20), cat: 'Mit felie sprechen',     title: 'Lass uns darüber reden',                        body: 'Wenn die Gedanken zu groß für den Kopf sind — <strong>felie ist da</strong>. Einfach losschreiben, kein Thema zu klein.' },
-    ]
-  },
-  'motiviert': {
-    felieMsg: 'Schön, dass du Energie spürst! ✨ Lass uns das klug nutzen — mit Rücksicht auf deine Lutealphase.',
-    tips: [
-      { type: 'tip-good',    icon: icoSvg('i-eye', 20), cat: 'Fokus',                title: 'Eine große Sache heute — nicht fünf',           body: 'Motivation verführt dazu, zu viel anzugehen. <strong>Eine Sache richtig</strong> ist wertvoller als fünf halbfertige.' },
-      { type: 'tip-caution', icon: icoSvg('i-sliders', 20), cat: 'Balancieren',           title: 'Nicht überdrehen',                              body: 'Motivation in der Lutealphase kann schnell in Erschöpfung kippen. <strong>Bewusst Pausen einbauen</strong> — auch wenn du nicht müde bist.' },
-      { type: 'tip-good',    icon: icoSvg('i-run', 20), cat: 'Bewegung',              title: 'Training heute: Kraft oder Ausdauer',           body: 'Bei guter Energie passt heute <strong>moderates Kraft- oder Ausdauertraining</strong>. Auf Hochintensives lieber verzichten.' },
-    ]
-  },
-  'nicht so toll': {
-    felieMsg: 'Danke dass du ehrlich bist 💜 Das ist wichtig. Ich passe alles auf heute an — kein Druck.',
-    tips: [
-      { type: 'tip-rest',    icon: icoSvg('i-calm', 20), cat: 'Erlaubnis zur Pause',  title: 'Heute darf weniger sein — wirklich',            body: 'Kein schlechtes Gewissen. <strong>Dein Körper braucht heute Fürsorge</strong>, keine Performance. Was ist das Minimum das heute sein muss?' },
-      { type: 'tip-gentle',  icon: icoSvg('i-bloom', 20), cat: 'Sanfte Selbstfürsorge', title: 'Kleine Wärme-Momente einbauen',                 body: 'Warmes Essen, ein Bad, eine Decke. <strong>Kleine Komfort-Rituale</strong> wirken in schwierigen Momenten überraschend stark.' },
-      { type: 'tip-caution', icon: icoSvg('i-chat', 20), cat: 'Nicht alleine tragen',  title: 'felie ist da — schreib mir',                    body: 'Wenn es mehr ist als Müdigkeit — <strong>sprich mit mir</strong>. Manchmal hilft es, einfach auszusprechen was schwer ist.' },
-    ]
-  }
-};
+  /* MOOD_TIPS ist am 21.09.2026 ersatzlos entfallen: die Struktur wurde
+   nirgends gerendert (die CSS-Klassen .dash-tip-card/.tip-rest/.tip-gentle
+   werden an keiner Stelle ausgegeben), und der Block, der sie mit echten
+   Daten personalisierte, sprach ein Feld an, das es nicht gab. Inhaltlich
+   stand dort dasselbe wie in den Info-Sheets: Hormonerklaerungen und
+   Empfehlungen (siehe AL-13). */
 
 
 

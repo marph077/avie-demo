@@ -638,11 +638,8 @@ html.native-app .phone {
 .ritual-pill { width: 100%; padding: 9px 12px; border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.9); font-family: inherit; font-size: 12.5px; font-weight: 500;
-  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: background 0.15s; }
-/* Kopfzeile: Icon und Wort bleiben nebeneinander, auch wenn die Unterzeile
-   darunter erscheint. */
-.ritual-pill-kopf { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .ritual-pill:hover { background: rgba(255,255,255,0.13); }
 .ritual-pill:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
 /* Markierung, wenn die letzte Selbstreflexion aelter als 24 Stunden ist
@@ -655,9 +652,13 @@ html.native-app .phone {
    tut, braucht er die Bewegung nicht.
      Der Ring sah in der Praxis ohnehin nie jemand: der Ausloeser war zu
    einem leeren Rumpf reduziert worden, die Klasse wurde nirgends
-   gesetzt. */
-.ritual-pill.markiert { border-color: rgba(225,234,125,0.55); background: rgba(225,234,125,0.14);
-  box-shadow: 0 0 0 2px rgba(225,234,125,0.28); }
+   gesetzt.
+     Seit dem 22.09. bleibt es bei genau einer Linie. Die leichte
+   Lime-Fuellung und der zweite Ring darueber waren zusammen schon wieder
+   eine Flaeche — und damit der Anfang der Aufgabe, die hier nie stehen
+   sollte. Statt drei schwacher Signale eines, das traegt: der Rand
+   allein, dafuer deutlich genug, um ohne Fuellung gesehen zu werden. */
+.ritual-pill.markiert { border-color: rgba(225,234,125,0.75); }
 /* Icon in Lime: einziger Farbakzent auf der ansonsten leisen Flaeche.
    Bewusst keine Lime-Fuellung fuer den ganzen Button — der bleibt Angebot.
    Volle Deckkraft, weil Lime bei 0.85 auf Plum schon deutlich abfaellt. */
@@ -669,7 +670,12 @@ html.native-app .phone {
      An dieser Stelle stand schon einmal eine Unterzeile und wurde bewusst
    entfernt: "ca. 1 Min." setzte eine Aufwandserwartung und liess das
    Angebot wie eine Aufgabe wirken. Ein Satz ueber den Datenstand tut das
-   nicht. */
+   nicht.
+     Sie sitzt seit dem 22.09. nicht mehr unter dem Wort in der Pille,
+   sondern rechts in der Zyklus-Zeile darunter, auf einer Hoehe mit
+   "Follikelphase - Tag 8". Zwei Zeilen im Button machten aus dem Angebot
+   einen Block; unten in der Fusszeile steht sie da, wo ohnehin die
+   Angaben zum Datenstand stehen. */
 .ritual-pill-sub { font-size: 10.5px; font-weight: 400; color: rgba(225,234,125,0.85);
   letter-spacing: 0.01em; }
 
@@ -6170,7 +6176,13 @@ function fillHomeData() {
 
   var cl = document.getElementById('home-cycle-line');
   if (cl) {
-    if (cd || window._bodyUpdatedAt) {
+    /* Der Selbstreflexionshinweis steht seit dem 22.09. rechts in dieser
+       Zeile. Also muss sie auch dann erscheinen, wenn es weder Zyklus-
+       noch Koerperdaten gibt - sonst haette der Hinweis genau bei denen
+       keinen Ort, die noch gar nichts erfasst haben. */
+    var markerAn = false;
+    try { markerAn = felieRitualMarkerNoetig(); } catch (e) {}
+    if (cd || window._bodyUpdatedAt || markerAn) {
       var cycIcon = '<svg class="ico" style="width:12px;height:12px;display:inline-block;vertical-align:-2px;margin-right:5px;opacity:0.8;"><use href="#i-bloom"/></svg>';
       var left = cd ? (cycIcon + cd.phase + (cd.cycleDay ? ' · Tag ' + cd.cycleDay : '')) : '';
       var upd = '';
@@ -6185,11 +6197,23 @@ function fillHomeData() {
           ? ('aktualisiert ' + w.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr')
           : ('aktualisiert ' + w.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }));
       }
-      cl.innerHTML = '<span>' + left + '</span><span style="color:rgba(255,255,255,0.45);font-size:10px;">' + upd + '</span>';
+      /* Rechts steht entweder der Hinweis ODER die Aktualisierungszeit,
+         nie beides: sie teilen sich eine Ecke und sagen dasselbe. Steht
+         der Marker, ist "noch keine Angaben von heute" die klarere der
+         beiden - "aktualisiert 20. Sept." tritt dann zurueck.
+           WELCHE der beiden sichtbar ist, entscheidet ausschliesslich
+         felieRitualMarkerAktualisieren(). Hier wird nur der Platz
+         gebaut, damit es keine zweite Stelle gibt, die es auch zu wissen
+         glaubt. */
+      cl.innerHTML = '<span>' + left + '</span>'
+        + '<span id="home-ritual-pill-sub" class="ritual-pill-sub" hidden>noch keine Angaben von heute</span>'
+        + '<span id="home-cycle-upd" style="color:rgba(255,255,255,0.45);font-size:10px;">' + upd + '</span>';
       cl.style.display = 'flex';
       cl.style.justifyContent = 'space-between';
       cl.style.alignItems = 'center';
       cl.style.gap = '8px';
+      /* Der Neuaufbau hat den Zustand mitgerissen - einmal nachziehen. */
+      try { felieRitualMarkerAktualisieren(); } catch (e) {}
     } else {
       cl.style.display = 'none';
     }
@@ -7252,12 +7276,16 @@ function felieHinweiseAktualisieren() {
 }
 
 function felieRitualMarkerAktualisieren() {
-  var pill = document.getElementById('home-ritual-pill');
-  if (!pill) return;
-  var sub = document.getElementById('home-ritual-pill-sub');
   var an = felieRitualMarkerNoetig();
-  pill.classList.toggle('markiert', an);
+  var pill = document.getElementById('home-ritual-pill');
+  if (pill) pill.classList.toggle('markiert', an);
+  /* Kein vorzeitiges Verlassen mehr, wenn die Pille fehlt: Unterzeile und
+     Aktualisierungszeit liegen seit dem 22.09. in der Zyklus-Zeile und
+     haengen nicht mehr an ihrem Dasein. */
+  var sub = document.getElementById('home-ritual-pill-sub');
   if (sub) sub.hidden = !an;
+  var upd = document.getElementById('home-cycle-upd');
+  if (upd) upd.hidden = an;
 }
 
 
@@ -8978,8 +9006,7 @@ function renderRitualAngebot() {
   var ci = document.getElementById('home-checkin'); if (!ci) return;
   ci.style.display = 'block'; ci.style.marginTop = '10px';
   ci.innerHTML = '<button id="home-ritual-pill" onclick="event.stopPropagation();felieRitualStarten()" class="ritual-pill">'
-    + '<span class="ritual-pill-kopf"><span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>Selbstreflexion</span>'
-    + '<span id="home-ritual-pill-sub" class="ritual-pill-sub" hidden>noch keine Angaben von heute</span>'
+    + '<span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>Selbstreflexion'
     + '</button>';
   /* Die Markierung haengt am Datenstand, nicht an einem Merker — deshalb
      wird sie hier bei jedem Rendern neu bestimmt und nicht irgendwo

@@ -12779,7 +12779,7 @@ function felieChatAntwortRegeln() {
   return [
     "<antwortauftrag>",
     "Antworte auf ihre letzte Nachricht, so, dass sie sich verstanden fühlt und etwas damit anfangen kann. Greif einen konkreten Punkt aus ihrer Nachricht auf. Eine Sachfrage bekommt sofort eine sachliche Antwort. Fang nicht mit einem Urteil über ihr Anliegen oder Gefühl an; Wärme braucht keinen Vorspann.",
-    "Unklar, was sie braucht? Schlag einen kleinen Einstieg vor und stimm ihn ab. Konkreter Wunsch? Direkt liefern: eine ausführbare Idee, die gewünschte Erklärung, den fertigen Text, ohne erfundene Gründe, Termine oder Gefühle. Eine Frage nur, wenn sie an ihre Worte anknüpft und deine Hilfe wirklich verändert; sonst keine. Nach einem Ja arbeitest du genau den vorherigen Vorschlag aus; nach einem Einwand änderst du ihn so, dass er weiter zu ihrem Ziel passt, statt das Problem nur zu verschieben. Entlasten heißt: eine wirklich verschiebbare Aufgabe kleiner machen oder verschieben; Pflichten bleiben. Will sie nur erzählen, gibt es weder Rat noch Aufgabe. Alltagstipps begründest du praktisch, ohne erfundene Körper- oder Gehirnwirkung und ohne Erfolgszahlen. Hast du etwas Unbelegtes behauptet und sie widerspricht, gibst du es knapp zu und setzt keine neue Erklärung an die Stelle.",
+    "Unklar, was sie braucht? Schlag einen kleinen Einstieg vor und stimm ihn ab. Konkreter Wunsch? Direkt liefern: eine ausführbare Idee, die gewünschte Erklärung, den fertigen Text, ohne erfundene Gründe, Termine oder Gefühle. Schlägt sie selbst etwas vor, arbeitest du es aus, statt es zu bewerten oder ihr die Idee zu erklären. Eine Frage nur, wenn sie an ihre Worte anknüpft und deine Hilfe wirklich verändert; sonst keine. Nach einem Ja arbeitest du genau den vorherigen Vorschlag aus; nach einem Einwand änderst du ihn so, dass er weiter zu ihrem Ziel passt, statt das Problem nur zu verschieben. Entlasten heißt: eine wirklich verschiebbare Aufgabe kleiner machen oder verschieben; Pflichten bleiben. Will sie nur erzählen, gibt es weder Rat noch Aufgabe. Alltagstipps begründest du praktisch, ohne erfundene Körper- oder Gehirnwirkung und ohne Erfolgszahlen. Hast du etwas Unbelegtes behauptet und sie widerspricht, gibst du es knapp zu und setzt keine neue Erklärung an die Stelle.",
     "SO KLINGST DU: wie eine kluge Freundin, die wirklich zuhört, locker, warm, direkt, in sauberem Alltagsdeutsch, so, wie man einer Freundin schreibt: natürliche Wendungen, kein Amtston, keine Lehrbuchsätze, und ohne Gründe oder Details zu erfinden. Punkt und Komma statt Gedankenstrich-Einschüben, keine Ankündigungs-Doppelpunkte; der erste Satz ist eine Antwort oder eine Aussage, kein Vorschlag, gemeinsam loszulegen. Ganze Sätze, meist ein bis zwei kurze Absätze; ein erbetener Plan oder eine Erklärung darf länger sein. Konkrete Wörter statt Sammelbegriffe („ein Buch“ statt „Hobbymaterial“, „abends abschalten“ statt „die Abendroutine optimieren“). Kein Vortrag, keine Befehlsketten, keine Überschriften, kein HTML, keine Emojis, keine Listen; auch mehrere Ideen oder Schritte stehen als Fließtext, ohne Nummern und ohne Sternchen; keine Coaching- oder Werbefloskeln, keine künstlichen Gegensätze, keine Schlusszusammenfassung. Gefühle weder verstärken noch mit Ursachen versehen. Grenzen sagst du kurz und menschlich. Deine Wörter: „magst du ausprobieren“, „wie siehst du das selbst“, „manche Frauen erleben“, „was gerade geht“; nicht deine Wörter: Symptom, Risiko, Warnung, „Anzeichen für“, „solltest du abklären lassen, weil“. Keine Schablone: Antworte auf diesen Moment, statt einen Beispielsatz einzusetzen. Ihren Namen benutzt du wie eine Freundin: gelegentlich, nicht in jeder Nachricht, nie als Anrede-Formel. Korrekte Groß- und Kleinschreibung; felie bleibt klein. Höchstens ein Fragezeichen in der ganzen Antwort; auch ein Angebot in Frageform zählt. Steht ein zweites da, streich es, bevor du antwortest. Gib nur die fertige Antwort aus.",
     "</antwortauftrag>"
   ].join('\n\n');
@@ -13629,8 +13629,15 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
      aber die Zusammenfassung fuers Archiv fehlt. Ob Notizen dabei sind,
      entscheidet nicht darueber: wenn alles Gesagte zu Angaben geworden
      ist, ist keine Notiz das richtige Ergebnis (E04). */
-  if (!out.zusammenfassung && !out.notizen.length
-      && (out.fakten.length || out.faeden.length)) unvollstaendig();
+  /* Erweitert am 22.09.: die Bedingung verlangte, dass UEBERHAUPT etwas
+     gewonnen wurde. Ein Gespraech, aus dem gar nichts wurde, galt damit
+     als fertig ausgewertet — die Archivkarte sah abgeschlossen aus, und
+     weil notizen ein (leeres) Array und der Status 'vollstaendig' war,
+     erschien nicht einmal der Knopf 'Notizen ergaenzen'. Genau dieser
+     Fall trat auf, wenn das Modell den bezug wegliess (siehe oben).
+       'profil' ist ausgenommen: die Extraktion aus dem Kennenlernen
+     liefert nie eine Zusammenfassung, dort ist ihr Fehlen kein Mangel. */
+  if (mode !== 'profil' && !out.zusammenfassung && !out.notizen.length) unvollstaendig();
   out.runden = runden;
   felieNotizVorschau(out);
   return out;
@@ -13795,8 +13802,7 @@ function felieVorschlaegePruefen(o, source, bestand) {
   (Array.isArray(o.vorschlaege) ? o.vorschlaege : []).forEach(function (v) {
     if (!v || typeof v !== 'object') { out.verworfen++; return; }
     var art = ['zusammenfassung', 'notiz', 'angabe', 'thema'].indexOf(v.art) >= 0 ? v.art : null;
-    var bezug = ['neu', 'bestaetigung', 'aktualisierung', 'widerspruch'].indexOf(v.bezug) >= 0 ? v.bezug : null;
-    if (!art || !bezug) { out.verworfen++; return; }
+    if (!art) { out.verworfen++; return; }
 
     var n = felieNotizPruefen(v, source,
       art === 'zusammenfassung' ? 600 : art === 'notiz' ? 240 : 90);
@@ -13812,6 +13818,22 @@ function felieVorschlaegePruefen(o, source, bestand) {
           nachweis: { quelle: 'zusammenfassung', text: n.text, belege: n.belege } };
       return;
     }
+
+    /* Fehlender bezug verwirft nicht mehr. Gemessen am 22.09.: dasselbe
+       Gespraech, zweimal ausgewertet, einmal mit und einmal ohne das Feld
+       — das Modell laesst es bei temperature 0.7 gelegentlich weg, und
+       vorher fiel dann JEDER Eintrag weg, die Zusammenfassung
+       eingeschlossen (sie stand vor ihrer eigenen Ausnahme oben).
+         Die Voreinstellung ist nicht geraten: ohne zielId KANN ein
+       Vorschlag nur 'neu' sein, denn bestaetigung, aktualisierung und
+       widerspruch benennen alle einen vorhandenen Eintrag. Mit zielId,
+       aber ohne bezug, ist die Absicht offen — das ist genau der Fall,
+       fuer den 'widerspruch' da ist (lieber zur Klaerung als geraten).
+       Dubletten faengt weiterhin felieMerkAbgleich ab. */
+    var bezug;
+    if (['neu', 'bestaetigung', 'aktualisierung', 'widerspruch'].indexOf(v.bezug) >= 0) bezug = v.bezug;
+    else if (v.bezug == null) bezug = v.zielId ? 'widerspruch' : 'neu';
+    else { out.verworfen++; return; }   /* gesetzt, aber unbekannt: etwa 'loeschen' — den gibt es nicht */
 
     var ziel = null;
     if (bezug !== 'neu') {

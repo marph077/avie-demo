@@ -638,32 +638,40 @@ html.native-app .phone {
 .ritual-pill { width: 100%; padding: 9px 12px; border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.9); font-family: inherit; font-size: 12.5px; font-weight: 500;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
   transition: background 0.15s; }
+/* Kopfzeile: Icon und Wort bleiben nebeneinander, auch wenn die Unterzeile
+   darunter erscheint. */
+.ritual-pill-kopf { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .ritual-pill:hover { background: rgba(255,255,255,0.13); }
 .ritual-pill:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
-/* Markierung nach dem Onboarding. Der Guide-Spotlight zeigt einmalig auf die
-   Pille; danach bleibt dieser leise Ring, bis die Selbstreflexion einmal
-   ausgefuellt wurde. Verworfen: die Pille dauerhaft in Lime fuellen — das
-   macht aus dem Angebot eine Aufgabe, genau das war beim alten Check-in
-   das Problem. Der Ring pulsiert langsam und respektiert reduzierte
-   Bewegung. */
+/* Markierung, wenn die letzte Selbstreflexion aelter als 24 Stunden ist
+   (E-U1). Verworfen: die Pille dauerhaft in Lime fuellen — das macht aus
+   dem Angebot eine Aufgabe, genau das war beim alten Check-in das
+   Problem. Ein Rand ist Angebot, eine Fuellung waere Aufgabe.
+     Kein Puls mehr. Bis zum 22.09. stand hier eine Animation mit einer
+   Reduced-Motion-Ausnahme; jetzt gilt die ruhige Fassung fuer alle. Nach
+   Hinweisregel 4 muss ein Hinweis ohne Bewegung tragen — wenn er das
+   tut, braucht er die Bewegung nicht.
+     Der Ring sah in der Praxis ohnehin nie jemand: der Ausloeser war zu
+   einem leeren Rumpf reduziert worden, die Klasse wurde nirgends
+   gesetzt. */
 .ritual-pill.markiert { border-color: rgba(225,234,125,0.55); background: rgba(225,234,125,0.14);
-  animation: ritualPuls 2.4s ease-in-out infinite; }
-@keyframes ritualPuls {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(225,234,125,0.34); }
-  50%      { box-shadow: 0 0 0 5px rgba(225,234,125,0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ritual-pill.markiert { animation: none; box-shadow: 0 0 0 2px rgba(225,234,125,0.28); }
-}
+  box-shadow: 0 0 0 2px rgba(225,234,125,0.28); }
 /* Icon in Lime: einziger Farbakzent auf der ansonsten leisen Flaeche.
    Bewusst keine Lime-Fuellung fuer den ganzen Button — der bleibt Angebot.
    Volle Deckkraft, weil Lime bei 0.85 auf Plum schon deutlich abfaellt. */
 .ritual-pill-ico { display: inline-flex; opacity: 1; color: var(--apricot); }
-/* .ritual-pill-sub entfernt: die Zeitangabe "ca. 1 Min." ist weg, weil sie
-   eine Aufwandserwartung setzte, die das Angebot wie eine Aufgabe wirken
-   liess. Keine weiteren Nutzungsstellen im Markup. */
+/* Unterzeile, nur im markierten Zustand. Sie nennt den ZUSTAND DER DATEN,
+   nie ihr Verhalten (Hinweisregel 1), und sie lautet an Tag 30 wortgleich
+   wie an Tag 1 — keine Zahl, kein Datum, damit keine Eskalation durch
+   Arithmetik entsteht (Hinweisregel 3).
+     An dieser Stelle stand schon einmal eine Unterzeile und wurde bewusst
+   entfernt: "ca. 1 Min." setzte eine Aufwandserwartung und liess das
+   Angebot wie eine Aufgabe wirken. Ein Satz ueber den Datenstand tut das
+   nicht. */
+.ritual-pill-sub { font-size: 10.5px; font-weight: 400; color: rgba(225,234,125,0.85);
+  letter-spacing: 0.01em; }
 
 /* Bottom-Sheet: faehrt von unten auf etwa drei Viertel der Hoehe.
    Der geteilte .score-popup-backdrop ist dafuer schon der richtige
@@ -2732,7 +2740,7 @@ var FELIE_LS_KEYS = [
   /* Markierung der Selbstreflexion nach dem Onboarding. Gehoert in diese
      Liste, weil sie sonst ein Zuruecksetzen ueberlebt und die frisch
      geleerte App die Markierung nicht mehr zeigt. */
-  'felie_ritual_marker', 'felie_onboarding_v1'
+  'felie_onboarding_v1'
 ];
 
 /* Nur loeschen, nicht sichern:
@@ -5611,6 +5619,45 @@ function klV2SichernIntern() {
   var chats = getSavedChats(), current = chats.find(function(c) { return c.onboardingId === s.id; });
   if (!current) return false;
   current.notizenStatus = 'vollstaendig'; current.onboardingFlow = 2;
+
+  /* AL-76: Die Archivkarte des Kennenlernens bekommt ihre Zusammenfassung.
+     Ohne sie stand dort "Noch keine Gespraechsnotizen vorhanden." — die
+     erste Archivkarte, die eine Nutzerin je sieht, las sich damit, als
+     waere das Gespraech verloren gegangen.
+       Der Text kommt aus klV2Zusammenfassung(), also deterministisch aus
+     ihren eigenen Auswahlen, ohne Modellaufruf. Er war dafuer schon
+     gebaut: der Kommentar dort sagt "Standalone im Archiv traegt der Satz
+     trotzdem" — es fehlte nur der Schreibvorgang.
+       nachweis.quelle 'selbst' ist die ehrliche Angabe. Der
+     Nachweis-Mechanismus existiert, um Modellerfindungen zu belegen, und
+     hat bei ihren eigenen Auswahlen nichts zu pruefen. */
+  try { current.zusammenfassung = { text: klV2Zusammenfassung(), nachweis: { quelle: 'selbst' } }; } catch (e) {}
+
+  /* AL-75: Was im Kennenlernen ins Gedaechtnis geschrieben wurde, wird als
+     "neu" gemeldet — Puls auf dem Gedaechtnis-Symbol, Register "Neu" als
+     Einstieg, Lime-Rand an den einzelnen Eintraegen, und alles verlischt
+     beim Ansehen. Der ganze Mechanismus war gebaut, wurde aber nur vom
+     Abschlussauftrag gefuettert; der Kennenlern-Weg schreibt ueber
+     felieFaktSetzen/felieEpisode und meldete nichts.
+       Damit sah das Ergebnis des Kennenlernens aus, als sei nichts
+     passiert — in genau dem Moment, den E-S5/2 als den Beweis bezeichnet,
+     der das Produkt verkauft.
+       Hier und nicht im Importblock darueber: der laeuft bei jeder
+     Korrektur erneut, und dann blinkte es mitten in der Aufnahme. Diese
+     Stelle wird durch 'stage !== aufnahme' oben genau einmal erreicht.
+       Gesammelt wird ueber die Kennung, nicht ueber einen Ruecklauf aus
+     fact(): die Aufnahme legt Fakten UND Episoden unter derselben
+     Kennungsform an, und gedNeueEintraege loest beide gegen den Bestand
+     auf. */
+  var neuPraefix = 'aufnahme:' + s.id + ':';
+  var neuIds = [];
+  try {
+    felieStore().fakten.forEach(function (f) {
+      if (String(f.id).indexOf(neuPraefix) === 0) neuIds.push(f.id); });
+    felieStore().episoden.forEach(function (e) {
+      if (String(e.id).indexOf(neuPraefix) === 0) neuIds.push(e.id); });
+  } catch (e) {}
+  if (neuIds.length) { try { felieNeueSnippetsSetzen(neuIds); } catch (e) {} }
   try { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); } catch(e) { window._klStorageError = true; return false; }
   if (!saveUserProfile()) { window._klStorageError = true; return false; }
   s.extraction = 'fertig'; s.stage = 'bereit'; s.input = ''; s.completedAt = Date.now();
@@ -5635,7 +5682,7 @@ function klV2StartApp() {
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   updateClock(); personalizeApp();
-  try { localStorage.setItem('felie_guide_home_deferred','1'); localStorage.removeItem('felie_ritual_marker'); } catch(e) {}
+  try { localStorage.setItem('felie_guide_home_deferred','1'); } catch(e) {}
   homeInit(true);
 }
 
@@ -7131,15 +7178,64 @@ function homeInit(fromOnboarding) {
   if (klErsterEinstiegZeigen()) { renderRitualEcho(false); return Promise.resolve(); }
   klHomeStatusZeigen();
   renderRitualEcho(false);
-  felieRitualMarkerAnstossen();
+  felieRitualMarkerAktualisieren();
   return felieHomeBegruessen();
 }
 
-/* Markierung erst zeigen, wenn die Startseite wirklich steht: die Pille
-   wird von fillHomeData()/renderRitualAngebot() gerendert, und der
-   Spotlight misst ihre Position. Zu frueh gemessen sitzt das Loch im
-   Leeren. Ein Frame reicht nicht — die Karte oben faehrt mit ein. */
-function felieRitualMarkerAnstossen() { /* Header access remains visible; no additional promotion. */ }
+/* ── Markierung der Selbstreflexion (E-U1, AL-70) ──────────────────────
+   Sichtbar, wenn die letzte Selbstreflexion aelter als 24 Stunden ist.
+   Sie dient der Nutzerin: ohne Stimmung, Nacht und Energie hat felie
+   nichts, worauf sie im Gespraech schauen kann.
+
+   ES WIRD NICHTS ZUSAETZLICH GESPEICHERT. Der Zustand wird aus den
+   Signalen abgeleitet, die ohnehin da sind — jedes traegt ts und quelle.
+   Damit ist Hinweisregel 5 ("nur ein Zeitstempel, keine Reihe") nicht nur
+   erfuellt, es wird sogar weniger gespeichert als vorher: der
+   localStorage-Schluessel felie_ritual_marker ist ersatzlos entfallen.
+
+   Bewusst NICHT ueber felieAktuell(): das filtert zusaetzlich mit
+   felieIstFrisch() nach einem eigenen Frischefenster. Der Hinweis haette
+   dann an dieser Regel gehangen statt an den 24 Stunden. */
+
+/* Millisekunden seit der juengsten selbst erfassten Ritual-Angabe.
+   null heisst: es gab noch nie eine. */
+function felieSelbstreflexionAlter(jetzt) {
+  var neuster = 0;
+  try {
+    felieStore().signale.forEach(function (e) {
+      if (!e || e.quelle !== 'selbst') return;
+      if (FELIE_RITUAL_SIGNALE.indexOf(e.key) < 0) return;
+      var t = Number(e.ts);
+      if (t > neuster) neuster = t;
+    });
+  } catch (err) { return null; }
+  return neuster ? (jetzt || Date.now()) - neuster : null;
+}
+
+function felieRitualMarkerNoetig() {
+  /* Vorrang des Gedaechtnisses: liegt etwas Ungesehenes im Register
+     "Neu", tritt dieser Hinweis zurueck. Sonst stuenden nach dem
+     Kennenlernen zwei Lime-Hinweise nebeneinander — und der Code haelt
+     seit jeher fest, dass es genau EINE Aufforderung sein soll. Der
+     Marker ist wiederkehrend und hat morgen wieder Gelegenheit; der Puls
+     am Gedaechtnis ist einmalig und ist die Antwort auf das, was sie
+     gerade erzaehlt hat. */
+  try {
+    var n = felieNeueSnippets();
+    if (n.ids.length && !n.gesehen) return false;
+  } catch (e) {}
+  var alter = felieSelbstreflexionAlter();
+  return alter === null || alter > 86400000;
+}
+
+function felieRitualMarkerAktualisieren() {
+  var pill = document.getElementById('home-ritual-pill');
+  if (!pill) return;
+  var sub = document.getElementById('home-ritual-pill-sub');
+  var an = felieRitualMarkerNoetig();
+  pill.classList.toggle('markiert', an);
+  if (sub) sub.hidden = !an;
+}
 
 
 
@@ -7330,9 +7426,6 @@ function homeStartChat(wahl) {
 
 
 
-/* opts.ritualMarker markiert den Overlay als einmalige Markierung statt
-   als Rundgang. Nur dafuer da, dass felieRitualMarkerSchliessen() ihn
-   gezielt wieder schliessen kann, ohne einen echten Rundgang abzuwuergen. */
 function showGuide(steps, opts) {
   opts = opts || {};
   const old = document.getElementById('guide');
@@ -7343,7 +7436,6 @@ function showGuide(steps, opts) {
   const g = tpl.content.cloneNode(true);
   document.querySelector('.phone').appendChild(g);
   const root = document.getElementById('guide');
-  if (root && opts.ritualMarker) root.dataset.ritualMarker = '1';
   guideStep = 0;
   renderGuideStep();
 }
@@ -7600,33 +7692,19 @@ function startHomeGuide() {
   try { localStorage.setItem('felie_guide_home', '1'); localStorage.removeItem('felie_guide_home_deferred'); } catch (e) {}
   var hint = document.getElementById('home-guide-hint');
   if (hint) hint.style.display = 'none';
-  felieRitualMarkerSchliessen();
   showGuide(GUIDE_STEPS);
 }
 
 /* ── Markierung der Selbstreflexion ────────────────────────────────── */
 
-/* Zwei Stufen, damit sie genau einmal angesprochen und danach nur noch
-   erinnert wird:
-     1. Einmalig ein Guide-Spotlight auf die Pille, direkt nach dem
-        Onboarding. Das Loch im Dunkelfeld ist durchklickbar — sie kann
-        die Pille sofort antippen, ohne vorher etwas wegzudruecken.
-     2. Danach bleibt nur der leise Ring an der Pille (.markiert), bis
-        die Selbstreflexion einmal ausgefuellt wurde.
-   Der Merker liegt in localStorage und nicht in einer Variable: sie
-   schliesst die App nach dem Onboarding vielleicht erst mal wieder. */
-
-
-function felieRitualMarkerErledigt() {
-  try { localStorage.removeItem('felie_ritual_marker'); } catch (e) {}
-  var pill = document.getElementById('home-ritual-pill');
-  if (pill) pill.classList.remove('markiert');
-}
-
-function felieRitualMarkerSchliessen() {
-  var g = document.getElementById('guide');
-  if (g && g.dataset.ritualMarker === '1') closeGuide();
-}
+/* Die frueher hier beschriebene Zweistufigkeit — einmalig ein
+   Guide-Spotlight auf die Pille, danach ein leiser Ring bis zum ersten
+   Ausfuellen — gibt es nicht mehr. Sie war schon vor dem 22.09. tot: der
+   Ausloeser war zu einem leeren Rumpf reduziert, die Klasse wurde
+   nirgends gesetzt, und der Kommentar hatte die Funktion ueberlebt.
+   Mit E-U1 tritt an ihre Stelle die Markierung nach 24 Stunden
+   (felieRitualMarkerAktualisieren, weiter oben), die ihren Zustand aus
+   den Daten ableitet statt aus einem Merker.
 
 /* Spotlight zeigen. Laeuft ueber showGuide() mit einem einzigen Schritt,
    nicht ueber ein eigenes Overlay: die Positionierungslogik fuer Maske,
@@ -7644,7 +7722,7 @@ function startApp() {
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   updateClock(); personalizeApp();
-  try { localStorage.setItem('felie_guide_home_deferred', '1'); localStorage.removeItem('felie_ritual_marker'); } catch (e) {}
+  try { localStorage.setItem('felie_guide_home_deferred', '1'); } catch (e) {}
   homeInit(true);
 }
 
@@ -8202,11 +8280,6 @@ function showDashboard() {
 }
 
 // ── Verlauf Screen ──
-// ── Oura Connect Simulation ──
-
-
-function showOuraConnect() { showWearableSync(); }
-
 /* Lebensphasen an EINER Stelle. Die Liste stand frueher nur im
    Sheet-Renderer, die Hormonbeschriftung nur in einer zweiten Tabelle
    daneben — das Onboarding kann jetzt dieselbe Phase voreinstellen, und
@@ -8881,15 +8954,22 @@ var FELIE_SPIEGEL_SIGNALE = ['stimmung', 'schlafqualitaet', 'energie', 'anspannu
 function renderRitualAngebot() {
   var ci = document.getElementById('home-checkin'); if (!ci) return;
   ci.style.display = 'block'; ci.style.marginTop = '10px';
-  ci.innerHTML = '<button id="home-ritual-pill" onclick="event.stopPropagation();felieRitualStarten()" class="ritual-pill"><span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>Selbstreflexion</button>';
+  ci.innerHTML = '<button id="home-ritual-pill" onclick="event.stopPropagation();felieRitualStarten()" class="ritual-pill">'
+    + '<span class="ritual-pill-kopf"><span class="ritual-pill-ico"><svg class="ico" style="width:13px;height:13px"><use href="#i-calm"/></svg></span>Selbstreflexion</span>'
+    + '<span id="home-ritual-pill-sub" class="ritual-pill-sub" hidden>noch keine Angaben von heute</span>'
+    + '</button>';
+  /* Die Markierung haengt am Datenstand, nicht an einem Merker — deshalb
+     wird sie hier bei jedem Rendern neu bestimmt und nicht irgendwo
+     gesetzt und wieder geloescht. */
+  felieRitualMarkerAktualisieren();
 }
 
 function felieRitualStarten() {
-  /* Sie hat die Pille angetippt — die Markierung hat ihren Zweck erfuellt,
-     unabhaengig davon, ob sie das Sheet gleich wieder schliesst. Ein
-     zweites Mal ansprechen waere Nachbohren. */
-  felieRitualMarkerSchliessen();
-  felieRitualMarkerErledigt();
+  /* Die Markierung wird hier NICHT geloescht. Sie haengt am Datenstand:
+     wer das Sheet ohne Eingabe wieder schliesst, hat weiterhin keine
+     Angaben von heute, und der Hinweis stimmt weiter. Frueher verbrauchte
+     schon das Antippen die Markierung — das war ein Merker, der etwas
+     anderes behauptete als die Daten. */
   /* Frueher wurde hier sofort _felieRitualGesehen gesetzt — wer das Sheet
      ohne Eingabe wieder zumachte, verlor das Angebot fuer die ganze
      Sitzung. Der Merker wird jetzt erst beim Schliessen gesetzt, und nur
@@ -9630,15 +9710,12 @@ function renderSpiegelWearable() {
   var mb = window.manualBodyData;
   var verbunden = !!(mb && (mb.quelle_schlaf === 'screenshot' || mb.quelle_hrv === 'screenshot' || mb.quelle_rhr === 'screenshot'));
 
-  if (!verbunden) {
-    var angebot = Object.keys(WEARABLES).filter(function (k) { return WEARABLES[k].verbindbar; });
-    if (!angebot.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
-    box.innerHTML = '<div class="sp-karte sp-hinweis">'
-      + 'Du kannst Schlafdauer, HRV und Ruhepuls aus einem Screenshot übernehmen und selbst prüfen.'
-      + '<button class="sp-link" onclick="showOuraConnect()">Wearable-Werte übernehmen</button></div>';
-    box.style.display = 'block';
-    return;
-  }
+  /* Ohne uebernommene Werte bleibt der Abschnitt leer. Bis AL-71a stand
+     hier ein Angebot — "Du kannst Schlafdauer, HRV und Ruhepuls aus einem
+     Screenshot uebernehmen" — mit einem Knopf, der nur noch meldete, dass
+     das nicht geht. Ein Angebot ohne Funktion ist schlechter als keins.
+     Mit E-T6 kommt an diese Stelle HealthKit bzw. Health Connect. */
+  if (!verbunden) { box.style.display = 'none'; box.innerHTML = ''; return; }
 
   var dev = (mb && mb.geraet && WEARABLES[mb.geraet]) ? WEARABLES[mb.geraet] : WEARABLES.oura;
   var zeilen = [];
@@ -9668,7 +9745,6 @@ function renderSpiegelWearable() {
     + '<div class="sp-karte-titel">' + (stand || 'Von dir übernommen') + '</div>'
     + (zeilen.length ? zeilen.join('')
         : '<div class="sp-hinweis" style="padding:6px 12px 10px;">Noch keine Werte abgerufen.</div>')
-    + '<button class="sp-link" style="padding:6px 12px 10px;" onclick="showBodyScreenshotFlow()">Neuen Screenshot übernehmen</button>'
     + '</div>';
   box.style.display = 'block';
 }
@@ -9682,9 +9758,7 @@ function rewireDashCTA() {
   const dash = document.getElementById('dashboard');
   if (!dash) return;
   const chatBtn    = dash.querySelector('#dash-chat-btn');
-  const wearableBtn = dash.querySelector('[data-wearable-connect]');
-  if (chatBtn)    { chatBtn.onclick = null;    chatBtn.addEventListener('click', closeDashboard); }
-  if (wearableBtn) { wearableBtn.onclick = null; wearableBtn.addEventListener('click', fetchOuraData); }
+  if (chatBtn) { chatBtn.onclick = null; chatBtn.addEventListener('click', closeDashboard); }
 }
 
 function ouraFmtSleep(mins) {
@@ -9709,30 +9783,16 @@ function ouraFmtSleep(mins) {
    renderSpiegelMuster(). Hier bleibt der Wearable-Abschnitt. */
 function renderOuraComparison() { try { renderSpiegelWearable(); } catch (e) {} }
 
-function showWearableSync() {
-  felieAlert('Ein automatischer Screenshot-Import ist in dieser Version noch nicht verfügbar. Deine eigenen Angaben kannst du unter Selbstreflexion festhalten.');
-}
-
-// Holt echte Oura-Werte über den Worker (/oura) und mappt sie in manualBodyData.
-// Zyklusphase bleibt manuell — Oura liefert sie nicht.
-function fetchOuraData() {
-  // Der alte gemeinsame Worker-Aufruf übertrug nur {days:30}, ohne ein
-  // persönliches Konto zu authentifizieren. Er ist kein Nutzerimport.
-  showWearableSync();
-  return Promise.resolve(false);
-}
-
-/* ══ Koerperdaten per Screenshot — nutzt denselben Worker- und Modellpfad
-   wie der Rest der App, kein direkter Aufruf beim Modellanbieter. Kein
-   App-spezifischer Prompt mehr (Apple Health/Oura/Garmin lesen sich gleich
-   aus) — deshalb ein einzelner, klarer Zwei-Schritte-Ablauf statt Tabs pro
-   App. Bestaetigen-vor-Speichern bleibt: geschaetzte Werte
-   (Energie/Stress) werden nie automatisch uebernommen, ohne dass die
-   Nutzerin sie sieht.
-     OFFEN seit dem Modellwechsel: dieser Weg schickt BILDER an den Worker.
-   Der Befund-Upload wurde dafuer bereits gesperrt, dieser hier nicht — er
-   laeuft ins Leere, sobald das gewaehlte Modell keine Bilder liest. */
-function showBodyScreenshotFlow() { showWearableSync(); }
+/* Mit AL-71a entfallen: showWearableSync, fetchOuraData,
+   showBodyScreenshotFlow und showOuraConnect. Alle vier waren bereits zu
+   Rumpffunktionen reduziert, die nur noch dieselbe Meldung zeigten — der
+   Screenshot-Weg starb mit dem Modellwechsel (der IONOS-Adapter nimmt nur
+   Text), der Oura-Abruf war nie ein Nutzerimport, sondern ein gemeinsamer
+   Zugang ohne Anmeldung.
+     Das Quellenmodell dahinter bleibt: getrennte Baender je Herkunft,
+   Messtag statt Abrufzeitpunkt, das WEARABLES-Register und
+   renderSpiegelWearable. Genau das befuellen HealthKit und Health Connect
+   nach E-T6, und der Messtag ist dort dasselbe Problem. */
 
 
 
@@ -12778,9 +12838,9 @@ function felieChatAntwortRegeln() {
   // v6: Ein-Frage-Regel einmal, am Ende (Abschnitt 3); Stilregel F8b; Dopplungen D4-D8 gestrichen.
   return [
     "<antwortauftrag>",
-    "Antworte auf ihre letzte Nachricht, so, dass sie sich verstanden fühlt und etwas damit anfangen kann. Greif einen konkreten Punkt aus ihrer Nachricht auf. Eine Sachfrage bekommt sofort eine sachliche Antwort. Fang nicht mit einem Urteil über ihr Anliegen oder Gefühl an; Wärme braucht keinen Vorspann.",
-    "Unklar, was sie braucht? Schlag einen kleinen Einstieg vor und stimm ihn ab. Konkreter Wunsch? Direkt liefern: eine ausführbare Idee, die gewünschte Erklärung, den fertigen Text, ohne erfundene Gründe, Termine oder Gefühle. Schlägt sie selbst etwas vor, arbeitest du es aus, statt es zu bewerten oder ihr die Idee zu erklären. Eine Frage nur, wenn sie an ihre Worte anknüpft und deine Hilfe wirklich verändert; sonst keine. Nach einem Ja arbeitest du genau den vorherigen Vorschlag aus; nach einem Einwand änderst du ihn so, dass er weiter zu ihrem Ziel passt, statt das Problem nur zu verschieben. Entlasten heißt: eine wirklich verschiebbare Aufgabe kleiner machen oder verschieben; Pflichten bleiben. Will sie nur erzählen, gibt es weder Rat noch Aufgabe. Alltagstipps begründest du praktisch, ohne erfundene Körper- oder Gehirnwirkung und ohne Erfolgszahlen. Hast du etwas Unbelegtes behauptet und sie widerspricht, gibst du es knapp zu und setzt keine neue Erklärung an die Stelle.",
-    "SO KLINGST DU: wie eine kluge Freundin, die wirklich zuhört, locker, warm, direkt, in sauberem Alltagsdeutsch, so, wie man einer Freundin schreibt: natürliche Wendungen, kein Amtston, keine Lehrbuchsätze, und ohne Gründe oder Details zu erfinden. Punkt und Komma statt Gedankenstrich-Einschüben, keine Ankündigungs-Doppelpunkte; der erste Satz ist eine Antwort oder eine Aussage, kein Vorschlag, gemeinsam loszulegen. Ganze Sätze, meist ein bis zwei kurze Absätze; ein erbetener Plan oder eine Erklärung darf länger sein. Konkrete Wörter statt Sammelbegriffe („ein Buch“ statt „Hobbymaterial“, „abends abschalten“ statt „die Abendroutine optimieren“). Kein Vortrag, keine Befehlsketten, keine Überschriften, kein HTML, keine Emojis, keine Listen; auch mehrere Ideen oder Schritte stehen als Fließtext, ohne Nummern und ohne Sternchen; keine Coaching- oder Werbefloskeln, keine künstlichen Gegensätze, keine Schlusszusammenfassung. Gefühle weder verstärken noch mit Ursachen versehen. Grenzen sagst du kurz und menschlich. Deine Wörter: „magst du ausprobieren“, „wie siehst du das selbst“, „manche Frauen erleben“, „was gerade geht“; nicht deine Wörter: Symptom, Risiko, Warnung, „Anzeichen für“, „solltest du abklären lassen, weil“. Keine Schablone: Antworte auf diesen Moment, statt einen Beispielsatz einzusetzen. Ihren Namen benutzt du wie eine Freundin: gelegentlich, nicht in jeder Nachricht, nie als Anrede-Formel. Korrekte Groß- und Kleinschreibung; felie bleibt klein. Höchstens ein Fragezeichen in der ganzen Antwort; auch ein Angebot in Frageform zählt. Steht ein zweites da, streich es, bevor du antwortest. Gib nur die fertige Antwort aus.",
+    "Antworte auf ihre letzte Nachricht, so, dass sie sich verstanden fühlt und etwas damit anfangen kann. Greif einen konkreten Punkt aus ihrer Nachricht auf. Eine Sachfrage bekommt sofort eine sachliche Antwort. Der erste Satz gehört ihr: Er greift ein Wort aus ihrer Nachricht auf oder sagt, was sie heute tun kann. Kein Satz darüber, ob ihr Gefühl verständlich, normal oder typisch ist; Wärme braucht keinen Vorspann.",
+    "Unklar, was sie braucht? Schlag einen kleinen Einstieg vor und stimm ihn ab. Konkreter Wunsch? Direkt liefern: eine ausführbare Idee, die gewünschte Erklärung, den fertigen Text, ohne erfundene Gründe, Termine oder Gefühle. Schlägt sie selbst etwas vor, arbeitest du es aus, statt es zu bewerten oder ihr die Idee zu erklären: Der erste Satz sagt, wie es morgen konkret geht, nicht, wie gut die Idee ist, und ohne erfundene Minuten oder Zahlen. Nicht jede Antwort endet mit einer Frage: Hast du etwas Konkretes vorgeschlagen, hör damit auf; eine Frage stellst du, wenn dir wirklich etwas fehlt und sie an ihre Worte anknüpft. Eine Frage, die du im Text nur stellst, um sie selbst zu beantworten, schreibst du als Aussage. Nach einem Ja arbeitest du genau den vorherigen Vorschlag aus; nach einem Einwand änderst du ihn so, dass er weiter zu ihrem Ziel passt, statt das Problem nur zu verschieben. Entlasten heißt: eine wirklich verschiebbare Aufgabe kleiner machen oder verschieben; Pflichten bleiben. Will sie nur erzählen, gibt es weder Rat noch Aufgabe. Alltagstipps begründest du praktisch, ohne erfundene Körper- oder Gehirnwirkung und ohne Erfolgszahlen. Hast du etwas Unbelegtes behauptet und sie widerspricht, gibst du es knapp zu und setzt keine neue Erklärung an die Stelle.",
+    "SO KLINGST DU: wie eine kluge Freundin, die wirklich zuhört, locker, warm, direkt, in sauberem Alltagsdeutsch, so, wie man einer Freundin schreibt: natürliche Wendungen, kein Amtston, keine Lehrbuchsätze, und ohne Gründe oder Details zu erfinden. Punkt und Komma statt Gedankenstrich-Einschüben, keine Ankündigungs-Doppelpunkte; der erste Satz ist eine Antwort, kein Vorschlag, gemeinsam loszulegen. Ganze Sätze, meist ein bis zwei kurze Absätze; ein erbetener Plan oder eine Erklärung darf länger sein. Konkrete Wörter statt Sammelbegriffe („ein Buch“ statt „Hobbymaterial“, „abends abschalten“ statt „die Abendroutine optimieren“). Kein Vortrag, keine Befehlsketten, keine Überschriften, kein HTML, keine Emojis, keine Listen; auch mehrere Ideen oder Schritte stehen als Fließtext, ohne Nummern und ohne Sternchen; keine Coaching- oder Werbefloskeln, keine künstlichen Gegensätze, keine Schlusszusammenfassung. Gefühle weder verstärken noch mit Ursachen versehen. Grenzen sagst du kurz und menschlich. Angebote statt Anweisungen, Fragen statt Feststellungen über sie, „manche Frauen“ statt Mehrheiten, und jedes Mal anders formuliert; nicht deine Wörter: Symptom, Risiko, Warnung, „Anzeichen für“, „solltest du abklären lassen, weil“. Keine Schablone: Antworte auf diesen Moment, statt einen Beispielsatz einzusetzen. Ihren Namen benutzt du wie eine Freundin: gelegentlich, nicht in jeder Nachricht, nie als Anrede-Formel. Korrekte Groß- und Kleinschreibung; felie bleibt klein. Höchstens ein Fragezeichen in der ganzen Antwort; auch ein Angebot in Frageform zählt. Steht ein zweites da, streich es, bevor du antwortest. Gib nur die fertige Antwort aus.",
     "</antwortauftrag>"
   ].join('\n\n');
 }

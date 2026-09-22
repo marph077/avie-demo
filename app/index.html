@@ -7177,7 +7177,7 @@ function homeInit(fromOnboarding) {
      direkt auf. Der Merker liegt in localStorage, damit der Hinweis einen
      Neustart ueberlebt — genau das tat er nicht, weil der Puls nur beim
      Auffrischen gesetzt wurde. */
-  felieGedPulsAktualisieren();
+  felieHinweiseAktualisieren();
   updateHomeGuideUI();
   var iw = document.getElementById('home-input-wrap'); if (iw) iw.style.display = 'flex';
   var ui = document.getElementById('home-user-input'); if (ui) ui.disabled = false;
@@ -7233,6 +7233,22 @@ function felieRitualMarkerNoetig() {
   } catch (e) {}
   var alter = felieSelbstreflexionAlter();
   return alter === null || alter > 86400000;
+}
+
+/* Beide Startseiten-Hinweise zusammen auffrischen.
+
+   Sie haengen seit E-U1 aneinander: der Selbstreflexionsmarker tritt
+   zurueck, solange im Gedaechtnis etwas Ungesehenes liegt. Wer nur einen
+   von beiden neu berechnet, bekommt genau den Fehler, der am 22.09. im
+   Betrieb auffiel — die Snippets waren gelesen, der Puls aus, und die
+   Pille blieb trotzdem unmarkiert, weil niemand sie noch einmal angesehen
+   hatte.
+     Deshalb gibt es diesen einen Aufruf, und die Stellen, die vorher nur
+   den Puls auffrischten, rufen jetzt ihn. Eine Kopplung, die man halb
+   erledigen kann, wird irgendwann halb erledigt. */
+function felieHinweiseAktualisieren() {
+  try { felieGedPulsAktualisieren(); } catch (e) {}
+  try { felieRitualMarkerAktualisieren(); } catch (e) {}
 }
 
 function felieRitualMarkerAktualisieren() {
@@ -10969,9 +10985,11 @@ function gedSchliessen() {
   if (ov) ov.remove();
   window._gedNeuIds = [];
   window._gedNeuHinweise = null;
-  /* Der Puls haengt am Merkzettel, der oben schon auf "gesehen" steht —
-     hier wird die Startseite nur neu gezeichnet. */
-  try { felieGedPulsAktualisieren(); } catch (e) {}
+  /* Der Merkzettel steht oben schon auf "gesehen" — hier wird die
+     Startseite nur neu gezeichnet. BEIDE Hinweise: mit dem Ansehen faellt
+     der Vorrang des Gedaechtnisses weg, und der Selbstreflexionsmarker
+     ist jetzt dran. */
+  try { felieHinweiseAktualisieren(); } catch (e) {}
 }
 
 /* Was beim Oeffnen unter „Neu" steht: was hinzugekommen ist UND was sich
@@ -11156,7 +11174,7 @@ function gedRender() {
      dem Startbildschirm weg, obwohl sie nur kurz in "Aktuell" geschaut
      hat. Die Hervorhebung bleibt fuer diese Ansicht stehen; beim naechsten
      Oeffnen ist sie weg. */
-  if (tab === 'neu') felieNeueSnippetsGesehen();
+  if (tab === 'neu') { felieNeueSnippetsGesehen(); felieHinweiseAktualisieren(); }
 
   /* Der Sicherungs-Hinweis sass auf der Notizkarte nach jedem Gespraech.
      Ohne sie steht er unter "Über dich": das ist das Register mit den
@@ -15342,7 +15360,7 @@ function gespraechAbschliessen(summary, messages, auftrag) {
      das, wonach die Nutzerin schaut), dann die Startseite mit der
      fertigen Karte an Stelle des Platzhalters, zuletzt das Archiv, falls
      es gerade offen ist. */
-  try { felieGedPulsAktualisieren(); } catch (e) {}
+  try { felieHinweiseAktualisieren(); } catch (e) {}
   refreshHome();
   try { if (document.getElementById('verlauf-overlay')) showVerlauf(); } catch (e) {}
   /* Der Loader laeuft mindestens 1,5 s, damit der Wechsel nicht zuckt. */

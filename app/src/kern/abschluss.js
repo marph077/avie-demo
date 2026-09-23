@@ -12,9 +12,9 @@
      _felieAbschlussLaufend) ist Modulzustand (D-17); die Webapp liest
      ihn ueber felieAbschlussLaeuft;
    - localStorage ueber den Speicher-Port;
-   - das Archiv (saveChat) und die Sicherung (felieAutosave) ueber die
-     verbundene Umgebung (felieAbschlussVerbinden), beide bleiben bis D5
-     in der Webapp;
+   - die Sicherung (felieAutosave) ueber die verbundene Umgebung
+     (felieAbschlussVerbinden); das Archiv (saveChat) steht seit D5b
+     selbst hier (D-21);
    - das letzte Gespraech ueber felieGedaechtnisLetzterChatSetzen (AL-94).
 
    In der Webapp bleiben die Auswertung mit dem Modell
@@ -26,8 +26,10 @@
 import { felieNotizSchluessel, felieNotizText } from './text.js';
 import { felieSpeicherLesen, felieSpeicherLoeschen, felieSpeicherSchreiben } from './speicher.js';
 import { getSavedChats } from './gespraeche.js';
-import { felieNeueSnippetsSetzen } from './neu-hinweise.js';
 import { felieGedaechtnisLetzterChatSetzen, felieMerkUebernehmenFuer, felieMerkVorschlaege, felieNotizPruefen, felieNotizVorschau } from './gedaechtnis.js';
+import { felieNeueSnippetsSetzen } from './neu-hinweise.js';
+import { felieArchivFeldQuelle, felieSichererVerlauf } from './archiv.js';
+import { bodySnapshotText } from './kontext.js';
 
 /* Zustand des Abschlussauftrags (seit D4b im Kern, D-17; vorher
    window._felieDatenEpoche, _felieAbschlussWartend, _felieAbschlussLaufend).
@@ -52,20 +54,14 @@ export function felieAbschlussZuruecksetzen() {
   laufend = {};
 }
 
-/* Umgebung (seit D4b). Zwei Schritte gehoeren bis D5 der Webapp: das
-   Schreiben ins Archiv (saveChat) und die Sicherung auf dem Geraet
-   (felieAutosave). archivieren(summary, messages, auftragId) liefert die
-   ID des Archiveintrags oder null; sichern() stoesst die Sicherung an.
-   Unverbunden scheitert das Archivieren - der Auftrag bleibt liegen -,
-   und gesichert wird nicht. */
+/* Umgebung (seit D4b). Die Sicherung auf dem Geraet (felieAutosave,
+   Capacitor) gehoert der Webapp; sichern() stoesst sie an. Unverbunden
+   wird nicht gesichert. Das Schreiben ins Archiv (saveChat) war bis D5b
+   ebenfalls ein Rueckruf und steht seitdem unten in diesem Modul (D-21). */
 let umgebung = null;
 
 export function felieAbschlussVerbinden(u) {
   umgebung = u || null;
-}
-
-export function felieAbschlussArchivieren(summary, messages, auftragId) {
-  return umgebung && typeof umgebung.archivieren === 'function' ? umgebung.archivieren(summary, messages, auftragId) : null;
 }
 
 export function felieAbschlussSichern() {
@@ -364,7 +360,7 @@ export function felieAbschlussAusfuehren(auftrag) {
     var vorhanden = getSavedChats().filter(function(c) { return c.auftragId === auftrag.id; })[0];
     var chatId = vorhanden ? (vorhanden.id || vorhanden.timestamp) : null;
     if (chatId == null) {
-      try { chatId = felieAbschlussArchivieren(auftrag.summary, auftrag.messages, auftrag.id); } catch (e) { chatId = null; }
+      try { chatId = saveChat(auftrag.summary, auftrag.messages, auftrag.id); } catch (e) { chatId = null; }
     }
     if (chatId == null) return false;
     felieAbschlussAktualisieren(auftrag, { chatId: chatId, status: 'gedaechtnis' });
@@ -494,4 +490,60 @@ export function felieAuswertungProtokoll(protokoll, runden) {
   var verworfen = {};
   FELIE_VERWURF_GRUENDE.forEach(function (g) { verworfen[g] = protokoll.verworfen[g] || 0; });
   return { version: 1, runden: runden, geprueft: protokoll.geprueft, verworfen: verworfen, doppelt: protokoll.doppelt };
+}
+
+/* ── Ins Archiv schreiben (seit Welle D / D5b, D-21) ──────────────────
+   Bis D5b stand saveChat in index.html und wurde ueber den Rueckruf
+   archivieren gerufen. Geaendert sind nur zwei Zugriffe: localStorage
+   ueber den Speicher-Port, das letzte Gespraech ueber
+   felieGedaechtnisLetzterChatSetzen. */
+export function saveChat(summary, messages, auftragId) {
+  try {
+    /* Zweite Sicherung: selbst wenn ein Aufrufer den Verlauf ungefiltert
+       uebergibt, wird hier kein Befund geschrieben. */
+    messages = felieSichererVerlauf(messages);
+    if (!messages.some(function(m) { return m.role === 'user'; })) return null;
+    var chats = getSavedChats();
+    var ts = Math.max(Date.now(), chats.reduce(function(max, c) { return Math.max(max, Number(c.id || c.timestamp) || 0); }, 0) + 1);
+    var feldQuelle = {};
+    ['erkenntnis', 'felie_lernt'].forEach(function(k) {
+      var q = felieArchivFeldQuelle(summary[k], summary.feldQuelle && summary.feldQuelle[k], messages);
+      if (q) feldQuelle[k] = q;
+    });
+    felieGedaechtnisLetzterChatSetzen(ts);
+    chats.push({
+      id: ts,
+      version: 5,
+      /* Die Zusammenfassung gehoert dem Gespraech, nicht dem Gedaechtnis
+         (E08). Sie steht deshalb als eigenes Feld hier und taucht in der
+         Gedaechtnisliste nirgends auf. */
+      zusammenfassung: summary.zusammenfassung ? {
+        text: summary.zusammenfassung.text,
+        nachweis: felieArchivFeldQuelle(summary.zusammenfassung.text,
+          summary.zusammenfassung.nachweis, messages) } : undefined,
+      notizen: Array.isArray(summary.notizen) ? summary.notizen.map(function(n) {
+        return { id: n.id, art: n.art, thema: n.thema, text: n.text, merken: n.merken !== false,
+          nachweis: felieArchivFeldQuelle(n.text, n.nachweis, messages) };
+      }) : undefined,
+      notizenStatus: summary.notizenStatus || 'vollstaendig',
+      feldQuelle: feldQuelle,
+      thema: summary.thema,
+      erkenntnis: summary.erkenntnis,
+      felie_lernt: summary.felie_lernt,
+      koerper: bodySnapshotText(),
+      messages: messages.map(function(m) { return Object.assign({}, m); }),
+      timestamp: ts,
+      /* Der Abschlussauftrag, aus dem dieser Eintrag stammt (A2). Damit
+         erkennt eine Wiederholung, dass das Gespraech schon im Archiv
+         liegt — auch wenn der Auftrag selbst nicht mehr aktualisiert
+         werden konnte. */
+      auftragId: auftragId || undefined,
+      /* Das Auswertungsprotokoll (AL-11): nur Zahlen und Gruende. */
+      auswertung: summary.auswertung || undefined
+    });
+    // Keine stillschweigende Löschung früherer Gespräche wegen einer Mengenregel.
+    felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats));
+    return ts;
+  } catch(e) {}
+  return null;
 }

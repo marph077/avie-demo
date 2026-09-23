@@ -56,11 +56,24 @@ kern.felieGedaechtnisVerbinden({
   ereignis: function (art, detail) { window.felieHomeEreignis(art, detail); }
 });
 
-/* Seit D4b fuehrt der Kern den Abschlussauftrag. Archiv (saveChat) und
-   Sicherung (felieAutosave) bleiben bis D5 in der Webapp. */
+/* Seit D4b fuehrt der Kern den Abschlussauftrag, seit D5b schreibt er
+   auch das Archiv selbst. Die Sicherung (felieAutosave) bleibt in der
+   Webapp. */
 kern.felieAbschlussVerbinden({
-  archivieren: function (summary, messages, auftragId) { return window.saveChat(summary, messages, auftragId); },
   sichern: function () { window.felieAutosave(); }
+});
+
+/* Seit D5b stellt der Kern die Kontext-Daten zusammen. Profil (userName,
+   klAnswers: Deklarationen mit let/const, also nicht am window, aber im
+   gemeinsamen globalen Geltungsbereich), offenes Archivgespraech und
+   Rueckblick-Auswahl bleiben in der Webapp. */
+kern.felieKontextVerbinden({
+  profil: function () {
+    return { userName: typeof userName !== 'undefined' ? userName : undefined,
+      klAnswers: typeof klAnswers !== 'undefined' ? klAnswers : undefined };
+  },
+  aktiverArchivChat: function () { return window._felieAktiverArchivChat; },
+  rueckblickAuswahl: function () { return window._felieRueckblickAuswahl; }
 });
 
 const namen = Object.keys(kern).sort();

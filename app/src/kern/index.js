@@ -28,7 +28,9 @@
    Seit D1d: der Speichervorgang (vorgang.js).
    Seit D2b: Signale (signale.js) und Zyklus (zyklus.js).
    Seit D3b: Gedaechtnis-Inhalt (gedaechtnis.js).
-   Seit D4b: Abschlussauftrag und Pruefung der Auswertung (abschluss.js). */
+   Seit D4b: Abschlussauftrag und Pruefung der Auswertung (abschluss.js).
+   Seit D5b: Selbstauskunft (selbstauskunft.js), Archiv-Lesewege
+   (archiv.js), Kontext-Daten (kontext.js); saveChat in abschluss.js. */
 
 export { felieKernProbe } from './probe.js';
 
@@ -47,6 +49,9 @@ export * from './vorgang.js';
 export * from './zyklus.js';
 export * from './signale.js';
 export * from './gedaechtnis.js';
+export * from './selbstauskunft.js';
+export * from './archiv.js';
+export * from './kontext.js';
 export * from './abschluss.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
@@ -57,10 +62,11 @@ import { felieVorgangZuruecksetzen } from './vorgang.js';
 import { felieKoerperVerbinden } from './zyklus.js';
 import { felieGedaechtnisVerbinden } from './gedaechtnis.js';
 import { felieAbschlussVerbinden, felieAbschlussZuruecksetzen } from './abschluss.js';
+import { felieKontextVerbinden } from './kontext.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
-   Ports (Speicher, Vorgang, Koerperdaten, Gedaechtnis, Abschluss). Die Webapp ruft es nie: das Loeschen der Nutzerdaten ist etwas
+   Ports (Speicher, Vorgang, Koerperdaten, Gedaechtnis, Abschluss, Kontext). Die Webapp ruft es nie: das Loeschen der Nutzerdaten ist etwas
    anderes und laesst den Port verbunden. */
 export function felieKernZuruecksetzen() {
   felieRepoUhrSetzen(null);
@@ -73,4 +79,5 @@ export function felieKernZuruecksetzen() {
   felieGedaechtnisVerbinden(null);
   felieAbschlussZuruecksetzen();
   felieAbschlussVerbinden(null);
+  felieKontextVerbinden(null);
 }

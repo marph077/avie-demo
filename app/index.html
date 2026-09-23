@@ -39,6 +39,57 @@ END_EXPO_REBUILD_CONTRACT_V6
   } catch(e){}
 })();
 </script>
+<script>
+/* == Kern-Waechter (Welle D, D0) ==
+   Die Kernlogik zieht schrittweise nach src/kern/ und kommt als ES-Modul
+   ueber src/webapp/kern-bruecke.js herein (Entscheidung D-1, kein
+   Build-Schritt). Module laden NICHT ueber file:// - lokal deshalb immer
+   ueber den Server oeffnen:
+
+     cd C:\Users\marce\felie-app
+     npm.cmd run lokal
+     -> http://localhost:8000/
+
+   Nicht 127.0.0.1: der Worker laesst als lokale Herkunft nur localhost zu.
+
+   Dieser Waechter sorgt dafuer, dass ein fehlender Kern nicht wie "alles
+   in Ordnung" aussieht. Geprueft wird bei DOMContentLoaded: das feuert
+   erst, nachdem alle Modul-Skripte gelaufen sind, ob erfolgreich oder
+   nicht. Fehlt dann window.FELIE_KERN oder meldet die Bruecke eine
+   Kollision, steht ein Fehlerschirm ueber der App. Blockierend mit
+   Absicht: ab D1 waere eine App ohne Kern eine App ohne Store.
+   Das Modul-Skript darf deshalb nie async sein - dann gaelte die
+   Reihenfolge nicht mehr. Und es bleibt eine externe Datei: Harness und
+   Prompt-Extraktor parsen jedes Inline-Skript, ein import dort macht
+   beide rot. Pruefung: tests/felie-d0-modulweg.test.cjs */
+(function () {
+  function schirm(grund) {
+    try { console.error('felie: Kern nicht geladen (' + grund + '). Netzwerk-Tab und src/webapp/kern-bruecke.js pruefen; lokal: npm.cmd run lokal, dann http://localhost:8000/'); } catch (e) {}
+    if (document.getElementById('kern-fehler')) return;
+    var lokal = location.protocol === 'file:';
+    var ov = document.createElement('div');
+    ov.id = 'kern-fehler';
+    ov.setAttribute('role', 'alertdialog');
+    ov.setAttribute('aria-labelledby', 'kern-fehler-titel');
+    ov.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:linear-gradient(160deg,#180430,#4A3A6A);display:flex;align-items:center;justify-content:center;padding:24px;font-family:'DM Sans',system-ui,sans-serif;";
+    ov.innerHTML = '<div style="width:min(90%,320px);background:#F1F0F0;border-radius:22px;padding:26px 22px;box-shadow:0 16px 44px rgba(0,0,0,0.3);text-align:center;">'
+      + '<div id="kern-fehler-titel" style="font-size:19px;font-weight:700;color:#180430;font-family:\'Alice\',Georgia,serif;margin-bottom:8px;">felie konnte nicht vollst\u00e4ndig geladen werden</div>'
+      + '<div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Ein Teil der App ist nicht angekommen. Bitte lade die Seite neu.</div>'
+      + (lokal ? '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Diese Datei wurde direkt ge\u00f6ffnet. felie braucht einen lokalen Server: im Ordner felie-app \u201enpm.cmd run lokal\u201c ausf\u00fchren und http://localhost:8000 \u00f6ffnen.</div>' : '')
+      + '<button type="button" id="kern-fehler-neu" style="width:100%;padding:13px;border-radius:12px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Neu laden</button>'
+      + '</div>';
+    (document.body || document.documentElement).appendChild(ov);
+    var knopf = document.getElementById('kern-fehler-neu');
+    if (knopf) knopf.addEventListener('click', function () { location.reload(); });
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    var k = window.FELIE_KERN;
+    if (!k) { schirm('FELIE_KERN fehlt'); return; }
+    if (k.kollisionen && k.kollisionen.length) schirm('doppelt deklariert: ' + k.kollisionen.join(', '));
+  });
+})();
+</script>
+<script type="module" src="src/webapp/kern-bruecke.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>felie · Qwen3.8 — Vergleichstest</title>
 <link href="https://fonts.googleapis.com/css2?family=Alice&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">

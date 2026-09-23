@@ -6335,7 +6335,7 @@ function fillHomeThemen() {
   try { chats = getSavedChats(); } catch(e) { chats = []; }
   var inArbeit = felieGespraecheInArbeit();
   if ((!chats || !chats.length) && !inArbeit.length) {
-    el.innerHTML = '<div style="background:#CFC0E6;border-radius:14px;padding:16px;text-align:center;font-size:12px;color:#6B5A88;">Noch keine Themen — euer erstes Gespräch erscheint hier.</div>';
+    el.innerHTML = '<div style="background:#CFC0E6;border-radius:14px;padding:16px;text-align:center;font-size:12px;color:#6B5A88;">Noch keine Themen — unser erstes Gespräch erscheint hier.</div>';
     return;
   }
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -13847,7 +13847,7 @@ function felieArchivNotizErstellen(id, btn) {
 function felieNotizenLesen(chat, auchGeloeschte) {
   if (!chat) return [];
   var liste = Array.isArray(chat.notizen) ? chat.notizen : ['erkenntnis', 'felie_lernt'].map(function(k) {
-    return { id: k, feld: k, thema: k === 'erkenntnis' ? 'Aus eurem Gespräch' : 'felie merkt sich',
+    return { id: k, feld: k, thema: k === 'erkenntnis' ? 'Aus unserem Gespräch' : 'felie merkt sich',
       text: chat[k] || '', merken: k === 'felie_lernt', nachweis: chat.feldQuelle && chat.feldQuelle[k] };
   });
   return liste.filter(function(n) { return n && typeof n.text === 'string' && (auchGeloeschte || n.text.trim()); });
@@ -13882,7 +13882,7 @@ function felieNotizenHtml(chat, editierbar) {
     + '<div style="display:flex;flex-direction:column;gap:8px;">' + liste.map(function(n) {
       var attr = editierbar ? ' data-snip="notiz" data-snip-notiz="' + felieSnipAttr(n.id) + '" data-snip-max="240" data-snip-label="Gesprächsnotiz bearbeiten"' : '';
       return '<div class="notiz-feld notiz-feld--erkenntnis' + (editierbar ? ' snip' : '') + '"' + attr + '>'
-        + '<div class="snip-view"><div class="notiz-kopf"><div class="notiz-kicker">' + felieSnipAttr(n.thema || chat.thema || 'Aus eurem Gespräch') + '</div>'
+        + '<div class="snip-view"><div class="notiz-kopf"><div class="notiz-kicker">' + felieSnipAttr(n.thema || chat.thema || 'Aus unserem Gespräch') + '</div>'
         + (editierbar ? felieSnipStiftHtml('Gesprächsnotiz bearbeiten') : '') + '</div>'
         + '<div class="snip-text notiz-text">' + felieSnipAttr(felieTextMitName(n.text)) + '</div></div></div>';
     }).join('') + '</div>';
@@ -14049,7 +14049,7 @@ function felieZusammenfassungPruefen(o, source, bestand) {
     o.notizen.forEach(function(n) { notiz(n, n && n.thema, true); });
   } else {
     // Antworten im bisherigen Schema bleiben lesbar, neue Prompts verwenden die Liste.
-    notiz(o.erkenntnis, 'Aus eurem Gespräch', false);
+    notiz(o.erkenntnis, 'Aus unserem Gespräch', false);
     notiz(o.felie_lernt, 'felie merkt sich', true);
   }
   var kat = ['familie', 'arbeit', 'gesundheit', 'beziehung', 'wohnen', 'allgemein'];

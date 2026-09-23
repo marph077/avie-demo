@@ -49,10 +49,18 @@ kern.felieKoerperVerbinden({
 /* Seit D3b schreibt und liest der Kern das Gedaechtnis. Das letzte
    Gespraech (window._letzteChatId) und die Meldung an die Startseite
    (felieHomeEreignis) bleiben in der Webapp; nachgeschlagen wird erst
-   beim Aufruf. */
+   beim Aufruf. Seit D4b setzt der Kern das letzte Gespraech auch. */
 kern.felieGedaechtnisVerbinden({
   letzterChat: function () { return window._letzteChatId; },
+  letzterChatSetzen: function (id) { window._letzteChatId = id; },
   ereignis: function (art, detail) { window.felieHomeEreignis(art, detail); }
+});
+
+/* Seit D4b fuehrt der Kern den Abschlussauftrag. Archiv (saveChat) und
+   Sicherung (felieAutosave) bleiben bis D5 in der Webapp. */
+kern.felieAbschlussVerbinden({
+  archivieren: function (summary, messages, auftragId) { return window.saveChat(summary, messages, auftragId); },
+  sichern: function () { window.felieAutosave(); }
 });
 
 const namen = Object.keys(kern).sort();

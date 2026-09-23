@@ -31,9 +31,10 @@ import { felieBrueckeBefehl, felieBrueckeEintragZuAltId, felieBrueckeSchreiben, 
    ist (window._letzteChatId, gesetzt im Gespraechsablauf) und wie die
    Startseite auf eine Aenderung reagiert (felieHomeEreignis).
    letzterChat() ist der Rueckfall, wenn ein Schreibweg kein Gespraech
-   mitbekommt; ereignis(art, detail) meldet, was geschah. Unverbunden gibt
-   es kein letztes Gespraech und keine Meldung. Der Zustand selbst bleibt
-   vorerst in der Webapp (AL-94). */
+   mitbekommt; ereignis(art, detail) meldet, was geschah. Seit D4b setzt
+   der Abschlussauftrag das letzte Gespraech auch (letzterChatSetzen).
+   Unverbunden gibt es kein letztes Gespraech und keine Meldung. Der
+   Zustand selbst bleibt vorerst in der Webapp (AL-94). */
 let umgebung = null;
 
 export function felieGedaechtnisVerbinden(u) {
@@ -42,6 +43,10 @@ export function felieGedaechtnisVerbinden(u) {
 
 export function felieGedaechtnisLetzterChat() {
   return umgebung && typeof umgebung.letzterChat === 'function' ? umgebung.letzterChat() : undefined;
+}
+
+export function felieGedaechtnisLetzterChatSetzen(id) {
+  if (umgebung && typeof umgebung.letzterChatSetzen === 'function') umgebung.letzterChatSetzen(id);
 }
 
 export function felieGedaechtnisEreignis(art, detail) {
@@ -521,7 +526,7 @@ export function felieMerkBestand() {
 /* Vorschlaege aus der Modellantwort saeubern. Alles, was nicht der Form
    entspricht, fliegt raus statt halbfertig durchzurutschen. */
 export function felieMerkVorschlaege(summary) {
-  var out = { fakten: [], faeden: [] };
+  var out = { fakten: [], faeden: [], gleich: 0 };
   if (!summary) return out;
   var kat = ['familie', 'arbeit', 'gesundheit', 'beziehung', 'wohnen', 'allgemein'];
   var bestand = felieMerkBestand();
@@ -555,7 +560,8 @@ export function felieMerkVorschlaege(summary) {
       return;
     }
     var stand = pruefen(text, bestand.fakten);
-    if (stand === 'gleich') return;
+    /* AL-11: wortgleich faellt still weg, das Protokoll zaehlt es. */
+    if (stand === 'gleich') { out.gleich++; return; }
     out.fakten.push({
       text: text,
       belege: f.belege || [],
@@ -580,7 +586,8 @@ export function felieMerkVorschlaege(summary) {
       return;
     }
     var stand = pruefen(text, bestand.faeden);
-    if (stand === 'gleich') return;
+    /* AL-11: wortgleich faellt still weg, das Protokoll zaehlt es. */
+    if (stand === 'gleich') { out.gleich++; return; }
     out.faeden.push({ text: text, tage: tage, belege: e.belege || [],
       bezug: 'neu', bekannt: stand === 'bekannt' });
   });
@@ -642,23 +649,35 @@ export function felieMerkUebernehmen(v) {
    alte Form gab in beiden Faellen [] zurueck und verschluckte den Fehler. */
 export function felieMerkUebernehmenFuer(cid, v) {
   if (!v) return { ok: true, ids: [] };
-  var ids = [];
+  var ids = [], bekannt = 0, abgelehnt = 0;
   var ok = felieVorgangPort()(function(store, chats) {
     if (!chats.some(function(c) { return (c.id || c.timestamp) === cid; })) throw new Error('Gespräch nicht gespeichert');
     (v.fakten || []).forEach(function(f) {
-      if (!f || f.bekannt) return;
+      if (!f) return;
+      if (f.bekannt) { bekannt++; return; }
       var id = felieBrueckeVorschlag('personal', { text:f.text, kategorie:f.kategorie,
         klasse:f.klasse, quelle:'gespraech', belege:f.belege || [],
         bezug:f.bezug, zielId:f.zielId }, cid);
-      if (id) ids.push(id);
+      if (id) ids.push(id); else abgelehnt++;
     });
     (v.faeden || []).forEach(function(e) {
-      if (!e || e.bekannt) return;
+      if (!e) return;
+      if (e.bekannt) { bekannt++; return; }
       var id = felieBrueckeVorschlag('topic', { text:e.text, quelle:'gespraech',
         faelligBis:Date.now() + (e.tage || 7) * 86400000, belege:e.belege || [],
         bezug:e.bezug, zielId:e.zielId }, cid);
-      if (id) ids.push(id);
+      if (id) ids.push(id); else abgelehnt++;
     });
+    /* AL-11: die Uebernahme ins Protokoll des Archiveintrags, im selben
+       Vorgang - scheitert er, rollt auch das zurueck. Gesetzt, nicht
+       addiert: eine Wiederholung zaehlt nicht doppelt. */
+    var chat = chats.find(function(c) { return (c.id || c.timestamp) === cid; });
+    if (chat && chat.auswertung) {
+      chat.auswertung.gleich = v.gleich || 0;
+      chat.auswertung.bekannt = bekannt;
+      chat.auswertung.uebernommen = ids.length;
+      chat.auswertung.abgelehnt = abgelehnt;
+    }
   });
   return { ok: !!ok, ids: ok ? ids : [] };
 }

@@ -32,6 +32,12 @@ import { felieLocalStoragePort } from './speicher-localstorage.js';
    Kern erst danach erreichen, und dann ist der Port schon da. */
 kern.felieSpeicherVerbinden(felieLocalStoragePort(window));
 
+/* Seit D1c oeffnet die Bruecke im Kern einen Speichervorgang ueber einen
+   Rueckruf, nicht ueber den globalen Namen. Den Vorgang fuehrt bis D1d
+   die Webapp (felieDatenAendern in index.html); nachgeschlagen wird erst
+   beim Aufruf. */
+kern.felieVorgangVerbinden(function (aenderung) { return window.felieDatenAendern(aenderung); });
+
 const namen = Object.keys(kern).sort();
 const kollisionen = [];
 

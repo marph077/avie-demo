@@ -1,8 +1,9 @@
 /* Neu aus dem letzten Gespraech - seit Welle D, Paket D1b, ein
    Kern-Modul. Gelesen und geschrieben wird ueber den Speicher-Port.
 
-   In index.html bleiben bis D1c felieHinweisVonIhr und
-   felieNeuHinweiseNachziehen: sie brauchen die Bruecke.
+   felieHinweisVonIhr und felieNeuHinweiseNachziehen stehen seit D1c in
+   bruecke.js: sie brauchen die Bruecke, und dieses Modul soll sie nicht
+   kennen.
 
    Der urspruengliche Wortlaut folgt unveraendert; geaendert sind nur die
    Zugriffe auf localStorage. */

@@ -8,14 +8,21 @@
      loeschen(schluessel)
      beobachten(rueckruf)       -> optional; meldet Schluessel, die eine
                                    andere Instanz geschrieben hat
+     transaktion(fn)            -> optional (seit D1d); fuehrt fn aus und
+                                   setzt im Fehlerfall alles zurueck, was
+                                   fn ueber den Port geschrieben hat, dann
+                                   wirft es weiter. Liefert fns Ergebnis
 
    Alle drei Grundoperationen sind synchron und reichen Fehler unveraendert
    weiter: die Aufrufer im Kern fangen sie genau dort, wo sie sie schon in
-   index.html gefangen haben. transaktion(fn) kommt mit D1c, zusammen mit
-   ihrem ersten Nutzer (felieDatenAendern).
+   index.html gefangen haben. transaktion(fn) nutzt seit D1d der
+   Speichervorgang (vorgang.js).
 
-   Webapp: src/webapp/speicher-localstorage.js. Expo spaeter:
-   expo-sqlite/kv-store mit denselben Schluesseln und demselben Format.
+   Webapp: src/webapp/speicher-localstorage.js. Expo spaeter: eine eigene
+   kleine Tabelle auf SQLiteDatabase (expo-sqlite, openDatabaseSync) mit
+   denselben Schluesseln und demselben Format, transaktion ueber
+   withTransactionSync. expo-sqlite/kv-store taugt dafuer nicht: es
+   bietet keine Transaktion an (D-4, korrigiert in D1d).
 
    Der urspruengliche Wortlaut der verschobenen Teile folgt unveraendert;
    geaendert sind nur die Zugriffe auf window (jetzt Modulzustand) und
@@ -42,6 +49,13 @@ function felieSpeicherPort() {
 export function felieSpeicherLesen(schluessel) { return felieSpeicherPort().lesen(schluessel); }
 export function felieSpeicherSchreiben(schluessel, wert) { felieSpeicherPort().schreiben(schluessel, wert); }
 export function felieSpeicherLoeschen(schluessel) { felieSpeicherPort().loeschen(schluessel); }
+
+/* Ein Port ohne transaktion fuehrt fn einfach aus: dann gibt es kein
+   Zurueckrollen des Speichers. Die Webapp und Expo bringen eine mit. */
+export function felieSpeicherTransaktion(fn) {
+  var p = felieSpeicherPort();
+  return typeof p.transaktion === 'function' ? p.transaktion(fn) : fn();
+}
 
 export const FELIE_STORE_KEY    = 'felie_store_v1';
 

@@ -6764,42 +6764,15 @@ function felieAendernFehlertext(e) {
     + 'erhalten. Bitte versuche es erneut.';
 }
 
+/* Seit Welle D / D1d steht der Vorgang im Kern (src/kern/vorgang.js,
+   felieVorgang). Hier bleibt, was nur die Webapp hat: der
+   Kennenlernen-Zustand, der Abgleich des laufenden Chats, der
+   Sitzungszaehler, der Autosave und die Meldungen. Name und Rueckgabewert
+   bleiben, damit kein Aufrufer sich aendert. */
 function felieDatenAendern(mutator) {
-  felieSpeicherHorchen();
-  /* Transaktionsgrenze: ALLES, was dieser Vorgang schreibt, wird vorher
-     gesichert und im Fehlerfall gemeinsam zurueckgesetzt. Bis zum 18.09.
-     fehlten der Vertragsdatensatz (felie_dataset_v2) und seine
-     Arbeitsspeicherkopie. Schlug das Speichern NACH
-     felieDatensatzSpeichern() fehl, meldete die App korrekt den
-     Fehlschlag und zeigte den alten Text — im Datensatz stand aber schon
-     die abgelehnte Aenderung, und die naechste erfolgreiche Aenderung
-     holte sie zurueck in die Oberflaeche (Supervisor-Abnahme, A1). */
-  var keys = [FELIE_STORE_KEY, FELIE_DATENSATZ_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
-  var raw = {}, before = JSON.stringify(felieStore());
-  var state = window._klState ? JSON.stringify(window._klState) : null;
-  var datensatzVorher = felieDatensatzStand() ? JSON.stringify(felieDatensatzStand()) : null;
-  var datensatzVerworfenVorher = felieDatensatzVerworfen();
-  try {
-    keys.forEach(function(k) { raw[k] = localStorage.getItem(k); });
-    /* Hat ein anderer Tab seit dem Laden geschrieben, gewann bisher
-       stillschweigend der letzte Schreiber — die Arbeit des anderen Tabs
-       war weg. Jetzt bricht der Vorgang ab, der Stand wird neu geladen
-       und die Nutzerin sieht, was passiert ist. */
-    var fremd = felieSpeicherFremdAenderung();
-    if (fremd.length) {
-      felieStoreLaden();
-      felieSpeicherStandMerken();
-      felieRevision(true);
-      felieAlert('Deine Angaben wurden in einem anderen Fenster geändert. Der aktuelle Stand ist jetzt geladen — bitte prüfe kurz und mach die Änderung noch einmal.');
-      return false;
-    }
-    var chats = getSavedChats();
-    /* Ein Vorgang, ein Datensatz: alle umgestellten Schreibwege wenden
-       ihre Befehle auf denselben Stand an und werden gemeinsam
-       uebernommen oder gemeinsam verworfen. */
-    felieBrueckeStart(felieStore(), chats);
-    mutator(felieStore(), chats);
-    felieBrueckeAbschluss(felieStore(), chats);
+  var r = felieVorgang(mutator, {
+    sichern: function () { return window._klState ? JSON.stringify(window._klState) : null; },
+    zuruecksetzen: function (state) { if (state) window._klState = JSON.parse(state); },
     /* „Der Kontext hat sich geaendert" heisst: die Nutzerin hat NACH der
        Aufnahme etwas korrigiert, die vorbereitete Uebergabe ist damit
        ueberholt. Die Aufnahme selbst schreibt aber ihre eigenen Angaben
@@ -6809,38 +6782,34 @@ function felieDatenAendern(mutator) {
        null zurueck und klV2StartseitenText() fiel auf den allgemeinen
        Satz zurueck. Fuer die Nutzerin sah das so aus, als haette felie
        ihr gerade gewaehltes Thema vergessen. */
-    if (window._klState && !window._klOnboardingSchreibt)
-      window._klState.contextChanged = true;
-    localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore()));
-    felieDatensatzSpeichern();
-    localStorage.setItem('felie_saved_chats', JSON.stringify(chats));
-    if (window._klState) localStorage.setItem('felie_onboarding_v1', JSON.stringify(window._klState));
-    felieRevision(true);
-    felieAktivenKontextAbgleichen(chats);
-    window._felieSessionGeneration = (window._felieSessionGeneration || 0) + 1;
-    felieAutosave();
-    felieSpeicherStandMerken();
-    felieRepoAktivLeeren();
-    return true;
-  } catch (e) {
-    felieRepoAktivLeeren();
-    felieStoreSetzen(JSON.parse(before));
-    felieDatensatzSetzen(datensatzVorher ? JSON.parse(datensatzVorher) : null, datensatzVerworfenVorher);
-    if (state) window._klState = JSON.parse(state);
-    Object.keys(raw).forEach(function(k) { try {
-      if (raw[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, raw[k]);
-    } catch (restoreError) {} });
-    felieSpeicherStandMerken();
-    felieRevision(true);
-    /* Zwei sehr verschiedene Gruende hatten bis hier dieselbe Meldung. Ein
-       abgelehnter Befehl hat mit freiem Speicher nichts zu tun: der
-       Vorgang passte nicht zum aktuellen Stand, etwa weil sich die
-       Angabe inzwischen geaendert hat oder ihre Quelle nicht mehr da
-       ist. Wer daraufhin Speicher freiraeumt, sucht an der falschen
-       Stelle — und beim zweiten Versuch passiert dasselbe. */
-    felieAlert(felieAendernFehlertext(e));
+    vorSpeichern: function () {
+      if (window._klState && !window._klOnboardingSchreibt)
+        window._klState.contextChanged = true;
+    },
+    /* Ueber den Port, damit die Transaktion den Schluessel zuruecksetzen
+       kann (D-9). */
+    schreiben: function () {
+      if (window._klState) felieSpeicherSchreiben('felie_onboarding_v1', JSON.stringify(window._klState));
+    },
+    nachSpeichern: function (chats) {
+      felieAktivenKontextAbgleichen(chats);
+      window._felieSessionGeneration = (window._felieSessionGeneration || 0) + 1;
+      felieAutosave();
+    }
+  });
+  if (r.ok) return true;
+  if (r.grund === 'fremd') {
+    felieAlert('Deine Angaben wurden in einem anderen Fenster geändert. Der aktuelle Stand ist jetzt geladen — bitte prüfe kurz und mach die Änderung noch einmal.');
     return false;
   }
+  /* Zwei sehr verschiedene Gruende hatten bis hier dieselbe Meldung. Ein
+     abgelehnter Befehl hat mit freiem Speicher nichts zu tun: der
+     Vorgang passte nicht zum aktuellen Stand, etwa weil sich die
+     Angabe inzwischen geaendert hat oder ihre Quelle nicht mehr da
+     ist. Wer daraufhin Speicher freiraeumt, sucht an der falschen
+     Stelle — und beim zweiten Versuch passiert dasselbe. */
+  felieAlert(felieAendernFehlertext(r.fehler));
+  return false;
 }
 /* Umgestellt auf das Repository (M2b).
 

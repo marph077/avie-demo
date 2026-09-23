@@ -24,7 +24,8 @@
    Stand D1b: Repository (repository.js), Texthelfer (text.js), Speicher-Port
    und Schluessel (speicher.js), Store und Datensatz (store.js), Neu-Hinweise
    (neu-hinweise.js), gespeicherte Gespraeche lesen (gespraeche.js).
-   Seit D1c: Bruecke Altbestand <-> Repository mit Vorgangs-Port (bruecke.js). */
+   Seit D1c: Bruecke Altbestand <-> Repository mit Vorgangs-Port (bruecke.js).
+   Seit D1d: der Speichervorgang (vorgang.js). */
 
 export { felieKernProbe } from './probe.js';
 
@@ -39,11 +40,13 @@ export * from './store.js';
 export * from './neu-hinweise.js';
 export * from './gespraeche.js';
 export * from './bruecke.js';
+export * from './vorgang.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';
 import { felieStoreZuruecksetzen } from './store.js';
 import { felieBrueckeZuruecksetzen } from './bruecke.js';
+import { felieVorgangZuruecksetzen } from './vorgang.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
@@ -55,4 +58,5 @@ export function felieKernZuruecksetzen() {
   felieSpeicherVerbinden(null);
   felieStoreZuruecksetzen();
   felieBrueckeZuruecksetzen();
+  felieVorgangZuruecksetzen();
 }

@@ -58,6 +58,8 @@ END_EXPO_REBUILD_CONTRACT_V6
    nicht. Fehlt dann window.FELIE_KERN oder meldet die Bruecke eine
    Kollision, steht ein Fehlerschirm ueber der App. Blockierend mit
    Absicht: ab D1 waere eine App ohne Kern eine App ohne Store.
+   Im Gutfall startet der Waechter die App (felieAppStarten, seit D0b):
+   erst dann ist sicher, dass alle Bloecke geparst und der Kern da ist.
    Das Modul-Skript darf deshalb nie async sein - dann gaelte die
    Reihenfolge nicht mehr. Und es bleibt eine externe Datei: Harness und
    Prompt-Extraktor parsen jedes Inline-Skript, ein import dort macht
@@ -85,7 +87,9 @@ END_EXPO_REBUILD_CONTRACT_V6
   document.addEventListener('DOMContentLoaded', function () {
     var k = window.FELIE_KERN;
     if (!k) { schirm('FELIE_KERN fehlt'); return; }
-    if (k.kollisionen && k.kollisionen.length) schirm('doppelt deklariert: ' + k.kollisionen.join(', '));
+    if (k.kollisionen && k.kollisionen.length) { schirm('doppelt deklariert: ' + k.kollisionen.join(', ')); return; }
+    if (typeof window.felieAppStarten !== 'function') { schirm('felieAppStarten fehlt'); return; }
+    window.felieAppStarten();
   });
 })();
 </script>
@@ -15747,6 +15751,22 @@ function ruZumGespraech() {
   /* Native Umgebung markieren — steuert Statusleiste und Downloads. */
   try { if (felieIsNative()) document.body.classList.add('is-native'); } catch (e) {}
 
+/* D0b (Welle D): der Start laeuft nicht mehr zur Parse-Zeit, sondern aus
+   dem Kern-Waechter heraus, bei DOMContentLoaded und nur, wenn der Kern
+   geladen ist.
+
+   Bis D0b stand hier ein nackter Aufruf initApp(). Er lief, bevor die
+   folgenden Skriptbloecke geparst waren - und erreichte dort
+   felieDatensatzLaden(), die es noch nicht gab. Der Fehler wurde in
+   felieStoreLaden geschluckt, der Datensatz nach jedem Neuladen also nie
+   uebernommen (AL-85). Folge: selbst bearbeitete Eintraege verschwanden
+   beim naechsten Speichervorgang. Die Tests sahen es nicht, weil der
+   Harness alle Bloecke auf einmal ausfuehrt.
+
+   Ab D1 liegen Store und Repository im Kern; der kommt erst nach dem
+   Parsen an. Ein Start zur Parse-Zeit faende sie gar nicht.
+   Pruefung: tests/felie-d0b-startreihenfolge.test.cjs */
+function felieAppStarten() {
 initApp();
 
 (function ruInit() {
@@ -15765,6 +15785,7 @@ initApp();
     }
   } catch (e) {}
 })();
+}
 </script>
 <script>
 /* ══ Gedächtnis-Repository — M2a ═══════════════════════════════════════

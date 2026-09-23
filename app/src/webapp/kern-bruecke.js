@@ -19,8 +19,10 @@
       fehlt es - und der Waechter sieht das bei DOMContentLoaded.
 
    Achtung Zeitpunkt: Module laufen erst, NACHDEM das Dokument geparst
-   ist. Inline-Code, der zur Parse-Zeit laeuft (heute initApp), sieht die
-   Kern-Namen noch nicht. Das regelt Paket D0b, bevor D1 Logik verschiebt. */
+   ist. Inline-Code, der zur Parse-Zeit laeuft, sieht die Kern-Namen noch
+   nicht. Seit D0b startet die App deshalb erst aus dem Waechter heraus
+   (felieAppStarten); tests/felie-d0b-startreihenfolge.test.cjs haelt
+   fest, dass kein Parse-Zeit-Aufruf einen Kern-Namen erreicht. */
 
 import * as kern from '../kern/index.js';
 

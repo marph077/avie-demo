@@ -46,6 +46,15 @@ kern.felieKoerperVerbinden({
   aktualisiert: function (ts) { window._bodyUpdatedAt = ts; }
 });
 
+/* Seit D3b schreibt und liest der Kern das Gedaechtnis. Das letzte
+   Gespraech (window._letzteChatId) und die Meldung an die Startseite
+   (felieHomeEreignis) bleiben in der Webapp; nachgeschlagen wird erst
+   beim Aufruf. */
+kern.felieGedaechtnisVerbinden({
+  letzterChat: function () { return window._letzteChatId; },
+  ereignis: function (art, detail) { window.felieHomeEreignis(art, detail); }
+});
+
 const namen = Object.keys(kern).sort();
 const kollisionen = [];
 

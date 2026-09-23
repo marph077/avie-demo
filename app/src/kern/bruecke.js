@@ -39,7 +39,9 @@ export function felieVorgangVerbinden(fn) {
   vorgang = typeof fn === 'function' ? fn : null;
 }
 
-function felieVorgangPort() {
+/* Seit D3b auch aus dem Gedaechtnis (gedaechtnis.js) aufgerufen: jede
+   Aenderung dort laeuft als ein Vorgang der Webapp. */
+export function felieVorgangPort() {
   if (!vorgang) throw new Error('felie-Kern: kein Vorgang verbunden');
   return vorgang;
 }

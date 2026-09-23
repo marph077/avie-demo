@@ -30,7 +30,8 @@
    Seit D3b: Gedaechtnis-Inhalt (gedaechtnis.js).
    Seit D4b: Abschlussauftrag und Pruefung der Auswertung (abschluss.js).
    Seit D5b: Selbstauskunft (selbstauskunft.js), Archiv-Lesewege
-   (archiv.js), Kontext-Daten (kontext.js); saveChat in abschluss.js. */
+   (archiv.js), Kontext-Daten (kontext.js); saveChat in abschluss.js.
+   Seit AL-73: die Kennenlern-Schritte als Daten (kennenlernen.js). */
 
 export { felieKernProbe } from './probe.js';
 
@@ -53,6 +54,7 @@ export * from './selbstauskunft.js';
 export * from './archiv.js';
 export * from './kontext.js';
 export * from './abschluss.js';
+export * from './kennenlernen.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';

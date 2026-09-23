@@ -2749,71 +2749,16 @@ var BLOOM = '<svg width="22" height="22" aria-label="felie"><use href="#felie-ma
    ══════════════════════════════════════════════════════════════════════ */
 
 var FELIE_FRISCHE_MS   = 24 * 60 * 60 * 1000;   /* 24 h, generell */
-var FELIE_AUFBEWAHRUNG = 365 * 24 * 60 * 60 * 1000;
+/* FELIE_AUFBEWAHRUNG: seit Welle D / D1b in src/kern/store.js */
 /* Tage, um die ein offenes Thema verlaengert wird, wenn die Nutzerin
    "Noch aktuell?" bejaht. */
 var FELIE_FADEN_VERLAENGERUNG = 14;
 /* Frist eines neuen offenen Themas, wenn keine mitgegeben wurde. Dieselbe
    Zahl, die felieMerkUebernehmen seit jeher als Rueckfall benutzt. */
 var FELIE_FADEN_TAGE = 7;
-var FELIE_STORE_KEY    = 'felie_store_v1';
-
-/* ── Alle localStorage-Schluessel an EINER Stelle ─────────────────────
-   Vorher hielten felieBackupData() und doResetUserData() je eine eigene
-   handgepflegte Liste. Die liefen auseinander: felie_store_v1 fehlte im
-   Backup (behoben) und fehlte zusaetzlich im Loeschpfad — dort bis jetzt.
-   Folge: "Nutzerdaten loeschen" und "Einwilligung widerrufen" entfernten
-   Profil und Gespraeche, liessen aber Signale, Fakten und Episoden
-   stehen. Nach einem neuen Onboarding standen deshalb Eintraege aus
-   frueheren Sitzungen im Gedaechtnis, die wie fest eingebaute
-   Beispieldaten wirken.
-   Beide Funktionen lesen jetzt diese Liste. Wer einen Schluessel
-   hinzufuegt, traegt ihn genau hier ein. */
-var FELIE_DATENSATZ_KEY = 'felie_dataset_v2';
-
-var FELIE_LS_KEYS = [
-  'felie_profile', 'felie_saved_chats', 'felie_body_data', FELIE_STORE_KEY,
-  /* Der dauerhafte Gedaechtnisteil des Vertragsdatensatzes (M6). Er
-     gehoert in die Sicherung: ohne ihn waere eine zurueckgespielte
-     Sicherung um alle Revisionen, Belege und Sperren aermer, und die
-     Altlisten allein wuerden beim naechsten Vorgang wieder zu einer
-     einzigen Fassung je Angabe eingeebnet. */
-  FELIE_DATENSATZ_KEY,
-  'felie_personality',
-  'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
-  'felie_guide_gedaechtnis', 'felie_guide_home',
-  'felie_backup_hint_off',
-  /* Merkzettel: welche Eintraege stammen aus dem zuletzt gespeicherten
-     Gespraech und hat die Nutzerin sie schon gesehen. Gehoert in die
-     Liste, weil ein liegengebliebener Merker nach dem Loeschen einen
-     Puls fuer Eintraege zeigen wuerde, die es nicht mehr gibt. */
-  'felie_neue_snippets',
-  /* Ein Gespraech, das beim Archivieren gescheitert ist und auf den
-     naechsten Versuch wartet (M24). Gehoert in die Liste, weil es sonst
-     ein Zuruecksetzen ueberlebt und danach ein geloeschtes Gespraech
-     wieder im Archiv auftauchen wuerde. */
-  'felie_archiv_wartend',
-  /* Abschlussauftraege je Gespraech (A2, 18.09.): Verlauf, Auswertung
-     und Gedaechtnisuebernahme mit fester ID. Loest felie_archiv_wartend
-     ab; ein dort noch liegendes Gespraech wird beim ersten Zugriff
-     uebernommen. In dieser Liste aus demselben Grund wie der Vorgaenger. */
-  'felie_abschluss_wartend',
-  /* Markierung der Selbstreflexion nach dem Onboarding. Gehoert in diese
-     Liste, weil sie sonst ein Zuruecksetzen ueberlebt und die frisch
-     geleerte App die Markierung nicht mehr zeigt. */
-  'felie_onboarding_v1'
-];
-
-/* Nur loeschen, nicht sichern:
-   - felie_body_history: stillgelegter Parallelspeicher.
-   - felie_store_migrated: Merker der avie_-Umbenennung. Bleibt er liegen,
-     laeuft die Migration nach einem Loeschen nicht erneut — sie soll auf
-     einem geleerten Speicher aber wieder greifen duerfen.
-   - felie_session_id: pseudonyme Kennung, die am Feedback haengt. Sie
-     gehoert bei einem vollstaendigen Loeschen weg. Bewusst NICHT ins
-     Backup: eine auf ein anderes Geraet zurueckgeholte Kennung wuerde
-     zwei Nutzungen zu einer verschmelzen. */
-var FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id', 'felie_checkins', 'felie_body_reminder_date', 'felie_wearable'];
+/* Speicherschluessel und die Listen FELIE_LS_KEYS / FELIE_LS_KEYS_ALTLAST:
+   seit Welle D / D1b in src/kern/speicher.js. Wer einen Schluessel
+   hinzufuegt, traegt ihn dort ein. */
 
 /* Selbstauskunft: die drei Signale, die die Nutzerin selbst angibt.
    Nur diese duerfen die Deutung tragen. */
@@ -2858,19 +2803,7 @@ function felieIstBeiwerk(feld) {
   return true;
 }
 
-function felieStore() {
-  if (!window._felieStore) {
-    window._felieStore = { version: 1, signale: [], fakten: [], episoden: [], zusatz: {} };
-  }
-  return window._felieStore;
-}
-
-/* Jede Aenderung erhoeht die Revision. Der abgeleitete View cached
-   darauf, damit haeufige Lesezugriffe nicht jedes Mal neu rechnen. */
-function felieRevision(inkrement) {
-  if (inkrement) { window._felieRev = (window._felieRev || 0) + 1; window._felieViewCache = null; }
-  return window._felieRev || 0;
-}
+/* felieStore und felieRevision: seit Welle D / D1b in src/kern/store.js */
 
 /* ── Zyklusattribute: abgeleitet, nie eingefroren ──────────────────── */
 
@@ -3371,34 +3304,10 @@ function felieEpisoden(opts) {
   });
 }
 
-/* ── Neu aus dem letzten Gespraech ────────────────────────────────────
-   Seit das Gespraech beim Schliessen ohne Rueckfrage uebernommen wird,
-   sieht die Nutzerin nicht mehr, WAS felie sich gemerkt hat. Diese Liste
-   traegt die Kennungen des letzten Schwungs, damit der Startbildschirm
-   darauf hinweisen und das Gedaechtnis sie hervorheben kann.
-     Bewusst ein eigener Speicherschluessel und kein Feld an den
-   Eintraegen selbst: die Markierung ist eine Ansichtssache und soll
-   weder in Backups als Inhalt auftauchen noch von der Bereinigung
-   angefasst werden. Fehlende Eintraege (geloescht) stoeren nicht — es
-   wird nur nach Kennung verglichen. */
-var FELIE_NEU_KEY = 'felie_neue_snippets';
-
-function felieNeueSnippets() {
-  try {
-    var o = JSON.parse(localStorage.getItem(FELIE_NEU_KEY) || 'null');
-    if (o && Array.isArray(o.ids)) return { ids: o.ids, gesehen: o.gesehen === true,
-      hinweise: Array.isArray(o.hinweise) ? o.hinweise : [] };
-  } catch (e) {}
-  return { ids: [], gesehen: true, hinweise: [] };
-}
-
-function felieNeueSnippetsSchreiben(stand) {
-  try {
-    if (!stand.ids.length && !stand.hinweise.length) localStorage.removeItem(FELIE_NEU_KEY);
-    else localStorage.setItem(FELIE_NEU_KEY, JSON.stringify(stand));
-  } catch (e) {}
-  return stand;
-}
+/* Neu aus dem letzten Gespraech (FELIE_NEU_KEY, felieNeueSnippets,
+   felieNeueSnippetsSchreiben, felieNeuHinweis, felieNeueSnippetsSetzen,
+   felieNeueSnippetsGesehen): seit Welle D / D1b in src/kern/neu-hinweise.js.
+   Hier bleiben bis D1c die beiden Teile, die die Bruecke brauchen. */
 
 /* Vorher/Nachher einer Aktualisierung.
 
@@ -3483,70 +3392,7 @@ function felieNeuHinweiseNachziehen(d) {
   return felieNeueSnippetsSchreiben(stand);
 }
 
-/* Der Hinweis zu einer Angabe, solange er ungelesen ist. */
-function felieNeuHinweis(id) {
-  var stand = felieNeueSnippets();
-  if (stand.gesehen) return null;
-  return stand.hinweise.filter(function (x) { return x.id === id; })[0] || null;
-}
-
-function felieNeueSnippetsSetzen(ids) {
-  var liste = (ids || []).filter(Boolean);
-  var vorhandene = felieNeueSnippets().hinweise;
-  try {
-    if (!liste.length && !vorhandene.length) localStorage.removeItem(FELIE_NEU_KEY);
-    /* gesehen:false ist der Ausloeser fuer den Puls. Ein neuer Schwung
-       ersetzt den alten vollstaendig: hervorgehoben wird immer nur das
-       ZULETZT gespeicherte Gespraech, sonst waechst die Liste mit jedem
-       Gespraech und "neu" verliert seine Bedeutung. */
-    else localStorage.setItem(FELIE_NEU_KEY,
-      JSON.stringify({ ids: liste, gesehen: false, hinweise: vorhandene }));
-  } catch (e) {}
-  return liste.length;
-}
-
-function felieNeueSnippetsGesehen() {
-  var n = felieNeueSnippets();
-  if ((!n.ids.length && !n.hinweise.length) || n.gesehen) return false;
-  /* Nach der Kenntnisnahme faellt der Vorher-Text weg: er wurde allein
-     fuer diesen Hinweis gehalten. Das aktuelle Snippet bleibt. */
-  n.gesehen = true;
-  n.hinweise = n.hinweise.map(function (x) {
-    return { id: x.id, nachher: x.nachher, art: x.art }; });
-  felieNeueSnippetsSchreiben(n);
-  return true;
-}
-
-
-
-function felieBereinigen() {
-  var jetzt = Date.now();
-  var s = felieStore();
-
-  /* Signale: harte Frist auf den Messzeitpunkt, keine Verlaengerung. */
-  s.signale = s.signale.filter(function(e) { return (jetzt - e.ts) <= FELIE_AUFBEWAHRUNG; });
-
-  /* Fakten: Frist laeuft auf bestaetigtAm. Stabile Fakten verfallen
-     nicht durch Nichterwaehnung. */
-  s.fakten = s.fakten.filter(function(f) {
-    if (f.klasse === 'stabil') return true;
-    return (jetzt - (f.bestaetigtAm || f.erfasstAm)) <= FELIE_AUFBEWAHRUNG;
-  });
-
-  /* Episoden: ein abgelaufener Faden wird NICHT mehr automatisch
-     geschlossen. Er bleibt offen stehen, wird im Gedaechtnis ausgegraut
-     und fragt dort "Noch aktuell?" — ueber das Ende eines persoenlichen
-     Themas entscheidet die Nutzerin, nicht eine Frist. Aus dem Kontext
-     fuer das Modell faellt er trotzdem heraus: dafuer sorgt der Filter
-     nurAktuell in felieEpisoden(), damit felie nichts von sich aus
-     aufgreift, dessen Zeit um ist.
-       Nur ausdruecklich geschlossene Faeden verfallen nach der Frist. */
-  s.episoden = s.episoden.filter(function(e) {
-    return e.status === 'offen' || (jetzt - e.zuletztAm) <= FELIE_AUFBEWAHRUNG;
-  });
-
-  felieRevision(true);
-}
+/* felieBereinigen: seit Welle D / D1b in src/kern/store.js */
 
 /* ── Abgeleitete Sicht: window.manualBodyData ─────────────────────── */
 
@@ -3611,36 +3457,8 @@ Object.defineProperty(window, 'manualBodyData', {
   }
 });
 
-/* ── Persistenz ───────────────────────────────────────────────────── */
-
-function felieStoreSpeichern() {
-  try { localStorage.setItem(FELIE_STORE_KEY, JSON.stringify(felieStore())); return true; } catch (e) { return false; }
-}
-
-function felieStoreLaden() {
-  try {
-    var d = JSON.parse(localStorage.getItem(FELIE_STORE_KEY) || 'null');
-    if (d && d.version === 1) {
-      window._felieStore = {
-        version: 1,
-        signale:  d.signale  || [],
-        fakten:   d.fakten   || [],
-        episoden: d.episoden || [],
-        zusatz:   d.zusatz   || {}
-      };
-      felieRevision(true);
-      felieBereinigen();
-      /* Erst jetzt, mit geladener Projektion: der Datensatz vergleicht
-         seinen Fingerabdruck gegen genau diese Listen. */
-      try { felieDatensatzLaden(); } catch (e) {}
-      return true;
-    }
-  } catch (e) {}
-  /* Kein Altstand: ein Datensatz kann trotzdem vorliegen (geleerte
-     Projektion, zurueckgespielte Sicherung). */
-  try { felieDatensatzLaden(); } catch (e) {}
-  return false;
-}
+/* Persistenz (felieStoreSpeichern, felieStoreLaden): seit Welle D / D1b
+   in src/kern/store.js */
 
 
 
@@ -4330,7 +4148,7 @@ function klExtract() {
     (summary.faeden || []).forEach(function(f) { remember(f, 'faden'); });
     // Facts and their import ledger share one atomic localStorage write.
     journal[id] = imported;
-    if (!felieStoreSpeichern()) { window._felieStore = JSON.parse(before); throw new Error('Speichern fehlgeschlagen'); }
+    if (!felieStoreSpeichern()) { felieStoreSetzen(JSON.parse(before)); throw new Error('Speichern fehlgeschlagen'); }
     current.onboardingErfasst = imported;
     var known = (current.notizen || []).map(function(n) { return n.id; });
     (summary.notizen || []).forEach(function(n) {
@@ -4639,7 +4457,7 @@ function klProfilAltbestand() {
         felieFaktSetzen({ id: id, text: text, kategorie: k === 'kinder' ? 'familie' : k === 'lifestyle' ? 'arbeit' : 'allgemein', klasse: 'stabil', quelle: 'selbst' });
     });
   });
-  if (!felieStoreSpeichern()) { window._felieStore = JSON.parse(previous); return; }
+  if (!felieStoreSpeichern()) { felieStoreSetzen(JSON.parse(previous)); return; }
   keys.forEach(function(k) {
     if (remaining[k]) klAnswers[k] = Array.isArray(old[k]) ? remaining[k] : remaining[k][0];
     else delete klAnswers[k];
@@ -5258,7 +5076,7 @@ function klV2WearableUebernehmen(w) {
     saveBodyData();
     return true;
   } catch (e) {
-    window._felieStore = JSON.parse(vorher);
+    felieStoreSetzen(JSON.parse(vorher));
     return false;
   }
 }
@@ -5603,7 +5421,7 @@ function klV2SnippetsNachziehen() {
   }
   if (!geaendert) return false;
   felieRevision(true);
-  if (felieStoreSpeichern() === false) { window._felieStore = JSON.parse(vorher); felieRevision(true); return false; }
+  if (felieStoreSpeichern() === false) { felieStoreSetzen(JSON.parse(vorher)); felieRevision(true); return false; }
   return true;
 }
 
@@ -5699,7 +5517,7 @@ function klV2SichernIntern() {
     felieStore().zusatz.onboardingVerbindungenV6 = felieStore().zusatz.onboardingVerbindungenV6 || {};
     felieStore().zusatz.onboardingVerbindungenV6[s.id] = true;
   }
-  if (!felieStoreSpeichern()) { window._felieStore = JSON.parse(before); window._klStorageError = true; return false; }
+  if (!felieStoreSpeichern()) { felieStoreSetzen(JSON.parse(before)); window._klStorageError = true; return false; }
   /* Erst NACH dem Store schreiben: die Zyklusangabe liegt unter einem
      eigenen Speicherschluessel, ein Ruecksetzen des Stores wuerde sie
      nicht mit zuruecknehmen. Die Voreinstellung ist idempotent und darf
@@ -7042,8 +6860,8 @@ function felieDatenAendern(mutator) {
   var keys = [FELIE_STORE_KEY, FELIE_DATENSATZ_KEY, 'felie_saved_chats', 'felie_onboarding_v1', 'felie_neue_snippets'];
   var raw = {}, before = JSON.stringify(felieStore());
   var state = window._klState ? JSON.stringify(window._klState) : null;
-  var datensatzVorher = window._felieDatensatz ? JSON.stringify(window._felieDatensatz) : null;
-  var datensatzVerworfenVorher = window._felieDatensatzVerworfen;
+  var datensatzVorher = felieDatensatzStand() ? JSON.stringify(felieDatensatzStand()) : null;
+  var datensatzVerworfenVorher = felieDatensatzVerworfen();
   try {
     keys.forEach(function(k) { raw[k] = localStorage.getItem(k); });
     /* Hat ein anderer Tab seit dem Laden geschrieben, gewann bisher
@@ -7089,9 +6907,8 @@ function felieDatenAendern(mutator) {
     return true;
   } catch (e) {
     window._felieRepoAktiv = null;
-    window._felieStore = JSON.parse(before);
-    window._felieDatensatz = datensatzVorher ? JSON.parse(datensatzVorher) : null;
-    window._felieDatensatzVerworfen = datensatzVerworfenVorher;
+    felieStoreSetzen(JSON.parse(before));
+    felieDatensatzSetzen(datensatzVorher ? JSON.parse(datensatzVorher) : null, datensatzVerworfenVorher);
     if (state) window._klState = JSON.parse(state);
     Object.keys(raw).forEach(function(k) { try {
       if (raw[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, raw[k]);
@@ -10878,8 +10695,10 @@ function doResetUserData() {
   /* Auch den Speicher im Arbeitsgedaechtnis leeren. Normalerweise erledigt
      das der Reload; scheitert der (siehe catch unten), wuerde der naechste
      felieStoreSpeichern()-Aufruf sonst die geloeschten Fakten sofort
-     zurueckschreiben. */
-  try { window._felieStore = { version: 1, signale: [], fakten: [], episoden: [] }; } catch(e) {}
+     zurueckschreiben. Bis D1b galt das nur fuer den Store: die
+     Datensatz-Kopie blieb stehen, und der naechste Vorgang brachte die
+     geloeschten Eintraege zurueck (AL-89). */
+  try { felieArbeitsspeicherLeeren(); } catch(e) {}
   /* Laufende Abschlussauftraege werden ungueltig (A2/B4): ein Ergebnis,
      das nach dem Loeschen eintrifft, darf nichts wiederherstellen — auch
      dann nicht, wenn der Reload ausbleibt. */
@@ -13326,7 +13145,7 @@ function felieRueckblickGehoert(d, r, cid) {
 }
 
 function felieRueckblickAussagen(cid) {
-  var d = window._felieDatensatz;
+  var d = felieDatensatzStand();
   if (!d || !Array.isArray(d.revisions)) return [];
   var raus = [];
   d.revisions.forEach(function (r) {
@@ -14557,12 +14376,7 @@ function generateChatSummary(historySnapshot) {
   });
 }
 
-function getSavedChats() {
-  try {
-    var list = JSON.parse(localStorage.getItem('felie_saved_chats') || '[]');
-    return Array.isArray(list) ? list.filter(function(c) { return c && typeof c === 'object'; }) : [];
-  } catch(e) { return []; }
-}
+/* getSavedChats: seit Welle D / D1b in src/kern/gespraeche.js */
 
 function saveChat(summary, messages, auftragId) {
   try {
@@ -16019,98 +15833,10 @@ function felieBrueckeZaehlerNachbilden(d, set, anzahl) {
   return raus;
 }
 
-/* ── Der Datensatz bleibt — M6 ────────────────────────────────────────
-   Bis M5 war die Bruecke je Speichervorgang zustandslos: saeen, Befehle
-   anwenden, zurueckprojizieren, verwerfen. Was der Vertrag traegt und die
-   Altform nicht kennt — Revisionen, Belege, Sperren, Hinweise — entstand
-   dabei jedes Mal neu aus zwei flachen Listen und war danach wieder weg.
-   Genau das machte die Sperre nachrichtengenau statt aussagegenau: ohne
-   dauerhafte Revisionen gibt es nichts, woran eine Ableitung haengen
-   koennte (Pruefaelle F06, F13, F14).
-
-   Jetzt bleibt der GEDAECHTNISTEIL des Datensatzes bestehen. Gespraeche
-   und Nachrichten werden weiterhin je Vorgang aus felie_saved_chats
-   gesaet: dort liegt der Bestand, den das Archiv anzeigt, und zwei
-   Wahrheiten darueber waere genau der Fehler, den dieses Paket
-   beseitigt. Belege zeigen auf Nachrichten-Kennungen, die sich aus
-   Gespraechskennung und Position ergeben — verschiebt sich eine
-   Position, faellt der Beleg weg, statt ueber Textgleichheit neu
-   zugeordnet zu werden (F45). */
-
-function felieDatensatzTeile() {
-  return ['entries', 'revisions', 'evidence', 'exclusions', 'conflicts',
-    'changeNotices', 'mutationReceipts', 'importRecords', 'legacyHerkunft'];
-}
-
-/* Was nach einem Vorgang bestehen bleibt. Bewusst ohne Gespraeche,
-   Nachrichten und Zusammenfassungen. */
-function felieDatensatzMerken(d) {
-  if (!d) return null;
-  var k = { meta: d.meta, profileBase: d.profileBase, referents: d.referents };
-  felieDatensatzTeile().forEach(function (t) { k[t] = d[t]; });
-  window._felieDatensatz = felieRepoKlon(k);
-  return window._felieDatensatz;
-}
-
-/* Der dauerhafte Teil wird SYNCHRON geschrieben, im selben Block wie die
-   Projektion. Damit gilt fuer beide dasselbe Alles-oder-nichts: der
-   vorhandene catch stellt im Fehlerfall alle Schluessel zurueck. Ein
-   asynchroner Schreibweg daneben koennte genau hier auseinanderlaufen —
-   sichtbarer Stand geschrieben, Datensatz nicht — und der naechste Start
-   wuerde stillschweigend mit dem aelteren Gedaechtnis weiterarbeiten. */
-/* Fingerabdruck der Projektion, die zu diesem Datensatz gehoert. Er
-   beantwortet eine einzige Frage beim Start: hat seither jemand die
-   flachen Listen geschrieben, der den Datensatz nicht kennt? Das kann ein
-   aelterer Client sein, eine zurueckgespielte Sicherung aus der Zeit
-   davor oder ein Eingriff von Hand. In all diesen Faellen waere es
-   falsch, den gehaltenen Datensatz weiter als Wahrheit zu nehmen: er
-   wuerde die neueren sichtbaren Angaben stillschweigend verdraengen
-   (Pruefaelle F32, F34, F42). */
-function felieProjektionAbdruck() {
-  try {
-    var st = felieStore();
-    var kurz = function (liste) {
-      return (liste || []).map(function (e) {
-        return [e.id, e.text, e.bestaetigtAm || '', e.quelle || ''].join('~'); }).sort().join('|');
-    };
-    return kurz(st.fakten) + '#' + kurz(st.episoden);
-  } catch (e) { return null; }
-}
-
-function felieDatensatzSpeichern() {
-  var k = felieDatensatzStand();
-  if (!k) return false;
-  k.projektionsAbdruck = felieProjektionAbdruck();
-  localStorage.setItem(FELIE_DATENSATZ_KEY, JSON.stringify(k));
-  return true;
-}
-
-function felieDatensatzLaden() {
-  try {
-    var roh = localStorage.getItem(FELIE_DATENSATZ_KEY);
-    if (!roh) return false;
-    var k = JSON.parse(roh);
-    if (!k || !k.meta || k.meta.schemaVersion !== 2 || !Array.isArray(k.entries)) return false;
-    /* Neuer als der Datensatz heisst: der Datensatz ist nicht mehr die
-       Wahrheit. Dann wird er verworfen und beim naechsten Vorgang aus dem
-       sichtbaren Stand neu aufgebaut — die Angaben der Nutzerin bleiben,
-       die Revisionshistorie geht verloren. Das ist der ehrliche Preis;
-       das Gegenteil waere, ihre neueren Angaben stillschweigend zu
-       ueberschreiben. */
-    if (k.projektionsAbdruck != null && k.projektionsAbdruck !== felieProjektionAbdruck()) {
-      window._felieDatensatz = null;
-      window._felieDatensatzVerworfen = true;
-      return false;
-    }
-    window._felieDatensatz = k;
-    window._felieDatensatzVerworfen = false;
-    return true;
-  } catch (e) { return false; }
-}
-
-function felieDatensatzStand() {
-  return (typeof window !== 'undefined' && window._felieDatensatz) || null;
-}
+/* Der Datensatz bleibt (M6): felieDatensatzTeile, -Merken, -Speichern,
+   -Laden, -Stand und felieProjektionAbdruck seit Welle D / D1b in
+   src/kern/store.js. felieDatensatzUebernehmen bleibt bis D1c hier, weil
+   es die Bruecke braucht. */
 
 /* Setzt den bestehenden Gedaechtnisteil in eine frische Saat ein. Kopiert
    wird dabei: der gehaltene Stand darf von einem laufenden Vorgang nicht
@@ -16757,56 +16483,17 @@ function felieBrueckeProjektion(d) {
    Umgeschaltet wird mit window._felieSpeicherArt = 'indexedDB'. Das
    allein reicht NICHT fuer den Produktivbetrieb: dafuer braucht es die
    Migration, die Ruecksicherung und den Rollback aus M6. */
+/* Seit Welle D / D1b steht die Pruefung der Altablage (Fremdaenderung)
+   im Kern (src/kern/speicher.js). Die IndexedDB-Ablage bleibt hier
+   ausgeschaltet stehen und wandert nicht mit (AL-10). */
 
 function felieSpeicherArt() {
   return (typeof window !== 'undefined' && window._felieSpeicherArt) || 'localStorage';
 }
 
-function felieSpeicherSchluessel() {
-  return [FELIE_STORE_KEY, FELIE_DATENSATZ_KEY, 'felie_saved_chats',
-    'felie_onboarding_v1', 'felie_neue_snippets'];
-}
-
-/* ── Fremdänderung erkennen (aktiv) ───────────────────────────────── */
-
-/* Fremd heisst: aus einem ANDEREN Fenster. Genau dafuer gibt es das
-   storage-Ereignis — es feuert nie fuer den eigenen Tab. Ein Vergleich
-   der rohen Werte taugt dafuer nicht: die App schreibt dieselben
-   Schluessel auch ausserhalb eines Speichervorgangs (felieStoreSpeichern,
-   saveChat, klV2Sichern), und jeder dieser Wege saehe wie eine
-   Fremdaenderung aus. Ein Fehlalarm waere schlimmer als die Luecke: er
-   wuerde eine gerade getippte Aenderung verwerfen. */
-function felieSpeicherFremdMerker() {
-  return window._felieSpeicherFremd || (window._felieSpeicherFremd = {});
-}
-
-function felieSpeicherHorchen() {
-  if (window._felieSpeicherHorcht) return false;
-  if (typeof window.addEventListener !== 'function') return false;
-  window._felieSpeicherHorcht = true;
-  window.addEventListener('storage', function (e) {
-    if (!e || !e.key) return;
-    if (felieSpeicherSchluessel().indexOf(e.key) < 0) return;
-    felieSpeicherFremdMerker()[e.key] = true;
-  });
-  return true;
-}
-
-/* Liefert die Schluessel, die ein anderes Fenster veraendert hat, und
-   vergisst sie danach — der Aufrufer hat sie behandelt. */
-function felieSpeicherFremdAenderung() {
-  var merker = felieSpeicherFremdMerker();
-  var raus = Object.keys(merker);
-  window._felieSpeicherFremd = {};
-  return raus;
-}
-
-/* Beibehalten fuer Aufrufer, die den Stand nach einem Schreibvorgang
-   quittieren wollen; der Merker wird dabei geleert. */
-function felieSpeicherStandMerken() {
-  window._felieSpeicherFremd = {};
-  return true;
-}
+/* Speicherpruefung (felieSpeicherSchluessel, Fremdaenderung erkennen):
+   seit Welle D / D1b in src/kern/speicher.js. Das storage-Ereignis
+   meldet der Webapp-Port (src/webapp/speicher-localstorage.js). */
 
 /* ── IndexedDB-Ablage (gebaut, bis M6 nicht aktiv) ─────────────────── */
 

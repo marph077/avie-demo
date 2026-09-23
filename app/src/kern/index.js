@@ -21,7 +21,9 @@
 
    Alle sechs prueft tests/felie-d0-modulweg.test.cjs.
 
-   Stand D1a: Repository (repository.js) und Texthelfer (text.js). */
+   Stand D1b: Repository (repository.js), Texthelfer (text.js), Speicher-Port
+   und Schluessel (speicher.js), Store und Datensatz (store.js), Neu-Hinweise
+   (neu-hinweise.js), gespeicherte Gespraeche lesen (gespraeche.js). */
 
 export { felieKernProbe } from './probe.js';
 
@@ -31,13 +33,22 @@ export { felieKernProbe } from './probe.js';
    Module exportieren - prueft tests/felie-d0-modulweg.test.cjs (C6). */
 export * from './text.js';
 export * from './repository.js';
+export * from './speicher.js';
+export * from './store.js';
+export * from './neu-hinweise.js';
+export * from './gespraeche.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
+import { felieSpeicherVerbinden } from './speicher.js';
+import { felieStoreZuruecksetzen } from './store.js';
 
-/* Setzt jeden Modulzustand des Kerns zurueck. Die Tests rufen es vor
-   jeder frischen Laufzeit; ab D1b ruft es auch das Zuruecksetzen der
-   Nutzerdaten. */
+/* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
+   Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihren
+   Port. Die Webapp ruft es nie: das Loeschen der Nutzerdaten ist etwas
+   anderes und laesst den Port verbunden. */
 export function felieKernZuruecksetzen() {
   felieRepoUhrSetzen(null);
   felieRepoZufallSetzen(null);
+  felieSpeicherVerbinden(null);
+  felieStoreZuruecksetzen();
 }

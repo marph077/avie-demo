@@ -25,6 +25,12 @@
    fest, dass kein Parse-Zeit-Aufruf einen Kern-Namen erreicht. */
 
 import * as kern from '../kern/index.js';
+import { felieLocalStoragePort } from './speicher-localstorage.js';
+
+/* Seit D1b liest und schreibt der Kern ueber einen Speicher-Port. Er wird
+   verbunden, bevor irgendein Name ans window kommt: Inline-Code kann den
+   Kern erst danach erreichen, und dann ist der Port schon da. */
+kern.felieSpeicherVerbinden(felieLocalStoragePort(window));
 
 const namen = Object.keys(kern).sort();
 const kollisionen = [];

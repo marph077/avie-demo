@@ -16,6 +16,28 @@
       haengt. Deklariert index.html denselben Namen noch selbst, ist das
       eine Kollision und haelt die App an - absichtlich.
 
-   Alle fuenf prueft tests/felie-d0-modulweg.test.cjs. */
+   6. Keine freien Namen ausser JS-Standard und eigenen Importen - der
+      Kern ruft nichts, was nur in index.html steht.
+
+   Alle sechs prueft tests/felie-d0-modulweg.test.cjs.
+
+   Stand D1a: Repository (repository.js) und Texthelfer (text.js). */
 
 export { felieKernProbe } from './probe.js';
+
+/* Ganze Module mit export *: die Liste der Namen ist dann das Modul
+   selbst, nicht eine zweite, von Hand gepflegte Aufzaehlung (AL-25).
+   Die Kehrseite - export * laesst einen Namen still fallen, den zwei
+   Module exportieren - prueft tests/felie-d0-modulweg.test.cjs (C6). */
+export * from './text.js';
+export * from './repository.js';
+
+import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
+
+/* Setzt jeden Modulzustand des Kerns zurueck. Die Tests rufen es vor
+   jeder frischen Laufzeit; ab D1b ruft es auch das Zuruecksetzen der
+   Nutzerdaten. */
+export function felieKernZuruecksetzen() {
+  felieRepoUhrSetzen(null);
+  felieRepoZufallSetzen(null);
+}

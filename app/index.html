@@ -2727,7 +2727,7 @@ var FELIE_LS_KEYS = [
   'felie_personality',
   'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
   'felie_guide_gedaechtnis', 'felie_guide_home',
-  'felie_guide_home_deferred', 'felie_backup_hint_off',
+  'felie_backup_hint_off',
   /* Merkzettel: welche Eintraege stammen aus dem zuletzt gespeicherten
      Gespraech und hat die Nutzerin sie schon gesehen. Gehoert in die
      Liste, weil ein liegengebliebener Merker nach dem Loeschen einen
@@ -3709,7 +3709,7 @@ const GUIDE_STEPS = [
     label: 'Willkommen'
   },
   {
-    text: `Jeden Tag begrüße ich dich und stelle dir eine <strong>Frage</strong> — immer mit Blick darauf, worüber wir zuletzt gesprochen haben. Hier <strong>antwortest du mir</strong> — schreib einfach, was dir auf dem Herzen liegt. Daraus wird unser Gespräch, ganz ohne Urteilen.`,
+    text: `Wenn du hereinschaust, begrüße ich dich und stelle dir eine <strong>Frage</strong> — immer mit Blick darauf, worüber wir zuletzt gesprochen haben. Hier <strong>antwortest du mir</strong> — schreib einfach, was dir auf dem Herzen liegt. Daraus wird unser Gespräch, ganz ohne Urteilen.`,
     target: 'greeting-input',
     label: 'Frage & Antwort'
   },
@@ -3719,7 +3719,7 @@ const GUIDE_STEPS = [
     label: 'Persönlichkeit'
   },
   {
-    text: `Über <strong>Neuer Chat</strong> startest du jederzeit ein frisches Gespräch mit mir — zu einem bestimmten Thema oder einfach frei drauflos. Der vorherige Verlauf bleibt dabei erhalten, du fängst nicht bei null an.`,
+    text: `Über <strong>Neuer Chat</strong> startest du jederzeit ein frisches Gespräch mit mir — zu einem bestimmten Thema oder einfach frei drauflos. Das alte Gespräch liegt dann im Archiv, und ich erinnere mich an das, was wir schon besprochen haben.`,
     target: 'nav-newchat',
     label: 'Neuer Chat'
   },
@@ -3729,12 +3729,20 @@ const GUIDE_STEPS = [
     label: 'Archiv'
   },
   {
-    text: `Hier sammelt sich, was ich von dir mitbekomme — aus unseren Gesprächen und, wenn du magst, aus einem Wearable. Du musst hier nichts pflegen: was ich für eine Antwort brauche, frage ich dich einfach.<br><br>Schau später in Ruhe rein. Schlaf, Energie, Anspannung und deine Zyklusphase hängen zusammen, und mit der Zeit wird sichtbar, wie das bei <em>dir</em> aussieht.`,
+    text: `Hier sammelt sich, was ich von dir mitbekomme — aus unseren Gesprächen und aus dem, was du selbst einträgst. Du musst hier nichts pflegen: was ich für eine Antwort brauche, frage ich dich einfach.<br><br>Schau später in Ruhe rein. Nacht, Energie, Stimmung und deine Zyklusphase hängen zusammen, und mit der Zeit wird sichtbar, wie das bei <em>dir</em> aussieht.`,
     target: 'score',
     label: 'Körperwerte'
   },
   {
-    text: `In meinem <strong>Gedächtnis</strong> siehst du, was ich von dir mitgenommen habe — was gerade läuft, meine Notizen aus euren Gesprächen und was dauerhaft über dich gilt. Du kannst dort alles ändern, ergänzen oder löschen.`,
+    /* Der Selbstreflexionsmarker (AL-70) wurde gebaut und von keinem
+       Rundgang eingefuehrt. Der letzte Satz ist der wichtige: er nimmt
+       der Markierung vorweg, wonach sie aussehen koennte. */
+    text: `Hier trägst du in einem Moment ein, wie deine Nacht war, wie deine Energie ist und wie du dich fühlst. Wenn ich länger nichts davon habe, bekommt sie einen leisen Rand — das ist alles. <strong>Kein Haken, keine Serie, kein schlechtes Gewissen.</strong>`,
+    target: 'ritual',
+    label: 'Selbstreflexion'
+  },
+  {
+    text: `In meinem <strong>Gedächtnis</strong> siehst du, was ich von dir mitgenommen habe — was gerade läuft, meine Notizen aus unseren Gesprächen und was dauerhaft über dich gilt. Du kannst dort alles ändern, ergänzen oder löschen.`,
     target: 'nav-gedaechtnis',
     label: 'Gedächtnis'
   },
@@ -3763,7 +3771,7 @@ const ARCHIV_GUIDE_STEPS = [
     label: 'Archiv'
   },
   {
-    text: `Jedes Gespräch zeigt seine <strong>Gesprächsnotizen</strong> mit passenden Themenüberschriften. Im Gedächtnis kannst du einzelne Notizen bearbeiten oder löschen. Tippe auf „Chat öffnen", um wieder einzusteigen.`,
+    text: `Jedes Gespräch zeigt seine <strong>Gesprächsnotizen</strong> mit passenden Themenüberschriften. Im Gedächtnis kannst du einzelne Notizen bearbeiten oder löschen. Tippe auf „Chat öffnen“, um wieder einzusteigen.`,
     target: 'verlauf-card',
     label: 'Gespräche'
   }
@@ -3811,7 +3819,7 @@ const GEDAECHTNIS_GUIDE_STEPS = [
     label: 'Gedächtnis'
   },
   {
-    text: `<strong>Neu</strong> — was aus deinem letzten Gespräch dazugekommen ist, bis du es einmal angesehen hast. Deine eigenen Angaben stehen nicht hier, sondern in deinem Profil.`,
+    text: `<strong>Neu</strong> — was aus deinem letzten Gespräch dazugekommen ist, bis du es einmal angesehen hast. Nach unserem Kennenlernen steht hier, was ich mir daraus gemerkt habe.`,
     target: 'ged-fakten',
     scrollSel: '#ged-card-neu',
     gedTab: 'neu',
@@ -3822,7 +3830,7 @@ const GEDAECHTNIS_GUIDE_STEPS = [
        DOM. Ohne das Umschalten fand renderGuideStep() sein Ziel nicht,
        fiel auf die statische Koordinatentabelle zurueck und leuchtete ein
        Rechteck ueber dem gerade sichtbaren, falschen Block aus. */
-    text: `<strong>Aktuell</strong> — Themen, die ich eine Weile mitdenke, z.B. „Abgabe nächste Woche". Abhaken musst du nichts: wenn die Zeit um ist, frage ich hier einmal nach, ob es noch aktuell ist.`,
+    text: `<strong>Aktuell</strong> — Themen, die ich eine Weile mitdenke, z.B. „Abgabe nächste Woche“. Abhaken musst du nichts: wenn die Zeit um ist, frage ich hier einmal nach, ob es noch aktuell ist.`,
     target: 'ged-faeden',
     scrollSel: '#ged-card-faeden',
     gedTab: 'aktuell',
@@ -3837,17 +3845,30 @@ const GEDAECHTNIS_GUIDE_STEPS = [
   }
 ];
 
+/* Folgt den beiden Abschnitten, die der Spiegel mit E-U4 noch hat.
+   Vorher zielte der zweite Schritt auf #score-cards — ein Element, das
+   es seit dem Umbau des Spiegels nicht mehr gibt. Das Live-Ziel war
+   damit null, die statische Ersatzkoordinate leuchtete ueber
+   irgendetwas, und der Text bewarb obendrein das Wearable-Verbinden aus
+   AL-71a. Dagegen steht jetzt eine Pruefung: felie-guides.test.cjs
+   loest jedes Ziel gegen ein wirklich vorhandenes Element auf. */
 const DASHBOARD_GUIDE_STEPS = [
   {
-    "text": "Das ist dein <strong>Spiegel</strong>: was ich von dir mitbekommen habe und was ich darin sehe. Schlaf, Energie, Anspannung und dein Zyklus hängen zusammen — und je länger wir sprechen, desto genauer erkenne ich, wie dieses Zusammenspiel bei dir aussieht.",
+    "text": "Das ist dein <strong>Spiegel</strong>: was ich von dir mitbekommen habe und was ich darin sehe. Nacht, Energie und Stimmung hängen bei jeder anders zusammen — und je öfter du mir davon erzählst, desto genauer sehe ich, wie es bei dir ist.",
     "target": null,
-    "label": "Dashboard"
+    "label": "Spiegel"
   },
   {
-    "text": "Wenn du ein <strong>Wearable</strong> nutzt, kannst du es verbinden — dann kommen Werte wie Schlafdauer oder HRV von allein dazu. Das ist ein Extra, keine Bedingung: was du mir selbst erzählst, zählt immer mehr als jede Messung.",
-    "target": "dash-scores",
-    "scrollSel": "#score-cards",
-    "label": "Körperdaten"
+    "text": "Oben steht, <strong>was ich heute von dir weiß</strong> — deine eigenen Angaben, mit Datum und Herkunft. Was du mir selbst erzählst, zählt für mich immer mehr als jede Messung.",
+    "target": "dash-heute",
+    "scrollSel": "#dash-checkin",
+    "label": "Heute"
+  },
+  {
+    "text": "Und hier, <strong>was bei dir zusammenhängt</strong> — zum Beispiel, wie deine Nächte und deine Stimmung miteinander gehen. Dafür brauche ich ein paar Reflexionen von dir; vorher sage ich dir das ehrlich, statt etwas zu behaupten.",
+    "target": "dash-muster",
+    "scrollSel": "#body-avg",
+    "label": "Zusammenhänge"
   }
 ];
 
@@ -5695,7 +5716,6 @@ function klV2StartApp() {
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   updateClock(); personalizeApp();
-  try { localStorage.setItem('felie_guide_home_deferred','1'); } catch(e) {}
   homeInit(true);
 }
 
@@ -7514,13 +7534,12 @@ function getLiveSpot(target) {
       'verlauf-card':   '#verlauf-list > div:first-child',
       'profile-group':   '#profile-fields-group',
       'profile-fakten':  '#profile-card-fakten',
-      'profile-gedaechtnis': '#profile-card-gedaechtnis',
       'profile-backup':  '#profile-card-backup',
       'ged-faeden':      '#ged-card-faeden',
       'ged-lernt':       '#ged-card-lernt',
       'ged-fakten':      '#ged-card-neu',
-      'dash-wearable':   '#wearable-banner',
-      'dash-scores':     '#score-cards',
+      'dash-heute':      '#dash-checkin',
+      'dash-muster':     '#body-avg',
       'profile-zyklus':  '#profile-card-zyklus',
     };
     const sel = selectors[target];
@@ -7620,14 +7639,15 @@ function positionGuideSpot() {
     'verlauf-card':    { t: 96,  l: 12,  w: 366, h: 200 },
     'profile-group':   { t: 96,  l: 12,  w: 366, h: 560 },
     'profile-fakten':  { t: 96, l: 12, w: 366, h: 240 },
-    'profile-gedaechtnis': { t: 96, l: 12, w: 366, h: 190 },
     'profile-backup':  { t: 96,  l: 12,  w: 366, h: 180 },
     'ged-faeden':      { t: 96,  l: 12,  w: 366, h: 220 },
     'ged-lernt':       { t: 96,  l: 12,  w: 366, h: 260 },
     'ged-fakten':      { t: 96,  l: 12,  w: 366, h: 240 },   /* Register "Neu" */
-    'dash-wearable':   { t: 110, l: 16,  w: 358, h: 130 },
-    'dash-scores':     { t: 110, l: 16,  w: 358, h: 96  },
-    'dash-zyklus':     { t: 110, l: 16,  w: 358, h: 120 },
+    /* Ersatzkoordinaten greifen nur, wenn das Element zwar existiert,
+       aber gerade keine Ausdehnung hat. Dass ein Ziel gar nicht mehr
+       existiert, faengt die Pruefung ab, nicht diese Tabelle. */
+    'dash-heute':      { t: 110, l: 16,  w: 358, h: 130 },
+    'dash-muster':     { t: 250, l: 16,  w: 358, h: 160 },
   };
   const liveSpot = step.target ? getLiveSpot(step.target) : null;
   const spotData = liveSpot || (step.target ? fallbackSpots[step.target] : null);
@@ -7718,21 +7738,26 @@ function closeGuide() {
      - Der Rundgang liegt ab sofort dauerhaft als Knopf im Header. Der
        Zustand springt beim Start direkt auf das, was frueher "Später"
        war — erreichbar, aber ungefragt.
-     - Die Selbstreflexion wird einmalig im Guide-Stil markiert. Sie ist
-       der erste sinnvolle Schritt: ohne Stimmung, Nacht, Energie und
-       Zyklus hat felie nichts, worauf sie schauen kann.
+     - Die Selbstreflexion traegt seit E-U1 ihre eigene, datengetriebene
+       Markierung (AL-70) und wird im Rundgang als eigener Schritt
+       eingefuehrt. Sie ist der erste sinnvolle Schritt: ohne Nacht,
+       Energie und Stimmung hat felie nichts, worauf sie schauen kann.
    ══════════════════════════════════════════════════════════════════════ */
+/* Ein einziger Zustand: ist der Rundgang gelaufen oder nicht.
+   Bis zum 23.09. stand hier ein zweiter, 'deferred' — ein Rest des
+   entfallenen "Später"-Dialogs. Er wurde an zwei Stellen geschrieben,
+   an einer geloescht und NIRGENDS ausgewertet; der Rueckgabewert landete
+   in einer Variablen, die niemand liest. Dieselbe Sorte wie der mit
+   E-U1 entfallene Ritual-Merker, und mit demselben Ergebnis: ein
+   Schluessel, der nichts entscheidet, ist keine Erinnerung, sondern
+   gespeicherte Vergangenheit. */
 function homeGuideState() {
-  var done = false, deferred = false;
+  var done = false;
   try { done = !!localStorage.getItem('felie_guide_home'); } catch (e) {}
-  try { deferred = !!localStorage.getItem('felie_guide_home_deferred'); } catch (e) {}
-  return { done: done, deferred: deferred };
+  return { done: done };
 }
 
-/* Der Header-Knopf zeigt sich, solange der Rundgang nicht gelaufen ist.
-   Vorher haing er zusaetzlich an 'deferred' — also daran, dass sie den
-   entfallenen Dialog einmal weggetippt hatte. Ohne Dialog waere er damit
-   nie erschienen. */
+/* Der Header-Knopf zeigt sich, solange der Rundgang nicht gelaufen ist. */
 function updateHomeGuideUI() {
   var st = homeGuideState();
   var hint = document.getElementById('home-guide-hint');
@@ -7740,7 +7765,7 @@ function updateHomeGuideUI() {
 }
 
 function startHomeGuide() {
-  try { localStorage.setItem('felie_guide_home', '1'); localStorage.removeItem('felie_guide_home_deferred'); } catch (e) {}
+  try { localStorage.setItem('felie_guide_home', '1'); } catch (e) {}
   var hint = document.getElementById('home-guide-hint');
   if (hint) hint.style.display = 'none';
   showGuide(GUIDE_STEPS);
@@ -7748,21 +7773,15 @@ function startHomeGuide() {
 
 /* ── Markierung der Selbstreflexion ────────────────────────────────── */
 
-/* Die frueher hier beschriebene Zweistufigkeit — einmalig ein
-   Guide-Spotlight auf die Pille, danach ein leiser Ring bis zum ersten
-   Ausfuellen — gibt es nicht mehr. Sie war schon vor dem 22.09. tot: der
-   Ausloeser war zu einem leeren Rumpf reduziert, die Klasse wurde
-   nirgends gesetzt, und der Kommentar hatte die Funktion ueberlebt.
-   Mit E-U1 tritt an ihre Stelle die Markierung nach 24 Stunden
-   (felieRitualMarkerAktualisieren, weiter oben), die ihren Zustand aus
-   den Daten ableitet statt aus einem Merker.
-
-/* Spotlight zeigen. Laeuft ueber showGuide() mit einem einzigen Schritt,
-   nicht ueber ein eigenes Overlay: die Positionierungslogik fuer Maske,
-   Spotlight und Sprechblase existiert bereits und soll es nur einmal
-   geben. Dafuer kennt ein Guide-Schritt jetzt optional nextLabel und
-   onNext (siehe renderGuideStep und guideNext). */
-
+/* Hier standen zwei Kommentare, von denen der erste nicht geschlossen
+   war — der zweite Kommentaranfang stand als Text in ihm, und beide
+   verschmolzen zu einem. Beschrieben haben sie eine einmalige
+   Guide-Markierung der Pille und einen Ein-Schritt-Spotlight; beides
+   gibt es nicht mehr.
+     An ihrer Stelle steht seit E-U1 felieRitualMarkerAktualisieren()
+   (weiter oben), die ihren Zustand aus den Daten ableitet statt aus
+   einem Merker. Eingefuehrt wird die Pille jetzt im Rundgang der
+   Startseite, Schritt "Selbstreflexion". */
 
 function startApp() {
   if (klZustand().flow === 2) return klV2Weiter(false);
@@ -7773,7 +7792,6 @@ function startApp() {
   document.getElementById('onboarding').style.display = 'none';
   document.getElementById('app').classList.add('visible');
   updateClock(); personalizeApp();
-  try { localStorage.setItem('felie_guide_home_deferred', '1'); } catch (e) {}
   homeInit(true);
 }
 
@@ -8256,8 +8274,9 @@ function showDashboard() {
 
     <div style="flex:1;min-height:0;overflow-y:auto;padding:14px 16px 12px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none;background:#E6E0EE;">
 
-      <!-- Spiegel statt Eingabe-Hub. Reihenfolge: was ich heute weiss,
-           dann das Muster auf der Phasenachse, dann der Kenntnisstand.
+      <!-- Spiegel statt Eingabe-Hub. Zwei Abschnitte seit E-U4: was ich
+           heute weiss, dann was bei ihr zusammenhaengt. Der
+           Phasenvergleich und der Kenntnisstand sind ohne Anzeige.
            Die frueheren gestrichelten "+ eintragen"-Karten sind entfallen:
            jeder leere Slot war ein kleiner Schuldauslöser. -->
       <div class="dash-section-label">Was ich heute weiß</div>
@@ -8267,7 +8286,6 @@ function showDashboard() {
 
       <div class="dash-section-label">Muster</div>
       <div id="body-avg"></div>
-      <div id="body-curve" style="margin-top:10px;"></div>
 
 
     </div>
@@ -8307,7 +8325,6 @@ function showDashboard() {
   setTimeout(function() {
     try { renderSpiegel(); } catch (e) {}
     try { renderSpiegelMuster(); } catch (e) {}
-    try { renderSpiegelKenntnis(); } catch (e) {}
     try { markScrollables(); } catch (e) {}
   }, 160);
 
@@ -9418,7 +9435,6 @@ function renderSpiegel() {
   try { renderSpiegelHeute(); }    catch (e) {}
   try { renderSpiegelWearable(); } catch (e) {}
   try { renderSpiegelMuster(); }   catch (e) {}
-  try { renderSpiegelKenntnis(); } catch (e) {}
 }
 
 function renderSpiegelHeute() {
@@ -9666,10 +9682,14 @@ function renderSpiegelMuster() {
   if (!box) return;
   var teile = [];
 
-  /* 1. Kombinationsmuster aus der Selbstreflexion. Steht zuerst, weil es
-     fuer alle Nutzerinnen funktioniert und schneller belastbar wird als
-     der Phasenvergleich: es braucht Tage, keine Zyklen. felie ist keine
-     Zyklus-App. */
+  /* Kombinationsmuster aus der Selbstreflexion. Mit E-U4 der einzige
+     Musterbaustein in v1, und der Grund dafuer ist genau der, der hier
+     schon stand: es braucht Tage, keine Zyklen, und funktioniert fuer
+     alle Nutzerinnen. felie ist keine Zyklus-App.
+       Er ist ausserdem der einzige, der etwas traegt: die zwei
+     staerksten Muster gehen ueber felieKontextDaten() in JEDEN
+     Modellaufruf. Der Phasenvergleich und der Kenntnisstand taten das
+     nie — sie waren reine Anzeige. */
   var kombi;
   try { kombi = felieKombiMuster(); } catch (e) { kombi = { muster: [], tage: 0 }; }
   if (kombi.muster.length) {
@@ -9681,73 +9701,32 @@ function renderSpiegelMuster() {
       + '</div>');
   }
 
-  /* 2. Phasenvergleich, nur wenn ein Zyklus vorliegt. Fehlt er, faellt
-     nur diese Dimension weg — nicht der ganze Abschnitt. */
-  var z = null;
-  try { z = felieZyklusAttribut(Date.now()); } catch (e) {}
-  if (z && z.phase) {
-    var zeilen = [], belastbar = 0;
-    ['schlafqualitaet', 'energie', 'anspannung'].forEach(function (key) {
-      var m;
-      try { m = felieMuster(key, z.phase); } catch (e) { return; }
-      if (!m || !m.belastbar) return;
-      belastbar++;
-      var a2 = m.aggregat;
-      var band = a2.band ? a2.band : '—';
-      var richtung = a2.richtung === 'fallend' ? 'nimmt im Verlauf ab'
-                   : (a2.richtung === 'steigend' ? 'nimmt im Verlauf zu' : 'bleibt ziemlich gleich');
-      zeilen.push('<div class="sp-muster-zeile">'
-        + '<span class="sp-label">' + FELIE_SIGNAL_META[key].label + '</span>'
-        + '<span class="sp-muster-wert">meist <strong>' + band + '</strong> · ' + richtung + '</span>'
-        + '</div>');
-    });
-    if (belastbar) {
-      teile.push('<div class="sp-karte">'
-        + '<div class="sp-karte-titel">Deine <strong>' + z.phase + '</strong> — sonst</div>'
-        + zeilen.join('') + '</div>');
-    }
-  }
-
   if (teile.length) { box.innerHTML = teile.join('<div style="height:10px;"></div>'); return; }
 
-  /* Noch nichts belastbar. Die Schwelle wird benannt, nicht verschwiegen —
-     und der Zyklus als Zusatz angeboten, nicht als Voraussetzung. */
-  var hinweis = kombi.tage < 6
+  /* Noch nichts belastbar. Die Schwelle wird benannt, nicht verschwiegen.
+     Der frueher hier angebotene Knopf "Zyklus eintragen" ist mit E-U4
+     entfallen: er stand da, weil der Phasenvergleich einen Zyklus
+     brauchte. Dieser Abschnitt braucht keinen. */
+  box.innerHTML = '<div class="sp-karte sp-hinweis">' + (kombi.tage < 6
     ? 'Für ein Muster brauche ich ein paar Reflexionen mehr von dir. Ab etwa sechs sehe ich, was bei dir zusammenhängt.'
-    : 'Bisher zeigt sich noch kein deutlicher Zusammenhang. Das ist eine ehrliche Antwort und kein Fehler — ich melde mich, wenn sich etwas abzeichnet.';
-  var zusatz = (z && z.phase)
-    ? ''
-    : '<button class="sp-link" onclick="showCycleInput()">Zyklus eintragen</button>';
-  box.innerHTML = '<div class="sp-karte sp-hinweis">' + hinweis + zusatz + '</div>';
+    : 'Bisher zeigt sich noch kein deutlicher Zusammenhang. Das ist eine ehrliche Antwort und kein Fehler — ich melde mich, wenn sich etwas abzeichnet.') + '</div>';
 }
 
-/* ── Spiegel: Kenntnisstand ───────────────────────────────────────── */
-
-function renderSpiegelKenntnis() {
-  var box = document.getElementById('body-curve');
-  if (!box) return;
-  var k;
-  try { k = felieKenntnisstand(); } catch (e) { box.innerHTML = ''; return; }
-  if (!k.hatZyklus) { box.innerHTML = ''; return; }
-
-  var liste = k.phasen.map(function (p) {
-    var stand = p.belastbar ? 'kenne ich' : (p.eintraege > 0 ? 'lerne ich noch' : 'noch offen');
-    return '<div class="sp-kenntnis-zeile' + (p.aktuell ? ' aktuell' : '') + '">'
-      + '<span class="sp-label">' + p.phase + '</span>'
-      + '<span class="sp-kenntnis-stand">' + stand + '</span>'
-      + '</div>';
-  }).join('');
-
-  /* Kein Fortschrittsbalken, der auf hundert Prozent zeigen will —
-     das waere Gamification-Schuld. Eine Stufe, die benennt, wo wir
-     stehen, und was als naechstes sichtbar wird. */
-  box.innerHTML = '<div class="sp-karte">'
-    + '<div class="sp-kicker">Wie gut ich dich kenne</div>'
-    + '<div class="sp-karte-titel">Ich ' + k.stufe + '</div>'
-    + liste + '</div>';
-}
-
-/* ── Spiegel: Wearable (Schritt 7) ────────────────────────────────────
+/* ── Spiegel: Kenntnisstand — mit E-U4 ohne Anzeige ───────────────────
+   Hier stand renderSpiegelKenntnis(): drei Phasenzeilen mit "kenne ich",
+   "lerne ich noch", "noch offen", darueber die Stufe "Ich lerne dich
+   kennen".
+     Entfallen fuer v1, nicht verworfen. Der Grund ist eine Zahl: eine
+   Phase gilt erst als gekannt, wenn ZWEI VERGANGENE Zyklen je zwei
+   Eintraege in ihr haben (felieMuster). Der fruehestmoegliche Treffer
+   liegt damit im dritten Zyklus — bis dahin las eine zahlende Nutzerin
+   drei Monate lang eine Liste aus "noch offen". Der Kommentar verteidigte
+   das als "kein Fortschrittsbalken, der auf hundert Prozent zeigen will";
+   genau das war es aber, nur ohne Balken.
+     felieKenntnisstand() und felieMuster() BLEIBEN. Sie haengen an keiner
+   Anzeige mehr, sind in Welle D regulaerer Modulinhalt und werden
+   wieder sichtbar, sobald taegliche Messwerte aus HealthKit die
+   Datenlage tragen. Geloescht waere der teure Weg zurueck. *//* ── Spiegel: Wearable (Schritt 7) ────────────────────────────────────
    Ontop-Feature, nie Voraussetzung. Der Abschnitt zeigt sich nur, wenn
    er etwas beitraegt: verbunden mit Werten, oder als einmaliges Angebot.
    Er enthaelt ausserdem den Aktualisieren-Auslöser — echter

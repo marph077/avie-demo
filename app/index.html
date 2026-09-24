@@ -5324,7 +5324,7 @@ function felieHomeBegruessen() {
      bleibt deshalb stehen, bis das Modell antwortet. */
   if (!anlassOffen || !s.text) felieHomeTextZeigen(felieHomeFallback(ctx));
   var pending = felieRequest('willkommen', [{ role: 'user', content: felieDatenBlock('startscreen', ctx) }],
-    { context: false, maxTokens: 450 }).then(function(data) {
+    { context: false }).then(function(data) {
       if (s.revision !== revision) return;
       var text = felieReplyText(data).trim();
       if (!text || data.stop_reason === 'max_tokens') return;
@@ -8423,7 +8423,7 @@ function reopenSavedChat(ts) {
     chatHistory.push({ role: 'user', hidden: true, internal: true,
       content: 'Ein älteres Gespräch wurde geöffnet; es liegen keine überprüfbaren Originalaussagen vor.' });
     showTyping();
-    felieRequest('wiedereinstieg', apiMsgs(), { maxTokens: 300 })
+    felieRequest('wiedereinstieg', apiMsgs())
     .then(function(data){
       removeTyping();
       var t = felieReplyText(data) ||
@@ -10848,6 +10848,11 @@ var FELIE_MODELL = {
   variante: 'qwen-27b',
   anbieter: 'ionos'
 };
+/* Vertrag mit dem Worker (E-T5, seit C2): die App sendet vertrag: 1 und
+   erwartet felie_vertrag: 1 in jeder Antwort. Ausgabebudget, Sampling und
+   Antwortformat setzt der Worker je Modus (C-4, C-6) - hier steht nichts
+   mehr davon. maxAusgabe bleibt nur als Gegenprobe fuer stop_reason. */
+var FELIE_VERTRAG = 1;
 var FELIE_ANFRAGE = { maxAusgabe: 4096, maxZeichen: 240000, timeout: 65000 };
 
 /* Die Antwort muss belegen, WELCHES Modell geantwortet hat. Ohne diese
@@ -10873,6 +10878,10 @@ function felieModellPruefen(data) {
      Evidenzregeln geantwortet wuerde. */
   if (!data.felie_prompt_version)
     throw new Error('Antwort ohne Promptfassung: der Worker hat den Systemprompt nicht gebaut');
+  /* Vertrag 1 (E-T5): antwortet der Worker mit einer anderen Fassung, sind
+     App und Worker auseinander - dann ist nichts an der Antwort verlaesslich. */
+  if (data.felie_vertrag !== FELIE_VERTRAG)
+    throw new Error('Der Worker spricht Vertrag ' + data.felie_vertrag + ', die App Vertrag ' + FELIE_VERTRAG);
 }
 
 /* Der Systemprompt entsteht im Worker (E-T4, seit C1 / 24.09.2026): die
@@ -10892,18 +10901,21 @@ function felieRequest(mode, messages, opts) {
         ? [{ type: 'text', text: msgs[0].content }] : msgs[0].content);
     } else msgs.unshift({ role: 'user', content: [prefix] });
   }
-  var body = { model: FELIE_MODELL.name, felie_variant: FELIE_MODELL.variante,
-    max_tokens: Math.min(FELIE_ANFRAGE.maxAusgabe, opts.maxTokens || 1000), temperature: 0.7, top_p: 0.8,
-    messages: msgs };
-  /* Nur Zahlen und Booleans. Kein Feld, dessen Inhalt als Text in den
-     Systemprompt fliesst — sonst laege die Sicherheitsgrenze wieder hier.
-     Personenbezogenes reist unveraendert im felie_daten-Block in msgs[0]. */
+  /* Vertrag 1 (E-T5, C2). Nur Zahlen, Booleans und Schluessel aus bekannten
+     Listen. Kein Feld, dessen Inhalt als Text in den Systemprompt fliesst —
+     sonst laege die Sicherheitsgrenze wieder hier. Personenbezogenes reist
+     unveraendert im felie_daten-Block in msgs[0].
+       Bis C2 gingen model, max_tokens, temperature und top_p mit, dazu ein
+     Flag abschluss, das nie gesetzt wurde (AL-74): alles Sache des Workers
+     (C-4, C-5). Die Variante bleibt - sie ist der Schluessel in die
+     Modelltabelle des Workers, keine Modell-ID. */
   var p = window._personality || loadPersonality();
-  body.mode = mode;
-  body.personality = { waerme: p.waerme, direktheit: p.direktheit,
-    ausfuehrlichkeit: p.ausfuehrlichkeit, koerperbezug: p.koerperbezug,
-    ton: p.ton, humor: !!p.humor };
-  body.flags = { bekannt: felieKenntNutzerin(), ritualFrisch: !!window._felieRitualFrisch, abschluss: !!opts.abschluss };
+  var body = { vertrag: FELIE_VERTRAG, felie_variant: FELIE_MODELL.variante, mode: mode,
+    personality: { waerme: p.waerme, direktheit: p.direktheit,
+      ausfuehrlichkeit: p.ausfuehrlichkeit, koerperbezug: p.koerperbezug,
+      ton: p.ton, humor: !!p.humor },
+    flags: { bekannt: felieKenntNutzerin(), ritualFrisch: !!window._felieRitualFrisch },
+    messages: msgs };
   var serialized = JSON.stringify(body);
   if (serialized.length > FELIE_ANFRAGE.maxZeichen) {
     var limit = new Error('Kontextgrenze');
@@ -10918,6 +10930,11 @@ function felieRequest(mode, messages, opts) {
     return r.json();
   }).then(function(data) {
     felieModellPruefen(data);
+    /* AL-74 / C-5: der Worker sagt, ob dieses Gespraech das letzte im
+       Freikontingent ist. Bis Welle F ist das immer false; die App merkt es
+       sich nur - der Ablauf danach (neues Gespraech, AL-67) kommt mit dem
+       nativen Neubau. */
+    window._felieGrenze = data.felie_grenze === true;
     if (data.error || !felieReplyText(data).trim()) throw new Error('Keine vollständige felie-Antwort');
     if (opts.json && data.stop_reason === 'max_tokens') throw new Error('JSON wurde abgeschnitten');
     return data;
@@ -11006,7 +11023,7 @@ async function felieNotizErzeugen(history, vorhanden, mode) {
         },
         antwortpaket: { maximalNeueEintraege: groesse, hinweis: 'Nur die Größe dieser Antwort ist begrenzt. weitere_notizen=true, solange noch wichtige neue Informationen fehlen. Keine bereits erfassten Inhalte wiederholen.' },
         formathinweis: fehlerOhneFortschritt ? 'Prüfe text, Nutzer-ID und Originalauszug. Formuliere fehlende Notizen mit passenden Belegen. Keine ausdrückliche Selbsterkenntnis erforderlich.' : null
-      }) }], { context: false, json: true, maxTokens: FELIE_ANFRAGE.maxAusgabe });
+      }) }], { context: false, json: true });
       page = felieZusammenfassungPruefen(felieJSON(page), source, bestand);
     } catch (e) {
       if (++fehlerOhneFortschritt < 2) { groesse = Math.max(1, Math.floor(groesse / 2)); continue; }

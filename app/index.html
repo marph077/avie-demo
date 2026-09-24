@@ -11998,14 +11998,19 @@ function closeDashboard() {
   }
 }
 
-// felie reagiert im Chat auf frisch eingetragene Daten (ohne sichtbare User-Nachricht)
+/* felie reagiert im Chat auf frisch eingetragene Daten (ohne sichtbare
+   User-Nachricht). Der Hinweis ist Modelleingabe, keine Oberflaeche: er
+   spricht felie an, deshalb "euer Gespraech" (deines mit ihr) wie im Kern
+   und wie felieBegruessungBezug - nicht "unser" (AL-09 Ebene 3, 24.09.2026;
+   gemessen: je 5 Antworten mit alter und neuer Fassung, kein Unterschied
+   in der Ansprache, kein euer/ihr in felies Antwort). */
 function felieReactToNewData(kind) {
   var win = document.getElementById('chat-window');
   if (!win || !win.classList.contains('open')) return;
   if (typeof showTyping === 'function') showTyping();
   var nudge = (kind === 'cycle')
-    ? 'Hinweis: Die Nutzerin hat gerade ihre Zyklusdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an unser Gespräch an und geh konkret auf die neue Info ein, kurz und ohne die Eingabe selbst zu wiederholen.'
-    : 'Hinweis: Die Nutzerin hat gerade ihre Körperdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an unser Gespräch an und geh konkret auf die neuen Werte ein, kurz und ohne die Eingabe selbst zu wiederholen.';
+    ? 'Hinweis: Die Nutzerin hat gerade ihre Zyklusdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an euer Gespräch an und geh konkret auf die neue Info ein, kurz und ohne die Eingabe selbst zu wiederholen.'
+    : 'Hinweis: Die Nutzerin hat gerade ihre Körperdaten eingetragen — sie stehen jetzt oben in deinem Kontext. Knüpf direkt an euer Gespräch an und geh konkret auf die neuen Werte ein, kurz und ohne die Eingabe selbst zu wiederholen.';
   callFelie(nudge, { hidden: true }).then(function(reply) {
     if (typeof removeTyping === 'function') removeTyping();
     addMsg(reply, 'felie');

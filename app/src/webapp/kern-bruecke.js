@@ -38,13 +38,9 @@ kern.felieSpeicherVerbinden(felieLocalStoragePort(window));
    beim Aufruf. */
 kern.felieVorgangVerbinden(function (aenderung) { return window.felieDatenAendern(aenderung); });
 
-/* Seit D2b rechnen Signale und Zyklus im Kern. Der Zyklus-Zustand bleibt
-   in der Webapp; der Kern liest ihn beim Aufruf, und den Zeitpunkt der
-   letzten Koerperdaten meldet er zurueck. */
-kern.felieKoerperVerbinden({
-  zyklus: function () { return window.cycleData; },
-  aktualisiert: function (ts) { window._bodyUpdatedAt = ts; }
-});
+/* Seit D2b rechnen Signale und Zyklus im Kern; seit D7b liegt auch der
+   Zyklus-Zustand dort (felieZyklusLesen/felieZyklusSetzen,
+   felieKoerperZeit/felieKoerperZeitSetzen). Kein Rueckruf mehr. */
 
 /* Seit D3b schreibt und liest der Kern das Gedaechtnis. Das letzte
    Gespraech (window._letzteChatId) und die Meldung an die Startseite

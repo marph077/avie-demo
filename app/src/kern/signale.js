@@ -6,8 +6,9 @@
    ihrem Cache bleibt dort. Geprueft vor dem Umzug: felie-signale (D2a).
 
    Geaendert ist nur ein Zugriff: den Zeitpunkt der letzten Koerperdaten
-   meldet felieUebernehmeAltObjekt ueber die Umgebung
-   (felieKoerperAktualisiert) statt ueber window._bodyUpdatedAt.
+   setzt felieUebernehmeAltObjekt ueber den Kern (seit D7b
+   felieKoerperZeitSetzen, bis dahin felieKoerperAktualisiert an die
+   Webapp) statt ueber window._bodyUpdatedAt.
 
    Seit D2c (AL-71b) heisst die Messquelle 'messung' statt 'oura' (der
    Hersteller steht in geraet), der Messtag messTag, die Formatierung
@@ -18,7 +19,7 @@
    Der urspruengliche Wortlaut folgt sonst unveraendert. */
 
 import { felieBereinigen, felieRevision, felieStore } from './store.js';
-import { CYCLE_PHASES, cycleMidnight, felieKoerperAktualisiert, felieZyklusAttribut } from './zyklus.js';
+import { CYCLE_PHASES, cycleMidnight, felieKoerperZeitSetzen, felieZyklusAttribut } from './zyklus.js';
 
 export const FELIE_FRISCHE_MS   = 24 * 60 * 60 * 1000;   /* 24 h, generell */
 
@@ -122,7 +123,7 @@ export function felieUebernehmeAltObjekt(obj, quelleHint) {
     felieStore().zusatz[f] = obj[f];
   });
   felieStore().zusatz.updatedAt = ts;
-  felieKoerperAktualisiert(ts);
+  felieKoerperZeitSetzen(ts);
   felieRevision(true);
   felieBereinigen();
 }

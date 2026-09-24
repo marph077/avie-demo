@@ -2,34 +2,34 @@
 
    Die Zyklusrechnung (cycleCompute und Hilfen), die Zyklusattribute fuer
    Eintraege und der Erinnerungsplan. Bis D2b standen sie in index.html.
-   Geaendert ist nur der Zugriff auf window.cycleData: er geht ueber die
-   verbundene Umgebung (felieKoerperVerbinden, D2b-Entscheidung
-   "verbundener Rueckruf"). Der Zustand selbst bleibt vorerst in der
-   Webapp.
+   Geaendert ist nur der Zugriff auf window.cycleData: bis D7b ging er
+   ueber eine verbundene Umgebung (felieKoerperVerbinden, D-11), seit D7b
+   (AL-93) liegt der Zustand hier im Modul. Speichern, Laden, Lebensphasen
+   und das Eintragen aus dem Sheet stehen in koerper.js.
 
    Der urspruengliche Wortlaut folgt unveraendert. */
 
 import { felieRevision, felieStore, felieStoreSpeichern } from './store.js';
 
-/* Umgebung der Koerperdaten (seit D2b). Der Zyklus-Zustand liegt in der
-   Webapp (window.cycleData, geschrieben vom Zyklus-Sheet, dem
-   Kennenlernen und beim Laden aus felie_body_data); der Kern liest ihn
-   ueber zyklus(). aktualisiert(ts) meldet der Webapp den Zeitpunkt der
-   letzten Koerperdaten (window._bodyUpdatedAt). Unverbunden gibt es
-   keinen Zyklus. */
-let koerper = null;
+/* Zustand der Koerperdaten (seit D7b, AL-93). Bis D7b lag er in der
+   Webapp (window.cycleData, window._bodyUpdatedAt) und der Kern las ihn
+   ueber einen verbundenen Rueckruf (felieKoerperVerbinden, D-11). Er
+   steht hier und nicht in koerper.js, weil die Rechnung in diesem Modul
+   ihn liest und koerper.js die Rechnung braucht - so bleibt der Kern ohne
+   Ringimport.
+     Geschrieben wird der Zyklus vom Zyklus-Sheet (felieZyklusEintragen),
+   vom Kennenlernen (klV2ZyklusVoreinstellen) und beim Laden
+   (felieKoerperLaden); der Zeitpunkt von felieUebernehmeAltObjekt, den
+   manuellen Werten und beim Laden. Anfangs gibt es keinen Zyklus
+   (undefined, wie vorher window.cycleData). */
+let zyklus;
+let koerperZeit;
 
-export function felieKoerperVerbinden(umgebung) {
-  koerper = umgebung || null;
-}
-
-export function felieKoerperZyklus() {
-  return koerper && typeof koerper.zyklus === 'function' ? koerper.zyklus() : undefined;
-}
-
-export function felieKoerperAktualisiert(ts) {
-  if (koerper && typeof koerper.aktualisiert === 'function') koerper.aktualisiert(ts);
-}
+export function felieZyklusLesen() { return zyklus; }
+export function felieZyklusSetzen(cd) { zyklus = cd; }
+export function felieKoerperZeit() { return koerperZeit; }
+export function felieKoerperZeitSetzen(ts) { koerperZeit = ts; }
+export function felieKoerperZuruecksetzen() { zyklus = undefined; koerperZeit = undefined; }
 
 /* ── Zyklusattribute: abgeleitet, nie eingefroren ──────────────────── */
 
@@ -51,7 +51,7 @@ export const FELIE_ZYKLUS_STANDARD  = 28;
 export const FELIE_ZYKLUS_UNBEKANNT = 7;   /* Tage ueber der Laenge: ab hier keine Phase */
 
 export function felieZyklusAttribut(ts) {
-  var cd = felieKoerperZyklus();
+  var cd = felieZyklusLesen();
   /* Bei einer Lebensphase bleibt lastPeriod erhalten, damit die Historie
      weiter zuordenbar ist — deshalb hier KEIN Abbruch bei cd.unknown. */
   if (!cd || !cd.lastPeriod) return null;
@@ -103,7 +103,7 @@ export function felieZyklusAttribut(ts) {
    danach wird nicht mehr gefragt. 'ueberfaellig' — die erwartete Periode
    ist ueber der Kulanz. 'ok' — nichts zu tun. */
 export function felieZyklusStatus() {
-  var cd = felieKoerperZyklus();
+  var cd = felieZyklusLesen();
   if (!cd || (!cd.lastPeriod && !cd.unknown)) return 'fehlt';
   if (cd.unknown) return 'unbekannt';
   var lp = (typeof cycleMidnight === 'function') ? cycleMidnight(cd.lastPeriod) : null;
@@ -128,7 +128,7 @@ export const FELIE_ZYKLUS_ERINNERUNGEN = [3, 4, 28];
 
 /* Tage ueber der erwarteten Periode, oder null wenn es keinen Zyklus gibt. */
 export function felieZyklusUeberfaelligTage() {
-  var cd = felieKoerperZyklus();
+  var cd = felieZyklusLesen();
   if (!cd || cd.unknown || !cd.lastPeriod) return null;
   var lp = (typeof cycleMidnight === 'function') ? cycleMidnight(cd.lastPeriod) : null;
   if (!lp) return null;
@@ -240,10 +240,10 @@ export function cycleCompute(lastPeriod, len, refDate) {
       : 'in ~' + (L - daysSince) + ' Tagen' };
 }
 
-/* Frischt window.cycleData aus den gespeicherten Rohwerten auf.
+/* Frischt den Zyklus-Zustand aus den gespeicherten Rohwerten auf.
    Ein unbekannter Zyklus (kein lastPeriod) bleibt unverändert. */
 export function cycleRefresh() {
-  var cd = felieKoerperZyklus();
+  var cd = felieZyklusLesen();
   if (!cd || cd.unknown || !cd.lastPeriod) return cd;
   var fresh = cycleCompute(cd.lastPeriod, cd.selectedLen);
   if (!fresh) fresh = { stale: true, ueberfaellig: null, cycleDay: null, daysLeft: null, phase: 'Aktuelle Phase unbekannt',

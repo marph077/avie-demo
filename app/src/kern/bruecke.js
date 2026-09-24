@@ -678,9 +678,11 @@ export function felieBrueckeAnlegen(art, f, gespraechId) {
    koennte einen Konflikt festhalten, aber die Bruecke ist je
    Speichervorgang zustandslos — er waere beim naechsten Saeen weg. Ein
    Widerspruch gehoert deshalb der Nutzerin vorgelegt, nicht still
-   verbucht; er kommt als Klaerung in die Vorschlagsliste. Der dauerhaft
-   gespeicherte Konflikt folgt, wenn der Vertragsdatensatz die Persistenz
-   ist (M6). */
+   verbucht. Angezeigt wird er HEUTE NOCH NICHT (AL-87): das Feld klaerung
+   wird gesetzt, aber nirgends gelesen, der Widerspruch geht damit
+   verloren. Als Klaerung in der Vorschlagsliste kommt er in Welle F
+   (F-7, Produktpaket Archivkarte mit AL-97). Der dauerhaft gespeicherte
+   Konflikt folgt, wenn der Vertragsdatensatz die Persistenz ist (M6). */
 export function felieBrueckeVorschlag(art, v, gespraechId) {
   if (!v || !v.text) return null;
   if (v.bezug === 'widerspruch') return null;

@@ -3983,56 +3983,8 @@ function klV2WearableVerbinden() {
   });
 }
 
-/* Welche Lebensphase folgt aus dem Kennenlernen?
-   ────────────────────────────────────────────────────────────────────
-   Bewusst NUR die drei eindeutigen Angaben. Nicht uebernommen werden:
-   - 'hormonelle Verhuetung': viele haben darunter eine Abbruchblutung und
-     fuehren ihren Zyklus normal weiter. Daraus "keine Periode" zu machen,
-     waere eine Unterstellung.
-   - 'natuerlicher Zyklus' und die Frage "wo stehst du gerade": daraus
-     liesse sich nur ein erfundenes Startdatum ableiten. Die Angabe bleibt
-     Fakt im Gedaechtnis; die Karte bleibt leer, bis sie einen Tag eintraegt.
-   Reihenfolge ist Rangfolge: Schwangerschaft schlaegt Stillzeit schlaegt
-   Wechseljahre, falls mehrere angetippt wurden. */
-function klV2ZyklusLebensphase(a) {
-  if (!a) return null;
-  var koerper = a.koerper && !a.koerper.skipped ? (a.koerper.selected || []) : [];
-  var gewaehlt = klV2Hat('leben', 'schwanger') ? koerper.concat(['Schwangerschaft']) : koerper;
-  var karte = [['Schwangerschaft', 'schwangerschaft'], ['Stillzeit', 'stillzeit'],
-               ['Perimenopause / Wechseljahre', 'wechseljahre']];
-  var treffer = karte.find(function(p) { return gewaehlt.indexOf(p[0]) >= 0; });
-  return treffer ? treffer[1] : null;
-}
-
-/* Die Angabe stand bisher nur als Fakt im Gedaechtnis. Im Dashboard traf
-   die Nutzerin trotzdem auf die gesperrte Zykluskarte und musste ihre
-   Schwangerschaft ein zweites Mal angeben — das liest sich, als haette
-   felie nicht zugehoert.
-     quelle: 'kennenlernen' markiert die Voreinstellung als aenderbar.
-   Sobald sie im Sheet selbst etwas waehlt, steht dort 'selbst', und ein
-   erneuter Durchlauf fasst den Eintrag nicht mehr an. */
-function klV2ZyklusVoreinstellen(a) {
-  var val = klV2ZyklusLebensphase(a);
-  if (!val || typeof felieLebensphase !== 'function') return false;
-  var cd = window.cycleData;
-  if (cd && cd.quelle !== 'kennenlernen') return false;
-  if (cd && cd.unknownType === val) return false;
-  var p = felieLebensphase(val);
-  if (!p) return false;
-  window.cycleData = {
-    phase: p.phase,
-    /* Ein frueherer Periodenstart bleibt erhalten: er ordnet die bereits
-       vorhandenen Eintraege weiter zu. phaseAb markiert, ab wann die
-       Lebensphase gilt. */
-    lastPeriod:  cd && cd.lastPeriod  || null,
-    selectedLen: cd && cd.selectedLen || null,
-    phaseAb: Date.now(),
-    cycleDay: null, daysLeft: null,
-    unknown: true, unknownType: val, lebensphase: p.phase, quelle: 'kennenlernen'
-  };
-  try { saveBodyData(); } catch (e) {}
-  return true;
-}
+/* klV2ZyklusLebensphase, klV2ZyklusVoreinstellen: seit Welle D / D7b in
+   src/kern/koerper.js */
 
 /* ── Aus Auswahlkaesten werden Saetze ────────────────────────────────
    Die Eintraege aus dem Kennenlernen standen als zusammengesetzte
@@ -4499,7 +4451,7 @@ function personalizeApp() {
 
   // Rebuild greeting dynamically using real data if available
   function buildGreeting() {
-    const cd = (function(){ try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
+    const cd = (function(){ try { return cycleRefresh(); } catch (e) { return felieZyklusLesen(); } })();
     const mb = window.manualBodyData;
     const phase    = cd ? cd.phase    : null;
     const cycleDay = (cd && cd.cycleDay != null) ? cd.cycleDay : null;
@@ -4748,7 +4700,7 @@ function themeIcon(thema) {
 function fillHomeData() {
   var grid = document.getElementById('home-scorecards');
   var mb = window.manualBodyData || {};
-  var cd = window.cycleData || null;
+  var cd = felieZyklusLesen() || null;
 
   if (grid) {
     function item(zeichen, label) {
@@ -4858,7 +4810,7 @@ function fillHomeData() {
        keinen Ort, die noch gar nichts erfasst haben. */
     var markerAn = false;
     try { markerAn = felieRitualMarkerNoetig(); } catch (e) {}
-    if (cd || window._bodyUpdatedAt || markerAn) {
+    if (cd || felieKoerperZeit() || markerAn) {
       var cycIcon = '<svg class="ico" style="width:12px;height:12px;display:inline-block;vertical-align:-2px;margin-right:5px;opacity:0.8;"><use href="#i-bloom"/></svg>';
       var left = cd ? (cycIcon + cd.phase + (cd.cycleDay ? ' · Tag ' + cd.cycleDay : '')) : '';
       var upd = '';
@@ -4866,8 +4818,8 @@ function fillHomeData() {
       if (mbf && mbf.source === 'messung' && mbf.messTag) {
         var od = new Date(mbf.messTag + 'T00:00:00');
         upd = 'Oura · Nacht auf ' + od.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
-      } else if (window._bodyUpdatedAt) {
-        var w = new Date(window._bodyUpdatedAt);
+      } else if (felieKoerperZeit()) {
+        var w = new Date(felieKoerperZeit());
         var sameDay = w.toDateString() === new Date().toDateString();
         upd = sameDay
           ? ('aktualisiert ' + w.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr')
@@ -6212,7 +6164,7 @@ function buildAnalysisSteps() {
        Jetzt: dieselbe Systematik wie ueberall — Selbstauskunft in Worten,
      mit Alter und Quelle, Messwerte nur bestaetigend, und die
      Kombinationsmuster als eigene Einordnung. */
-  var cd = (function () { try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
+  var cd = (function () { try { return cycleRefresh(); } catch (e) { return felieZyklusLesen(); } })();
   var z = null;
   try { z = felieZyklusAttribut(Date.now()); } catch (e) {}
   var phase = z ? z.phase : null;
@@ -6588,7 +6540,7 @@ function showScoreInfo(key) {
 function openDashInsight() {
   var mb = window.manualBodyData;
   var cd = null;
-  try { cd = cycleRefresh(); } catch (e) { cd = window.cycleData; }
+  try { cd = cycleRefresh(); } catch (e) { cd = felieZyklusLesen(); }
   /* Leer heisst: weder Zyklus noch irgendeine Selbstauskunft. Die alte
      Pruefung sah nur auf energyScore/sleepMins/stressScore und uebersah
      damit Stimmung und Schlafqualitaet komplett. */
@@ -6637,7 +6589,7 @@ function showDashboard() {
   window._dashSnapshot = {
     fromChat: _chatOpen,
     body: !!(_mbNow && (_mbNow.energyScore != null || _mbNow.hrv != null || _mbNow.sleepMins != null || _mbNow.stressScore != null)),
-    cycle: !!window.cycleData
+    cycle: !!felieZyklusLesen()
   };
 
   const now = new Date();
@@ -6737,50 +6689,8 @@ function showDashboard() {
 }
 
 // ── Verlauf Screen ──
-/* Lebensphasen an EINER Stelle. Die Liste stand frueher nur im
-   Sheet-Renderer, die Hormonbeschriftung nur in einer zweiten Tabelle
-   daneben — das Onboarding kann jetzt dieselbe Phase voreinstellen, und
-   zwei Listen waeren die Stelle gewesen, an der Label und Beschriftung
-   spaeter auseinanderlaufen.
-     'stillzeit' ist neu: die Koerperfrage im Kennenlernen bietet sie an,
-   das Zyklus-Sheet kannte sie nicht — eine uebernommene Angabe haette
-   sonst keinen passenden Eintrag gehabt.
-
-   zyklus: darf neben dieser Lebensphase ein Periodenstart mitlaufen?
-   Bei Stillzeit, Wechseljahren, Postmenopause und einem unregelmaessigen
-   Zyklus kommen Blutungen weiter vor — oft selten und unregelmaessig,
-   und genau deshalb ist das Mitschreiben dort wertvoll. Vorher schloss
-   die Wahl einer Lebensphase die Eingabe komplett aus; wer in den
-   Wechseljahren ihre Periode festhalten wollte, musste sich zwischen
-   beidem entscheiden.
-     Schwangerschaft und "Keine Periode aktuell" bleiben ausgenommen: dort
-   gibt es per Definition keinen Start einzutragen, und ein Feld dafuer
-   waere eine Einladung zu einer erfundenen Angabe. */
-/* Die Hormonangabe je Lebensphase ist am 21.09.2026 entfallen (AL-51). Die
-   Tabelle trug je Phase eine Behauptung ueber ihren Hormonstatus - hCG und
-   Progesteron hoch, Prolaktin hoch, Oestrogen dauerhaft niedrig -, die auf
-   der Zykluskarte in einem eigenen Feld erschien. Damit behauptete die App
-   einen Hormonstatus, abgeleitet aus einer Auswahl in einem Dropdown, im
-   Layout eines Messwerts. Die Phase selbst bleibt: die ist ihre eigene
-   Angabe. */
-var FELIE_LEBENSPHASEN = [
-  { val: 'schwangerschaft', label: 'Schwangerschaft',              sub: 'Hormone verändern sich stark',
-    phase: 'Schwangerschaft',        zyklus: false },
-  { val: 'stillzeit',       label: 'Stillzeit',                    sub: 'Zyklus setzt oft noch aus',
-    phase: 'Stillzeit',              zyklus: true },
-  { val: 'wechseljahre',    label: 'Wechseljahre / Perimenopause', sub: 'Östrogen und Progesteron sinken',
-    phase: 'Wechseljahre',           zyklus: true },
-  { val: 'postmenopause',   label: 'Postmenopause',                sub: 'Nach den Wechseljahren',
-    phase: 'Postmenopause',          zyklus: true },
-  { val: 'unregelmaessig',  label: 'Unregelmäßiger Zyklus',        sub: 'Keine klare Periode',
-    phase: 'Unregelmäßiger Zyklus',  zyklus: true },
-  { val: 'keine-periode',   label: 'Keine Periode aktuell',        sub: 'Z.B. durch Pille, Stress oder anderes',
-    phase: 'Keine Periode',          zyklus: false }
-];
-
-function felieLebensphase(val) {
-  return FELIE_LEBENSPHASEN.find(function(p) { return p.val === val; }) || null;
-}
+/* FELIE_LEBENSPHASEN, felieLebensphase: seit Welle D / D7b in
+   src/kern/koerper.js (eingefroren, Pruefsumme je Eintrag) */
 
 /* vorauswahl: markiert eine bereits gespeicherte Lebensphase, OHNE sie
    erneut zu schreiben und ohne das Sheet zu schliessen. Ohne diesen Weg
@@ -6809,7 +6719,7 @@ function selectCycleUnknown(btn, vorauswahl) {
       </button>`).join('')}`;
     btn.parentElement.insertAdjacentElement('afterend', subDiv);
 
-    /* Frueher schrieb ein Tipp hier sofort window.cycleData und schloss das
+    /* Frueher schrieb ein Tipp hier sofort den Zyklus-Zustand und schloss das
        Sheet. Das war der Grund, warum sich Lebensphase und Periodenstart
        gegenseitig ausschlossen: die Wahl war schon gespeichert, bevor die
        Nutzerin ueberhaupt an den Feldern darunter vorbeikam.
@@ -7007,8 +6917,8 @@ function felieFetch(url, opts, ms) {
 
 /* Zyklusrechnung (cycleDayPart, cycleMidnight, cycleDaysBetween,
    CYCLE_PHASES, cycleCompute, cycleRefresh): seit Welle D / D2b in
-   src/kern/zyklus.js. Der Zustand (window.cycleData) bleibt hier; der Kern
-   liest ihn ueber felieKoerperVerbinden. */
+   src/kern/zyklus.js. Der Zustand liegt seit D7b ebenfalls im Kern
+   (felieZyklusLesen, felieZyklusSetzen). */
 
 function showCycleInput(onDone) {
   /* Rueckruf, damit die Selbstreflexion nach dem Speichern weiterblaettern
@@ -7031,7 +6941,7 @@ function showCycleInput(onDone) {
   const today = new Date();
   const maxDate = today.toISOString().split('T')[0];
   // Vorbelegung: gespeicherte Werte, sonst 13 Tage zurück und 28 Tage Länge
-  const _cd = window.cycleData || null;
+  const _cd = felieZyklusLesen() || null;
   /* Leer statt "heute minus 13 Tage". Die Vorbelegung sparte einen Tipp,
      aber wer nur die Zykluslaenge aendern oder eine Lebensphase waehlen
      wollte und auf Speichern tippte, schrieb damit einen Periodenstart
@@ -7191,53 +7101,18 @@ function showCycleInput(onDone) {
   updatePreview();
 
   bd.querySelector('#cycle-save-btn').addEventListener('click', function() {
-    /* Nur die Rohwerte merken — alles Abgeleitete rechnet cycleCompute()
-       bei jeder Anzeige neu, damit der Zyklustag nicht einfriert. */
     const lastPeriodVal = bd.querySelector('#cycle-last-period').value;
     const phaseVal = felieZyklusPhaseGewaehlt(bd);
-    const p = phaseVal ? felieLebensphase(phaseVal) : null;
-    /* Drei Faelle statt zwei sich ausschliessender Wege:
-       nur Zyklus, nur Lebensphase, oder beides zusammen. Letzteres ist
-       der eigentliche Punkt — in Stillzeit, Wechseljahren, Postmenopause
-       und bei unregelmaessigem Zyklus kommen Blutungen weiter vor, und
-       gerade dort lohnt das Mitschreiben. */
-    const mitZyklus = !!lastPeriodVal && !(p && p.zyklus === false);
-    const c = mitZyklus ? cycleCompute(lastPeriodVal, selectedLen) : null;
-    if (!c && !p) return;
-    var vorher = window.cycleData || {};
-    if (c) {
-      /* unknown bleibt false: der Zyklus IST berechenbar. Die Lebensphase
-         steht daneben, nicht an seiner Stelle — alles Nachgelagerte
-         (Karte, Kontext, Zuordnung von Eintraegen) haengt an unknown und
-         darf durch die Zusatzangabe nicht abgeschaltet werden. */
-      window.cycleData = Object.assign(c, p
-        ? { unknownType: p.val, lebensphase: p.phase, phaseAb: vorher.phaseAb || Date.now(), quelle: 'selbst' }
-        : { unknownType: null, lebensphase: null, quelle: 'selbst' });
-    } else {
-      window.cycleData = {
-        phase: p.phase,
-        /* Ein frueherer Periodenstart bleibt stehen: er ordnet vorhandene
-           Eintraege weiter zu. phaseAb markiert, ab wann die Phase gilt. */
-        lastPeriod:  vorher.lastPeriod  || null,
-        selectedLen: vorher.selectedLen || null,
-        phaseAb: Date.now(),
-        cycleDay: null, daysLeft: null,
-        unknown: true, unknownType: p.val, lebensphase: p.phase, quelle: 'selbst'
-      };
-    }
-    /* Ein neuer Periodenstart setzt den Erinnerungsplan zurueck. */
-    if (c) { try { felieZyklusPlanZuruecksetzen(); } catch (e) {} }
-    /* Sofort schreiben. Der Rest der Verarbeitung haengt an einem
-       Zeitgeber von 1,2 Sekunden, der nur die Bestaetigung am Knopf
-       stehen laesst — wer die App in diesem Fenster schliesst oder
-       neu laedt, verlor bisher die gerade gemachte Eingabe. */
-    try { saveBodyData(); } catch (e) {}
+    /* Die drei Faelle (nur Zyklus, nur Lebensphase, beides), der
+       Erinnerungsplan und das sofortige Schreiben: seit Welle D / D7b
+       felieZyklusEintragen in src/kern/koerper.js. Hier bleibt die Anzeige. */
+    if (!felieZyklusEintragen({ lastPeriod: lastPeriodVal, selectedLen: selectedLen, phaseVal: phaseVal })) return;
 
     this.textContent = 'Gespeichert';
     this.style.background = '#e1ea7d';
     setTimeout(() => {
       bd.remove();
-      populateZyklusCard(window.cycleData);
+      populateZyklusCard(felieZyklusLesen());
       removeDashWearableBanner();
       personalizeApp();
       refreshGreeting();
@@ -7971,7 +7846,7 @@ function renderOuraComparison() { try { renderSpiegelWearable(); } catch (e) {} 
 
 
 function updateManualScoreCards(energyScore, sleep, stressScore) {
-  window._bodyUpdatedAt = Date.now();
+  felieKoerperZeitSetzen(Date.now());
   bodyStampFields(window.manualBodyData);
   saveBodyData();
   try { renderSpiegel(); } catch (e) {}
@@ -8081,7 +7956,7 @@ function updateManualScoreCards(energyScore, sleep, stressScore) {
 function populateZyklusCard(data) {
   /* Vor dem Zeichnen aus den Rohwerten neu rechnen — sonst zeigt die Karte
      den Zyklustag vom Tag der Eingabe. */
-  try { if (data && data === window.cycleData) data = cycleRefresh() || data; } catch (e) {}
+  try { if (data && data === felieZyklusLesen()) data = cycleRefresh() || data; } catch (e) {}
   saveBodyData();
   const dash = document.getElementById('profile-card-zyklus');
   if (!dash) return;
@@ -8264,9 +8139,9 @@ function removeDashWearableBanner() {
   }
 
   // Populate zyklus if cycle data available
-  if (window.cycleData) {
+  if (felieZyklusLesen()) {
     setTimeout(() => {
-      populateZyklusCard(window.cycleData);
+      populateZyklusCard(felieZyklusLesen());
       rewireDashCTA();
     }, 400);
   }
@@ -8590,46 +8465,15 @@ function enterAppFromStorage() {
 /* ══ Heute vs. Schnitt + Verlaufskurve (aus felie_body_history) ══ */
 
 
-/* Frueher wurde hier ein ZWEITER Verlauf gefuehrt: felie_body_history,
-   ein Datensatz pro Kalendertag mit einem einzigen src-Feld fuer den
-   ganzen Tag. Damit konnte er Selbstauskunft und Messung nicht
-   auseinanderhalten. Der Store kann das, also ist der Parallelspeicher
-   entfallen — eine Quelle der Wahrheit statt zwei. Die Funktion bleibt
-   als No-op, weil saveBodyData sie aufruft. */
-function bodyHistoryPush() { return; }
 
 /* Letzte n Kalendertage aus dem Verlauf, chronologisch */
 
 
-function saveBodyData() {
-  try { bodyHistoryPush(); } catch (e) {}
-  /* Der Store ist ab jetzt die Quelle der Wahrheit. Der alte Schluessel
-     bleibt nur fuer den Zyklus und als Migrationspfad bestehen. */
-  try { felieStoreSpeichern(); } catch (e) {}
-  try {
-    localStorage.setItem('felie_body_data', JSON.stringify({
-      cycleData: window.cycleData || null,
-      updatedAt: window._bodyUpdatedAt || null
-    }));
-  } catch(e) {}
-}
-
-function loadBodyData() {
-  /* Reihenfolge ist wichtig: erst der Zyklus, damit die Zyklusattribute
-     der Signale sofort abgeleitet werden koennen, dann der Store. */
-  try {
-    var d = JSON.parse(localStorage.getItem('felie_body_data') || 'null');
-    if (d) {
-      if (d.cycleData) { window.cycleData = d.cycleData; try { cycleRefresh(); } catch (e) {} }
-      if (d.updatedAt) window._bodyUpdatedAt = d.updatedAt;
-    }
-    var geladen = false;
-    try { geladen = felieStoreLaden(); } catch (e) {}
-    /* Migration: Altbestand nur uebernehmen, wenn noch kein Store da ist.
-       Der Setter verteilt das Objekt auf Signaleintraege. */
-    if (!geladen && d && d.manualBodyData) window.manualBodyData = d.manualBodyData;
-  } catch(e) {}
-}
+/* saveBodyData, loadBodyData: seit Welle D / D7b felieKoerperSpeichern
+   und felieKoerperLaden in src/kern/koerper.js (mit AL-98). Die Huellen
+   bleiben, weil hier neun Stellen speichern und initApp laedt. */
+function saveBodyData() { felieKoerperSpeichern(); }
+function loadBodyData() { felieKoerperLaden(); }
 
 /* App-Splash. Er liegt schon im Markup, damit beim Start nichts aufblitzt.
    Rueckkehrerinnen sehen ihn kurz, neue Nutzerinnen praktisch gar nicht —
@@ -9998,7 +9842,7 @@ function showProfile() {
     '</div>';
 
   document.querySelector('.phone').appendChild(div);
-  try { var zyklus = cycleRefresh() || window.cycleData; if (zyklus) populateZyklusCard(zyklus); } catch (e) {}
+  try { var zyklus = cycleRefresh() || felieZyklusLesen(); if (zyklus) populateZyklusCard(zyklus); } catch (e) {}
   felieDialog(div, { label: 'Profil', onClose: function() { div.remove(); } });
 }
 
@@ -10258,7 +10102,7 @@ function openTopicSheetNew() {
   if (!sheet || !list) return;
 
   /* Auffrischen, sonst zeigt die Kachel den Zyklustag vom Tag der Eingabe. */
-  var cd = (function(){ try { return cycleRefresh(); } catch (e) { return window.cycleData; } })();
+  var cd = (function(){ try { return cycleRefresh(); } catch (e) { return felieZyklusLesen(); } })();
   var mb = window.manualBodyData;
   var phase = cd ? cd.phase : null;
 
@@ -10441,7 +10285,7 @@ function bodyStampFields(mb) {
 
 /* Wurden die Körperdaten heute (Kalendertag) schon aktualisiert? */
 function bodyDataFromToday() {
-  var t = window._bodyUpdatedAt;
+  var t = felieKoerperZeit();
   if (!t) return false;
   var u = new Date(t); u.setHours(0, 0, 0, 0);
   var today = new Date(); today.setHours(0, 0, 0, 0);
@@ -10617,7 +10461,7 @@ function addMsg(text, who, opts) {
        herausgefiltert, falls das Modell ihn aus Gewohnheit setzt — sonst
        stuende die Zeichenfolge sichtbar im Chat. */
     text = text.replace(/\[\[NEED:(cycle|body)\]\]/gi, '').replace(/\n{3,}/g, '\n\n').trim();
-  var cycleMissing = !window.cycleData;
+  var cycleMissing = !felieZyklusLesen();
     var mb = window.manualBodyData;
     var bodyMissing = !mb || (mb.energyScore == null && mb.hrv == null && mb.sleepMins == null && mb.stressScore == null);
     var bodyOld = !bodyMissing && !bodyDataFromToday();
@@ -11991,7 +11835,7 @@ function closeDashboard() {
     if (win && win.classList.contains('open')) {
       var mb = window.manualBodyData;
       var bodyNow = !!(mb && (mb.energyScore != null || mb.hrv != null || mb.sleepMins != null || mb.stressScore != null));
-      var cycleNow = !!window.cycleData;
+      var cycleNow = !!felieZyklusLesen();
       var kind = (!snap.body && bodyNow) ? 'body' : ((!snap.cycle && cycleNow) ? 'cycle' : null);
       if (kind) setTimeout(function() { felieReactToNewData(kind); }, 350);
     }

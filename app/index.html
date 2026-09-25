@@ -73,9 +73,9 @@ END_EXPO_REBUILD_CONTRACT_V6
     ov.id = 'kern-fehler';
     ov.setAttribute('role', 'alertdialog');
     ov.setAttribute('aria-labelledby', 'kern-fehler-titel');
-    ov.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:linear-gradient(160deg,#180430,#4A3A6A);display:flex;align-items:center;justify-content:center;padding:24px;font-family:'DM Sans',system-ui,sans-serif;";
+    ov.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:linear-gradient(160deg,#180430,#4A3A6A);display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Montserrat',system-ui,sans-serif;";
     ov.innerHTML = '<div style="width:min(90%,320px);background:#F1F0F0;border-radius:22px;padding:26px 22px;box-shadow:0 16px 44px rgba(0,0,0,0.3);text-align:center;">'
-      + '<div id="kern-fehler-titel" style="font-size:19px;font-weight:700;color:#180430;font-family:\'Alice\',Georgia,serif;margin-bottom:8px;">felie konnte nicht vollst\u00e4ndig geladen werden</div>'
+      + '<div id="kern-fehler-titel" style="font-size:19px;font-weight:400;color:#180430;font-family:\'Alice\',Georgia,serif;margin-bottom:8px;">felie konnte nicht vollst\u00e4ndig geladen werden</div>'
       + '<div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Ein Teil der App ist nicht angekommen. Bitte lade die Seite neu.</div>'
       + (lokal ? '<div style="font-size:12px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Diese Datei wurde direkt ge\u00f6ffnet. felie braucht einen lokalen Server: im Ordner felie-app \u201enpm.cmd run lokal\u201c ausf\u00fchren und http://localhost:8000 \u00f6ffnen.</div>' : '')
       + '<button type="button" id="kern-fehler-neu" style="width:100%;padding:13px;border-radius:12px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">Neu laden</button>'
@@ -96,8 +96,17 @@ END_EXPO_REBUILD_CONTRACT_V6
 <script type="module" src="src/webapp/kern-bruecke.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>felie · Qwen3.8 — Vergleichstest</title>
-<link href="https://fonts.googleapis.com/css2?family=Alice&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+/* Schriften (Marcel, 25.09., Markenvorlage): Alice + Montserrat, selbst
+   ausgeliefert - keine Anfrage an Google. Alice hat nur Regular und wird
+   nie fett gesetzt. Montserrat 600 gibt es nicht; 600 faellt auf 700.
+   Pfeil und Kreuz fehlen in den Dateien, dafuer springt die Systemschrift
+   ein (Liste in --font-body). */
+@font-face { font-family: 'Alice'; font-style: normal; font-weight: 400; font-display: swap; src: url('src/webapp/schriften/alice-v21-latin-regular.woff2') format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 300; font-display: swap; src: url('src/webapp/schriften/montserrat-v31-latin-300.woff2') format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 400; font-display: swap; src: url('src/webapp/schriften/montserrat-v31-latin-regular.woff2') format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 500; font-display: swap; src: url('src/webapp/schriften/montserrat-v31-latin-500.woff2') format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 700; font-display: swap; src: url('src/webapp/schriften/montserrat-v31-latin-700.woff2') format('woff2'); }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -126,7 +135,7 @@ END_EXPO_REBUILD_CONTRACT_V6
      Nutzerinnenblase sein, sonst verschwindet das Lilac darin. */
   --chat-bg:        #F6F3FA;
   --font-display: 'Alice', Georgia, serif;
-  --font-body:    'DM Sans', sans-serif;
+  --font-body:    'Montserrat', system-ui, sans-serif;
 }
 
 html, html {
@@ -1695,7 +1704,7 @@ html.native-app .header { padding-top: 22px; }
 .score-popup-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
 .score-popup-text { font-size: 13px; color: #4A3A6A; line-height: 1.55; font-weight: 300; }
 .score-popup-text strong { color: #180430; font-weight: 500; }
-.score-popup-close { width: 100%; margin-top: 18px; padding: 13px; border-radius: 20px; border: none; background: #e1ea7d; color: #180430; font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; }
+.score-popup-close { width: 100%; margin-top: 18px; padding: 13px; border-radius: 20px; border: none; background: #e1ea7d; color: #180430; font-family: 'Montserrat',system-ui,sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; }
 
 /* ═══════════════════════════════
    APP GUIDE OVERLAY
@@ -2126,7 +2135,7 @@ body.is-native .status-bar { display: none !important; }
 .kl-v2-card { padding:18px; background:#FFFFFF; border-radius:16px; border:1px solid rgba(143,91,189,0.2); color:var(--plum); box-shadow:0 2px 8px rgba(24,4,48,0.05); flex-shrink:0; }
 /* Die Frage war 23px Alice und damit das lauteste Element des Schritts —
    lauter als felie selbst, obwohl felie sie stellt. Sie traegt jetzt den
-   Stil der Bubble-Ueberschriften der Seiten davor (.ru-bub h4): DM Sans,
+   Stil der Bubble-Ueberschriften der Seiten davor (.ru-bub h4): Fliesstext,
    halbfett, Plum. Serifen bleiben den Seitentiteln vorbehalten, damit die
    Hierarchie ueber das Onboarding hinweg eine Bedeutung behaelt. */
 .kl-v2-card h2 { font-family:var(--font-body); font-size:15px; font-weight:600; line-height:1.4; color:var(--plum); margin:0 0 2px; }
@@ -2234,10 +2243,10 @@ body.is-native .status-bar { display: none !important; }
       if (!phone) return;
       var ov = document.createElement('div');
       ov.id = 'review-gate';
-      ov.style.cssText = "position:absolute;inset:0;z-index:100000;background:linear-gradient(160deg,#180430,#4A3A6A);display:flex;align-items:center;justify-content:center;font-family:'DM Sans',system-ui,sans-serif;padding:24px;box-sizing:border-box;";
+      ov.style.cssText = "position:absolute;inset:0;z-index:100000;background:linear-gradient(160deg,#180430,#4A3A6A);display:flex;align-items:center;justify-content:center;font-family:'Montserrat',system-ui,sans-serif;padding:24px;box-sizing:border-box;";
       ov.innerHTML = '<div style="width:min(90%,300px);background:#F1F0F0;border-radius:22px;padding:26px 22px;box-shadow:0 16px 44px rgba(0,0,0,0.3);text-align:center;">'
         + '<div style="font-size:32px;margin-bottom:10px;">\uD83C\uDF38</div>'
-        + '<div style="font-size:19px;font-weight:700;color:#180430;font-family:\'Alice\',Georgia,serif;margin-bottom:6px;">felie \u2014 Vorschau</div>'
+        + '<div style="font-size:19px;font-weight:400;color:#180430;font-family:\'Alice\',Georgia,serif;margin-bottom:6px;">felie \u2014 Vorschau</div>'
         + '<div style="font-size:13px;color:#6B5A88;line-height:1.5;margin-bottom:18px;">Passwortgesch\u00fctzte Vorschau. Bitte gib das Passwort ein.</div>'
         + '<input id="review-gate-input" type="password" autocomplete="off" placeholder="Passwort" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(143, 91, 189,0.35);font-family:inherit;font-size:15px;color:#180430;background:#E6E0EE;outline:none;text-align:center;margin-bottom:10px;">'
         + '<button id="review-gate-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#e1ea7d;color:#180430;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">\u00d6ffnen</button>'
@@ -2514,7 +2523,7 @@ body.is-native .status-bar { display: none !important; }
             placeholder="Was liegt dir auf dem Herzen…"
             rows="1"
             oninput="autoH(this)"
-            style="flex:1;box-sizing:border-box;padding:10px 14px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:'DM Sans',sans-serif;font-size:14px;color:#180430;outline:none;resize:none;line-height:1.5;overflow-y:auto;box-shadow:0 2px 8px rgba(24, 4, 48,0.06);"
+            style="flex:1;box-sizing:border-box;padding:10px 14px;border-radius:14px;border:1.5px solid rgba(143, 91, 189,0.25);background:white;font-family:'Montserrat',system-ui,sans-serif;font-size:14px;color:#180430;outline:none;resize:none;line-height:1.5;overflow-y:auto;box-shadow:0 2px 8px rgba(24, 4, 48,0.06);"
             onfocus="this.style.borderColor='#8F5BBD'"
             onblur="this.style.borderColor='rgba(143, 91, 189,0.25)'"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();homeUserReply();}" aria-label="Deine Nachricht an felie"></textarea>
@@ -9903,8 +9912,7 @@ function felieDatenschutzEmpfaenger() {
   return 'Für die Antworten von felie werden deine Eingaben und der dafür nötige Kontext an <strong>'
     + FELIE_HOSTING.kiAnbieter + '</strong> übermittelt und dort verarbeitet. '
     + 'Die App selbst wird über ' + FELIE_HOSTING.appBetreiber + ' ausgeliefert. '
-    + 'Weitere Empfänger gibt es nicht: Es findet kein Verkauf und keine Auswertung für Werbung statt. '
-    + 'Google Fonts werden von Google-Servern geladen; dabei wird deine IP-Adresse übertragen.';
+    + 'Weitere Empfänger gibt es nicht: Es findet kein Verkauf und keine Auswertung für Werbung statt.';
 }
 
 function showDatenschutz() {

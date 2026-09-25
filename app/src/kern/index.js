@@ -35,7 +35,9 @@
    Seit D7b: Koerperdaten speichern und laden, Lebensphasen, Eintragen
    aus dem Zyklus-Sheet (koerper.js); der Zyklus-Zustand in zyklus.js.
    Seit F2a: Modell-Anbindung und Auswertung (modell.js) mit Netz-Port -
-   die einzige asynchrone Stelle des Kerns. */
+   die einzige asynchrone Stelle des Kerns.
+   Seit F2b: der Gespraechsablauf ohne Oberflaeche (gespraech.js) - die
+   Sitzung, Senden, Rueckblick, Abschluss, Verwerfen, Fortsetzen. */
 
 export { felieKernProbe } from './probe.js';
 
@@ -61,6 +63,7 @@ export * from './kontext.js';
 export * from './abschluss.js';
 export * from './kennenlernen.js';
 export * from './modell.js';
+export * from './gespraech.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';
@@ -72,6 +75,7 @@ import { felieGedaechtnisVerbinden } from './gedaechtnis.js';
 import { felieAbschlussVerbinden, felieAbschlussZuruecksetzen } from './abschluss.js';
 import { felieKontextVerbinden } from './kontext.js';
 import { felieNetzVerbinden, felieModellVerbinden } from './modell.js';
+import { felieGespraechZuruecksetzen } from './gespraech.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
@@ -92,4 +96,5 @@ export function felieKernZuruecksetzen() {
   felieKontextVerbinden(null);
   felieNetzVerbinden(null);
   felieModellVerbinden(null);
+  felieGespraechZuruecksetzen();
 }

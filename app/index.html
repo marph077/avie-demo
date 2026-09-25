@@ -2615,10 +2615,7 @@ body.is-native .status-bar { display: none !important; }
       </div>
       <div class="input-area">
         <div class="input-row">
-          <button id="befund-btn" class="io-btn" onclick="befundFlow()" aria-label="Befund oder Foto anhängen" title="Anhängen">
-            <svg class="ico" style="width:18px;height:18px"><use href="#i-clip"/></svg>
-          </button>
-          <input type="file" id="befund-file" accept="image/*,application/pdf" style="display:none;">
+          <!-- Kein Anhang-Knopf (D3, AL-102): er zeigte nur einen Hinweis, dass Uploads nicht gehen. -->
           <textarea class="chat-input" id="inp" rows="1" placeholder="Schreib felie…"
             onkeydown="handleKey(event)" oninput="autoH(this)" aria-label="Deine Nachricht"></textarea>
           <button id="mic-btn" class="io-btn" onclick="micToggle()" aria-label="Anliegen einsprechen" title="Einsprechen">
@@ -8193,15 +8190,12 @@ function showVerlauf() {
   } else if (savedChats.length) {
     cardsHTML += 
     cardsHTML = savedChats.slice().reverse().map(function(chat) {
-      const date = new Date(chat.timestamp);
-      const dateStr = date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' });
-      const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
       const kannErgaenzen = felieSichererVerlauf(chat.messages).some(function(m) { return m.role === 'user'; })
         && (!Array.isArray(chat.notizen) || chat.notizenStatus === 'unvollstaendig');
       return `<div style="background:white;border-radius:16px;border:1px solid rgba(143, 91, 189,0.15);padding:16px;box-shadow:0 2px 10px rgba(24, 4, 48,0.07);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="font-size:14px;font-weight:600;color:#180430;">${icoSvg('i-box', 14, '#8F5BBD')} ${htmlEsc(chat.thema || 'Gespräch')}</div>
-          <div style="font-size:11px;color:#6B5A88;">${dateStr} · ${timeStr}</div>
+          <div style="font-size:11px;color:#6B5A88;">${htmlEsc(felieArchivKartenDatum(chat))}</div>
         </div>
         ${felieNotizenHtml(chat, false)}
         ${chat.notizenStatus === 'unvollstaendig' ? '<div class="ged-sub">Noch nicht vollständig verarbeitet. Bereits erfasste Notizen bleiben erhalten.</div>' : ''}
@@ -8240,7 +8234,6 @@ function reopenSavedChat(ts) {
   var chats = getSavedChats();
   var chat = chats.filter(function(c){ return (c.id || c.timestamp) == ts; })[0];
   if (!chat) return;
-  window._felieAktiverArchivChat = chat.id || chat.timestamp;
 
   function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -8261,45 +8254,18 @@ function reopenSavedChat(ts) {
   if (msgsEl) msgsEl.innerHTML = '';
   window._hasNewUserMsg = false;
 
-  if (Array.isArray(chat.messages) && chat.messages.length) {
-    // Exakten Verlauf 1:1 wiederherstellen
-    chatHistory.length = 0;
-    chat.messages.forEach(function(m, index) {
-      var e = Object.assign({}, m);
-      e.kontextAuslassen = !!m.kontextAuslassen || (chat.kontextNachrichtenAuslassen || []).indexOf(index) >= 0;
-      /* Eine berichtigte oder geloeschte Aussage darf aus ihrer
-         Ursprungsstelle nicht neu gewonnen werden — die Stelle faellt
-         weg, der Rest der Nachricht bleibt verwendbar (Pruefall F14).
-         Bleibt nichts Tragfaehiges uebrig, ist die Nachricht draussen. */
-      if (!e.kontextAuslassen && m.role === 'user' && typeof m.content === 'string') {
-        var rein = felieStelleBereinigt(chat, index, m.content);
-        if (rein === null) e.kontextAuslassen = true;
-        else if (rein !== m.content) e.inhaltBereinigt = rein;
-      }
-      if (m.hidden) e.hidden = true;
-      chatHistory.push(e);
-      /* Wiederhergestellter Verlauf: Chips an einer alten Blase waeren
-         eine Frage von damals mit dem Budget von heute. */
-      if (!m.hidden) addMsg(m.content, m.role === 'user' ? 'user' : 'felie', { stumm: true });
-    });
+  /* Seit F2b im Kern: aktives Archivgespraech, Verlauf 1:1 samt
+     gesperrter Stellen (felieGespraechWiederherstellen), Wiedereinstieg
+     bei einer Karte ohne Verlauf (felieGespraechWiedereinstieg). */
+  var sichtbar = felieGespraechWiederherstellen(chat);
+  if (sichtbar) {
+    /* Wiederhergestellter Verlauf: Chips an einer alten Blase waeren
+       eine Frage von damals mit dem Budget von heute. */
+    sichtbar.forEach(function (m) { addMsg(m.text, m.von, { stumm: true }); });
   } else {
-    // Kein gespeicherter Verlauf (ältere Karte) → felie steigt anhand der Erkenntnisse neu ein
-    chatHistory.length = 0;
-    chatHistory.push({ role: 'user', hidden: true, internal: true,
-      content: 'Ein älteres Gespräch wurde geöffnet; es liegen keine überprüfbaren Originalaussagen vor.' });
     showTyping();
-    felieRequest('wiedereinstieg', apiMsgs())
-    .then(function(data){
+    felieGespraechWiedereinstieg(chat).then(function (t) {
       removeTyping();
-      var t = felieReplyText(data) ||
-        ('Schön, dass du nochmal an „' + (chat.thema||'unser Thema') + '" anknüpfst. Magst du erzählen, wo du gerade stehst?');
-      chatHistory.push({ role: 'assistant', content: t });
-      addMsg(t, 'felie');
-    })
-    .catch(function(){
-      removeTyping();
-      var t = 'Die Verbindung hat gerade nicht geklappt. Du kannst hier schreiben, womit du weitergehen möchtest.';
-      chatHistory.push({ role: 'assistant', content: t });
       addMsg(t, 'felie');
     });
   }
@@ -10139,8 +10105,7 @@ function openThemeSheet(id) {
 
   var dateStr = '';
   try {
-    var d = new Date(chat.timestamp);
-    dateStr = d.toLocaleDateString('de-DE', { day:'numeric', month:'short', year:'numeric' }) + ' · ' + d.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
+    dateStr = felieArchivKartenDatum(chat);
   } catch(e) {}
 
   var body = document.getElementById('theme-sheet-body');
@@ -10417,12 +10382,12 @@ function continueFelie(btn) {
 function felieGespraechGeneration() { return window._felieGespraechGeneration || 0; }
 
 function felieSessionZuruecksetzen() {
+  /* Seit F2b liegt die Sitzung im Kern (felieSitzungNeu: aktives
+     Archivgespraech, offene Rueckfrage - AL-101 -, abgeschnitten,
+     Generation). Hier bleibt, was die Webapp selbst fuehrt. */
+  felieSitzungNeu();
   window._felieOnboardingChatId = null;
-  window._felieAktiverArchivChat = null;
   window._letzteChatId = null;
-
-  window._lastCut = false;
-  window._felieSessionGeneration = (window._felieSessionGeneration || 0) + 1;
   window._felieGespraechGeneration = felieGespraechGeneration() + 1;
 
 }
@@ -10503,7 +10468,8 @@ function handleKey(e) {
 
 
 // ── felie Chat — Qwen3.8 über den Text-Worker ──
-const chatHistory = [];
+/* chatHistory: seit F2b in src/kern/gespraech.js (dasselbe Array, von der Bruecke
+   ans window gehaengt). */
 
 /* PERSONALITY_DEFAULTS: seit F2a in src/kern/modell.js */
 
@@ -10563,95 +10529,13 @@ function felieKontextFuer(zweck, opts) {
 
 /* felieRueckblickDaten: seit Welle D / D5b in src/kern/kontext.js */
 
-/* ── Rückblick: erkennen, klären, erst dann ausliefern ────────────────
-   Entschieden am 17.09.: bei mehreren passenden Gespraechen fragt felie
-   EINMAL nach, und erst die Antwort waehlt aus. Ohne Antwort geht kein
-   Rueckblick an das Modell — ersatzweise die letzten Gespraeche
-   beizulegen bleibt ausgeschlossen (E11, Pruefaelle F22, F23).
+/* Rueckblick (felieRueckblickMarker, ...Absicht, ...Kandidaten, ...Frage,
+   ...Anfrage, ...AuswahlLesen): seit F2b in src/kern/gespraech.js */
 
-   Die Absicht wird an ausdruecklichen Ruckwaertsbezuegen erkannt, nicht
-   geraten. Faellt die Erkennung aus, passiert nichts Schlimmes: es bleibt
-   ein normales Gespraech ohne Archivbeigabe. Das ist die richtige
-   Fehlerrichtung. */
-/* Als Funktion, nicht als Konstante: die bestehenden Regressionen laden
-   nur eine feste Liste von Variablendeklarationen in ihren Testkontext.
-   Eine neue Konstante waere dort schlicht nicht vorhanden — derselbe
-   Fehler ist in M2a schon einmal passiert. */
-function felieRueckblickMarker() {
-  return ['haben wir', 'hatten wir', 'habe ich dir', 'erzählt', 'besprochen',
-    'geredet', 'gesprochen', 'letztes mal', 'damals', 'neulich',
-    'erinnerst du dich', 'weißt du noch', 'worüber'];
-}
 
-function felieRueckblickAbsicht(text) {
-  var t = String(text || '').toLowerCase();
-  if (!t) return false;
-  return felieRueckblickMarker().some(function (m) { return t.indexOf(m) >= 0; });
-}
 
-/* Welche gespeicherten Gespraeche passen zu dieser Frage? Verglichen
-   wird gegen Thema und eigene Worte — nicht gegen die Notizen, die
-   seit M6 ohnehin kein Modellfutter mehr sind. */
-function felieRueckblickKandidaten(text) {
-  var woerter = String(text || '').toLowerCase()
-    .replace(/[^a-zäöüß0-9 ]/g, ' ').split(/\s+/)
-    .filter(function (w) { return w.length >= 5 && felieRueckblickMarker().indexOf(w) < 0; });
-  if (!woerter.length) return [];
-  return getSavedChats().filter(function (c) {
-    var heu = ((c.thema || '') + ' ' + (c.messages || []).map(function (m) {
-      return m && m.role === 'user' ? m.content : ''; }).join(' ')).toLowerCase();
-    return woerter.some(function (w) { return heu.indexOf(w) >= 0; });
-  });
-}
 
-function felieRueckblickFrage(kandidaten) {
-  var teile = kandidaten.slice(0, 4).map(function (c) {
-    return (c.thema || 'unser Gespräch') + ' vom '
-      + new Date(c.timestamp).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
-  });
-  return 'Dazu finde ich mehrere Gespräche: ' + teile.join(', ')
-    + '. Welches meinst du?';
-}
 
-/* Der einzige Zugang fuer den Chat. Drei Ausgaenge, keine Zwischentoene. */
-function felieRueckblickAnfrage(text) {
-  /* Steht eine Rueckfrage offen, ist die naechste Nachricht ihre
-     Antwort — auch ohne Rueckwaertsbezug darin. „Das über die
-     Wohnungssuche." ist eine Antwort, kein neues Anliegen. */
-  var offen = window._felieRueckblickOffen;
-  if (offen && offen.length) {
-    var wahl = felieRueckblickAuswahlLesen(text, offen);
-    window._felieRueckblickOffen = null;
-    if (!wahl) return { modus: 'kein' };
-    return { modus: 'rueckblick', gespraeche: [wahl] };
-  }
-  if (!felieRueckblickAbsicht(text)) return { modus: 'kein' };
-  var k = felieRueckblickKandidaten(text);
-  if (!k.length) return { modus: 'kein' };
-  if (k.length === 1) return { modus: 'rueckblick',
-    gespraeche: [String(k[0].id || k[0].timestamp)] };
-  window._felieRueckblickOffen = k.map(function (c) {
-    return { id: String(c.id || c.timestamp), thema: c.thema || '', timestamp: c.timestamp }; });
-  return { modus: 'rueckfrage', frage: felieRueckblickFrage(k),
-    kandidaten: window._felieRueckblickOffen };
-}
-
-/* Die Antwort der Nutzerin auf die Rueckfrage. Erkannt wird, was sie
-   tatsaechlich schreibt: ein Datum, ein Monat oder ein Wort aus dem
-   Thema. Bleibt es unklar, wird NICHT geraten — dann gibt es keinen
-   Rueckblick, und sie kann es noch einmal sagen. */
-function felieRueckblickAuswahlLesen(text, kandidaten) {
-  var t = String(text || '').toLowerCase();
-  var treffer = kandidaten.filter(function (k) {
-    var d = new Date(k.timestamp);
-    var tag = String(d.getDate());
-    var monat = d.toLocaleDateString('de-DE', { month: 'long' }).toLowerCase();
-    if (t.indexOf(tag + '.') >= 0 || (t.indexOf(monat) >= 0 && t.indexOf(tag) >= 0)) return true;
-    return (k.thema || '').toLowerCase().split(/\s+/).some(function (w) {
-      return w.length >= 5 && t.indexOf(w) >= 0; });
-  });
-  return treffer.length === 1 ? treffer[0].id : null;
-}
 
 /* Fassungen, die zu diesem Gespraech gehoeren und damals zutrafen.
    Berichtigtes bleibt draussen: historicalUse entscheidet, nicht der
@@ -10686,7 +10570,8 @@ function felieArchivNotizErstellen(id, btn) {
   })) { felieAlert('Eine frühere Notiz wurde bewusst gelöscht. Die automatische Ergänzung bleibt deshalb aus.'); return Promise.resolve(false); }
   pending[id] = true;
   if (btn) { btn.disabled = true; btn.textContent = 'Notizen werden ergänzt…'; }
-  return felieNotizErzeugen(chat.messages, vorhanden).then(function(summary) {
+  /* AL-105: ohne gesperrte Stellen, der Index bleibt die Kennung. */
+  return felieNotizErzeugen(felieArchivVerlauf(chat), vorhanden).then(function(summary) {
     var chats = getSavedChats(), current = chats.find(function(c) { return (c.id || c.timestamp) === id; });
     if (!current) return false;
     if (JSON.stringify(felieNotizenLesen(current, true)) !== vorher) {
@@ -10699,7 +10584,7 @@ function felieArchivNotizErstellen(id, btn) {
       var schluessel = felieNotizSchluessel(n.text);
       if (liste.some(function(e) { return felieNotizSchluessel(e.text) === schluessel ||
         (e.ursprungstext && felieNotizSchluessel(e.ursprungstext) === schluessel); })) return;
-      var q = felieArchivFeldQuelle(n.text, n.nachweis, current.messages);
+      var q = felieArchivFeldQuelle(n.text, n.nachweis, felieArchivVerlauf(current));
       if (!q) return;
       var nummer = liste.length;
       while (liste.some(function(e) { return e.id === 'notiz:' + nummer; })) nummer++;
@@ -10946,57 +10831,15 @@ function micStop() {
   });
 })();
 
-function befundFlow() {
-  felieAlert('Datei- und Foto-Uploads sind in diesem Qwen-Textvergleich noch nicht verfügbar.');
-}
-
-
-/* Bestaetigungsstufe. Bei Laborwerten ist sie nicht optional: eine falsch
-   gelesene Dezimalstelle kann eine Handlung ausloesen. */
+/* befundFlow und der Anhang-Knopf sind entfallen (D3, AL-102, 25.09.):
+   der Knopf zeigte nur einen Hinweis, der Befund-Modus war im Client nie
+   erreichbar. Bilder und Anhaenge nur mit eigener Entscheidung. */
 
 
 /* ohneBefunde: seit Welle D / D5b in src/kern/archiv.js */
 
-function apiMsgs() {
-  return chatHistory.filter(function(m) { return !m.kontextAuslassen; }).map(function(m) { return { role: m.role,
-    content: m.hidden || m.internal ? felieDatenBlock(m.befund ? 'befund' : 'app_ereignis', { text: m.content }) : m.content }; });
-}
-function callFelie(userMessage, opts) {
-  opts = opts || {};
-  if (window._felieRequestPending) return Promise.reject(new Error('Eine Antwort wird bereits vorbereitet'));
-  var fluechtig = chatHistory.some(function(m) { return m.befund; });
-  var entry = { role: 'user', content: userMessage, hidden: !!opts.hidden, internal: !!opts.hidden, befund: fluechtig };
-  chatHistory.push(entry);
-
-  /* Rueckblick: passen mehrere Gespraeche, fragt felie EINMAL nach und
-     ruft dafuer kein Modell. Erst die Antwort waehlt aus; ohne Antwort
-     gibt es keinen Rueckblick (F22, F23). Die Rueckfrage kostet nichts
-     und behauptet nichts — der Fehlerfall ist ein normales Gespraech. */
-  var rb = null;
-  try { rb = opts.hidden ? null : felieRueckblickAnfrage(userMessage); } catch (e) {}
-  if (rb && rb.modus === 'rueckfrage') {
-    chatHistory.push({ role: 'assistant', content: rb.frage });
-    try { addMsg(rb.frage, 'felie'); } catch (e) {}
-    return Promise.resolve(rb.frage);
-  }
-  window._felieRueckblickAuswahl = rb && rb.modus === 'rueckblick' ? rb.gespraeche : null;
-
-
-  // Der Chat wählt seine Rückfrage nach dem Anliegen. Ein Stichwort wie
-  // „müde“ reserviert keine Körperdaten-Abfrage und verdrängt keine Hilfe.
-  window._felieRequestPending = true;
-  var generation = window._felieSessionGeneration || 0;
-  return felieRequest(fluechtig ? 'befund' : 'chat', apiMsgs(), { context: fluechtig ? false : undefined }).then(function(data) {
-    if (generation !== (window._felieSessionGeneration || 0)) throw new Error('Gespräch wurde gewechselt');
-    var reply = felieReplyText(data);
-    chatHistory.push({ role: 'assistant', content: reply, befund: fluechtig });
-    window._lastCut = data.stop_reason === 'max_tokens';
-    return reply;
-  }).catch(function(err) {
-
-    throw err;
-  }).finally(function() { window._felieRequestPending = false; });
-}
+/* apiMsgs: seit F2b in src/kern/gespraech.js */
+/* callFelie: seit F2b in src/kern/gespraech.js */
 
 function send() {
   if (window._felieRequestPending) return;
@@ -11065,40 +10908,14 @@ function discardChatAndClose() {
   if (dialog) dialog.style.display = 'none';
   window._hasNewUserMsg = false;
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.remove('open');
-  chatHistory.length = 0;
-  felieHomeEreignis('gespraech_verlassen');
+  /* Seit F2b im Kern: Verlauf leeren, offene Rueckfrage abraeumen
+     (AL-101), gespraech_verlassen an die Startseite. */
+  felieGespraechVerwerfen();
   showFelieLoader(1500);
   refreshHome();
 }
 
-function generateChatSummary(historySnapshot) {
-  felieHomeEreignis('gespraech_beendet');
-  var history = felieSichererVerlauf(historySnapshot || chatHistory);
-  if (!history.some(function(m) { return m.role === 'user'; })) {
-    window._letzteChatId = null; hideFelieLoader();
-    if ((historySnapshot || chatHistory).some(function(m) { return m.befund; }))
-      felieAlert('Das Gespräch über dein Dokument bleibt flüchtig und wurde nicht archiviert.');
-    return Promise.resolve();
-  }
-  /* Der Verlauf wird VOR der Auswertung als Auftrag gesichert (A2). Bis
-     zum 18.09. entschied hier der Gespraechszaehler: begann die Nutzerin
-     waehrend der rund 36 Sekunden Auswertung ein neues Gespraech, wurde
-     das Ergebnis stumm verworfen — kein Archiveintrag, kein wartender
-     Auftrag. Ein Gespraechswechsel darf einen abgeschlossenen Verlauf
-     nicht loeschen; er gehoert in dasselbe Archiv. Was verspaetete
-     Ergebnisse tatsaechlich unzulaessig macht, ist ein Datenreset — dafuer
-     traegt der Auftrag die Datenepoche. */
-  var auftrag = felieAbschlussAnlegen(history);
-  return felieNotizErzeugen(history).then(function(summary) {
-    gespraechAbschliessen(summary, history, auftrag);
-  }).catch(function() {
-    /* Fehlgeschlagene Notiz: das Gespraech wird trotzdem archiviert und
-       traegt notizenStatus 'unvollstaendig' — die Archivkarte zeigt das
-       an und bietet dort das erneute Erzeugen. Ohne Pop-up ist die
-       Archivkarte die einzige Stelle, an der das sichtbar wird. */
-    gespraechAbschliessen(felieAbschlussNotlaufNotiz(), history, auftrag);
-  });
-}
+/* generateChatSummary: seit F2b in src/kern/gespraech.js */
 
 /* getSavedChats: seit Welle D / D1b in src/kern/gespraeche.js */
 

@@ -26,7 +26,7 @@
 import { felieNotizSchluessel, felieNotizText } from './text.js';
 import { felieSpeicherLesen, felieSpeicherLoeschen, felieSpeicherSchreiben } from './speicher.js';
 import { getSavedChats } from './gespraeche.js';
-import { felieGedaechtnisLetzterChatSetzen, felieMerkUebernehmenFuer, felieMerkVorschlaege, felieNotizPruefen, felieNotizVorschau } from './gedaechtnis.js';
+import { felieGedaechtnisLetzterChatSetzen, felieMerkUebernehmenFuer, felieMerkVorschlaege, felieNotizenLesen, felieNotizPruefen, felieNotizVorschau } from './gedaechtnis.js';
 import { felieNeueSnippetsSetzen } from './neu-hinweise.js';
 import { felieArchivFeldQuelle, felieSichererVerlauf } from './archiv.js';
 import { bodySnapshotText } from './kontext.js';
@@ -312,11 +312,14 @@ export function felieAbschlussSpeichern() {
   } catch (e) {}
 }
 
-export function felieAbschlussAnlegen(messages) {
+export function felieAbschlussAnlegen(messages, fortsetzungVon) {
   var liste = felieAbschlussListe();
   var ts = Date.now();
   var auftrag = { id: 'ab-' + ts + '-' + Math.random().toString(36).slice(2, 8), epoche: felieDatenEpoche(), ts: ts,
     status: 'auswertung', messages: messages.map(function(m) { return Object.assign({}, m); }), summary: null, chatId: null };
+  /* Fortschreiben (F2b-2): der Eintrag, den dieser Auftrag fortschreibt -
+     auch fuer das Nachholen nach einem Neustart. */
+  if (fortsetzungVon != null) auftrag.fortsetzungVon = fortsetzungVon;
   liste.push(auftrag);
   laufend[auftrag.id] = true;
   felieAbschlussSpeichern();
@@ -359,8 +362,18 @@ export function felieAbschlussAusfuehren(auftrag) {
   if (auftrag.status === 'archiv') {
     var vorhanden = getSavedChats().filter(function(c) { return c.auftragId === auftrag.id; })[0];
     var chatId = vorhanden ? (vorhanden.id || vorhanden.timestamp) : null;
+    if (chatId == null && auftrag.fortsetzungVon != null && !getSavedChats().some(function (c) {
+      return (c.id || c.timestamp) === auftrag.fortsetzungVon; })) {
+      /* Der fortgeschriebene Eintrag wurde inzwischen geloescht: sein alter
+         Teil kommt nicht zurueck, und die Auswertung (Indizes des alten
+         Eintrags) verfaellt. Die neuen Nachrichten werden ein eigener
+         Eintrag, die Karte bietet das Nacherzeugen. */
+      var neu = auftrag.messages.filter(function (m) { return m.archivIndex == null; });
+      if (!neu.some(function (m) { return m.role === 'user'; })) { felieAbschlussEntfernen(auftrag.id); return false; }
+      felieAbschlussAktualisieren(auftrag, { messages: neu, summary: felieAbschlussNotlaufNotiz(), fortsetzungVon: null });
+    }
     if (chatId == null) {
-      try { chatId = saveChat(auftrag.summary, auftrag.messages, auftrag.id); } catch (e) { chatId = null; }
+      try { chatId = saveChat(auftrag.summary, auftrag.messages, auftrag.id, auftrag.fortsetzungVon); } catch (e) { chatId = null; }
     }
     if (chatId == null) return false;
     felieAbschlussAktualisieren(auftrag, { chatId: chatId, status: 'gedaechtnis' });
@@ -497,13 +510,18 @@ export function felieAuswertungProtokoll(protokoll, runden) {
    archivieren gerufen. Geaendert sind nur zwei Zugriffe: localStorage
    ueber den Speicher-Port, das letzte Gespraech ueber
    felieGedaechtnisLetzterChatSetzen. */
-export function saveChat(summary, messages, auftragId) {
+export function saveChat(summary, messages, auftragId, fortsetzungVon) {
   try {
     /* Zweite Sicherung: selbst wenn ein Aufrufer den Verlauf ungefiltert
        uebergibt, wird hier kein Befund geschrieben. */
     messages = felieSichererVerlauf(messages);
     if (!messages.some(function(m) { return m.role === 'user'; })) return null;
     var chats = getSavedChats();
+    var ziel = fortsetzungVon == null ? null
+      : chats.filter(function (c) { return (c.id || c.timestamp) === fortsetzungVon; })[0];
+    if (ziel) return fortschreiben(chats, ziel, summary, messages, auftragId);
+    /* Ein neuer Eintrag traegt keine gesperrte Stelle und keine Hilfsfelder. */
+    messages = messages.filter(function (m) { return !m.gesperrt; }).map(ohneHilfsfelder);
     var ts = Math.max(Date.now(), chats.reduce(function(max, c) { return Math.max(max, Number(c.id || c.timestamp) || 0); }, 0) + 1);
     var feldQuelle = {};
     ['erkenntnis', 'felie_lernt'].forEach(function(k) {
@@ -531,7 +549,7 @@ export function saveChat(summary, messages, auftragId) {
       erkenntnis: summary.erkenntnis,
       felie_lernt: summary.felie_lernt,
       koerper: bodySnapshotText(),
-      messages: messages.map(function(m) { return Object.assign({}, m); }),
+      messages: messages,
       timestamp: ts,
       /* Der Abschlussauftrag, aus dem dieser Eintrag stammt (A2). Damit
          erkennt eine Wiederholung, dass das Gespraech schon im Archiv
@@ -546,4 +564,54 @@ export function saveChat(summary, messages, auftragId) {
     return ts;
   } catch(e) {}
   return null;
+}
+
+function ohneHilfsfelder(m) {
+  var e = Object.assign({}, m);
+  delete e.archivIndex; delete e.gesperrt; delete e.inhaltBereinigt; delete e.kontextAuslassen;
+  return e;
+}
+
+/* ── Fortschreiben (F2b-2, Marcel 25.09.) ─────────────────────────────
+   Ein fortgesetztes Archivgespraech bleibt eine Karte. Belege, Sperren und
+   Gedaechtnis verweisen ueber den Index auf die Nachrichten; deshalb
+   bleiben die alten Nachrichten unveraendert an ihrem Index (messages
+   kommt aus felieFortsetzungVerlauf: alt, dann neu), und nur die neuen
+   werden angehaengt. Die Notizen der Karte bleiben samt Bearbeitung und
+   Loeschung; neue kommen dazu wie beim Ergaenzen der Karte
+   (felieArchivNotizErstellen). Die Zusammenfassung umfasst das ganze
+   Gespraech; ohne neue (Notlauf) bleibt die alte. Thema, id und
+   timestamp bleiben, fortgesetzt traegt den Zeitpunkt, der Eintrag rueckt
+   ans Ende (oben in der Liste). */
+function fortschreiben(chats, ziel, summary, messages, auftragId) {
+  var id = ziel.id || ziel.timestamp, n = (ziel.messages || []).length;
+  var neue = messages.slice(n).map(ohneHilfsfelder);
+  var liste = felieNotizenLesen(ziel, true).filter(function (x) { return x.text || x.ursprungstext || x.nachweis; });
+  (Array.isArray(summary.notizen) ? summary.notizen : []).forEach(function (neu) {
+    var schluessel = felieNotizSchluessel(neu.text);
+    if (liste.some(function (e) { return felieNotizSchluessel(e.text) === schluessel ||
+      (e.ursprungstext && felieNotizSchluessel(e.ursprungstext) === schluessel); })) return;
+    var q = felieArchivFeldQuelle(neu.text, neu.nachweis, messages);
+    if (!q) return;
+    var nummer = liste.length;
+    while (liste.some(function (e) { return e.id === 'notiz:' + nummer; })) nummer++;
+    liste.push({ id: 'notiz:' + nummer, art: neu.art, thema: neu.thema, text: neu.text, merken: neu.merken !== false, nachweis: q });
+  });
+  var selbst = ziel.zusammenfassung && ziel.zusammenfassung.nachweis && ziel.zusammenfassung.nachweis.quelle === 'selbst';
+  if (summary.zusammenfassung && !selbst) ziel.zusammenfassung = { text: summary.zusammenfassung.text,
+    nachweis: felieArchivFeldQuelle(summary.zusammenfassung.text, summary.zusammenfassung.nachweis, messages) };
+  ziel.notizen = liste;
+  ziel.notizenStatus = summary.notizenStatus || 'vollstaendig';
+  ziel.version = 5;
+  felieNotizVorschau(ziel);
+  ziel.koerper = bodySnapshotText();
+  ziel.messages = (ziel.messages || []).concat(neue);
+  ziel.fortgesetzt = Date.now();
+  ziel.auftragId = auftragId || undefined;
+  ziel.auswertung = summary.auswertung || undefined;
+  chats.splice(chats.indexOf(ziel), 1);
+  chats.push(ziel);
+  felieGedaechtnisLetzterChatSetzen(id);
+  felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats));
+  return id;
 }

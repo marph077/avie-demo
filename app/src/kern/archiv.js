@@ -80,8 +80,12 @@ export function felieExtraktionsDaten(hist) {
     /* Was gesperrt ist, steht der erneuten Auswertung nicht zur
        Verfuegung — auch dann nicht, wenn es woertlich in der
        Ursprungsnachricht steht (E15, Pruefall F14). */
+    /* Eine gesperrte Stelle eines fortgeschriebenen Eintrags (F2b-2)
+       faellt weg, behaelt aber ihren Index: die Kennungen bleiben die
+       Indizes im Eintrag. */
+    if (m.gesperrt) return null;
     return { id: i, rolle: m.role, text: m.inhaltBereinigt != null ? m.inhaltBereinigt : m.content };
-  });
+  }).filter(Boolean);
 }
 
 export function felieArchivFeldQuelle(text, q, messages) {

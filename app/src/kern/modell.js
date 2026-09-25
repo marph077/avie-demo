@@ -268,12 +268,20 @@ export async function felieNotizErzeugen(history, vorhanden, mode) {
       page = felieZusammenfassungPruefen(felieJSON(page), source, bestand);
     } catch (e) {
       if (++fehlerOhneFortschritt < 2) { groesse = Math.max(1, Math.floor(groesse / 2)); continue; }
-      if (!out.notizen.length && !out.fakten.length && !out.faeden.length) throw e;
+      /* AL-100 (Marcel, 25.09.): die Zusammenfassung zaehlt als Ergebnis.
+         Bis F2b ging ein Gespraech mit Zusammenfassung, aber ohne Notiz,
+         Angabe oder Faden beim Scheitern der naechsten Runde in den
+         Notlauf - und die Zusammenfassung war verloren. */
+      if (!out.notizen.length && !out.fakten.length && !out.faeden.length && !out.zusammenfassung) throw e;
       unvollstaendig(); break;
     }
     if (out.thema === 'Unser Gespräch' && page.thema) out.thema = page.thema;
-    if (!out.zusammenfassung && page.zusammenfassung) out.zusammenfassung = page.zusammenfassung;
     var zuwachs = 0;
+    /* AL-100: eine neue Zusammenfassung ist Fortschritt wie ein neuer
+       Eintrag (zaehlt fuer die Pruefung ohne Fortschritt, nicht fuers
+       Protokoll: felieAuswertungZaehlen bekommt nur die Eintraege). */
+    var neueZusammenfassung = false;
+    if (!out.zusammenfassung && page.zusammenfassung) { out.zusammenfassung = page.zusammenfassung; neueZusammenfassung = true; }
     ['notizen', 'fakten', 'faeden'].forEach(function(k) {
       page[k].forEach(function(n) {
         if (k === 'notizen' && bekannt.some(function(t) { return felieNotizSchluessel(t) === felieNotizSchluessel(n.text); })) return;
@@ -305,7 +313,7 @@ export async function felieNotizErzeugen(history, vorhanden, mode) {
         && mode !== 'profil' && !page.listenformat);
     if (!brauchtWeiter) break;
     if (runden >= 6) { unvollstaendig(); break; }
-    if (!zuwachs) {
+    if (!zuwachs && !neueZusammenfassung) {
       if (++fehlerOhneFortschritt >= 2) { unvollstaendig(); break; }
     } else fehlerOhneFortschritt = 0;
   }

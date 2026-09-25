@@ -85,6 +85,29 @@ kern.felieModellVerbinden({
   kennenlernenKontext: function () { return window.klUebergabeKontext(); }
 });
 
+/* Seit F2b fuehrt der Kern das Gespraech (gespraech.js): die Sitzung liegt
+   dort, unabhaengig vom Bildschirm. Die Webapp liest und schreibt sie
+   weiter unter ihren alten Namen - als Sicht auf den Kern, wie den
+   Zyklus-Zustand seit D7b; chatHistory ist das Array des Kerns selbst (unten ans window).
+   Angezeigt wird hier: eine Rueckfrage (addMsg), das Ergebnis eines
+   Abschlusses (gespraechAbschliessen), das Ende ohne Abschluss (Loader). */
+const SITZUNG_SICHT = {
+  _felieRequestPending: 'laeuft', _felieSessionGeneration: 'generation', _lastCut: 'abgeschnitten',
+  _felieRueckblickOffen: 'rueckblickOffen', _felieRueckblickAuswahl: 'rueckblickAuswahl', _felieAktiverArchivChat: 'aktiverArchivChat'
+};
+Object.keys(SITZUNG_SICHT).forEach(function (name) {
+  Object.defineProperty(window, name, {
+    configurable: true,
+    get: function () { return kern.felieSitzung()[SITZUNG_SICHT[name]]; },
+    set: function (wert) { kern.felieSitzung()[SITZUNG_SICHT[name]] = wert; }
+  });
+});
+kern.felieGespraechVerbinden({
+  nachrichtZeigen: function (text) { window.addMsg(text, 'felie'); },
+  abschliessen: function (ergebnis, verlauf, auftrag) { window.gespraechAbschliessen(ergebnis, verlauf, auftrag); },
+  ohneAbschluss: function () { window.hideFelieLoader(); }
+});
+
 const namen = Object.keys(kern).sort();
 const kollisionen = [];
 

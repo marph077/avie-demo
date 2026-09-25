@@ -26,6 +26,7 @@
 
 import * as kern from '../kern/index.js';
 import { felieLocalStoragePort } from './speicher-localstorage.js';
+import { felieFetchPort } from './netz-fetch.js';
 
 /* Seit D1b liest und schreibt der Kern ueber einen Speicher-Port. Er wird
    verbunden, bevor irgendein Name ans window kommt: Inline-Code kann den
@@ -70,6 +71,18 @@ kern.felieKontextVerbinden({
   },
   aktiverArchivChat: function () { return window._felieAktiverArchivChat; },
   rueckblickAuswahl: function () { return window._felieRueckblickAuswahl; }
+});
+
+/* Seit F2a fragt der Kern das Modell an (modell.js). Das Netz ist
+   felieFetch aus index.html, beim Aufruf nachgeschlagen (netz-fetch.js).
+   Persoenlichkeit, Ritual-Flag, Startseiten- und Kennenlernen-Kontext
+   bleiben in der Webapp (F5, F6); nachgeschlagen wird erst beim Aufruf. */
+kern.felieNetzVerbinden(felieFetchPort(window));
+kern.felieModellVerbinden({
+  personalitaet: function () { return window._personality || window.loadPersonality(); },
+  ritualFrisch: function () { return window._felieRitualFrisch; },
+  homeKontext: function () { return window.felieHomeKontext(); },
+  kennenlernenKontext: function () { return window.klUebergabeKontext(); }
 });
 
 const namen = Object.keys(kern).sort();

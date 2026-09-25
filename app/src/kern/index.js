@@ -33,7 +33,9 @@
    (archiv.js), Kontext-Daten (kontext.js); saveChat in abschluss.js.
    Seit AL-73: die Kennenlern-Schritte als Daten (kennenlernen.js).
    Seit D7b: Koerperdaten speichern und laden, Lebensphasen, Eintragen
-   aus dem Zyklus-Sheet (koerper.js); der Zyklus-Zustand in zyklus.js. */
+   aus dem Zyklus-Sheet (koerper.js); der Zyklus-Zustand in zyklus.js.
+   Seit F2a: Modell-Anbindung und Auswertung (modell.js) mit Netz-Port -
+   die einzige asynchrone Stelle des Kerns. */
 
 export { felieKernProbe } from './probe.js';
 
@@ -58,6 +60,7 @@ export * from './archiv.js';
 export * from './kontext.js';
 export * from './abschluss.js';
 export * from './kennenlernen.js';
+export * from './modell.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';
@@ -68,10 +71,11 @@ import { felieKoerperZuruecksetzen } from './zyklus.js';
 import { felieGedaechtnisVerbinden } from './gedaechtnis.js';
 import { felieAbschlussVerbinden, felieAbschlussZuruecksetzen } from './abschluss.js';
 import { felieKontextVerbinden } from './kontext.js';
+import { felieNetzVerbinden, felieModellVerbinden } from './modell.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
-   Ports (Speicher, Vorgang, Gedaechtnis, Abschluss, Kontext); der
+   Ports (Speicher, Vorgang, Gedaechtnis, Abschluss, Kontext, Netz, Modell); der
    Koerper-Zustand liegt seit D7b im Kern und wird hier geleert. Die Webapp ruft es nie: das Loeschen der Nutzerdaten ist etwas
    anderes und laesst den Port verbunden. */
 export function felieKernZuruecksetzen() {
@@ -86,4 +90,6 @@ export function felieKernZuruecksetzen() {
   felieAbschlussZuruecksetzen();
   felieAbschlussVerbinden(null);
   felieKontextVerbinden(null);
+  felieNetzVerbinden(null);
+  felieModellVerbinden(null);
 }

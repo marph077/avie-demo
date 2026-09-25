@@ -177,6 +177,13 @@ export function felieRequest(mode, messages, opts) {
   }, opts.timeout || FELIE_ANFRAGE.timeout).then(function(r) {
     if (!r.ok) throw new Error('felie HTTP ' + r.status);
     return r.json();
+  }, function(e) {
+    /* N6 (F2): ohne Netz lehnt fetch mit einem TypeError ab (Browser wie
+       React Native); die Zeitgrenze ist ein AbortError, ein HTTP-Fehler
+       eine Antwort. Der Port reicht den Fehler unveraendert durch
+       (Netz-Vertrag N3), die Einordnung macht der Kern. */
+    if (e && e.name === 'TypeError') { try { e.felieOhneNetz = true; } catch (x) {} }
+    throw e;
   }).then(function(data) {
     felieModellPruefen(data);
     /* AL-74 / C-5: der Worker sagt mit felie_grenze, ob dieses Gespraech

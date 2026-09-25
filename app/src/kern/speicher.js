@@ -113,8 +113,13 @@ export const FELIE_LS_KEYS = [
    - felie_session_id: pseudonyme Kennung, die am Feedback haengt. Sie
      gehoert bei einem vollstaendigen Loeschen weg. Bewusst NICHT ins
      Backup: eine auf ein anderes Geraet zurueckgeholte Kennung wuerde
-     zwei Nutzungen zu einer verschmelzen. */
-export const FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id', 'felie_checkins', 'felie_body_reminder_date', 'felie_wearable'];
+     zwei Nutzungen zu einer verschmelzen.
+   - felie_laufendes_gespraech: das noch nicht abgeschlossene Gespraech
+     (F2, Entscheidung Marcel 2 A). Loeschen ja - sonst ueberlebte es ein
+     Zuruecksetzen; sichern nein - ein unfertiges Gespraech gehoert in
+     keine Sicherungsdatei (zurueckgespielt waere es ohne Abschluss). */
+export const FELIE_LAUFEND_KEY = 'felie_laufendes_gespraech';
+export const FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id', 'felie_checkins', 'felie_body_reminder_date', 'felie_wearable', FELIE_LAUFEND_KEY];
 
 /* ── Speicheradapter M2c (Auszug) ─────────────────────────────────────
    Aktiv ist die Altablage: mehrere Schluessel, wie bisher. Neu daran ist

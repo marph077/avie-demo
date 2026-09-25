@@ -5542,9 +5542,7 @@ function felieDatenAendern(mutator) {
   return false;
 }
 /* felieErinnerungBearbeiten und felieArchivAbleitungenAendern: seit Welle D / D3b in src/kern/gedaechtnis.js */
-function felieAnfrageFehler(e) {
-  return e && e.felieHinweis ? e.felieHinweis : 'Die Verbindung hat gerade nicht geklappt. Bitte versuche es noch einmal.';
-}
+/* felieAnfrageFehler: seit F2 in src/kern/anzeige.js */
 
 
 function felieHomeSichtbarkeit(aktiv) {
@@ -5812,20 +5810,15 @@ function homeStartChat(wahl) {
      zwischen den beiden Themenlisten, und der Kopf fiel still auf
      "Deine Begleiterin" zurueck. Andere Einstiege (dashStartChat) geben
      weiter einen freien Satz - der wird unveraendert durchgereicht. */
-  var hit = null;
-  try {
-    hit = TOPICS.filter(function(t) { return t.key === wahl; })[0] || null;
-  } catch (e) {}
-  var msg = hit ? hit.msg : wahl;
+  var hit = felieThema(wahl);
   if (topicLabel) topicLabel.textContent = hit ? hit.name : 'Deine Begleiterin';
   if (topicIconWrap) {
     var iconName = hit ? hit.icon : 'chat';
-    var bg = hit ? hit.bg : 'rgba(255,255,255,0.16)';
+    var bg = hit ? TOPICS_FARBE[hit.key] : 'rgba(255,255,255,0.16)';
     topicIconWrap.style.background = bg;
     topicIconWrap.innerHTML = '<svg class="ico" style="width:18px;height:18px;color:#e1ea7d"><use href="#i-' + iconName + '"/></svg>';
   }
   var _cw = document.getElementById('chat-window'); if(_cw) _cw.classList.add('open');
-  chatHistory.length = 0;
   var msgs = document.getElementById('messages');
   if (msgs) msgs.innerHTML = '';
   // Seed history silently (don't show user message as bubble)
@@ -5846,17 +5839,18 @@ function homeStartChat(wahl) {
      bewusst NICHT in chatHistory - er ist Text der App, nicht etwas, das
      felie gesagt hat; der Verlauf beginnt sauber mit dem ersten Satz der
      Nutzerin. */
-  if (hit && !msg) {
-    addMsg(hit.eroeffnung, 'felie');
+  /* Seit F2 im Kern (felieThemaStarten): leert den Verlauf, liefert den
+     festen Satz oder die Antwort auf den versteckten Einstieg (bei einem
+     Fehler den Ersatzsatz). */
+  var start = felieThemaStarten(wahl);
+  if (start.sofort) {
+    addMsg(start.sofort, 'felie');
     return;
   }
   showTyping();
-  callFelie(msg, { hidden: true }).then(function(reply) {
+  start.antwort.then(function(reply) {
     removeTyping();
     addMsg(reply, 'felie');
-  }).catch(function() {
-    removeTyping();
-    addMsg('Ich bin gleich für dich da.', 'felie');
   });
 }
 
@@ -10017,47 +10011,14 @@ function homeFabTapped() {
   openTopicSheetNew();
 }
 
-/* Statische Themen-Identitaet (Icon, Farbe, Name, Nachricht) — global, damit
-   sowohl das Themen-Sheet als auch der Chat-Header darauf zugreifen koennen.
-   Die dynamischen Hinweiszeilen (HRV, Zyklustag, Schlafdauer) bleiben lokal
-   in openTopicSheetNew(), weil sie von live-Daten abhaengen. homeStartChat()
-   verwies bisher auf ein nie existierendes globales "TOPICS" (Grossschreibung)
-   — das lief bei jedem Chat-Start still in den catch-Block, das Thema im
-   Header blieb deshalb immer auf "Deine Begleiterin" stehen. */
-var TOPICS = [
-  /* Eine einzige Themenliste (AL-46). Der Sheet baut daraus, der Kopf des
-     Chats sucht darin ueber den key. "msg" ist der versteckte Einstieg, den
-     felie beantwortet; "eroeffnung" ist ein fester Satz der App fuer die
-     Faelle, in denen es nichts zu fragen gibt. */
-  { key: 'eigenes',    icon: 'chat',  bg: 'rgba(255,255,255,0.16)',   name: 'Mein Thema',
-    hint: 'Ich möchte etwas besprechen', msg: null,
-    eroeffnung: 'Erzähl einfach, was gerade los ist.' },
-  { key: 'bewegung',   icon: 'run',   bg: 'rgba(225, 234, 125,0.16)', name: 'Bewegung & Energie',
-    /* Hinweis war "Training & Zyklusphase" (AL-47): aus einer Zyklusphase
-       folgt laut K7 keine Leistungsfaehigkeit und keine Sportvorgabe - die
-       Kachel versprach genau das, was der Prompt felie verbietet. */
-    hint: 'Bewegung, die in deinen Tag passt',
-    msg: 'Ich möchte über Bewegung und Energie sprechen' },
-  { key: 'stress',     icon: 'calm',  bg: 'rgba(123,168,224,0.34)',   name: 'Stress & Mental Load',
-    /* Hinweis war "Nervensystem & Erholung" (AL-48): physiologische Rahmung
-       fuer ein Alltagsthema. K6 nennt die Woerter, die hier passen -
-       Erschoepfung, Ueberlastung, am Limit. */
-    hint: 'Belastung & Erholung',
-    msg: 'Ich möchte über meinen Stresslevel und Mental Load sprechen' },
-  { key: 'zyklus',     icon: 'bloom', bg: 'rgba(143, 91, 189,0.48)',  name: 'Zyklus & Hormone',
-    hint: 'Zyklus verstehen',
-    msg: 'Ich möchte über meinen Zyklus und meine Hormone sprechen' },
-  { key: 'schlaf',     icon: 'moon',  bg: 'rgba(107,143,212,0.34)',   name: 'Schlaf & Erholung',
-    /* Hinweis war "Schlafqualitaet verbessern" (AL-48): ein Wirkversprechen
-       ueber eine Koerperfunktion. Die Kachel nennt jetzt das Thema, nicht
-       sein Ergebnis. */
-    hint: 'Abende, Nächte, Routinen',
-    msg: 'Ich möchte über meinen Schlaf sprechen' },
-  { key: 'ernaehrung', icon: 'bowl',  bg: 'rgba(225, 234, 125,0.16)', name: 'Ernährung & Körper',
-    /* Hinweis war "Zyklusbasiert essen" (AL-47), gleiche Begruendung. */
-    hint: 'Essen im Alltag',
-    msg: 'Ich möchte über Ernährung und meinen Körper sprechen' }
-];
+/* Themen: seit F2 im Kern (FELIE_THEMEN, felieThemenListe, felieThema -
+   src/kern/anzeige.js; AL-46/47/48 dort). Hier nur die Kachelfarbe der
+   Webapp. Bewusst kein TOPICS aus dem Kern beim Laden: die Inline-Skripte
+   laufen vor dem Kern-Modul (felie-d0b-startreihenfolge). */
+var TOPICS_FARBE = {
+  eigenes: 'rgba(255,255,255,0.16)', bewegung: 'rgba(225, 234, 125,0.16)', stress: 'rgba(123,168,224,0.34)',
+  zyklus: 'rgba(143, 91, 189,0.48)', schlaf: 'rgba(107,143,212,0.34)', ernaehrung: 'rgba(225, 234, 125,0.16)'
+};
 
 function openTopicSheetNew() {
   var sheet = document.getElementById('topic-sheet');
@@ -10065,26 +10026,15 @@ function openTopicSheetNew() {
   var list = document.getElementById('topic-sheet-list');
   if (!sheet || !list) return;
 
-  /* Auffrischen, sonst zeigt die Kachel den Zyklustag vom Tag der Eingabe. */
-  var cd = (function(){ try { return cycleRefresh(); } catch (e) { return felieZyklusLesen(); } })();
-  var mb = window.manualBodyData;
-  var phase = cd ? cd.phase : null;
-
-  /* Dynamisch sind nur die beiden Hinweiszeilen, die von Live-Daten
-     abhaengen; alles andere kommt aus TOPICS. Bis hierher stand die
-     komplette Liste ein zweites Mal in dieser Funktion. */
-  var hinweis = {};
-  if (cd && !cd.stale) hinweis.zyklus = phase + cycleDayPart(cd, ' · ');
-  if (mb && mb.sleepStr) hinweis.schlaf = mb.sleepStr + ' letzte Nacht';
-
-  list.innerHTML = TOPICS.map(function(t) {
+  /* Liste samt Hinweiszeilen aus Live-Daten: seit F2 im Kern (felieThemenListe). */
+  list.innerHTML = felieThemenListe().map(function(t) {
     return '<button class="topic-btn" onclick="closeTopicSheet();homeStartChat(\'' + t.key + '\')">' +
-      '<div style="width:40px;height:40px;border-radius:12px;background:' + t.bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' +
+      '<div style="width:40px;height:40px;border-radius:12px;background:' + TOPICS_FARBE[t.key] + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' +
         '<svg class="ico" style="color:#e1ea7d"><use href="#i-' + t.icon + '"/></svg>' +
       '</div>' +
       '<div style="flex:1;text-align:left;">' +
         '<div class="topic-name">' + t.name + '</div>' +
-        '<div class="topic-hint">' + (hinweis[t.key] || t.hint) + '</div>' +
+        '<div class="topic-hint">' + t.hinweis + '</div>' +
       '</div>' +
       '<div class="topic-arrow">→</div>' +
     '</button>';
@@ -10221,17 +10171,15 @@ function updateClock() {
   if (el) el.textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
 }
 
-function now() {
-  var d = new Date();
-  return d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
-}
+/* now: seit F2 im Kern (felieUhrzeit). */
 
+/* HTML aus den Kern-Teilen (felieTextTeile, seit F2): maskiert, **fett**,
+   Zeilenumbruch - Zeichen fuer Zeichen wie bisher (felie-f2-anzeige A7). */
 function mdToHtml(text) {
-  var s = (text == null ? '' : String(text));
-  s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/\n/g, '<br>');
-  return s;
+  return felieTextTeile(text).map(function(t) {
+    var s = t.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    return t.fett ? '<strong>' + s + '</strong>' : s;
+  }).join('');
 }
 
 /* Zeitstempel je Einzelwert. Vorher galt ein gemeinsamer fuer alle drei —
@@ -10267,12 +10215,10 @@ function continueFelie(btn) {
   dots.textContent = ' …';
   dots.style.opacity = '0.5';
   bubble.appendChild(dots);
-  callFelie('Schreib genau dort weiter, wo du gerade abgebrochen hast. ' +
-           'Keine Begrüßung, keine Wiederholung, keine Einleitung — setz einfach den Satz fort.',
-           { hidden: true })
-    .then(function(reply) {
+  /* Auftrag und Bereinigung: seit F2 im Kern (felieWeiterschreiben). */
+  felieWeiterschreiben()
+    .then(function(clean) {
       dots.remove();
-      var clean = reply.replace(/\[\[NEED:(cycle|body)\]\]/gi, '').trim();
       var add = document.createElement('span');
       add.innerHTML = ' ' + mdToHtml(clean);
       bubble.appendChild(add);
@@ -10419,11 +10365,10 @@ function addMsg(text, who, opts) {
   var row = document.createElement('div');
   row.className = 'msg-row ' + who;
   if (who === 'felie') {
-    var needCycle = /\[\[NEED:cycle\]\]/i.test(text);
-    /* [[NEED:body]] steht nicht mehr im Prompt. Der Marker wird nur noch
-       herausgefiltert, falls das Modell ihn aus Gewohnheit setzt — sonst
-       stuende die Zeichenfolge sichtbar im Chat. */
-    text = text.replace(/\[\[NEED:(cycle|body)\]\]/gi, '').replace(/\n{3,}/g, '\n\n').trim();
+    /* Marker und Leerzeilen: seit F2 im Kern (felieAntwortAufbereiten). */
+    var aufbereitet = felieAntwortAufbereiten(text);
+    var needCycle = aufbereitet.zyklusGewuenscht;
+    text = aufbereitet.text;
   var cycleMissing = !felieZyklusLesen();
     var mb = window.manualBodyData;
     var bodyMissing = !mb || (mb.energyScore == null && mb.hrv == null && mb.sleepMins == null && mb.stressScore == null);
@@ -10439,10 +10384,10 @@ function addMsg(text, who, opts) {
       window._lastCut = false;
     }
     var ctaHtml = ctaBtns.length ? '<div class="data-cta-wrap">' + ctaBtns.join('') + '</div>' : '';
-    row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div><div class="bubble felie">' + mdToHtml(text) + '</div>' + ctaHtml + '<div class="msg-time">' + now() + '</div></div>';
+    row.innerHTML = '<div class="msg-avatar">' + BLOOM + '</div><div><div class="bubble felie">' + mdToHtml(text) + '</div>' + ctaHtml + '<div class="msg-time">' + felieUhrzeit() + '</div></div>';
   } else {
     var safe = (text == null ? '' : String(text)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
-    row.innerHTML = '<div><div class="bubble user">' + safe + '</div><div class="msg-time">' + now() + '</div></div>';
+    row.innerHTML = '<div><div class="bubble user">' + safe + '</div><div class="msg-time">' + felieUhrzeit() + '</div></div>';
   }
   msgs.appendChild(row);
   msgs.scrollTop = msgs.scrollHeight;

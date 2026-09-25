@@ -64,6 +64,7 @@ export * from './abschluss.js';
 export * from './kennenlernen.js';
 export * from './modell.js';
 export * from './gespraech.js';
+export * from './anzeige.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';

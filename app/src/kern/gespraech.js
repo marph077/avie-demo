@@ -28,6 +28,8 @@
 
 import { felieRequest, felieReplyText, felieDatenBlock, felieNotizErzeugen } from './modell.js';
 import { felieKontextDaten } from './kontext.js';
+import { felieThema } from './anzeige.js';
+import { FELIE_LAUFEND_KEY, felieSpeicherLesen, felieSpeicherLoeschen, felieSpeicherSchreiben } from './speicher.js';
 import { felieSichererVerlauf } from './archiv.js';
 import { felieAbschlussAnlegen, felieAbschlussNotlaufNotiz } from './abschluss.js';
 import { felieStelleBereinigt } from './bruecke.js';
@@ -257,9 +259,43 @@ export function callFelie(userMessage, opts) {
   }).finally(function() { sitzung.laeuft = false; });
 }
 
+/* ── Einstieg ueber ein Thema (seit F2, bis dahin homeStartChat) ─── */
+export const FELIE_EINSTIEG_ERSATZ = 'Ich bin gleich für dich da.';
+
+/* wahl: Schluessel eines Themas oder ein freier Satz (dashStartChat).
+   Liefert { thema, sofort, antwort }: bei "Mein Thema" steht sofort der
+   feste Satz und es gibt keine Anfrage - er geht bewusst NICHT in den
+   Verlauf, er ist Text der App (AL-45). Sonst geht der Einstieg versteckt
+   an felie; antwort ist ihre Antwort, bei einem Fehler der Ersatzsatz.
+   Die Sitzung setzt der Aufrufer neu (felieSitzungNeu). */
+export function felieThemaStarten(wahl) {
+  var thema = felieThema(wahl);
+  var msg = thema ? thema.msg : wahl;
+  chatHistory.length = 0;
+  if (thema && !msg) return { thema: thema, sofort: thema.eroeffnung, antwort: null };
+  return { thema: thema, sofort: null,
+    antwort: callFelie(msg, { hidden: true }).catch(function () { return FELIE_EINSTIEG_ERSATZ; }) };
+}
+
+/* ── Weiterschreiben (seit F2, bis dahin continueFelie) ─────────── */
+export const FELIE_WEITERSCHREIBEN_AUFTRAG = 'Schreib genau dort weiter, wo du gerade abgebrochen hast. '
+  + 'Keine Begrüßung, keine Wiederholung, keine Einleitung — setz einfach den Satz fort.';
+
+/* Setzt eine vom Token-Limit gekappte Antwort fort; liefert den Text
+   ohne Marker. Ob auch die Fortsetzung gekappt wurde, steht danach in
+   felieSitzung().abgeschnitten. */
+export function felieWeiterschreiben() {
+  return callFelie(FELIE_WEITERSCHREIBEN_AUFTRAG, { hidden: true }).then(function (reply) {
+    return reply.replace(/\[\[NEED:(cycle|body)\]\]/gi, '').trim();
+  });
+}
+
 /* ── Abschluss ──────────────────────────────────────────────────── */
 export function generateChatSummary(historySnapshot) {
   felieGedaechtnisEreignis('gespraech_beendet');
+  /* Speichern beendet das laufende Gespraech: seine Sicherung faellt weg
+     (Marcel, 2 A). Der Verlauf ist ab hier im Abschlussauftrag. */
+  felieGespraechSicherungLoeschen();
   var history = felieSichererVerlauf(historySnapshot || chatHistory);
   /* Fortsetzung eines Archivgespraechs (F2b-2): derselbe Eintrag wird
      fortgeschrieben. Ohne neue Nachricht der Nutzerin gibt es nichts
@@ -341,6 +377,68 @@ export function felieArchivVerlauf(chat) {
   return felieFortsetzungVerlauf(chat, []);
 }
 
+/* ── Ohne Netz (N6, F2) ─────────────────────────────────────────── */
+/* Nach einer Anfrage, die ohne Netz scheiterte (felieOhneNetz): die
+   unbeantwortete Nachricht der Nutzerin verlaesst den Verlauf und geht
+   zurueck ins Eingabefeld - sonst stuenden beim naechsten Senden zwei
+   Nachrichten ohne Antwort hintereinander. Liefert den Text oder null. */
+export function felieNachrichtZuruecknehmen() {
+  var m = chatHistory[chatHistory.length - 1];
+  if (!m || m.role !== 'user' || m.hidden || m.internal) return null;
+  chatHistory.pop();
+  return m.content;
+}
+
+/* ── Laufendes Gespraech sichern (F2, Marcel 2 A) ───────────────── */
+/* iOS beendet Apps im Hintergrund; Minimieren verspricht, dass nichts
+   endet (D2). Die App sichert deshalb nach jeder Nachricht, beim
+   Minimieren und beim Wechsel in den Hintergrund; nach einem Neustart
+   erscheint das Gespraech als Mini-Leiste. Speichern und Verwerfen
+   loeschen die Sicherung (generateChatSummary, felieGespraechVerwerfen).
+   Gesichert wird nur, was ihres ist: mindestens eine eigene Nachricht
+   oder ein begonnener Text - ein nur geoeffnetes Thema nicht.
+   zusatz: { thema, entwurf } aus der Oberflaeche. */
+export function felieGespraechSichern(zusatz) {
+  zusatz = zusatz || {};
+  var entwurf = typeof zusatz.entwurf === 'string' ? zusatz.entwurf : '';
+  var eigenes = chatHistory.some(function (m) { return m.role === 'user' && !m.hidden && !m.internal; });
+  if (!eigenes && !entwurf.trim()) { felieGespraechSicherungLoeschen(); return false; }
+  felieSpeicherSchreiben(FELIE_LAUFEND_KEY, JSON.stringify({
+    version: 1, gesichertAm: Date.now(),
+    verlauf: chatHistory.map(function (m) { return Object.assign({}, m); }),
+    sitzung: { aktiverArchivChat: sitzung.aktiverArchivChat, fortsetzungAb: sitzung.fortsetzungAb,
+      abgeschnitten: sitzung.abgeschnitten },
+    thema: zusatz.thema || null, entwurf: entwurf }));
+  return true;
+}
+
+/* Die Sicherung oder null (keine, kaputt, fremde Fassung). */
+export function felieGespraechSicherung() {
+  try {
+    var s = JSON.parse(felieSpeicherLesen(FELIE_LAUFEND_KEY) || 'null');
+    if (!s || s.version !== 1 || !Array.isArray(s.verlauf) || !s.sitzung) return null;
+    return s;
+  } catch (e) { return null; }
+}
+
+export function felieGespraechSicherungLoeschen() {
+  try { felieSpeicherLoeschen(FELIE_LAUFEND_KEY); } catch (e) {}
+}
+
+/* Nach einem Neustart: Verlauf und Sitzung wie vor dem Ende der App.
+   Liefert { thema, entwurf, sichtbar } - sichtbar wie
+   felieGespraechWiederherstellen. */
+export function felieGespraechWiederaufnehmen(s) {
+  chatHistory.length = 0;
+  s.verlauf.forEach(function (m) { chatHistory.push(Object.assign({}, m)); });
+  sitzung.aktiverArchivChat = s.sitzung.aktiverArchivChat == null ? null : s.sitzung.aktiverArchivChat;
+  sitzung.fortsetzungAb = Number.isFinite(s.sitzung.fortsetzungAb) ? s.sitzung.fortsetzungAb : null;
+  sitzung.abgeschnitten = !!s.sitzung.abgeschnitten;
+  var sichtbar = chatHistory.filter(function (m) { return !m.hidden && !m.internal; })
+    .map(function (m) { return { text: m.content, von: m.role === 'user' ? 'user' : 'felie' }; });
+  return { thema: s.thema || null, entwurf: s.entwurf || '', sichtbar: sichtbar };
+}
+
 /* ── Verwerfen, Neubeginn ───────────────────────────────────────── */
 
 /* Der Teil von discardChatAndClose ohne Oberflaeche: nichts wird
@@ -350,6 +448,7 @@ export function felieGespraechVerwerfen() {
   sitzung.rueckblickOffen = null;
   sitzung.rueckblickAuswahl = null;
   sitzung.fortsetzungAb = null;
+  felieGespraechSicherungLoeschen();
   felieGedaechtnisEreignis('gespraech_verlassen');
 }
 

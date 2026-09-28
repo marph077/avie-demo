@@ -27,7 +27,7 @@
    tests/felie-al101-rueckblick-verwerfen.test.cjs. */
 
 import { felieRequest, felieReplyText, felieDatenBlock, felieNotizErzeugen } from './modell.js';
-import { felieKontextDaten } from './kontext.js';
+import { felieKontextDaten, felieProfilDaten } from './kontext.js';
 import { felieThema } from './anzeige.js';
 import { felieLauf, felieLaufPruefen, felieUeberholt } from './lauf.js';
 import { FELIE_LAUFEND_KEY, felieSpeicherLesen, felieSpeicherLoeschen, felieSpeicherSchreiben } from './speicher.js';
@@ -338,22 +338,29 @@ export function felieGrenzeFortsetzen() {
 
 /* Der Block abschluss an das Modell: leer (F4-11 A, Marcel 28.09.) - so
    endet felies Abschied nach dem Satz ueber die naechsten Gespraeche
-   (Regel v6-abschied ohne Thema, gemessen 8/8 ohne Einladung). Die
-   Einladung schreibt die App (felieEinladungSatz). Die Notiz der
+   (Regel v6-abschied ohne Thema, gemessen 8/8 ohne Einladung). Was sie
+   ueber Abo und Archiv wissen muss, setzt die App davor
+   (felieAbschiedVorsatz). Die Notiz der
    Auswertung gibt es im parallelen Ablauf noch nicht (Zusatz 1). */
 export function felieAbschlussBlock() {
   return {};
 }
 
-/* Der Einladungssatz am Ende von felies Abschied (F4-11 A, freigegeben
-   Marcel 28.09.): mit dem gespeicherten Thema (Kachelname, im Satz "und"
-   statt "&"; die Kacheltitel bleiben unveraendert), sonst allgemein -
-   "Mein Thema", unbekannte und aeltere Eintraege ohne Thema. Nie ein vom
-   Modell abgeleitetes Thema. */
-export function felieEinladungSatz(themaSchluessel) {
+/* Der Vorsatz von felies Abschied an der Grenze (freigegeben Marcel
+   28.09., ersetzt den Einladungssatz aus F4-11 A): ein fester Text der App
+   VOR felies Rueckblick in derselben Blase - er sagt, warum das Gespraech
+   endet (bewusste Aenderung von AL-62: das Abo wird genannt, als Text der
+   App, nicht vom Modell; AL-61/65 bleiben). Mit ihrem Namen, wenn das
+   Profil ihn kennt; mit dem gespeicherten Thema (Kachelname, "und" statt
+   "&"; die Kacheltitel bleiben unveraendert), sonst ohne Thema - "Mein
+   Thema", unbekannte und aeltere Eintraege. Nie ein vom Modell
+   abgeleitetes Thema. */
+export function felieAbschiedVorsatz(themaSchluessel, name) {
   var t = themaSchluessel && themaSchluessel !== 'eigenes' ? felieThema(themaSchluessel) : null;
-  return t ? 'Wenn du magst, sprechen wir weiter über ' + t.name.replace(/\s*&\s*/g, ' und ') + '.'
-    : 'Wenn du magst, sprechen wir weiter.';
+  var anfang = name ? name + ', ich hoffe' : 'Ich hoffe';
+  var weiter = t ? 'Wenn du weiter mit mir über ' + t.name.replace(/\s*&\s*/g, ' und ') + ' sprechen möchtest, geht das mit dem Monatsabo.'
+    : 'Wenn du weiter mit mir sprechen möchtest, geht das mit dem Monatsabo.';
+  return anfang + ', du konntest einen ersten Eindruck von mir gewinnen. ' + weiter + ' Unser bisheriges Gespräch habe ich für dich im Archiv abgelegt.';
 }
 
 /* Liefert felies Abschied, null ohne Abschied (Reserve verbraucht, 402).
@@ -376,8 +383,10 @@ export function felieAbschiedHolen() {
   return felieRequest('chat', msgs, Object.assign({ lauf: lauf }, fortsetzungKontext())).then(function (data) {
     felieLaufPruefen(lauf);
     if (generation !== sitzung.generation) throw new Error('Gespräch wurde gewechselt');
-    /* F4-11 A: der Einladungssatz als letzter Absatz, gleiche Blase. */
-    var text = felieReplyText(data).replace(/\s+$/, '') + '\n\n' + felieEinladungSatz(sitzung.gespraechThema);
+    /* Der feste Vorsatz der App vor felies Rueckblick, gleiche Blase. */
+    var name = null;
+    try { name = felieProfilDaten().name || null; } catch (e) { name = null; }
+    var text = felieAbschiedVorsatz(sitzung.gespraechThema, name) + '\n\n' + felieReplyText(data).replace(/^\s+|\s+$/g, '');
     var m = { role: 'assistant', content: text, zeit: Date.now(), abschied: true };
     chatHistory.push(m);
     fertig(m);

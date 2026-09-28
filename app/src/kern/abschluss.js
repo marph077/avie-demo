@@ -312,14 +312,20 @@ export function felieAbschlussSpeichern() {
   } catch (e) {}
 }
 
-export function felieAbschlussAnlegen(messages, fortsetzungVon) {
+export function felieAbschlussAnlegen(messages, fortsetzungVon, gewaehltesThema) {
   var liste = felieAbschlussListe();
   var ts = Date.now();
   var auftrag = { id: 'ab-' + ts + '-' + Math.random().toString(36).slice(2, 8), epoche: felieDatenEpoche(), ts: ts,
     status: 'auswertung', messages: messages.map(function(m) { return Object.assign({}, m); }), summary: null, chatId: null };
+  /* F4-6: kam felies Abschied an, bevor dieser Auftrag entstand, gehoert er
+     ans Ende seines Verlaufs. */
+  var k = abschiedKennung(auftrag.messages), n = k ? abschiedNachtraege()[k] : null;
+  if (n) { auftrag.messages.push(Object.assign({}, n)); abschiedNachtragLoesen(k); }
   /* Fortschreiben (F2b-2): der Eintrag, den dieser Auftrag fortschreibt -
      auch fuer das Nachholen nach einem Neustart. */
   if (fortsetzungVon != null) auftrag.fortsetzungVon = fortsetzungVon;
+  /* F4-9 A: das gewaehlte Thema des Gespraechs, auch fuer das Nachholen. */
+  if (typeof gewaehltesThema === 'string' && gewaehltesThema) auftrag.gewaehltesThema = gewaehltesThema;
   liste.push(auftrag);
   laufend[auftrag.id] = true;
   felieAbschlussSpeichern();
@@ -338,6 +344,43 @@ export function felieAbschlussEntfernen(id) {
   for (var i = liste.length - 1; i >= 0; i--) if (liste[i].id === id) liste.splice(i, 1);
   delete laufend[id];
   felieAbschlussSpeichern();
+}
+
+/* ── Abschied an der Grenze (F4-6 A) ─────────────────────────────────
+   Die Auswertung laeuft parallel zu felies Abschied (Zusatz 1). Der
+   Abschied gehoert als letzte Nachricht zu dem Gespraech, dessen Verlauf
+   die Kennung grenzeKennung traegt: an den wartenden Auftrag, an den
+   Archiveintrag - oder, wenn es beides noch nicht gibt, als Nachtrag, den
+   felieAbschlussAnlegen anhaengt. Ausgewertet wird er nicht. */
+var ABSCHIED_NACHTRAG_KEY = 'felie_abschied_nachtrag';
+function abschiedKennung(messages) {
+  var m = (messages || []).filter(function (x) { return x && x.grenzeKennung; })[0];
+  return m ? m.grenzeKennung : null;
+}
+function abschiedNachtraege() {
+  try { var o = JSON.parse(felieSpeicherLesen(ABSCHIED_NACHTRAG_KEY) || '{}'); return o && typeof o === 'object' ? o : {}; }
+  catch (e) { return {}; }
+}
+function abschiedNachtragLoesen(k) {
+  var o = abschiedNachtraege(); delete o[k];
+  try { if (Object.keys(o).length) felieSpeicherSchreiben(ABSCHIED_NACHTRAG_KEY, JSON.stringify(o)); else felieSpeicherLoeschen(ABSCHIED_NACHTRAG_KEY); } catch (e) {}
+}
+function mitAbschied(messages, m) {
+  if (messages.some(function (x) { return x && x.abschied; })) return false;
+  messages.push(Object.assign({}, m));
+  return true;
+}
+/* Liefert, wo der Abschied gelandet ist: 'auftrag', 'archiv' oder 'nachtrag'. */
+export function felieAbschiedNachtragen(kennung, m) {
+  var hat = function (msgs) { return Array.isArray(msgs) && msgs.some(function (x) { return x && x.grenzeKennung === kennung; }); };
+  var a = felieAbschlussListe().filter(function (x) { return hat(x.messages); })[0];
+  if (a) { if (mitAbschied(a.messages, m)) felieAbschlussSpeichern(); return 'auftrag'; }
+  var chats = getSavedChats();
+  var c = chats.filter(function (x) { return hat(x.messages); })[0];
+  if (c) { if (mitAbschied(c.messages, m)) felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats)); return 'archiv'; }
+  var o = abschiedNachtraege(); o[kennung] = Object.assign({}, m);
+  try { felieSpeicherSchreiben(ABSCHIED_NACHTRAG_KEY, JSON.stringify(o)); } catch (e) {}
+  return 'nachtrag';
 }
 
 /* Die Notiz, wenn die Auswertung ausfaellt: das Gespraech wird trotzdem
@@ -373,7 +416,7 @@ export function felieAbschlussAusfuehren(auftrag) {
       felieAbschlussAktualisieren(auftrag, { messages: neu, summary: felieAbschlussNotlaufNotiz(), fortsetzungVon: null });
     }
     if (chatId == null) {
-      try { chatId = saveChat(auftrag.summary, auftrag.messages, auftrag.id, auftrag.fortsetzungVon); } catch (e) { chatId = null; }
+      try { chatId = saveChat(auftrag.summary, auftrag.messages, auftrag.id, auftrag.fortsetzungVon, auftrag.gewaehltesThema); } catch (e) { chatId = null; }
     }
     if (chatId == null) return false;
     felieAbschlussAktualisieren(auftrag, { chatId: chatId, status: 'gedaechtnis' });
@@ -510,7 +553,7 @@ export function felieAuswertungProtokoll(protokoll, runden) {
    archivieren gerufen. Geaendert sind nur zwei Zugriffe: localStorage
    ueber den Speicher-Port, das letzte Gespraech ueber
    felieGedaechtnisLetzterChatSetzen. */
-export function saveChat(summary, messages, auftragId, fortsetzungVon) {
+export function saveChat(summary, messages, auftragId, fortsetzungVon, gewaehltesThema) {
   try {
     /* Zweite Sicherung: selbst wenn ein Aufrufer den Verlauf ungefiltert
        uebergibt, wird hier kein Befund geschrieben. */
@@ -519,7 +562,12 @@ export function saveChat(summary, messages, auftragId, fortsetzungVon) {
     var chats = getSavedChats();
     var ziel = fortsetzungVon == null ? null
       : chats.filter(function (c) { return (c.id || c.timestamp) === fortsetzungVon; })[0];
-    if (ziel) return fortschreiben(chats, ziel, summary, messages, auftragId);
+    if (ziel) {
+      /* F4-9 A: ein fortgeschriebener Eintrag behaelt sein Thema; ein alter
+         ohne Thema bekommt das der Fortsetzung, falls sie eins hat. */
+      if (!ziel.gewaehltesThema && typeof gewaehltesThema === 'string' && gewaehltesThema) ziel.gewaehltesThema = gewaehltesThema;
+      return fortschreiben(chats, ziel, summary, messages, auftragId);
+    }
     /* Ein neuer Eintrag traegt keine gesperrte Stelle und keine Hilfsfelder. */
     messages = messages.filter(function (m) { return !m.gesperrt; }).map(ohneHilfsfelder);
     var ts = Math.max(Date.now(), chats.reduce(function(max, c) { return Math.max(max, Number(c.id || c.timestamp) || 0); }, 0) + 1);
@@ -556,6 +604,9 @@ export function saveChat(summary, messages, auftragId, fortsetzungVon) {
          liegt — auch wenn der Auftrag selbst nicht mehr aktualisiert
          werden konnte. */
       auftragId: auftragId || undefined,
+      /* F4-9 A: das beim Einstieg gewaehlte Thema (Schluessel aus
+         FELIE_THEMEN), getrennt vom Thema der Auswertung (thema). */
+      gewaehltesThema: typeof gewaehltesThema === 'string' && gewaehltesThema ? gewaehltesThema : undefined,
       /* Das Auswertungsprotokoll (AL-11): nur Zahlen und Gruende. */
       auswertung: summary.auswertung || undefined
     });

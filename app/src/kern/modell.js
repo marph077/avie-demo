@@ -23,6 +23,8 @@
    Webapp-Port), tests/felie-f2-netz-vertrag.test.mjs (beide Netz-Ports). */
 
 import { felieKontextDaten } from './kontext.js';
+import { felieKontoToken, felieKontoVerbunden } from './konto.js';
+import { felieLauf, felieLaufPruefen, felieUeberholt } from './lauf.js';
 import { getSavedChats } from './gespraeche.js';
 import { felieSichererVerlauf, felieExtraktionsDaten } from './archiv.js';
 import { felieFakten, felieEpisoden, felieNotizVorschau } from './gedaechtnis.js';
@@ -138,6 +140,10 @@ export function felieModellPruefen(data) {
    schickte; die Bausteine dazu liegen jetzt in worker/src/prompt/bausteine.js. */
 export function felieRequest(mode, messages, opts) {
   opts = opts || {};
+  /* F3: Arbeit aus einem frueheren Lauf (Kontowechsel) fragt nicht mehr
+     an - sonst ginge sie mit dem Token des neuen Kontos raus. */
+  var lauf = opts.lauf != null ? opts.lauf : felieLauf();
+  if (lauf !== felieLauf()) return Promise.reject(felieUeberholt());
   var msgs = (messages || []).map(function(m) { return { role: m.role, content: m.content }; });
   if (opts.context !== false) {
     var ctx = opts.context || (mode === 'willkommen' ? aus('homeKontext', {}) : felieKontextDaten());
@@ -171,11 +177,24 @@ export function felieRequest(mode, messages, opts) {
   }
   var port;
   try { port = felieNetzPort(); } catch (e) { return Promise.reject(e); }
-  return port.anfragen(FELIE_MODELL.endpunkt, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: serialized
-  }, opts.timeout || FELIE_ANFRAGE.timeout).then(function(r) {
-    if (!r.ok) throw new Error('felie HTTP ' + r.status);
+  var optionen = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: serialized };
+  var zeit = opts.timeout || FELIE_ANFRAGE.timeout;
+  /* F3: mit Konto-Port das Zugangs-Token im Kopf (felieKontoToken); ohne
+     Port - die Webapp - geht die Anfrage wie bisher synchron ab. */
+  var abgeschickt = felieKontoVerbunden()
+    ? felieKontoToken().then(function(t) {
+        if (t) optionen.headers.Authorization = 'Bearer ' + t;
+        return port.anfragen(FELIE_MODELL.endpunkt, optionen, zeit);
+      })
+    : port.anfragen(FELIE_MODELL.endpunkt, optionen, zeit);
+  return abgeschickt.then(function(r) {
+    if (!r.ok) {
+      var fehler = new Error('felie HTTP ' + r.status);
+      /* F4: das freie Kontingent ist aufgebraucht und kein Abo aktiv - die
+         App zeigt die Paywall (der Worker entscheidet, felie_abo_noetig). */
+      if (r.status === 402) fehler.felieAboNoetig = true;
+      throw fehler;
+    }
     return r.json();
   }, function(e) {
     /* N6 (F2): ohne Netz lehnt fetch mit einem TypeError ab (Browser wie
@@ -185,6 +204,7 @@ export function felieRequest(mode, messages, opts) {
     if (e && e.name === 'TypeError') { try { e.felieOhneNetz = true; } catch (x) {} }
     throw e;
   }).then(function(data) {
+    felieLaufPruefen(lauf);
     felieModellPruefen(data);
     /* AL-74 / C-5: der Worker sagt mit felie_grenze, ob dieses Gespraech
        das letzte im Freikontingent ist. Bis F2 stand hier
@@ -205,7 +225,8 @@ export function felieJSON(data) {
   return value;
 }
 
-export async function felieNotizErzeugen(history, vorhanden, mode) {
+export async function felieNotizErzeugen(history, vorhanden, mode, optionen) {
+  var lauf = optionen && optionen.lauf != null ? optionen.lauf : felieLauf();
   var source = felieExtraktionsDaten(history);
   if (!source.some(function(m) { return m.rolle === 'user'; })) throw new Error('Kein archivfähiges Gespräch');
   var out = { thema: 'Unser Gespräch', zusammenfassung: null, notizen: [], fakten: [], faeden: [],
@@ -271,9 +292,10 @@ export async function felieNotizErzeugen(history, vorhanden, mode) {
         },
         antwortpaket: { maximalNeueEintraege: groesse, hinweis: 'Nur die Größe dieser Antwort ist begrenzt. weitere_notizen=true, solange noch wichtige neue Informationen fehlen. Keine bereits erfassten Inhalte wiederholen.' },
         formathinweis: fehlerOhneFortschritt ? 'Prüfe text, Nutzer-ID und Originalauszug. Formuliere fehlende Notizen mit passenden Belegen. Keine ausdrückliche Selbsterkenntnis erforderlich.' : null
-      }) }], { context: false, json: true });
+      }) }], { context: false, json: true, lauf: lauf });
       page = felieZusammenfassungPruefen(felieJSON(page), source, bestand);
     } catch (e) {
+      if (e && e.felieUeberholt) throw e;
       if (++fehlerOhneFortschritt < 2) { groesse = Math.max(1, Math.floor(groesse / 2)); continue; }
       /* AL-100 (Marcel, 25.09.): die Zusammenfassung zaehlt als Ergebnis.
          Bis F2b ging ein Gespraech mit Zusammenfassung, aber ohne Notiz,

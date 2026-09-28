@@ -65,6 +65,8 @@ export * from './kennenlernen.js';
 export * from './modell.js';
 export * from './gespraech.js';
 export * from './anzeige.js';
+export * from './konto.js';
+export * from './lauf.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';
@@ -77,6 +79,8 @@ import { felieAbschlussVerbinden, felieAbschlussZuruecksetzen } from './abschlus
 import { felieKontextVerbinden } from './kontext.js';
 import { felieNetzVerbinden, felieModellVerbinden } from './modell.js';
 import { felieGespraechZuruecksetzen } from './gespraech.js';
+import { felieKontoVerbinden } from './konto.js';
+import { felieLaufNeu } from './lauf.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
@@ -98,4 +102,7 @@ export function felieKernZuruecksetzen() {
   felieNetzVerbinden(null);
   felieModellVerbinden(null);
   felieGespraechZuruecksetzen();
+  felieKontoVerbinden(null);
+  /* Ein neuer Lauf: fruehere asynchrone Arbeit bricht ab (lauf.js). */
+  felieLaufNeu();
 }

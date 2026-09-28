@@ -29,9 +29,10 @@
 import { felieRequest, felieReplyText, felieDatenBlock, felieNotizErzeugen } from './modell.js';
 import { felieKontextDaten } from './kontext.js';
 import { felieThema } from './anzeige.js';
+import { felieLauf, felieLaufPruefen, felieUeberholt } from './lauf.js';
 import { FELIE_LAUFEND_KEY, felieSpeicherLesen, felieSpeicherLoeschen, felieSpeicherSchreiben } from './speicher.js';
 import { felieSichererVerlauf } from './archiv.js';
-import { felieAbschlussAnlegen, felieAbschlussNotlaufNotiz } from './abschluss.js';
+import { felieAbschiedNachtragen, felieAbschlussAnlegen, felieAbschlussNotlaufNotiz, felieArchivNachholen } from './abschluss.js';
 import { felieStelleBereinigt } from './bruecke.js';
 import { getSavedChats } from './gespraeche.js';
 import { felieGedaechtnisEreignis, felieGedaechtnisLetzterChatSetzen } from './gedaechtnis.js';
@@ -41,7 +42,18 @@ import { felieGedaechtnisEreignis, felieGedaechtnisLetzterChatSetzen } from './g
 export const chatHistory = [];
 
 const sitzung = { laeuft: false, generation: 0, abgeschnitten: false,
-  rueckblickOffen: null, rueckblickAuswahl: null, aktiverArchivChat: null, fortsetzungAb: null };
+  rueckblickOffen: null, rueckblickAuswahl: null, aktiverArchivChat: null, fortsetzungAb: null,
+  /* Fester Eroeffnungssatz des Themas - nur fuer die Anzeige nach einem
+     Neustart (Marcel 11 B), nie im Verlauf (AL-45). */
+  eroeffnung: null,
+  /* F4-6 A: grenzeErreicht - die letzte Antwort hat das freie Kontingent
+     aufgebraucht (felie_grenze); abschiedOffen - Kennung des Gespraechs,
+     dessen Abschied noch aussteht; abgeschlossen - der Abschied ist da,
+     die Eingabe ist zu. */
+  grenzeErreicht: false, abschiedOffen: null, abgeschlossen: false,
+  /* F4-7 A: das gespeicherte Thema des Gespraechs (Schluessel aus
+     FELIE_THEMEN, von der Oberflaeche) fuer den Block abschluss. */
+  gespraechThema: null };
 
 export function felieSitzung() {
   return sitzung;
@@ -62,7 +74,10 @@ export function felieGespraechZuruecksetzen() {
   chatHistory.length = 0;
   sitzung.laeuft = false; sitzung.generation = 0; sitzung.abgeschnitten = false;
   sitzung.rueckblickOffen = null; sitzung.rueckblickAuswahl = null; sitzung.aktiverArchivChat = null;
-  sitzung.fortsetzungAb = null;
+  sitzung.fortsetzungAb = null; sitzung.eroeffnung = null;
+  /* F4-6 A: auch beim Kontowechsel - B erbt weder Grenze noch Abschluss von A. */
+  sitzung.grenzeErreicht = false; sitzung.abschiedOffen = null; sitzung.abgeschlossen = false; sitzung.gespraechThema = null;
+  letzteGrenze = null;
   umgebung = null;
 }
 
@@ -226,6 +241,7 @@ export function apiMsgs() {
 export function callFelie(userMessage, opts) {
   opts = opts || {};
   if (sitzung.laeuft) return Promise.reject(new Error('Eine Antwort wird bereits vorbereitet'));
+  if (sitzung.abgeschlossen || sitzung.abschiedOffen) return Promise.reject(new Error('Das Gespräch ist abgeschlossen'));
   var entry = { role: 'user', content: userMessage, hidden: !!opts.hidden, internal: !!opts.hidden, zeit: Date.now() };
   chatHistory.push(entry);
 
@@ -247,16 +263,131 @@ export function callFelie(userMessage, opts) {
   // „muede“ reserviert keine Koerperdaten-Abfrage und verdraengt keine Hilfe.
   sitzung.laeuft = true;
   var generation = sitzung.generation;
-  return felieRequest('chat', apiMsgs(), fortsetzungKontext()).then(function(data) {
+  var lauf = felieLauf();
+  return felieRequest('chat', apiMsgs(), Object.assign({ lauf: lauf }, fortsetzungKontext())).then(function(data) {
+    /* F3: nach einem Kontowechsel gehoert diese Antwort niemandem mehr hier. */
+    felieLaufPruefen(lauf);
     if (generation !== sitzung.generation) throw new Error('Gespräch wurde gewechselt');
     var reply = felieReplyText(data);
     chatHistory.push({ role: 'assistant', content: reply, zeit: Date.now() });
     sitzung.abgeschnitten = data.stop_reason === 'max_tokens';
+    /* F4-6 A: diese Antwort hat das freie Kontingent aufgebraucht - die
+       Oberflaeche zeigt sie und ruft dann felieGrenzeAbschliessen. */
+    sitzung.grenzeErreicht = data.felie_grenze === true;
     return reply;
   }).catch(function(err) {
-
+    /* F3: scheitert die Anfrage erst nach einem Kontowechsel, gehoert auch
+       der Fehler dem frueheren Lauf - keine Meldung im neuen Konto. */
+    if (lauf !== felieLauf() && !(err && err.felieUeberholt)) throw felieUeberholt();
     throw err;
-  }).finally(function() { sitzung.laeuft = false; });
+  }).finally(function() { if (lauf === felieLauf()) sitzung.laeuft = false; });
+}
+
+/* ── Abschied an der Grenze des Freikontingents (F4-6 A, Marcel 28.09.) ──
+   Nach der Antwort, die das Kontingent aufgebraucht hat: die Auswertung
+   startet, ohne dass jemand auf sie wartet (Zusatz 1), und felie bittet
+   ohne neue Nachricht der Nutzerin um ihren Abschied - letzter Eintrag
+   der Anfrage ist der Block abschluss (felieAbschlussRegel im Worker, der
+   die Regel nur im Zustand grenze anhaengt). Das Gespraech wird mit
+   "Abschied offen" gesichert: endet die App vorher, erscheint der
+   Abschied beim naechsten Oeffnen (Zusatz 2); die Auswertung holt der
+   Mechanismus fuer wartende Auftraege nach.
+   auswerten(verlauf, { sicherungBehalten: true }) startet die Auswertung
+   (Webapp: generateChatSummary, App: felieAppAbschliessen); zusatz wie
+   bei felieGespraechSichern ({ thema, entwurf } der Oberflaeche). */
+var letzteGrenze = null;
+
+export function felieGrenzeAbschliessen(auswerten, zusatz) {
+  var kennung = 'grenze-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  var letzte = chatHistory[chatHistory.length - 1];
+  if (letzte) letzte.grenzeKennung = kennung;
+  sitzung.grenzeErreicht = false;
+  sitzung.abschiedOffen = kennung;
+  if (zusatz && typeof zusatz.thema === 'string') sitzung.gespraechThema = zusatz.thema;
+  felieGespraechSichern(zusatz || {});
+  var verlauf = chatHistory.slice();
+  var auswertung = null;
+  try { auswertung = Promise.resolve(auswerten(verlauf, { sicherungBehalten: true, thema: sitzung.gespraechThema })).catch(function () {}); }
+  catch (e) { auswertung = Promise.resolve(); }
+  letzteGrenze = { kennung: kennung, auswertung: auswertung, lauf: felieLauf() };
+  return { kennung: kennung, auswertung: auswertung };
+}
+
+/* Nach erfolgreichem Kauf (F4b, Marcel 28.09.): weiter im selben Chat,
+   wie "Chat oeffnen" an der Archivkarte - das Archivgespraech mit dieser
+   Grenze wird wiederhergestellt (Verlauf samt Abschied sichtbar), die
+   Eingabe ist offen, beim naechsten Speichern bleibt es eine Karte
+   (F2b-2). Laeuft die Auswertung noch, wird auf sie gewartet. Liefert
+   { chat, sichtbar, thema } oder null. */
+export function felieGrenzeFortsetzen() {
+  var g = letzteGrenze;
+  if (!g) return Promise.resolve(null);
+  return Promise.resolve(g.auswertung).then(function () {
+    felieLaufPruefen(g.lauf);
+    try { felieArchivNachholen(); } catch (e) {}
+    var chat = getSavedChats().filter(function (c) {
+      return Array.isArray(c.messages) && c.messages.some(function (m) { return m && m.grenzeKennung === g.kennung; });
+    })[0];
+    if (!chat) return null;
+    felieSitzungNeu();
+    var sichtbar = felieGespraechWiederherstellen(chat) || [];
+    letzteGrenze = null;
+    return { chat: chat, sichtbar: sichtbar, thema: sitzung.gespraechThema };
+  });
+}
+
+/* Der Block abschluss an das Modell: leer (F4-11 A, Marcel 28.09.) - so
+   endet felies Abschied nach dem Satz ueber die naechsten Gespraeche
+   (Regel v6-abschied ohne Thema, gemessen 8/8 ohne Einladung). Die
+   Einladung schreibt die App (felieEinladungSatz). Die Notiz der
+   Auswertung gibt es im parallelen Ablauf noch nicht (Zusatz 1). */
+export function felieAbschlussBlock() {
+  return {};
+}
+
+/* Der Einladungssatz am Ende von felies Abschied (F4-11 A, freigegeben
+   Marcel 28.09.): mit dem gespeicherten Thema (Kachelname, im Satz "und"
+   statt "&"; die Kacheltitel bleiben unveraendert), sonst allgemein -
+   "Mein Thema", unbekannte und aeltere Eintraege ohne Thema. Nie ein vom
+   Modell abgeleitetes Thema. */
+export function felieEinladungSatz(themaSchluessel) {
+  var t = themaSchluessel && themaSchluessel !== 'eigenes' ? felieThema(themaSchluessel) : null;
+  return t ? 'Wenn du magst, sprechen wir weiter über ' + t.name.replace(/\s*&\s*/g, ' und ') + '.'
+    : 'Wenn du magst, sprechen wir weiter.';
+}
+
+/* Liefert felies Abschied, null ohne Abschied (Reserve verbraucht, 402).
+   Ein Netzfehler laesst den Abschied offen (naechster Versuch beim
+   Oeffnen); nach einem Kontowechsel gehoert er niemandem mehr hier. */
+export function felieAbschiedHolen() {
+  if (!sitzung.abschiedOffen) return Promise.resolve(null);
+  if (sitzung.laeuft) return Promise.reject(new Error('Eine Antwort wird bereits vorbereitet'));
+  var kennung = sitzung.abschiedOffen;
+  var msgs = apiMsgs().concat([{ role: 'user', content: felieDatenBlock('abschluss', felieAbschlussBlock()) }]);
+  sitzung.laeuft = true;
+  var generation = sitzung.generation;
+  var lauf = felieLauf();
+  var fertig = function (m) {
+    sitzung.abschiedOffen = null;
+    sitzung.abgeschlossen = true;
+    felieGespraechSicherungLoeschen();
+    if (m) { try { felieAbschiedNachtragen(kennung, m); } catch (e) {} }
+  };
+  return felieRequest('chat', msgs, Object.assign({ lauf: lauf }, fortsetzungKontext())).then(function (data) {
+    felieLaufPruefen(lauf);
+    if (generation !== sitzung.generation) throw new Error('Gespräch wurde gewechselt');
+    /* F4-11 A: der Einladungssatz als letzter Absatz, gleiche Blase. */
+    var text = felieReplyText(data).replace(/\s+$/, '') + '\n\n' + felieEinladungSatz(sitzung.gespraechThema);
+    var m = { role: 'assistant', content: text, zeit: Date.now(), abschied: true };
+    chatHistory.push(m);
+    fertig(m);
+    return text;
+  }).catch(function (err) {
+    if (lauf !== felieLauf() || (err && err.felieUeberholt)) throw (err && err.felieUeberholt ? err : felieUeberholt());
+    /* Die Reserve reicht nicht mehr: ohne Abschied, aber abgeschlossen. */
+    if (err && err.felieAboNoetig) { fertig(null); return null; }
+    throw err;
+  }).finally(function () { if (lauf === felieLauf()) sitzung.laeuft = false; });
 }
 
 /* ── Einstieg ueber ein Thema (seit F2, bis dahin homeStartChat) ─── */
@@ -272,9 +403,17 @@ export function felieThemaStarten(wahl) {
   var thema = felieThema(wahl);
   var msg = thema ? thema.msg : wahl;
   chatHistory.length = 0;
+  /* F4-9 A: das gewaehlte Thema (auch "Mein Thema") - es geht mit ins
+     Archiv und traegt eine Fortsetzung. */
+  sitzung.gespraechThema = thema ? thema.key : null;
+  sitzung.eroeffnung = thema && !msg ? thema.eroeffnung : null;
   if (thema && !msg) return { thema: thema, sofort: thema.eroeffnung, antwort: null };
   return { thema: thema, sofort: null,
-    antwort: callFelie(msg, { hidden: true }).catch(function () { return FELIE_EINSTIEG_ERSATZ; }) };
+    antwort: callFelie(msg, { hidden: true }).catch(function (e) {
+      if (e && e.felieUeberholt) throw e;   /* F3: kein Ersatzsatz im Gespraech eines anderen Kontos */
+      if (e && e.felieAboNoetig) throw e;   /* F4: ohne Abo kein neues Gespraech - die App zeigt die Paywall */
+      return FELIE_EINSTIEG_ERSATZ;
+    }) };
 }
 
 /* ── Weiterschreiben (seit F2, bis dahin continueFelie) ─────────── */
@@ -291,11 +430,14 @@ export function felieWeiterschreiben() {
 }
 
 /* ── Abschluss ──────────────────────────────────────────────────── */
-export function generateChatSummary(historySnapshot) {
+export function generateChatSummary(historySnapshot, opts) {
   felieGedaechtnisEreignis('gespraech_beendet');
   /* Speichern beendet das laufende Gespraech: seine Sicherung faellt weg
-     (Marcel, 2 A). Der Verlauf ist ab hier im Abschlussauftrag. */
-  felieGespraechSicherungLoeschen();
+     (Marcel, 2 A). Der Verlauf ist ab hier im Abschlussauftrag. An der
+     Grenze (F4-6 A) bleibt sie, bis felies Abschied da ist - die
+     Auswertung startet in der App erst nach der Hintergrundzeit von iOS
+     und loeschte sonst "Abschied offen". */
+  if (!(opts && opts.sicherungBehalten)) felieGespraechSicherungLoeschen();
   var history = felieSichererVerlauf(historySnapshot || chatHistory);
   /* Fortsetzung eines Archivgespraechs (F2b-2): derselbe Eintrag wird
      fortgeschrieben. Ohne neue Nachricht der Nutzerin gibt es nichts
@@ -316,10 +458,21 @@ export function generateChatSummary(historySnapshot) {
      nicht loeschen; er gehoert in dasselbe Archiv. Was verspaetete
      Ergebnisse tatsaechlich unzulaessig macht, ist ein Datenreset — dafuer
      traegt der Auftrag die Datenepoche. */
-  var auftrag = felieAbschlussAnlegen(history, ziel ? (ziel.id || ziel.timestamp) : undefined);
-  return felieNotizErzeugen(history).then(function(summary) {
+  /* F4-9 A: das gewaehlte Thema - ausdruecklich vom Aufrufer (die App
+     startet die Auswertung verzoegert; inzwischen kann ein neues Gespraech
+     begonnen haben), sonst das der Sitzung; eine Fortsetzung erbt es. */
+  var gewaehlt = opts && Object.prototype.hasOwnProperty.call(opts, 'thema') ? opts.thema : sitzung.gespraechThema;
+  if (!gewaehlt && ziel && typeof ziel.gewaehltesThema === 'string') gewaehlt = ziel.gewaehltesThema;
+  var auftrag = felieAbschlussAnlegen(history, ziel ? (ziel.id || ziel.timestamp) : undefined, gewaehlt || null);
+  /* F3: die Auswertung gehoert ihrem Lauf. Nach einem Kontowechsel wird
+     nichts gemeldet und nichts geschrieben - der Auftrag liegt schon im
+     Bestand dieses Kontos und wird dort nachgeholt. */
+  var lauf = felieLauf();
+  return felieNotizErzeugen(history, undefined, undefined, { lauf: lauf }).then(function(summary) {
+    if (lauf !== felieLauf()) return;
     melden('abschliessen', summary, history, auftrag);
   }).catch(function() {
+    if (lauf !== felieLauf()) return;
     /* Fehlgeschlagene Notiz: das Gespraech wird trotzdem archiviert und
        traegt notizenStatus 'unvollstaendig' — die Archivkarte zeigt das
        an und bietet dort das erneute Erzeugen. Ohne Pop-up ist die
@@ -400,6 +553,9 @@ export function felieNachrichtZuruecknehmen() {
    zusatz: { thema, entwurf } aus der Oberflaeche. */
 export function felieGespraechSichern(zusatz) {
   zusatz = zusatz || {};
+  /* F4-6 A: nach felies Abschied ist das Gespraech zu und im Archiv - es
+     kommt nach einem Neustart nicht als laufendes zurueck. */
+  if (sitzung.abgeschlossen) { felieGespraechSicherungLoeschen(); return false; }
   var entwurf = typeof zusatz.entwurf === 'string' ? zusatz.entwurf : '';
   var eigenes = chatHistory.some(function (m) { return m.role === 'user' && !m.hidden && !m.internal; });
   if (!eigenes && !entwurf.trim()) { felieGespraechSicherungLoeschen(); return false; }
@@ -407,8 +563,10 @@ export function felieGespraechSichern(zusatz) {
     version: 1, gesichertAm: Date.now(),
     verlauf: chatHistory.map(function (m) { return Object.assign({}, m); }),
     sitzung: { aktiverArchivChat: sitzung.aktiverArchivChat, fortsetzungAb: sitzung.fortsetzungAb,
-      abgeschnitten: sitzung.abgeschnitten },
-    thema: zusatz.thema || null, entwurf: entwurf }));
+      abgeschnitten: sitzung.abgeschnitten, abschiedOffen: sitzung.abschiedOffen || null },
+    thema: zusatz.thema || null, entwurf: entwurf,
+    /* Nur Anzeige (Marcel 11 B): geht nicht in den Verlauf zurueck. */
+    eroeffnung: sitzung.eroeffnung || null }));
   return true;
 }
 
@@ -426,17 +584,24 @@ export function felieGespraechSicherungLoeschen() {
 }
 
 /* Nach einem Neustart: Verlauf und Sitzung wie vor dem Ende der App.
-   Liefert { thema, entwurf, sichtbar } - sichtbar wie
-   felieGespraechWiederherstellen. */
+   Liefert { thema, entwurf, eroeffnung, sichtbar } - sichtbar wie
+   felieGespraechWiederherstellen; eroeffnung nur fuer die Anzeige vor dem
+   Verlauf (Marcel 11 B). */
 export function felieGespraechWiederaufnehmen(s) {
   chatHistory.length = 0;
   s.verlauf.forEach(function (m) { chatHistory.push(Object.assign({}, m)); });
   sitzung.aktiverArchivChat = s.sitzung.aktiverArchivChat == null ? null : s.sitzung.aktiverArchivChat;
   sitzung.fortsetzungAb = Number.isFinite(s.sitzung.fortsetzungAb) ? s.sitzung.fortsetzungAb : null;
   sitzung.abgeschnitten = !!s.sitzung.abgeschnitten;
+  sitzung.eroeffnung = typeof s.eroeffnung === 'string' ? s.eroeffnung : null;
+  /* F4-6 A, Zusatz 2: der Abschied steht noch aus. */
+  sitzung.abschiedOffen = typeof s.sitzung.abschiedOffen === 'string' ? s.sitzung.abschiedOffen : null;
+  sitzung.gespraechThema = typeof s.thema === 'string' ? s.thema : null;
+  sitzung.abgeschlossen = false;
+  sitzung.grenzeErreicht = false;
   var sichtbar = chatHistory.filter(function (m) { return !m.hidden && !m.internal; })
     .map(function (m) { return { text: m.content, von: m.role === 'user' ? 'user' : 'felie' }; });
-  return { thema: s.thema || null, entwurf: s.entwurf || '', sichtbar: sichtbar };
+  return { thema: s.thema || null, entwurf: s.entwurf || '', eroeffnung: sitzung.eroeffnung, sichtbar: sichtbar };
 }
 
 /* ── Verwerfen, Neubeginn ───────────────────────────────────────── */
@@ -448,6 +613,7 @@ export function felieGespraechVerwerfen() {
   sitzung.rueckblickOffen = null;
   sitzung.rueckblickAuswahl = null;
   sitzung.fortsetzungAb = null;
+  sitzung.eroeffnung = null;
   felieGespraechSicherungLoeschen();
   felieGedaechtnisEreignis('gespraech_verlassen');
 }
@@ -456,6 +622,10 @@ export function felieGespraechVerwerfen() {
    Webapp leert daneben Gespraechszeiger und Kennenlernen-Kennung. */
 export function felieSitzungNeu() {
   sitzung.aktiverArchivChat = null;
+  sitzung.gespraechThema = null;
+  sitzung.grenzeErreicht = false;
+  sitzung.abschiedOffen = null;
+  sitzung.abgeschlossen = false;
   /* AL-101: eine offene Rueckblick-Rueckfrage gehoert zu ihrem Gespraech.
      Blieb sie stehen, las das naechste Gespraech seine erste Nachricht als
      Auswahl. */
@@ -463,6 +633,7 @@ export function felieSitzungNeu() {
   sitzung.rueckblickAuswahl = null;
   sitzung.abgeschnitten = false;
   sitzung.fortsetzungAb = null;
+  sitzung.eroeffnung = null;
   sitzung.generation = sitzung.generation + 1;
 }
 
@@ -473,6 +644,9 @@ export function felieSitzungNeu() {
    gespeicherten Verlauf hat (dann felieGespraechWiedereinstieg). */
 export function felieGespraechWiederherstellen(chat) {
   sitzung.aktiverArchivChat = chat.id || chat.timestamp;
+  /* F4-9 A: die Fortsetzung uebernimmt das gewaehlte Thema; aeltere
+     Eintraege haben keins. */
+  sitzung.gespraechThema = typeof chat.gewaehltesThema === 'string' ? chat.gewaehltesThema : null;
   chatHistory.length = 0;
   /* Der alte Teil: seine letzte Nachricht, bei aelteren Karten ohne
      Uhrzeit am Eintrag der Zeitpunkt des Gespraechs. */
@@ -514,13 +688,18 @@ export function felieGespraechWiederherstellen(chat) {
    (Modus wiedereinstieg) und haengt ihre Antwort an. Liefert den Text;
    scheitert die Anfrage, einen festen Satz. */
 export function felieGespraechWiedereinstieg(chat) {
-  return felieRequest('wiedereinstieg', apiMsgs(), fortsetzungKontext())
+  var lauf = felieLauf();
+  return felieRequest('wiedereinstieg', apiMsgs(), Object.assign({ lauf: lauf }, fortsetzungKontext()))
     .then(function(data){
+      felieLaufPruefen(lauf);
       var t = felieReplyText(data) ||
         ('Schön, dass du nochmal an „' + (chat.thema||'unser Thema') + '" anknüpfst. Magst du erzählen, wo du gerade stehst?');
       chatHistory.push({ role: 'assistant', content: t, zeit: Date.now() });
       return t;
-    }, function(){
+    }, function(e){
+      /* F3: weder nach einem Kontowechsel noch bei einem Fehler danach in
+         das Gespraech eines anderen Kontos. */
+      if ((e && e.felieUeberholt) || lauf !== felieLauf()) throw (e && e.felieUeberholt ? e : felieUeberholt());
       var t = 'Die Verbindung hat gerade nicht geklappt. Du kannst hier schreiben, womit du weitergehen möchtest.';
       chatHistory.push({ role: 'assistant', content: t, zeit: Date.now() });
       return t;

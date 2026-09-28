@@ -5851,6 +5851,10 @@ function homeStartChat(wahl) {
   start.antwort.then(function(reply) {
     removeTyping();
     addMsg(reply, 'felie');
+  }, function() {
+    /* Nur bei einem Laufwechsel (F3, src/kern/lauf.js; in der Webapp nur
+       in den Tests) - dann gehoert die Antwort keinem Gespraech mehr. */
+    removeTyping();
   });
 }
 
@@ -8270,7 +8274,7 @@ function reopenSavedChat(ts) {
     felieGespraechWiedereinstieg(chat).then(function (t) {
       removeTyping();
       addMsg(t, 'felie');
-    });
+    }, function () { removeTyping(); });   /* nur bei einem Laufwechsel (F3) */
   }
 }
 

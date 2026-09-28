@@ -32,6 +32,7 @@
    Seit D5b: Selbstauskunft (selbstauskunft.js), Archiv-Lesewege
    (archiv.js), Kontext-Daten (kontext.js); saveChat in abschluss.js.
    Seit AL-73: die Kennenlern-Schritte als Daten (kennenlernen.js).
+   Seit F5a: Ablauf und Aufnahme des Kennenlernens (aufnahme.js).
    Seit D7b: Koerperdaten speichern und laden, Lebensphasen, Eintragen
    aus dem Zyklus-Sheet (koerper.js); der Zyklus-Zustand in zyklus.js.
    Seit F2a: Modell-Anbindung und Auswertung (modell.js) mit Netz-Port -
@@ -62,6 +63,7 @@ export * from './archiv.js';
 export * from './kontext.js';
 export * from './abschluss.js';
 export * from './kennenlernen.js';
+export * from './aufnahme.js';
 export * from './modell.js';
 export * from './gespraech.js';
 export * from './anzeige.js';
@@ -81,6 +83,7 @@ import { felieNetzVerbinden, felieModellVerbinden } from './modell.js';
 import { felieGespraechZuruecksetzen } from './gespraech.js';
 import { felieKontoVerbinden } from './konto.js';
 import { felieLaufNeu } from './lauf.js';
+import { felieKlZuruecksetzen } from './aufnahme.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
@@ -103,6 +106,7 @@ export function felieKernZuruecksetzen() {
   felieModellVerbinden(null);
   felieGespraechZuruecksetzen();
   felieKontoVerbinden(null);
+  felieKlZuruecksetzen();
   /* Ein neuer Lauf: fruehere asynchrone Arbeit bricht ab (lauf.js). */
   felieLaufNeu();
 }

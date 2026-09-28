@@ -100,3 +100,34 @@ export function felieUhrzeit(d) {
 export function felieAnfrageFehler(e) {
   return e && e.felieHinweis ? e.felieHinweis : 'Die Verbindung hat gerade nicht geklappt. Bitte versuche es noch einmal.';
 }
+
+/* ── "Ueber dich" als knappe Angabe (B-5b A, Marcel 28.09., AL-110) ──
+   Gespeichert wird "Sie ...": der Text geht wortgleich als Merknotiz ins
+   Modell, und "Du" laese ein Modell dort als Aussage ueber sich selbst.
+   Angezeigt wird ohne das Subjekt am Anfang - "Lebt in einer
+   Partnerschaft.", "Hat keine Kinder." - statt den Namen einzusetzen
+   (bis F5 felieTextMitName in der Webapp: "Marcel lebt ..."). Keine
+   Morphologie: das Verb steht schon in der dritten Person und bleibt.
+   "Die Nutzerin"/"Nutzerin" stammen aus alten Zusammenfassungen. */
+var ANGABE_SUBJEKT = /^(Sie|Die Nutzerin|Nutzerin)\s+(\S)/;
+
+export function felieAngabeAnzeige(text) {
+  var t = text == null ? '' : String(text), m = ANGABE_SUBJEKT.exec(t);
+  return m ? m[2].toUpperCase() + t.slice(m[0].length) : t;
+}
+
+/* 'Sie', wenn die Anzeige ein Subjekt gestrichen hat, sonst ''. */
+export function felieAngabeSubjekt(text) {
+  return ANGABE_SUBJEKT.test(text == null ? '' : String(text)) ? 'Sie' : '';
+}
+
+/* Beim Bearbeiten: beginnt ihr neuer Satz mit demselben Wort wie der
+   angezeigte, hat sie die Angabe geaendert - das "Sie" kommt zurueck.
+   Ein ganz neuer Satz bleibt, wie sie ihn schreibt ("Mein Sohn ist
+   fuenf."), statt ein "Sie" davor zu bekommen. */
+export function felieAngabeZurueck(neu, alt, subjekt) {
+  var n = neu == null ? '' : String(neu), a = alt == null ? '' : String(alt);
+  var erstes = function (t) { return t.split(/\s+/)[0]; };
+  if (!subjekt || !n || erstes(n) !== erstes(a)) return n;
+  return subjekt + ' ' + n.charAt(0).toLowerCase() + n.slice(1);
+}

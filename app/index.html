@@ -2160,20 +2160,6 @@ body.is-native .status-bar { display: none !important; }
 .kl-v2-input { display:block; width:100%; box-sizing:border-box; border:1.5px solid #d6c9e3; border-radius:12px; background:#FFFFFF; color:#180430; font:inherit; font-size:16px; padding:12px; resize:vertical; }
 .kl-v2-input:focus-visible,.kl-v2-card button:focus-visible,.kl-v2-review summary:focus-visible { outline:3px solid #8f5bbd; outline-offset:2px; }
 .kl-v2-skip { flex-shrink:0; color:#d3c7de; background:#180430; border:0; font:inherit; font-size:12px; padding:0 16px 12px; cursor:pointer; }
-.kl-v2-demo { background:#FFFFFF; border:1px solid rgba(143,91,189,0.18); border-radius:14px; padding:14px; margin-top:14px; font-size:13px; color:var(--plum); }
-/* Geraeteliste: eine Zeile je Wearable, damit "bald" neben dem Namen
-   steht und nicht als eigener Absatz darunter. Die noch nicht
-   verfuegbaren Geraete bleiben sichtbar — verstecken wuerde offen
-   lassen, ob sie spaeter kommen oder gar nicht vorgesehen sind. */
-.kl-wear-list { margin:10px 0 4px; }
-.kl-wear-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid rgba(143,91,189,0.12); font-size:13px; }
-.kl-wear-row:first-child { border-top:0; }
-.kl-wear-bald { color:#8b7aa5; }
-.kl-wear-tag { font-size:11px; color:#6b5a88; border:1px solid rgba(143,91,189,0.28); border-radius:999px; padding:4px 9px; }
-.kl-wear-on { color:var(--plum); background:#e1ea7d; border-color:#e1ea7d; }
-.kl-wear-row .kl-chip { font-size:12px; padding:7px 13px; border-radius:999px; }
-.kl-v2-demo p,.kl-v2-demo li { font-size:12px; line-height:1.5; }
-.kl-v2-demo ul { padding-left:18px; }
 .kl-v2-link { display:inline-block; color:#6e4193; font:inherit; font-size:13px; text-decoration:underline; border:0; background:none; padding:8px 0; cursor:pointer; }
 /* Drei gleichwertige Angebote statt einer Lime-Karte plus Kleinlink.
    Alle drei tragen dieselbe Flaeche, damit keins allein durch sein
@@ -3075,24 +3061,7 @@ function klInitFromRampup() {
   if (window._klInited) return;
   klV2Starten();
 }
-/* Sie tippt gelegentlich einen ganzen Satz ("Ich bin Lena"). Ein
-   Modellaufruf nur zum Namensziehen waere Aufwand fuer nichts — ein
-   paar Hoeflichkeitsfloskeln vorne abzuschneiden reicht. Bleibt etwas
-   Ungewoehnliches uebrig, wird es uebernommen: es ist ihr Name, nicht
-   unserer. */
-function klNameSetzen(text) {
-  var t = text.replace(/\s+/g, ' ').trim();
-  t = t.replace(/^(hallo|hi|hey|guten tag|moin)[,!.\s]+/i, '');
-  var prefix = /^(ich (?:bin|heisse|heiße)|mein name ist|nenn mich|man nennt mich)\s+/i;
-  var mitPrefix = prefix.test(t);
-  t = t.replace(prefix, '');
-  if (mitPrefix) t = t.split(/[,;.!?]|\s+(?:und|aber|weil|ich)\s+/i)[0].trim();
-  t = t.replace(/[.!]+$/, '').trim();
-  if (!t || t.length > 30 || t.split(' ').length > 3 || !/^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u.test(t) ||
-      /\b(ich|möchte|moechte|will|nicht|kein|keine|namen|heißen|heissen|brauche|hilfe|müde|muede|erschöpft|traurig|überfordert|jahre|alt|anonym|unsicher|gestresst)\b/i.test(t)) return '';
-  return t;
-}
-
+/* klNameSetzen, klNameAblehnung, klZustand: seit F5a in src/kern/aufnahme.js */
 /* Wissenspool: einmalige, verdeckte Zusammenfassung in strukturierter Form.
    ──────────────────────────────────────────────────────────────────────
    Frueher landete das Ergebnis als 3 bis 5 Saetze Freitext in
@@ -3198,13 +3167,6 @@ function klSend() {
   return klV2Weiter(false);
 }
 
-
-function klZustand() {
-  if (!window._klState) window._klState = { version: 1, id: 'kl-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
-    stage: 'aufnahme', extraction: 'offen', archiveId: null, input: '', step: 0 };
-  return window._klState;
-}
-
 function klEntwurfSpeichern() {
   var s = klZustand();
   if (s.stage === 'aufnahme') {
@@ -3263,11 +3225,6 @@ function klWiederholen() {
   klEntwurfSpeichern(); klV2Status(); return Promise.resolve(!window._klStorageError);
 }
 
-function klNameAblehnung(text) {
-  return /^(?:nein|überspringen|ueberspringen|anonym|ohne namen|keine angabe)[.!\s]*$/i.test(text.trim()) ||
-    /(?:namen?|nennen|anonym)/i.test(text) && /(?:nicht|lieber nicht|kein|ohne|anonym)/i.test(text);
-}
-
 function klExtraktionsVerlauf(messages) {
   // Keep original message indices so evidence can still be checked against the archive.
   return messages.map(function(m) {
@@ -3277,19 +3234,12 @@ function klExtraktionsVerlauf(messages) {
   });
 }
 
+/* Seit F5a im Kern (felieKlArchivSichern); hier nur noch fuer den
+   Altbestand aus Flow 1 (klExtract). */
 function klArchivSichern() {
-  var s = klZustand(), chats = getSavedChats();
-  var c = chats.find(function(x) { return x.onboardingId === s.id; });
-  if (s.archiveId && !c) return false; // A deleted conversation must stay deleted.
-  if (!c) {
-    var ts = Math.max(Date.now(), chats.reduce(function(max, x) { return Math.max(max, Number(x.id) || 0); }, 0) + 1);
-    c = { id: ts, timestamp: ts, version: 5, thema: 'Unser erstes Gespräch', onboardingId: s.id,
-      notizen: [], notizenStatus: 'unvollstaendig', onboardingErfasst: [], messages: felieSichererVerlauf(klHistory) };
-    chats.push(c);
-  }
-  if (s.flow === 2 && s.stage === 'aufnahme') { c.messages = felieSichererVerlauf(klHistory); c.thema = 'Unser Kennenlernen'; }
-  try { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); s.archiveId = c.id; return c; }
-  catch (e) { window._klStorageError = true; return false; }
+  var c = felieKlArchivSichern(klHistory);
+  if (c === null) { window._klStorageError = true; return false; }
+  return c;
 }
 
 function klHomeStatusZeigen() {
@@ -3385,39 +3335,14 @@ function klProfilAltbestand() {
 }
 
 /* klV2Definition und die Schritt-Tabelle: seit Welle D / AL-73 in
-   src/kern/kennenlernen.js (KL_SCHRITTE). */
-
-function klV2Form(key) {
-  var s = klZustand(); s.form = s.form || {}; s.committed = s.committed || {};
-  if (!s.form[key]) s.form[key] = { selected: [], text: '' };
-  return s.form[key];
-}
-
-function klV2Hat(key, value) {
-  var f = (klZustand().committed || {})[key];
-  return !!(f && !f.skipped && (f.selected || []).indexOf(value) >= 0);
-}
-
-function klV2KinderGenannt() {
-  /* Eine ausdrueckliche Verneinung schlaegt jeden Texthinweis. Ohne diese
-     Zeile koennte ein Freitext unter "anderes" den Kinderschritt trotz
-     angetippter Gegenangabe ausloesen. */
-  if (klV2Hat('leben', 'keine Kinder')) return false;
-  if (klV2Hat('leben', 'Kinder')) return true;
-  var f = (klZustand().committed || {}).leben, t = f && !f.skipped ? f.text || '' : '';
-  return !/keine? Kinder/i.test(t) && /(?:mein(?:e|en)?|unser(?:e|en)?) (?:Kinder|Sohn|Tochter)|(?:ich habe|wir haben) (?:ein|zwei|drei|vier|fünf|\d+) (?:Kinder|Kind|Sohn|Tochter)/i.test(t);
-}
-
-function klV2Schritte() {
-  var keys = ['name', 'alter', 'leben'];
-  if (klV2KinderGenannt()) keys.push('kinder');
-  keys.push('themen', 'gefuehl', 'ziel', 'koerper');
-  if (klV2Hat('koerper', 'natürlicher Zyklus')) keys.push('zyklus');
-  var k = (klZustand().committed || {}).koerper;
-  if (k && !k.skipped && (k.text || '').trim()) keys.push('beschwerden');
-  /* Die vier festen Schluss-Schritte: seit AL-73 KL_SCHRITTE_ENDE im Kern. */
-  return keys.concat(KL_SCHRITTE_ENDE);
-}
+   src/kern/kennenlernen.js (KL_SCHRITTE). Seit F5a in src/kern/aufnahme.js:
+   der Stand (klZustand, klV2Form, klV2Hat), die Schrittfolge
+   (klV2Schritte, klV2KinderGenannt), die Pruefung (klV2Validieren), die
+   Antwortsaetze (klV2Antwort, felieKlVerlauf), Zusammenfassung und
+   Einstiege (klV2Zusammenfassung, klV2Einstiege, KL_PLAENE,
+   KL_EINSTIEGSFRAGEN), die Satzbausteine (KL_SATZ_*, klV2Satz,
+   klV2KinderSaetze, klV2SchlafSatz, klV2FadenText) und die Aufnahme
+   (felieKlSichern). Hier bleibt die Anzeige. */
 
 function klV2Esc(text) { return htmlEsc(String(text == null ? '' : text)).replace(/"/g, '&quot;'); }
 
@@ -3444,47 +3369,36 @@ function klV2Text(label) {
     + klV2Esc(klV2Form(klPhase).text) + '</textarea>';
 }
 
+/* Seit F5a: die Bedienung aendert den Stand im Kern (src/kern/aufnahme.js,
+   felieKl...); hier bleibt, was die Anzeige danach tut. */
 function klV2Eingabe(field, value) {
-  if (klZustand().flow !== 2 || window._klV2Saving) return;
-  if (['text', 'age', 'amount', 'ages', 'bed', 'wake'].indexOf(field) < 0) return;
-  klV2Form(klPhase)[field] = String(value).slice(0, field === 'text' ? 2000 : 200);
-  klZustand().formError = ''; klEntwurfSpeichern(); klV2Status();
+  if (window._klV2Saving) return;
+  if (!felieKlEingabe(klPhase, field, value)) return;
+  klEntwurfSpeichern(); klV2Status();
 }
 
 function klV2Waehlen(index) {
   if (window._klV2Saving) return;
-  var def = klV2Definition(klPhase), f = klV2Form(klPhase), value = def.options && def.options[index];
-  if (!value) return;
-  var selected = f.selected.slice(), pos = selected.indexOf(value);
-  var exklusiv = ['schwer zu sagen', 'weiß ich noch nicht', 'nichts davon', 'später'];
-  if (pos >= 0) selected.splice(pos, 1);
-  else if (!def.multi || exklusiv.indexOf(value) >= 0) selected = [value];
-  else {
-    selected = selected.filter(function(v) { return exklusiv.indexOf(v) < 0; });
-    // Vor der Hoechstzahl, damit die abgewaehlte Gegenoption ihren Platz freigibt.
-    (def.entweder || []).forEach(function(paar) {
-      var i = paar.indexOf(value);
-      if (i < 0) return;
-      selected = selected.filter(function(v) { return v !== paar[1 - i]; });
-    });
-    if (def.max && selected.length >= def.max) { klZustand().formError = 'Wähle höchstens ' + def.max + ' Antworten aus.'; klV2Status(); return; }
-    selected.push(value);
-  }
-  f.selected = selected;
-  if ((klPhase === 'leben' && selected.indexOf('anderes') < 0) || (klPhase === 'koerper' && selected.indexOf('bekannte körperliche Themen') < 0)) f.text = '';
-  klZustand().formError = ''; klEntwurfSpeichern(); klV2Render(true);
+  var r = felieKlWaehlen(klPhase, index);
+  if (!r) return;
+  if (r === 'fehler') { klV2Status(); return; }
+  klEntwurfSpeichern(); klV2Render(true);
 }
 
 function klV2Unregelmaessig() {
-  var f = klV2Form('schlafroutine'); f.irregular = !f.irregular;
-  if (f.irregular) { f.bed = ''; f.wake = ''; }
+  felieKlUnregelmaessig();
   klEntwurfSpeichern(); klV2Render(true);
 }
 
 function klV2Starten() {
-  var s = klZustand(); s.flow = 2; s.form = s.form || {}; s.committed = s.committed || {};
-  s.stage = 'aufnahme'; window._klInited = true; klDone = false; klPhase = 'name';
+  felieKlStarten(); window._klInited = true; klDone = false; klPhase = 'name';
   klEntwurfSpeichern(); klV2Render();
+}
+
+/* Name und Alter aus dem Kennenlernen (Profil-Port des Kerns, felieKlVerbinden). */
+function klProfilSetzen(p) {
+  if ('userName' in p) userName = p.userName;
+  if ('alter' in p) { delete klAnswers.alter; delete klAnswers.alterExact; if (p.alter) { klAnswers.alterExact = p.alter.exakt; klAnswers.alterErfasstAm = p.alter.am; } }
 }
 
 /* Der sichtbare Text in felies Blase. Er muss allein stehen koennen: die
@@ -3553,10 +3467,6 @@ function klV2Render(keepPosition) {
     if (f.selected.indexOf('bekannte körperliche Themen') >= 0) h += klV2Text('Was möchtest du mir dazu mitgeben? (optional)');
   }
   if (klPhase === 'beschwerden') h += klV2Text('Ungefährer Zeitraum (optional)');
-  /* Die Geraeteliste erscheint erst nach der Wahl "Wearable verknuepfen".
-     Vorher stand der Kasten immer da und zeigte einen Demo-Knopf, auch
-     wenn sie gerade "ohne" gewaehlt hatte. */
-  if (klPhase === 'daten' && f.selected.indexOf('Wearable verknüpfen') >= 0) h += klV2WearableHtml();
   if (klPhase === 'schlafroutine') {
     h += '<button id="kl-v2-irregular" type="button" class="kl-chip' + (f.irregular ? ' selected' : '') + '" aria-pressed="' + !!f.irregular + '" onclick="klV2Unregelmaessig()">Kein fester Rhythmus</button>';
     if (!f.irregular) h += klV2Input('bed', 'Meist ins Bett gegen (optional)', 'time') + klV2Input('wake', 'Meist aufstehen gegen (optional)', 'time');
@@ -3606,453 +3516,51 @@ function klV2Status() {
   var retry = document.getElementById('kl-retry'); if (retry) retry.hidden = !window._klStorageError;
 }
 
-function klV2Validieren(key, f) {
-  if (key === 'name' && (!klNameSetzen(f.text || '') || klNameAblehnung(f.text || ''))) return 'Bitte trage deinen Vornamen ein, oder wähle „Überspringen“.';
-  if (key === 'alter' && !/^(?:1[89]|[2-9]\d|1[01]\d|120)$/.test(String(f.age || ''))) return 'Bitte gib dein Alter als ganze Zahl zwischen 18 und 120 ein.';
-  if (key === 'kinder' && f.amount && !/^(?:[1-9]|[12]\d|30)$/.test(f.amount)) return 'Bitte gib die Anzahl als ganze Zahl zwischen 1 und 30 ein.';
-  if (key === 'schlafroutine' && !f.irregular && [f.bed, f.wake].some(function(t) { return t && !/^([01]\d|2[0-3]):[0-5]\d$/.test(t); })) return 'Bitte prüfe die Uhrzeit.';
-  var d = klV2Definition(key);
-  if (d.options && !(f.selected || []).length && !(key === 'themen' && (f.text || '').trim())) return 'Wähle eine Antwort oder überspringe diesen Schritt.';
-  if (key === 'themen' && f.selected.length === 1 && f.selected[0] === 'Etwas anderes' && !(f.text || '').trim()) return 'Erzähl kurz, was dich beschäftigt, oder überspringe diesen Schritt.';
-  return '';
-}
-
 function klV2Weiter(skip) {
   var s = klZustand(); if (s.flow !== 2 || window._klV2Saving) return;
   if (klPhase === 'zusammenfassung') return klV2StartApp();
-  var key = klPhase, f = klV2Form(key), error = skip ? '' : klV2Validieren(key, f);
-  if (error) { s.formError = error; klV2Status(); return; }
-  var a = skip ? { skipped: true, selected: [], text: '', ts: Date.now() } : JSON.parse(JSON.stringify(f));
-  a.ts = Date.now(); s.committed[key] = a; s.formError = '';
-  /* Jede geaenderte Angabe kann die Angebote am Ende verschieben. Eine
-     Wahl stehen zu lassen, die sich auf ein Angebot bezieht, das es nicht
-     mehr gibt, waere schlimmer als sie noch einmal treffen zu lassen. */
-  delete s.einstieg;
-  if (key === 'name') { userName = skip ? '' : klNameSetzen(f.text); if (!skip) { a.text = userName; f.text = userName; } }
-  if (key === 'alter') { delete klAnswers.alter; delete klAnswers.alterExact; if (!skip) { klAnswers.alterExact = Number(f.age); klAnswers.alterErfasstAm = a.ts; } }
-  if (key === 'leben') {
-    if (!klV2KinderGenannt()) { delete s.committed.kinder; delete s.form.kinder; }
-    var body = klV2Form('koerper');
-    if (klV2Hat('leben', 'schwanger') && body.selected.indexOf('Schwangerschaft') < 0) { body.selected = body.selected.filter(function(v) { return ['nichts davon', 'später'].indexOf(v) < 0; }); body.selected.push('Schwangerschaft'); delete s.committed.koerper; s.pregnancyPrefill = true; }
-    else if (!klV2Hat('leben', 'schwanger') && s.pregnancyPrefill) { body.selected = body.selected.filter(function(v) { return v !== 'Schwangerschaft'; }); delete s.committed.koerper; s.pregnancyPrefill = false; }
-  }
-  if (key === 'koerper') {
-    // An explicit correction to a prefilled choice also updates its earlier source.
-    if (!skip && klV2Hat('leben', 'schwanger') && !klV2Hat('koerper', 'Schwangerschaft')) {
-      s.committed.leben.selected = s.committed.leben.selected.filter(function(v) { return v !== 'schwanger'; });
-      klV2Form('leben').selected = klV2Form('leben').selected.filter(function(v) { return v !== 'schwanger'; });
-      s.pregnancyPrefill = false;
-    }
-    if (!klV2Hat('koerper', 'natürlicher Zyklus')) { delete s.committed.zyklus; delete s.form.zyklus; }
-    if (!a.text) { delete s.committed.beschwerden; delete s.form.beschwerden; }
-  }
-  var keys = klV2Schritte(), next = keys[keys.indexOf(key) + 1];
-  if (s.editing) { next = keys.find(function(k) { return k !== 'zusammenfassung' && !s.committed[k]; }) || 'zusammenfassung'; s.editing = next !== 'zusammenfassung'; }
-  klPhase = next || 'zusammenfassung'; klDone = klPhase === 'zusammenfassung';
+  var r = felieKlWeiter(klPhase, skip);
+  if (r.fehler) { klV2Status(); return; }
+  klPhase = r.naechster; klDone = klPhase === 'zusammenfassung';
   klV2Verlauf(); klEntwurfSpeichern(); klV2Render();
 }
 
 function klV2Zurueck() {
   if (window._klV2Saving) return;
   if (klZustand().flow !== 2) { ruBackToRampup(); return; }
-  var keys = klV2Schritte(), i = keys.indexOf(klPhase);
-  if (i <= 0) { ruBackToRampup(); return; }
-  klPhase = keys[i - 1]; klDone = false; klZustand().formError = ''; klEntwurfSpeichern(); klV2Render();
+  var zurueck = felieKlZurueck(klPhase);
+  if (!zurueck) { ruBackToRampup(); return; }
+  klPhase = zurueck; klDone = false; klEntwurfSpeichern(); klV2Render();
 }
 
 function klV2Bearbeiten(key) {
-  if (window._klV2Saving || klV2Schritte().indexOf(key) < 0) return;
-  klZustand().editing = true; klPhase = key; klDone = false; klEntwurfSpeichern(); klV2Render();
+  if (window._klV2Saving || !felieKlBearbeiten(key)) return;
+  klPhase = key; klDone = false; klEntwurfSpeichern(); klV2Render();
 }
 
-function klV2Antwort(key, a) {
-  if (!a || a.skipped) return 'Das möchte ich auslassen.';
-  if (key === 'name') return a.text;
-  if (key === 'alter') return 'Ich bin ' + a.age + ' Jahre alt.';
-  if (key === 'kinder') return [a.amount ? 'Anzahl: ' + a.amount : '', a.ages ? 'Alter: ' + a.ages : ''].filter(Boolean).join('. ') || 'Keine weiteren Angaben zu meinen Kindern.';
-  if (key === 'schlafroutine') return a.irregular ? 'Ich habe keinen festen Schlafrhythmus.' : [a.bed ? 'Meist gehe ich gegen ' + a.bed + ' Uhr ins Bett.' : '', a.wake ? 'Meist stehe ich gegen ' + a.wake + ' Uhr auf.' : ''].filter(Boolean).join(' ') || 'Keine Angaben zu meiner Schlafroutine.';
-  /* Fuer das Archiv zaehlt, ob die Verbindung zustande kam — nicht, was
-     sie angetippt hat. "Wearable verknuepfen" ausgewaehlt und dann nicht
-     verbunden ist sonst im Verlauf von einer echten Verbindung nicht zu
-     unterscheiden, und felie wuerde spaeter Werte erwaehnen, die es nicht
-     gibt. */
-  if (key === 'daten') {
-    var v = klZustand().wearable;
-    if (v && v.anbieter === 'oura') return 'Ich habe meinen Oura Ring verknüpft.';
-    return 'Ich nutze kein verknüpftes Wearable.';
-  }
-  var prefix = { leben: 'Meine Lebenssituation: ', themen: 'Mich beschäftigt: ', gefuehl: 'Damit fühle ich mich: ', ziel: 'Ich möchte besser verstehen: ', koerper: 'Körperliche oder hormonelle Themen: ', zyklus: 'Meine ungefähre Zykluseinschätzung: ', daten: 'Körperdaten: ', schlafqualitaet: 'Meine letzte Nacht: ', beschwerden: 'Zeitraum meines körperlichen Themas: ' };
-  return (prefix[key] || '') + (a.selected || []).join(', ') + (a.text ? ((a.selected || []).length ? '. ' : '') + a.text : '');
-}
-
+/* klHistory ist das Spiegelbild des Verlaufs aus dem Kern (felieKlVerlauf),
+   dasselbe Array bleibt erhalten. */
 function klV2Verlauf() {
-  var s = klZustand(); klHistory.length = 0;
-  klV2Schritte().forEach(function(k) {
-    var a = s.committed[k]; if (!a) return;
-    klHistory.push({ role: 'assistant', content: klV2Definition(k).title, onboardingFeld: k });
-    var m = { role: 'user', content: klV2Antwort(k, a), onboardingFeld: k };
-    if (k === 'name' || k === 'alter') m.profilFeld = k;
-    klHistory.push(m);
-  });
-  /* Der Verlauf soll zeigen, was sie gesehen und gewaehlt hat — sonst
-     steht im Archiv ein Vorschlag, den sie moeglicherweise abgelehnt hat,
-     und felie greift ihn spaeter als vereinbart auf. */
-  if (klDone) {
-    var s2 = klZustand(), angebote = klV2Einstiege();
-    klHistory.push({ role: 'assistant', content: klV2Zusammenfassung() + '\n\n' + angebote.map(function(e) { return e.text; }).join('\n') });
-    var wahl = angebote.find(function(e) { return e.key === s2.einstieg; });
-    if (wahl) klHistory.push({ role: 'user', content: wahl.key === 'anderes'
-      ? 'Ich möchte mit einem anderen Thema starten.'
-      : 'Ja, lass uns so anfangen.' });
-  }
+  klVerlaufUebernehmen(felieKlVerlauf(klDone));
 }
-
-function klV2Zusammenfassung() {
-  var a = klZustand().committed || {}, parts = [];
-  if (a.themen && !a.themen.skipped) {
-    var topics = a.themen.selected.filter(function(t) { return t !== 'Etwas anderes'; });
-    if (topics.length) parts.push('Gerade geht es dir vor allem um ' + topics.join(' und ') + '.');
-    if (a.themen.text) parts.push('Du hast mir mitgegeben: „' + (a.themen.text.length > 240 ? a.themen.text.slice(0, 240) + '…' : a.themen.text) + '“');
-  }
-  if (a.gefuehl && !a.gefuehl.skipped && a.gefuehl.selected.indexOf('schwer zu sagen') < 0) parts.push('Damit fühlst du dich ' + a.gefuehl.selected.join(' und ') + '.');
-  var goal = a.ziel && !a.ziel.skipped && a.ziel.selected.filter(function(t) { return t !== 'weiß ich noch nicht'; });
-  var goals = {
-    'warum ich mich so fühle': 'verstehen, warum du dich so fühlst',
-    'was mich beeinflusst': 'verstehen, was dich beeinflusst',
-    'was mir guttut': 'herausfinden, was dir guttut',
-    'meinen Körper besser verstehen': 'deinen Körper besser verstehen',
-    'meine Stimmung besser einordnen': 'deine Stimmung besser einordnen',
-    'Zusammenhänge erkennen': 'Zusammenhänge erkennen',
-    'Veränderungen bei mir verstehen': 'Veränderungen bei dir verstehen',
-    'wissen, worauf ich achten kann': 'wissen, worauf du im Alltag achten kannst'
-  };
-  if (goal && goal.length) parts.push('Du möchtest ' + goal.map(function(g) { return goals[g] || g; }).join(' und ') + '.');
-  /* Ohne Dank: der Abschlusstext bedankt sich bereits eine Zeile vorher,
-     seit die Zusammenfassung in felies Blase eingebettet ist. Standalone
-     im Archiv traegt der Satz trotzdem. */
-  return parts.length ? parts.join(' ') : 'Was dir gerade wichtig ist, finden wir gemeinsam heraus.';
-}
-
-/* Kurzform des Themas fuer die Alternativzeile. Die Plaene unten sind
-   ganze Nebensaetze ("wir schauen zuerst auf deinen Abend und…") und
-   passen grammatisch nicht hinter "beginnen mit". */
-var KL_THEMA_DATIV = {
-  Schlaf: 'deinem Schlaf', Stress: 'dem, was dich gerade stresst', Energie: 'deiner Energie',
-  Stimmung: 'deiner Stimmung', 'Körper': 'deinem Körper', Zyklus: 'deinem Zyklus',
-  'Ernährung': 'deiner Ernährung', Bewegung: 'Bewegung', 'Mental Load': 'deinem Mental Load',
-  Familie: 'dem Thema Familie', Arbeit: 'dem Thema Arbeit'
-};
-
-var KL_PLAENE = {
-  Schlaf: 'wir schauen zuerst auf deinen Abend und überlegen, was dir das Zur-Ruhe-Kommen erleichtern könnte',
-  Stress: 'wir sortieren zuerst, was dich im Alltag beansprucht, und suchen eine konkrete Möglichkeit zur Entlastung',
-  Energie: 'wir schauen zuerst auf deinen Tagesablauf und suchen eine Stelle, an der du dir etwas Druck nehmen kannst',
-  Stimmung: 'wir nehmen eine konkrete Situation aus deinem Alltag und schauen gemeinsam, wie sie sich für dich anfühlt',
-  'Körper': 'wir beginnen mit dem, was du an deinem Körper wahrnimmst und was du dazu besser verstehen möchtest',
-  Zyklus: 'wir schauen zuerst auf deine eigenen Beobachtungen im Alltag und was du dabei besser verstehen möchtest',
-  'Ernährung': 'wir schauen zuerst, welche einfachen Mahlzeiten zu deinem Alltag und deinen Vorlieben passen',
-  Bewegung: 'wir suchen zuerst eine Form von Bewegung, die du magst und die in deinen Alltag passt',
-  'Mental Load': 'wir sortieren zuerst, was du alles im Kopf behältst, und suchen eine Aufgabe, bei der Entlastung möglich ist',
-  Familie: 'wir beginnen mit einer konkreten Familiensituation, bei der du dir Unterstützung wünschst',
-  Arbeit: 'wir schauen zuerst auf eine konkrete Situation bei der Arbeit, die dich gerade beschäftigt'
-};
-
-/* Was sie mir konkret schreiben kann. Der Plan sagt, WORAN wir
-   arbeiten; diese Zeile sagt, WOMIT sie anfaengt. Ohne sie endete die
-   erste Startseite mit „hier direkt weitersprechen" — eine Einladung
-   ohne Ziel, und das beim allerersten Besuch (Befund 17.09.).
-   Jede Zeile ist die Fortsetzung von „Du kannst mir auch direkt
-   schreiben, ..." und steht deshalb im Nebensatz. */
-var KL_EINSTIEGSFRAGEN = {
-  Schlaf: 'wie deine Abende gerade aussehen',
-  Stress: 'was dich im Moment am meisten beansprucht',
-  Energie: 'an welcher Stelle deines Tages dir am meisten Energie fehlt',
-  Stimmung: 'welche Situation dir zuletzt besonders nachgegangen ist',
-  'Körper': 'was du an deinem Körper konkret wahrnimmst',
-  Zyklus: 'was dir in den letzten Wochen an dir aufgefallen ist',
-  'Ernährung': 'wie deine Mahlzeiten im Alltag gerade aussehen',
-  Bewegung: 'wie viel Bewegung gerade in deinen Alltag passt',
-  'Mental Load': 'welche Aufgabe dir gerade am meisten im Kopf herumgeht',
-  Familie: 'welche Situation in deiner Familie dich gerade beschäftigt',
-  Arbeit: 'welche Situation bei der Arbeit dich gerade beschäftigt'
-};
-
-var KL_EINSTIEGSFRAGE_OFFEN = 'was dir gerade am meisten durch den Kopf geht';
-
-var KL_PLAN_OFFEN = 'wir sortieren zunächst gemeinsam, was gerade Raum in deinem Alltag einnimmt, und wählen einen kleinen nächsten Schritt';
-
-/* ══════════════════════════════════════════════════════════════════════
-   EINSTIEGSWAHL AM ENDE DES KENNENLERNENS
-   ──────────────────────────────────────────────────────────────────────
-   Vorher gab es genau einen Vorschlag und darunter einen unterstrichenen
-   Link "Mit einem anderen Thema starten". Das war eine Ja-Nein-Frage mit
-   ungleichen Gewichten: der Vorschlag stand in einer Lime-Karte, die
-   Ablehnung als kleiner Link. Und welches ihrer bis zu drei Themen zum
-   Vorschlag wurde, entschied die Reihenfolge der Optionsliste — nicht
-   ihre Auswahl. Beides ist jetzt weg.
-
-   Stattdessen bis zu drei gleichwertige Angebote: ihre ersten beiden
-   Themen und ein offenes. Dass die Reihenfolge der beiden Themen aus der
-   Optionsliste stammt, bleibt so — aber es entscheidet nicht mehr allein,
-   womit sie anfaengt, sondern nur noch, was zuerst angeboten wird. Sie
-   waehlt danach selbst.
-
-   Der Startknopf bleibt gesperrt, bis sie eines angetippt hat. Ein
-   vorausgewaehltes Angebot waere bequemer, wuerde aber genau die stille
-   Vorentscheidung zurueckholen, die wir gerade abgeschafft haben.
-   ══════════════════════════════════════════════════════════════════════ */
-function klV2Einstiege() {
-  var a = klZustand().committed || {};
-  var themen = a.themen && !a.themen.skipped
-    ? a.themen.selected.filter(function(v) { return v !== 'Etwas anderes' && KL_PLAENE[v]; }) : [];
-  var liste = [];
-  themen.slice(0, 2).forEach(function(t, i) {
-    if (i === 0) liste.push({ key: 'vorschlag', thema: t, plan: KL_PLAENE[t],
-      text: 'Ich schlage vor, ' + KL_PLAENE[t] + '. Passt dieser Einstieg für dich?' });
-    else liste.push({ key: 'alternativ', thema: t, plan: KL_PLAENE[t],
-      text: 'Alternativ können wir mit ' + (KL_THEMA_DATIV[t] || ('dem Thema ' + t)) + ' beginnen. Ist dir das lieber?' });
-  });
-  if (!liste.length) liste.push({ key: 'vorschlag', thema: null, plan: KL_PLAN_OFFEN,
-    text: 'Ich schlage vor, ' + KL_PLAN_OFFEN + '. Passt dieser Einstieg für dich?' });
-  liste.push({ key: 'anderes', thema: null, plan: null,
-    text: 'Wir können auch gerne mit einem ganz anderen Thema starten.' });
-  return liste;
+function klVerlaufUebernehmen(verlauf) {
+  klHistory.length = 0; verlauf.forEach(function(m) { klHistory.push(m); });
 }
 
 function klV2EinstiegWaehlen(key) {
   if (window._klV2Saving || klPhase !== 'zusammenfassung') return;
-  if (!klV2Einstiege().some(function(e) { return e.key === key; })) return;
-  var s = klZustand();
-  s.einstieg = s.einstieg === key ? null : key;
+  if (!felieKlEinstiegWaehlen(key)) return;
   klEntwurfSpeichern(); klV2Render(true);
 }
 
-/* ══════════════════════════════════════════════════════════════════════
-   WEARABLE VERKNUEPFEN
-   ──────────────────────────────────────────────────────────────────────
-   Vorher stand hier eine Demo: ein Knopf "Demo ansehen", drei Zahlen aus
-   einem Testkonto, und danach waren sie weg. Genau das war der
-   Rueckschritt — nicht das Wort Demo, sondern die Sackgasse. Sie sah
-   Werte, die nirgendwo ankamen, und stand danach wieder bei null.
-
-   Jetzt ist es ein Verbindungsvorgang mit drei Stufen: Geraet waehlen,
-   verbinden, Werte werden uebernommen. Was angezeigt wird, ist exakt
-   das, was in die Koerperdaten geht — deshalb faellt der frueher
-   angezeigte Oura Sleep Score weg: fuer ihn gibt es kein Feld in
-   FELIE_FELD_MAP, und etwas zu zeigen, das nicht ankommt, waere wieder
-   die alte Sackgasse.
-
-   Apple Watch, Garmin und Fitbit stehen sichtbar in der Liste, aber
-   ausgegraut. Sie zu verstecken waere die andere Moeglichkeit gewesen;
-   dagegen spricht, dass eine Garmin-Traegerin dann nicht erkennt, ob das
-   Geraet spaeter kommt oder gar nicht vorgesehen ist.
-
-   Die Begrenzung auf drei Abrufe pro Kennenlernen bleibt: hinter dem
-   Endpunkt steht ein einzelner echter Zugang, kein Konto pro Nutzerin.
-   VOR DEM LIVEGANG: der Worker braucht einen OAuth-Ablauf je Nutzerin,
-   sonst zeigt die App jeder Frau dieselben Werte.
-   ══════════════════════════════════════════════════════════════════════ */
-
-var KL_WEARABLES = [
-  { v: 'oura',   t: 'Oura Ring',   bald: false },
-  { v: 'apple',  t: 'Apple Watch', bald: true },
-  { v: 'garmin', t: 'Garmin',      bald: true },
-  { v: 'fitbit', t: 'Fitbit',      bald: true }
-];
-
-function klV2WearableHtml() {
-  var w = window._klWearable || {}, s = klZustand();
-  var verbunden = !!(s.wearable && s.wearable.anbieter === 'oura');
-  var h = '<div class="kl-v2-demo"><strong>' + (verbunden ? 'Oura verbunden' : 'Wearable auswählen') + '</strong>';
-  h += '<div class="kl-wear-list">';
-  KL_WEARABLES.forEach(function(g) {
-    var aktiv = g.v === 'oura' && verbunden;
-    h += '<div class="kl-wear-row' + (g.bald ? ' kl-wear-bald' : '') + '">'
-      + '<span>' + g.t + '</span>'
-      + (g.bald ? '<span class="kl-wear-tag">bald</span>'
-        : aktiv ? '<span class="kl-wear-tag kl-wear-on">verbunden</span>'
-        : '<button type="button" class="kl-chip" onclick="klV2WearableVerbinden()"' + (window._klWearablePending ? ' disabled' : '') + '>'
-          + (window._klWearablePending ? 'Verbinde…' : 'Verbinden') + '</button>')
-      + '</div>';
-  });
-  h += '</div><div id="kl-v2-demo-result">';
-  if (w.limit) h += '<p role="status">Die Verbindung wurde in diesem Kennenlernen schon dreimal abgerufen. Du kannst später in den Körperdaten weitermachen.</p>';
-  else if (w.error) h += '<p role="status">Die Verbindung ist gerade nicht erreichbar. Du kannst es erneut versuchen oder ohne Wearable weitergehen.</p>';
-  else if (verbunden && w.values && w.values.length) {
-    h += '<p role="status">Diese Werte habe ich übernommen:</p><ul>'
-      + w.values.map(function(v) { return '<li>' + klV2Esc(v) + '</li>'; }).join('')
-      + '</ul><p>Du kannst sie später in den Körperdaten ändern oder löschen.</p>';
-  } else if (verbunden) h += '<p role="status">Verbunden. Es lagen keine auswertbaren Werte der letzten Tage vor.</p>';
-  else h += '<p>Nach dem Verbinden lese ich deine letzten Nächte aus.</p>';
-  return h + '</div></div>';
-}
-
-/* Liefert Anzeigezeilen UND Importfelder aus derselben Quelle, damit
-   beides nicht auseinanderlaufen kann. Jeder Wert bringt seinen eigenen
-   Messtag mit: Oura misst nachts, abgerufen wird irgendwann tagsueber —
-   der Abrufzeitpunkt waere das falsche Datum. */
-function klV2WearableDaten(data) {
-  if (!data || !data.ok || !data.oura) throw new Error('Keine Werte erhalten');
-  function latest(key) {
-    var block = data.oura[key];
-    if (!block || block.status !== 200 || !Array.isArray(block.data)) return null;
-    return block.data.slice().sort(function(a, b) { return String(b.day || '').localeCompare(String(a.day || '')); })[0];
-  }
-  var sleep = latest('sleep'), readiness = latest('daily_readiness');
-  var values = [], felder = {}, stempel = {}, meta = {};
-
-  function tagStempel(tag) {
-    var d = cycleMidnight(tag);
-    if (!d || d > cycleMidnight(new Date())) return null;
-    return d.getTime();
-  }
-  function uebernehmen(feld, wert, tag, zeile) {
-    var ts = tagStempel(tag);
-    if (ts === null) return;
-    felder[feld] = wert; stempel[feld] = ts;
-    meta[feld] = { datumsquelle: 'Messtag aus Oura', importiertAm: Date.now(), geraet: 'Oura Ring' };
-    values.push(zeile + ' · ' + new Date(ts).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }));
-  }
-
-  if (sleep) {
-    var dauer = sleep.total_sleep_duration;
-    if (Number.isFinite(dauer) && dauer > 0 && dauer <= 86400)
-      uebernehmen('sleepMins', Math.round(dauer / 60), sleep.day, 'Schlafdauer: ' + felieSchlafFmt(Math.round(dauer / 60)));
-    if (Number.isFinite(sleep.average_hrv) && sleep.average_hrv > 0 && sleep.average_hrv < 300)
-      uebernehmen('hrv', Math.round(sleep.average_hrv), sleep.day, 'HRV: ' + Math.round(sleep.average_hrv) + ' ms');
-    var puls = Number.isFinite(sleep.lowest_heart_rate) ? sleep.lowest_heart_rate : sleep.average_heart_rate;
-    if (Number.isFinite(puls) && puls > 25 && puls < 150)
-      uebernehmen('rhr', Math.round(puls), sleep.day, 'Ruhepuls: ' + Math.round(puls) + ' bpm');
-  }
-  if (readiness && Number.isFinite(readiness.score) && readiness.score >= 0 && readiness.score <= 100) {
-    // Readiness ist in dieser App die Wearable-Quelle fuer "energie" —
-    // siehe FELIE_BAENDER, wo der Oura-Bereich an Readiness kalibriert ist.
-    uebernehmen('energyScore', readiness.score, readiness.day, 'Erholung: ' + readiness.score + ' von 100');
-  }
-  if (!values.length) throw new Error('Keine verwertbaren Werte');
-  return { anbieter: 'oura', values: values, felder: felder, stempel: stempel, meta: meta };
-}
-
-/* Schreibt ueber denselben Pfad wie der Screenshot-Import. Ein eigener
-   Schreibweg waere die Stelle gewesen, an der Herkunft, Messtag und
-   Dublettenpruefung spaeter auseinanderlaufen. */
-function klV2WearableUebernehmen(w) {
-  var neu = { source: 'messung', geraet: 'Oura Ring', signalTs: w.stempel, signalMeta: w.meta, updatedAt: Date.now() };
-  Object.keys(w.felder).forEach(function(f) { neu[f] = w.felder[f]; });
-  var vorher = JSON.stringify(felieStore());
-  try {
-    felieUebernehmeAltObjekt(neu, 'messung');
-    window.ouraConnected = true;
-    saveBodyData();
-    return true;
-  } catch (e) {
-    felieStoreSetzen(JSON.parse(vorher));
-    return false;
-  }
-}
-
-function klV2WearableVerbinden() {
-  if (window._klWearablePending) return Promise.resolve(false);
-  var s = klZustand(), id = s.id, generation = window._klGeneration || 0;
-  // Alter Entwurfsschluessel wird weitergelesen, damit ein angefangenes
-  // Kennenlernen seinen Zaehler nicht verliert.
-  var abrufe = s.wearableAbrufe != null ? s.wearableAbrufe : (s.demoRequests || 0);
-  if (abrufe >= 3) { window._klWearable = { limit: true }; klV2Render(true); return Promise.resolve(false); }
-  s.wearableAbrufe = abrufe + 1;
-  if (!klEntwurfSpeichern()) { s.wearableAbrufe = abrufe; klV2Status(); return Promise.resolve(false); }
-  window._klWearablePending = true; klV2Render(true);
-  /* Der Abruf ist mit AL-71a entfallen: die Route /oura gibt es nicht
-     mehr, und mit E-T6 kommt sie auch nicht wieder — Wearables laufen in
-     v1 ueber HealthKit und Health Connect auf dem Geraet. Hier steht
-     bewusst kein Netzaufruf mehr, damit der Client keine Adresse kennt,
-     die es nicht gibt.
-       Der Schritt selbst bleibt vorerst stehen und zeigt dieselbe Meldung
-     wie bisher. Ihn ganz zu entfernen nimmt einen Schritt aus der
-     Aufnahme, und ein angefangenes Kennenlernen traegt ihn in seinem
-     Entwurf — das braucht einen eigenen Durchgang (AL-71a, Teil zwei). */
-  return Promise.reject(new Error('Nicht erreichbar')).then(function(data) {
-    if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return false;
-    var w = klV2WearableDaten(data);
-    // Erst speichern, dann als verbunden markieren: eine Verbindung ohne
-    // uebernommene Werte waere genau die Sackgasse von vorher.
-    if (!klV2WearableUebernehmen(w)) throw new Error('Übernahme fehlgeschlagen');
-    window._klWearable = w;
-    s.wearable = { anbieter: 'oura', verbundenAm: Date.now(), felder: Object.keys(w.felder) };
-    klEntwurfSpeichern();
-    return true;
-  }).catch(function() {
-    if (generation === (window._klGeneration || 0) && id === klZustand().id) window._klWearable = { error: true };
-    return false;
-  }).finally(function() {
-    if (generation !== (window._klGeneration || 0) || id !== klZustand().id) return;
-    window._klWearablePending = false; if (klPhase === 'daten') klV2Render(true);
-  });
-}
+/* Wearable verknuepfen: mit F5-2 A (Marcel, 28.09.) entfallen - der Weg war
+   seit AL-71a tot. Der Apple-Health-Schritt kommt mit F8 (F-15). */
 
 /* klV2ZyklusLebensphase, klV2ZyklusVoreinstellen: seit Welle D / D7b in
    src/kern/koerper.js */
 
-/* ── Aus Auswahlkaesten werden Saetze ────────────────────────────────
-   Die Eintraege aus dem Kennenlernen standen als zusammengesetzte
-   Etiketten im Gedaechtnis: "Lebenssituation: Partnerschaft, Kinder.",
-   "Arbeit und Alltag: Vollzeit." Das Praefix stammte vom Zusammenbauen
-   aus Mehrfachauswahlen, nicht aus einem inhaltlichen Grund — und es las
-   sich wie ein ausgefuelltes Formular zwischen Saetzen, die felie sich
-   gemerkt hat.
-     Die Form folgt jetzt derselben Regel wie die Extraktion aus
-   Gespraechen (siehe felieMerkPromptTeil im Worker): kurze neutrale Saetze ohne
-   Ich- oder Du-Anrede. Aus "Partnerschaft, Kinder" wird "Lebt in einer
-   Partnerschaft, hat Kinder." */
-var KL_SATZ_FAMILIE = { 'alleinlebend': 'lebt allein', 'Partnerschaft': 'lebt in einer Partnerschaft', 'Kinder': 'hat Kinder', 'keine Kinder': 'hat keine Kinder', 'Kinderwunsch': 'hat einen Kinderwunsch' };
-var KL_SATZ_ARBEIT  = { 'Vollzeit': 'arbeitet Vollzeit', 'Teilzeit': 'arbeitet Teilzeit',
-                        'selbstständig': 'ist selbstständig', 'Elternzeit': 'ist in Elternzeit' };
-
-function klV2Satz(auswahl, karte) {
-  var teile = (auswahl || []).map(function(v) { return karte[v] || v; }).filter(Boolean);
-  return teile.length ? 'Sie ' + klV2SatzListe(teile) + '.' : '';
-}
-
-/* Zahlwoerter bis zwoelf. "2 Kinder" liest sich wie ein Formularfeld,
-   "Zwei Kinder" wie ein Satz — und genau das ist der Unterschied zwischen
-   einer Datenzeile und etwas, das felie sich gemerkt hat. */
-var KL_ZAHLWORT = ['null','Ein','Zwei','Drei','Vier','Fünf','Sechs','Sieben','Acht','Neun','Zehn','Elf','Zwölf'];
-
-function klV2Zahlwort(n) {
-  return (n >= 0 && n < KL_ZAHLWORT.length) ? KL_ZAHLWORT[n] : String(n);
-}
-
-/* Anzahl und Alter der Kinder werden zu ZWEI Eintraegen. Frueher stand
-   beides in einer Zeile ("Kinder: 2 Kinder, im Alter von 3 und 5"), was
-   sich nicht nur sperrig las, sondern auch nicht einzeln aenderbar war:
-   wer nur das Alter berichtigen wollte, musste den ganzen Satz neu
-   tippen. Zwei Angaben, zwei Blasen, zwei Stifte. */
-function klV2KinderSaetze(k) {
-  var raus = [], roh = String(k.amount == null ? '' : k.amount).trim();
-  var zahl = /^\d+$/.test(roh) ? parseInt(roh, 10) : null;
-  if (zahl != null && zahl > 0) raus.push({ suffix: ':anzahl', text: 'Sie hat ' + klV2Zahlwort(zahl).toLowerCase() + (zahl === 1 ? ' Kind.' : ' Kinder.') });
-  else if (zahl === 0) raus.push({ suffix: ':anzahl', text: 'Sie hat keine Kinder.' });
-  else if (roh) raus.push({ suffix: ':anzahl', text: klV2ZitatSatz('Zur Anzahl ihrer Kinder sagt sie', roh) });
-  var alter = String(k.ages == null ? '' : k.ages).trim();
-  if (alter) {
-    var nurZahlen = /^\d+(?:\s*(?:,|und|&)\s*\d+)*$/.test(alter);
-    raus.push({ suffix: ':alter', text: nurZahlen
-      ? (zahl === 1 ? 'Ihr Kind ist ' : 'Ihre Kinder sind ') + alter.replace(/\s*&\s*/g, ' und ') + ' Jahre alt.'
-      : klV2ZitatSatz(zahl === 1 ? 'Zum Alter ihres Kindes sagt sie' : 'Zum Alter ihrer Kinder sagt sie', alter) });
-  }
-  return raus;
-}
-
-/* klV2Antwort() bleibt in der Ich-Form: dieselbe Funktion erzeugt die
-   Antwortblase im Kennenlern-Gespraech, und dort spricht die Nutzerin. */
-function klV2SchlafSatz(sr) {
-  if (sr.irregular) return 'Sie hat keinen festen Schlafrhythmus.';
-  var teile = [];
-  if (sr.bed) teile.push('geht meist gegen ' + sr.bed + ' Uhr ins Bett');
-  if (sr.wake) teile.push('steht meist gegen ' + sr.wake + ' Uhr auf');
-  return teile.length ? 'Sie ' + klV2SatzListe(teile) + '.' : '';
-}
-
-/* Offene Faeden aus dem Kennenlernen, in derselben Form wie die Fakten.
+/* Die alte Form der Faeden - nur noch fuer klV2SnippetsNachziehen (Altbestand).
+   Offene Faeden aus dem Kennenlernen, in derselben Form wie die Fakten.
    Vorher stand dort "Beim Kennenlernen am 14.9.2026: Mich beschaeftigt:
    Schlaf, Arbeit" — zwei gestapelte Praefixe und die Ich-Form aus der
    Antwortblase. Das Datum ist ersatzlos weg: diese Faeden laufen nach
@@ -4069,63 +3577,6 @@ var KL_FADEN_PRAEFIX = {
   zyklus:      'Ungefähre eigene Zykluseinschätzung: ',
   beschwerden: 'Zeitraum des körperlichen Themas: '
 };
-
-function klV2SatzListe(teile) {
-  teile = (teile || []).filter(Boolean);
-  if (teile.length < 2) return teile[0] || '';
-  return teile.slice(0, -1).join(', ') + ' und ' + teile[teile.length - 1];
-}
-
-function klV2ZitatSatz(einleitung, text) {
-  text = String(text || '').trim();
-  return text ? einleitung + ': „' + text + '“' + (/[.!?…]$/.test(text) ? '' : '.') : '';
-}
-
-function klV2FadenText(key, f) {
-  f = f || {};
-  var auswahl = (f.selected || []).filter(function(v) {
-    return ['schwer zu sagen', 'weiß ich noch nicht', 'weiß ich nicht'].indexOf(v) < 0;
-  });
-  var satz = '';
-  if (key === 'themen') {
-    var themen = auswahl.slice();
-    if (themen.length) satz = klV2SatzListe(themen) + (themen.length === 1 ? ' beschäftigt' : ' beschäftigen') + ' sie gerade';
-  } else if (key === 'gefuehl') {
-    if (auswahl.length) satz = 'Bei ihren aktuellen Anliegen fühlt sie sich ' + klV2SatzListe(auswahl);
-  } else if (key === 'ziel') {
-    var fragen = {
-      'warum ich mich so fühle': 'warum sie sich so fühlt',
-      'was mich beeinflusst': 'was sie beeinflusst',
-      'was mir guttut': 'was ihr guttut',
-      'meinen Körper besser verstehen': 'wie sie ihren Körper besser verstehen kann',
-      'meine Stimmung besser einordnen': 'wie sie ihre Stimmung besser einordnen kann',
-      'Zusammenhänge erkennen': 'welche Zusammenhänge sie bei sich beobachtet',
-      'Veränderungen bei mir verstehen': 'wie sie Veränderungen bei sich einordnen kann',
-      'wissen, worauf ich achten kann': 'worauf sie achten kann'
-    };
-    var ziele = auswahl.map(function(v) { return fragen[v]; }).filter(Boolean);
-    if (ziele.length) satz = 'Sie möchte besser verstehen, ' + klV2SatzListe(ziele);
-  } else if (key === 'zyklus') {
-    var phasen = {
-      'Periode': 'Sie schätzt, dass sie gerade ihre Periode hat',
-      'kurz danach': 'Nach eigener Einschätzung ist sie kurz nach ihrer Periode',
-      'Zyklusmitte': 'Sie verortet sich ungefähr in der Zyklusmitte',
-      'kurz vor der Periode': 'Nach eigener Einschätzung steht sie kurz vor ihrer Periode'
-    };
-    satz = phasen[auswahl[0]] || '';
-  } else if (key === 'beschwerden') {
-    var zeitraum = String(f.text || '').trim();
-    if (!zeitraum) return '';
-    if (/^(seit|schon seit)\s+/i.test(zeitraum)) return 'Das körperliche Thema beschäftigt sie ' + zeitraum.replace(/[.!?]+$/, '') + '.';
-    if (/^(\d+|ein(?:e[nmr]?)?|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|mehrere[nr]?|wenige[nr]?)\s+(tag|woche|monat|jahr)/i.test(zeitraum)) return 'Das körperliche Thema beschäftigt sie seit ' + zeitraum.replace(/[.!?]+$/, '') + '.';
-    return klV2ZitatSatz('Zum Zeitraum des körperlichen Themas sagt sie', zeitraum);
-  }
-  var text = String(f.text || '').trim();
-  if (satz && text) return klV2ZitatSatz(satz + ' und sie ergänzt dazu', text);
-  if (satz) return satz.charAt(0).toUpperCase() + satz.slice(1) + '.';
-  var rahmen = { themen: 'Zu ihrem aktuellen Anliegen sagt sie', gefuehl: 'Zu ihrem Erleben sagt sie', ziel: 'Zu dem, was sie verstehen möchte, sagt sie', zyklus: 'Zu ihrer eigenen Zykluseinschätzung sagt sie' };
-  return klV2ZitatSatz(rahmen[key] || 'Sie sagt', text || auswahl.join(', '));
-}
 
 // Update only untouched text whose exact old wording can be reproduced.
 
@@ -4212,17 +3663,17 @@ function klV2SnippetsNachziehen() {
     update(store.fakten, prefix + 'leben:familie', altSatz(family, KL_SATZ_FAMILIE), klV2Satz(family, KL_SATZ_FAMILIE), true);
     update(store.fakten, prefix + 'leben:arbeit', altSatz(work, KL_SATZ_ARBEIT), klV2Satz(work, KL_SATZ_ARBEIT), true);
   }
-  if (life && !life.skipped && life.text) update(store.fakten, prefix + 'leben:text', life.text, klV2ZitatSatz('Zu ihrem Alltag sagt sie', life.text), true);
+  if (life && !life.skipped && life.text) update(store.fakten, prefix + 'leben:text', life.text, klV2ZitatSatz('Zum Alltag', life.text), true);
   var body = a.koerper;
-  if (body && !body.skipped && body.text) update(store.fakten, prefix + 'koerper:text', body.text, klV2ZitatSatz('Zu ihrem körperlichen Kontext sagt sie', body.text), true);
+  if (body && !body.skipped && body.text) update(store.fakten, prefix + 'koerper:text', body.text, klV2ZitatSatz('Zum Körper', body.text), true);
   var hormones = body && !body.skipped ? (body.selected || []).filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
   if (life && !life.skipped && (life.selected || []).indexOf('schwanger') >= 0 && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
   if (hormones.length) {
     var kontextId = prefix + (body && !body.skipped ? 'koerper' : 'leben') + ':kontext';
-    update(store.fakten, kontextId, hormones.join(', ') + '.', 'Sie nennt als körperlichen Kontext: ' + klV2SatzListe(hormones) + '.', true);
+    update(store.fakten, kontextId, hormones.join(', ') + '.', 'Körperlicher Kontext: ' + klV2SatzListe(hormones) + '.', true);
     /* Zweiter Schritt fuer alle, die den fehlerhaften Satz schon stehen
        haben. Ohne ihn bliebe „nennt sie natürlicher Zyklus" fuer immer. */
-    update(store.fakten, kontextId, 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', 'Sie nennt als körperlichen Kontext: ' + klV2SatzListe(hormones) + '.', true);
+    update(store.fakten, kontextId, 'Als körperlichen Kontext nennt sie ' + klV2SatzListe(hormones) + '.', 'Körperlicher Kontext: ' + klV2SatzListe(hormones) + '.', true);
   }
   var kinder = a.kinder;
   if (kinder && !kinder.skipped) {
@@ -4253,155 +3704,21 @@ function klV2SnippetsNachziehen() {
    klV2SichernIntern spaeter noch dazunimmt. */
 function klV2Sichern() {
   window._klOnboardingSchreibt = true;
-  try { return klV2SichernIntern(); }
-  finally { window._klOnboardingSchreibt = false; }
-}
-
-function klV2SichernIntern() {
-  var s = klZustand(); if (s.stage !== 'aufnahme') return true;
-  klV2Verlauf(); var chat = klArchivSichern(); if (!chat) return false;
-  var before = JSON.stringify(felieStore());
-  var imported = felieStore().zusatz.onboardingImporte || (felieStore().zusatz.onboardingImporte = {});
-  var fingerprint = JSON.stringify(s.committed);
-  if (imported[s.id] !== fingerprint) {
-    // Only reconcile this still-unfinished intake after an explicit correction.
-    var prefix = 'aufnahme:' + s.id + ':';
-    felieStore().fakten = felieStore().fakten.filter(function(f) { return String(f.id).indexOf(prefix) !== 0; });
-    felieStore().episoden = felieStore().episoden.filter(function(f) { return String(f.id).indexOf(prefix) !== 0; });
-    felieStore().signale = felieStore().signale.filter(function(f) { return !(f.meta && f.meta.onboardingId === s.id); });
-    /* Die Klasse entscheidet, wann eine Angabe als überholungsbeduerftig
-       gilt: 'stabil' verfällt nie durch Nichterwähnung, 'volatil' 365 Tage
-       nach der letzten Bestätigung. Die Aufnahme schrieb bisher ALLES als
-       volatil - „Sie hat zwei Kinder." lief damit auf dieselbe Frist wie
-       eine Tageslage. Jetzt entscheidet die Aussage, nach der Regel, die
-       oben bei den Fakten steht: stabil sind Kinder, Chronisches und die
-       Arbeitssituation; volatil sind Wohnsituation, Beziehungsstatus und
-       aktuelle Last. */
-    function fact(key, text, cat, suffix, klasse) {
-      if (!text) return;
-      var i = chat.messages.findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === key; });
-      felieFaktSetzen({ id: 'aufnahme:' + s.id + ':' + key + (suffix || ''), text: text, kategorie: cat,
-        klasse: klasse === 'stabil' ? 'stabil' : 'volatil', quelle: 'selbst',
-        belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
-    }
-    var a = s.committed, life = a.leben;
-    if (life && !life.skipped) {
-      var work = life.selected.filter(function(v) { return ['Elternzeit','Vollzeit','Teilzeit','selbstständig'].indexOf(v) >= 0; });
-      var family = life.selected.filter(function(v) { return ['alleinlebend','Partnerschaft','Kinder'].indexOf(v) >= 0; });
-      /* "hat Kinder" faellt weg, sobald eine Anzahl vorliegt — die eigene
-         Blase "Zwei Kinder." sagt dasselbe und mehr. */
-      if (a.kinder && !a.kinder.skipped && a.kinder.amount)
-        family = family.filter(function(v) { return v !== 'Kinder'; });
-      if (life.selected.indexOf('keine Kinder') >= 0) fact('leben', 'Sie hat keine Kinder.', 'familie', ':kinderstatus', 'stabil');
-      if (life.selected.indexOf('Kinderwunsch') >= 0) fact('leben', 'Sie hat einen Kinderwunsch.', 'familie', ':kinderwunsch');
-      if (family.length) fact('leben', klV2Satz(family, KL_SATZ_FAMILIE), 'familie', ':familie');
-      /* Elternzeit ist eine Phase, keine Arbeitssituation - eine Auswahl,
-         die sie enthält, bleibt volatil und will wieder bestätigt werden. */
-      if (work.length) fact('leben', klV2Satz(work, KL_SATZ_ARBEIT), 'arbeit', ':arbeit',
-        work.indexOf('Elternzeit') < 0 ? 'stabil' : 'volatil');
-      if (life.text) fact('leben', klV2ZitatSatz('Zu ihrem Alltag sagt sie', life.text), 'allgemein', ':text');
-    }
-    if (a.kinder && !a.kinder.skipped)
-      /* Die ANZAHL der Kinder ändert sich nicht durch Zeitablauf, ihr ALTER
-         schon - deshalb nicht dieselbe Klasse fuer beide Sätze. */
-      klV2KinderSaetze(a.kinder).forEach(function(k) {
-        fact('kinder', k.text, 'familie', k.suffix, k.suffix === ':anzahl' ? 'stabil' : 'volatil'); });
-    var body = a.koerper, hormones = body && !body.skipped ? body.selected.filter(function(v) { return ['nichts davon','später','bekannte körperliche Themen'].indexOf(v) < 0; }) : [];
-    if (klV2Hat('leben','schwanger') && hormones.indexOf('Schwangerschaft') < 0) hormones.push('Schwangerschaft');
-    /* Auch hier ohne Praefix. "Nach eigener Angabe" war als Abgrenzung
-       gedacht — felie stellt nichts fest, sie gibt wieder —, aber diese
-       Abgrenzung gehoert nicht in den angezeigten Satz: im Profil steht
-       ohnehin nur Selbstauskunft, und die Kategorie "Gesundheit" steht in
-       der Blase. Fuer das Modell traegt sie jetzt felieKontextDaten() als
-       eigenes Feld quelle bei, statt sie in den Text zu schreiben. */
-    /* „nennt sie natürlicher Zyklus" war falsches Deutsch: nach „nennt"
-       steht der Akkusativ, die Auswahlwerte stehen im Nominativ. Statt die
-       Werte zu beugen - „einen natürlichen Zyklus", aber „eine hormonelle
-       Verhütung" - loest der Doppelpunkt die Rektion auf. Der Satz beginnt
-       jetzt ausserdem mit „Sie", damit die Anzeige ihren Namen einsetzt. */
-    if (hormones.length) fact(body && !body.skipped ? 'koerper' : 'leben', 'Sie nennt als körperlichen Kontext: ' + klV2SatzListe(hormones) + '.', 'gesundheit', ':kontext');
-    if (body && !body.skipped && body.text) fact('koerper', klV2ZitatSatz('Zu ihrem körperlichen Kontext sagt sie', body.text), 'gesundheit', ':text');
-    if (a.schlafroutine && !a.schlafroutine.skipped && (a.schlafroutine.bed || a.schlafroutine.wake || a.schlafroutine.irregular)) fact('schlafroutine', klV2SchlafSatz(a.schlafroutine), 'allgemein');
-    ['themen','gefuehl','ziel','zyklus','beschwerden'].forEach(function(key) {
-      var f = a[key]; if (!f || f.skipped) return;
-      if (['gefuehl','ziel','zyklus'].indexOf(key) >= 0 && f.selected.some(function(v) { return ['schwer zu sagen','weiß ich noch nicht','weiß ich nicht'].indexOf(v) >= 0; })) return;
-      var days = ['gefuehl','zyklus'].indexOf(key) >= 0 ? 1 : 7;
-      var i = chat.messages.findIndex(function(m) { return m.role === 'user' && m.onboardingFeld === key; });
-      felieEpisode({ id: 'aufnahme:' + s.id + ':' + key, text: klV2FadenText(key, f), faelligBis: f.ts + days * 86400000,
-        belege: i >= 0 ? [{ nachricht: i, beleg: chat.messages[i].content }] : [] });
-    });
-    var sleep = a.schlafqualitaet;
-    if (sleep && !sleep.skipped && sleep.selected.length) {
-      var chip = FELIE_FRAGEN.schlafqualitaet.chips.find(function(c) { return c.label === sleep.selected[0]; });
-      if (chip) felieSchreibeSignal('schlafqualitaet', chip.wert, 'selbst', { quelleDetail: 'Onboarding: letzte Nacht', onboardingId: s.id }, sleep.ts);
-    }
-    imported[s.id] = fingerprint;
-    felieStore().zusatz.onboardingVerbindungenV6 = felieStore().zusatz.onboardingVerbindungenV6 || {};
-    felieStore().zusatz.onboardingVerbindungenV6[s.id] = true;
-  }
-  if (!felieStoreSpeichern()) { felieStoreSetzen(JSON.parse(before)); window._klStorageError = true; return false; }
-  /* Erst NACH dem Store schreiben: die Zyklusangabe liegt unter einem
-     eigenen Speicherschluessel, ein Ruecksetzen des Stores wuerde sie
-     nicht mit zuruecknehmen. Die Voreinstellung ist idempotent und darf
-     bei jedem Durchlauf erneut aufgerufen werden. */
-  try { klV2ZyklusVoreinstellen(s.committed); } catch (e) {}
-  var chats = getSavedChats(), current = chats.find(function(c) { return c.onboardingId === s.id; });
-  if (!current) return false;
-  current.notizenStatus = 'vollstaendig'; current.onboardingFlow = 2;
-
-  /* AL-76: Die Archivkarte des Kennenlernens bekommt ihre Zusammenfassung.
-     Ohne sie stand dort "Noch keine Gespraechsnotizen vorhanden." — die
-     erste Archivkarte, die eine Nutzerin je sieht, las sich damit, als
-     waere das Gespraech verloren gegangen.
-       Der Text kommt aus klV2Zusammenfassung(), also deterministisch aus
-     ihren eigenen Auswahlen, ohne Modellaufruf. Er war dafuer schon
-     gebaut: der Kommentar dort sagt "Standalone im Archiv traegt der Satz
-     trotzdem" — es fehlte nur der Schreibvorgang.
-       nachweis.quelle 'selbst' ist die ehrliche Angabe. Der
-     Nachweis-Mechanismus existiert, um Modellerfindungen zu belegen, und
-     hat bei ihren eigenen Auswahlen nichts zu pruefen. */
-  try { current.zusammenfassung = { text: klV2Zusammenfassung(), nachweis: { quelle: 'selbst' } }; } catch (e) {}
-
-  /* AL-75: Was im Kennenlernen ins Gedaechtnis geschrieben wurde, wird als
-     "neu" gemeldet — Puls auf dem Gedaechtnis-Symbol, Register "Neu" als
-     Einstieg, Lime-Rand an den einzelnen Eintraegen, und alles verlischt
-     beim Ansehen. Der ganze Mechanismus war gebaut, wurde aber nur vom
-     Abschlussauftrag gefuettert; der Kennenlern-Weg schreibt ueber
-     felieFaktSetzen/felieEpisode und meldete nichts.
-       Damit sah das Ergebnis des Kennenlernens aus, als sei nichts
-     passiert — in genau dem Moment, den E-S5/2 als den Beweis bezeichnet,
-     der das Produkt verkauft.
-       Hier und nicht im Importblock darueber: der laeuft bei jeder
-     Korrektur erneut, und dann blinkte es mitten in der Aufnahme. Diese
-     Stelle wird durch 'stage !== aufnahme' oben genau einmal erreicht.
-       Gesammelt wird ueber die Kennung, nicht ueber einen Ruecklauf aus
-     fact(): die Aufnahme legt Fakten UND Episoden unter derselben
-     Kennungsform an, und gedNeueEintraege loest beide gegen den Bestand
-     auf. */
-  var neuPraefix = 'aufnahme:' + s.id + ':';
-  var neuIds = [];
   try {
-    felieStore().fakten.forEach(function (f) {
-      if (String(f.id).indexOf(neuPraefix) === 0) neuIds.push(f.id); });
-    felieStore().episoden.forEach(function (e) {
-      if (String(e.id).indexOf(neuPraefix) === 0) neuIds.push(e.id); });
-  } catch (e) {}
-  if (neuIds.length) { try { felieNeueSnippetsSetzen(neuIds); } catch (e) {} }
-  try { localStorage.setItem('felie_saved_chats', JSON.stringify(chats)); } catch(e) { window._klStorageError = true; return false; }
-  if (!saveUserProfile()) { window._klStorageError = true; return false; }
-  s.extraction = 'fertig'; s.stage = 'bereit'; s.input = ''; s.completedAt = Date.now();
-  if (!klEntwurfSpeichern()) { s.stage = 'aufnahme'; return false; }
-  felieAutosave(); return true;
+    klZustand().phase = klPhase;
+    var r = felieKlSichern();
+    if (r.speicherFehler) window._klStorageError = true;
+    if (r.ok && !r.schonFertig) felieAutosave();
+    return r.ok;
+  }
+  finally { window._klOnboardingSchreibt = false; }
 }
 
 function klV2StartApp() {
   if (window._klV2Saving || window._felieRequestPending) return;
-  var s = klZustand();
   /* Ohne Auswahl wird nicht gestartet. Der Knopf ist bis dahin gesperrt;
      diese Zeile faengt den Aufruf ueber die Tastatur oder aus dem Code ab. */
-  var wahl = klV2Einstiege().find(function(e) { return e.key === s.einstieg; });
-  if (!wahl) { s.formError = 'Wähle bitte aus, womit wir anfangen.'; klV2Status(); return; }
-  s.landing = { choice: wahl.key, thema: wahl.thema, plan: wahl.plan, active: true, ts: Date.now() };
+  if (!felieKlLanden()) { klV2Status(); return; }
   window._klV2Saving = true;
   var ok = false;
   try { ok = klV2Sichern(); } catch(e) { window._klStorageError = true; }
@@ -4414,24 +3731,11 @@ function klV2StartApp() {
   homeInit(true);
 }
 
-function klV2StartseitenText() {
-  var s = klZustand(), landing = s.landing;
-  /* Greift jetzt fuer jeden angenommenen Themenvorschlag, nicht nur fuer
-     den erstgenannten. Beim offenen Thema gibt es keinen Plan — dann
-     bleibt der neutrale Text unten. */
-  if (landing && landing.plan && !s.contextChanged) {
-    /* „Diesen Gedanken nehmen wir mit" stand vor dem Plan und sagte
-       nichts — der Plan ist der Gedanke. Er steht jetzt als eigener
-       Satz. */
-    var plan = landing.plan.charAt(0).toUpperCase() + landing.plan.slice(1);
-    var frage = (landing.thema && KL_EINSTIEGSFRAGEN[landing.thema]) || KL_EINSTIEGSFRAGE_OFFEN;
-    return plan + '.\n\nSchau dich gern erst einmal ein bisschen in der App um. '
-      + 'Du kannst mir aber auch direkt schreiben, ' + frage + '.';
-  }
-  return 'Schau dich gern erst einmal um. Wenn du direkt weitersprechen möchtest: Worüber würdest du gerne mit mir sprechen?';
-}
-
 function klV2Wiederherstellen(s) {
+  /* F5-2: ein Entwurf, der beim entfallenen Wearable-Schritt stand, geht
+     beim naechsten Schritt weiter; eine alte Antwort dort bleibt liegen
+     und erscheint nirgends (klV2Schritte kennt den Schritt nicht mehr). */
+  if (s && s.phase === 'daten') s.phase = 'schlafqualitaet';
   if (!s.form || typeof s.form !== 'object' || !s.committed || typeof s.committed !== 'object' || !klV2Definition(s.phase)) return false;
   window._klState = s;
   if (s.stage === 'reflexion') s.stage = 'bereit';
@@ -5329,7 +4633,7 @@ function felieHomeAenderungssatz(d) {
   /* Zitiert wird, was sie im Gedaechtnis liest - nicht die gespeicherte
      Fassung. Sonst meldet die Startseite "Sie hat ...", waehrend zwei
      Zentimeter weiter ihr Name steht. */
-  var t = felieHomeZitat(felieTextMitName(d.text));
+  var t = felieHomeZitat(felieAngabeAnzeige(d.text));
   var z = t ? '\u201e' + t + '\u201c' : null;
   if (d.was === 'gespraech') return 'Das Gespr\u00e4ch ist gel\u00f6scht.';
   if (d.was === 'notiz') {
@@ -8735,7 +8039,7 @@ function resetUserDataConfirm(title, message) {
 
 function doResetUserData() {
   window._klGeneration = (window._klGeneration || 0) + 1;
-  window._klWearable = null; window._klWearablePending = false; window._klV2Saving = false;
+  window._klV2Saving = false;
   window._klState = null; window._klExtractPromise = null; window._klRequestPending = false; window._felieOnboardingChatId = null;
   try {
     /* Dieselbe Liste wie das Backup, plus die Altlasten. Vorher stand hier
@@ -9036,7 +8340,7 @@ function gedNeuFadenZeile(e) {
     + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten" data-snip-loeschbar="1">'
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
-    + '<div class="snip-text">' + gedEsc(felieTextMitName(e.text)) + '</div>'
+    + '<div class="snip-text"' + felieSubjektAttr(e.text) + '>' + gedEsc(felieAngabeAnzeige(e.text)) + '</div>'
     + '<span class="ged-badge">vorübergehend</span>'
     + '</div>'
     + '<div class="ged-akt">' + felieSnipStiftHtml('„' + e.text + '" bearbeiten') + '</div>'
@@ -9179,7 +8483,7 @@ function gedFaedenHtml() {
         + ' data-snip-id="' + felieSnipAttr(e.id) + '" data-snip-label="Offenen Faden bearbeiten" data-snip-loeschbar="1">'
         + '<div class="snip-view">'
         + '<div style="flex:1;min-width:0;">'
-        + '<div class="snip-text">' + gedEsc(felieTextMitName(e.text)) + '</div>'
+        + '<div class="snip-text"' + felieSubjektAttr(e.text) + '>' + gedEsc(felieAngabeAnzeige(e.text)) + '</div>'
         + marke + wieder
         + '</div>'
         + rechts
@@ -9362,7 +8666,7 @@ function gedLerntHtml() {
       + '<div class="ged-lernt-body">'
       + '<div class="snip-view">'
       + '<div style="flex:1;min-width:0;">'
-      + '<div class="snip-text">' + gedEsc(felieTextMitName(c.felie_lernt)) + '</div>'
+      + '<div class="snip-text"' + felieSubjektAttr(c.felie_lernt) + '>' + gedEsc(felieAngabeAnzeige(c.felie_lernt)) + '</div>'
       + '<div class="ged-meta">' + gedEsc(c.thema || 'Gespräch') + (when ? ' · ' + when : '') + '</div>'
       + (!felieArchivNotizQuelle(c) ? '<div class="ged-meta">Ältere, ungeprüfte Notiz. felie nutzt sie nicht automatisch; du kannst sie korrigieren.</div>' : '')
       + '</div>'
@@ -9449,7 +8753,7 @@ function gedFaktZeile(f) {
     + ' data-snip-label="Eintrag bearbeiten" data-snip-loeschbar="1">'
     + '<div class="snip-view">'
     + '<div style="flex:1;min-width:0;">'
-    + '<div class="snip-text">' + gedEsc(felieTextMitName(f.text)) + '</div>'
+    + '<div class="snip-text"' + felieSubjektAttr(f.text) + '>' + gedEsc(felieAngabeAnzeige(f.text)) + '</div>'
     + aend + marken
     + '</div>'
     + '<div class="ged-akt">' + felieSnipStiftHtml('„' + f.text + '" bearbeiten') + '</div>'
@@ -9482,7 +8786,7 @@ function profilFaktZeile(f) {
        so traegt jeder Eintrag seine Einordnung selbst und bleibt auch
        dann lesbar, wenn er einzeln betrachtet oder verschoben wird. */
     + '<span class="profil-fakt-kat">' + GED_KAT_LABEL[GED_KAT_LABEL[f.kategorie] ? f.kategorie : 'allgemein'] + '</span>'
-    + '<div class="snip-text">' + gedEsc(felieTextMitName(f.text)) + '</div>'
+    + '<div class="snip-text"' + felieSubjektAttr(f.text) + '>' + gedEsc(felieAngabeAnzeige(f.text)) + '</div>'
     + '</div>'
     + felieSnipStiftHtml('„' + f.text + '" bearbeiten')
     + '</div></div>';
@@ -10585,7 +9889,7 @@ function felieNotizenHtml(chat, editierbar) {
       return '<div class="notiz-feld notiz-feld--erkenntnis' + (editierbar ? ' snip' : '') + '"' + attr + '>'
         + '<div class="snip-view"><div class="notiz-kopf"><div class="notiz-kicker">' + felieSnipAttr(n.thema || chat.thema || 'Aus unserem Gespräch') + '</div>'
         + (editierbar ? felieSnipStiftHtml('Gesprächsnotiz bearbeiten') : '') + '</div>'
-        + '<div class="snip-text notiz-text">' + felieSnipAttr(felieTextMitName(n.text)) + '</div></div></div>';
+        + '<div class="snip-text notiz-text"' + felieSubjektAttr(n.text) + '>' + felieSnipAttr(felieAngabeAnzeige(n.text)) + '</div></div></div>';
     }).join('') + '</div>';
 }
 
@@ -10967,7 +10271,12 @@ function discardChatAndClose() {
    Gespeichert wird weiterhin "Sie ...". Der Name steht im Profil und
    nirgends sonst; ihn in jeden Satz zu schreiben hiesse, ihn bei einer
    Namensaenderung ueberall stehen zu lassen. Beim Bearbeiten geht es
-   deshalb den Weg zurueck (felieTextOhneName). */
+   deshalb den Weg zurueck (felieTextOhneName).
+
+   Seit B-5b (Marcel, 28.09., AL-110) zeigen "Ueber dich" und das
+   Gedaechtnis die knappe Angabe ohne Namen (felieAngabeAnzeige im Kern,
+   Rueckweg felieAngabeZurueck). Die Namensform bleibt nur fuer die nicht
+   bearbeitbare Zusammenfassung alter Archivkarten (felieNotizenHtml). */
 function felieAnzeigeName() {
   var n = typeof userName === 'string' ? userName.replace(/\s+/g, ' ').trim() : '';
   /* Ein Name, der selbst wie das ersetzte Wort aussieht, wuerde beim
@@ -10983,6 +10292,12 @@ function felieTextMitName(text) {
      ("Nutzerin teilt mit, dass ..."). Dieselbe Rechnung, dasselbe
      Ergebnis: eine Bezeichnung in dritter Person gegen eine andere. */
   return t.replace(/^(Sie|Die Nutzerin|Nutzerin)(?=\s)/, n);
+}
+
+/* Merkt am Anzeigeelement, dass die Anzeige das "Sie" gestrichen hat
+   (B-5b) - fuer den Rueckweg beim Bearbeiten. */
+function felieSubjektAttr(text) {
+  return felieAngabeSubjekt(text) ? ' data-subjekt="Sie"' : '';
 }
 
 function felieTextOhneName(text) {
@@ -11041,6 +10356,7 @@ function felieSnipStart(btn) {
 
   host.dataset.snipOffen = '1';
   host.dataset.snipAlt = alt;
+  host.dataset.snipSubjekt = (textEl.dataset && textEl.dataset.subjekt) || '';
   view.style.display = 'none';
 
   var form = document.createElement('div');
@@ -11117,10 +10433,9 @@ function felieSnipUebernehmen(el) {
   if (!neu) { felieSnipSchliessen(host); return; }
 
   if (neu !== (host.dataset.snipAlt || '')) {
-    /* Angezeigt und bearbeitet wird mit ihrem Namen, gespeichert wird mit
-       "Sie" - sonst stuende der Name in jedem Satz und bliebe dort auch
-       stehen, wenn sie ihn spaeter aendert. */
-    if (felieSnipSchreiben(host, felieTextOhneName(neu)) === false) { try { ta.focus(); } catch (e) {} return; }
+    /* Angezeigt und bearbeitet wird als knappe Angabe, gespeichert mit
+       "Sie" (B-5b, seit F5a: felieAngabeZurueck im Kern). */
+    if (felieSnipSchreiben(host, felieAngabeZurueck(neu, host.dataset.snipAlt, host.dataset.snipSubjekt)) === false) { try { ta.focus(); } catch (e) {} return; }
     textEl.textContent = neu;
     var editButton = host.querySelector('.snip-edit');
     if (editButton) editButton.setAttribute('aria-label', '„' + neu + '“ bearbeiten');

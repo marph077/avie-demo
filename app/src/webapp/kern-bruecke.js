@@ -108,6 +108,23 @@ kern.felieGespraechVerbinden({
   ohneAbschluss: function () { window.hideFelieLoader(); }
 });
 
+/* Seit F5a fuehrt der Kern das Kennenlernen (aufnahme.js): sein Stand
+   liegt dort, die Webapp sieht ihn weiter als window._klState. Name und
+   Alter setzt die Webapp in ihre Profil-Variablen (klProfilSetzen), das
+   Profil und den Entwurf schreibt sie selbst (saveUserProfile,
+   klEntwurfSpeichern); den Verlauf spiegelt sie in klHistory. */
+Object.defineProperty(window, '_klState', {
+  configurable: true,
+  get: function () { return kern.felieKlStand(); },
+  set: function (wert) { kern.felieKlStandSetzen(wert); }
+});
+kern.felieKlVerbinden({
+  profilSetzen: function (p) { window.klProfilSetzen(p); },
+  profilSichern: function () { return window.saveUserProfile(); },
+  entwurfSichern: function () { return window.klEntwurfSpeichern(); },
+  verlauf: function (v) { window.klVerlaufUebernehmen(v); }
+});
+
 const namen = Object.keys(kern).sort();
 const kollisionen = [];
 

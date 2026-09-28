@@ -56,8 +56,6 @@ export const KL_SCHRITTE = tiefFrieren({
   zyklus: { title: 'Möchtest du ungefähr sagen, wo du gerade stehst?', hint: 'Wo du in deinem Zyklus ungefähr stehst, kann mir dabei helfen zu verstehen, welche Körpersignale du gerade fühlst. Deine eigene Einschätzung genügt, genau muss es nicht sein.', group: 'Dein Körper',
     options: ['Periode', 'kurz danach', 'Zyklusmitte', 'kurz vor der Periode', 'weiß ich nicht'] },
   beschwerden: { title: 'Seit wann beschäftigt dich das?', hint: 'Ob dich das erst seit Kurzem begleitet oder schon länger, macht für mich einen Unterschied. Ein ungefährer Zeitraum reicht völlig.', group: 'Dein Körper' },
-  daten: { title: 'Möchtest du ein Wearable verknüpfen?', hint: 'Wenn du magst, kannst du Daten aus deinem Wearable ins Gespräch holen. Nötig ist das nicht, ich komme auch ohne aus. Es gibt uns eventuell zusätzlich Aufschluss über deine Körper- und Gefühlslage.', group: 'Deine Daten',
-    options: ['Wearable verknüpfen', 'Ohne Wearable weiter'] },
   schlafqualitaet: { title: 'Wie hat sich deine letzte Nacht angefühlt?', hint: 'Wie du deine Nacht selbst erlebt hast, sagt mir oft mehr als jede Zahl. Erzähl mir, wie sich die letzte angefühlt hat.', group: 'Deine Daten',
     options: ['kaum geschlafen', 'oft wach', 'unruhig', 'okay', 'ruhig', 'erholsam'] },
   schlafroutine: { title: 'Wie sieht deine Schlafroutine meist aus?', hint: 'Wann dein Tag endet und wann er beginnt, sagt mir viel über deinen Rhythmus. Damit kann ich Ideen für deinen Abend besser an deinen Tagesablauf anpassen.', group: 'Deine Daten' },
@@ -77,8 +75,11 @@ export const KL_SCHRITTE = tiefFrieren({
     hintDanach: 'Das Wichtigste habe ich mir gemerkt — ändern kannst du das jederzeit im Abschnitt **Gedächtnis**. Wie es dir gerade geht, kannst du später auf der Startseite unter **Selbstreflexion** festhalten.' }
 });
 
-/* Die vier Schritte, mit denen jedes Kennenlernen endet, in dieser Folge. */
-export const KL_SCHRITTE_ENDE = Object.freeze(['daten', 'schlafqualitaet', 'schlafroutine', 'zusammenfassung']);
+/* Die Schritte, mit denen jedes Kennenlernen endet, in dieser Folge. Bis
+   F5-2 A (Marcel, 28.09.) stand davor der Wearable-Schritt 'daten' - tot
+   seit AL-71a (die Oura-Verbindung endete immer mit "nicht erreichbar");
+   der Apple-Health-Schritt kommt mit F8 (F-15). */
+export const KL_SCHRITTE_ENDE = Object.freeze(['schlafqualitaet', 'schlafroutine', 'zusammenfassung']);
 
 /* Die Definition eines Schritts; unbekannt: undefined. Wie bisher ein
    einfacher Zugriff auf die Tabelle. */

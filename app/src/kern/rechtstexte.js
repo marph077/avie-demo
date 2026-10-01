@@ -33,7 +33,7 @@ var RECHTSTEXTE_DATEN = {
         "bloecke": [
           {
             "art": "absatz",
-            "text": "Lumavis GmbH, Nordring 9a, 60388 Frankfurt am Main, Deutschland\nVertreten durch die Geschäftsführung: Luisa Hoyer, Marcel Phillip Hoyer\nE-Mail: info@lumavis-gmbh.de · Telefon: +49 6109 7068525 · www.lumavis-gmbh.de"
+            "text": "Lumavis GmbH, Nordring 9a, 60388 Frankfurt am Main, Deutschland\nVertreten durch die Geschäftsführung: Luisa Hoyer, Marcel Phillip Hoyer\nE-Mail: datenschutz@felie.app · Telefon: +49 6109 7068525 · www.lumavis-gmbh.de"
           }
         ]
       },
@@ -175,7 +175,7 @@ var RECHTSTEXTE_DATEN = {
         "bloecke": [
           {
             "art": "absatz",
-            "text": "Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20), Widerspruch (Art. 21), Widerruf einer Einwilligung (Art. 7 Abs. 3). Das meiste, was felie über dich weiß, siehst du vollständig im Bereich **Gedächtnis**, kannst es dort ändern, löschen und exportieren. Eine Auskunft von uns umfasst, was bei uns liegt. Anfragen an info@lumavis-gmbh.de oder an unsere Datenschutzbeauftragte; wir antworten innerhalb eines Monats."
+            "text": "Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18), Datenübertragbarkeit (Art. 20), Widerspruch (Art. 21), Widerruf einer Einwilligung (Art. 7 Abs. 3). Das meiste, was felie über dich weiß, siehst du vollständig im Bereich **Gedächtnis**, kannst es dort ändern, löschen und exportieren. Eine Auskunft von uns umfasst, was bei uns liegt. Anfragen an datenschutz@felie.app oder an unsere Datenschutzbeauftragte; wir antworten innerhalb eines Monats."
           },
           {
             "art": "absatz",
@@ -403,7 +403,7 @@ var RECHTSTEXTE_DATEN = {
         "bloecke": [
           {
             "art": "absatz",
-            "text": "Für die Nutzung auf Apple-Geräten gilt: Diese Bedingungen bestehen zwischen dir und uns, nicht mit Apple. Wir – nicht Apple – sind für die App, ihre Pflege und ihren Support verantwortlich und für Ansprüche im Zusammenhang mit der App, einschließlich Produkthaftung, gesetzlicher und behördlicher Anforderungen, Verbraucherschutz sowie Rechten Dritter am geistigen Eigentum. Entspricht die App nicht einer gesetzlichen Gewährleistung, kannst du Apple benachrichtigen; Apple erstattet dann ggf. den Kaufpreis, weitere Gewährleistungspflichten hat Apple nicht. Du versicherst, dass du dich nicht in einem Land unter US-Embargo befindest und nicht auf einer US-Sperrliste stehst. Apple und seine Tochtergesellschaften sind Drittbegünstigte dieser Bedingungen und können sie dir gegenüber durchsetzen. Kontakt für Fragen und Beschwerden: Lumavis GmbH, Anschrift wie oben, info@lumavis-gmbh.de."
+            "text": "Für die Nutzung auf Apple-Geräten gilt: Diese Bedingungen bestehen zwischen dir und uns, nicht mit Apple. Wir – nicht Apple – sind für die App, ihre Pflege und ihren Support verantwortlich und für Ansprüche im Zusammenhang mit der App, einschließlich Produkthaftung, gesetzlicher und behördlicher Anforderungen, Verbraucherschutz sowie Rechten Dritter am geistigen Eigentum. Entspricht die App nicht einer gesetzlichen Gewährleistung, kannst du Apple benachrichtigen; Apple erstattet dann ggf. den Kaufpreis, weitere Gewährleistungspflichten hat Apple nicht. Du versicherst, dass du dich nicht in einem Land unter US-Embargo befindest und nicht auf einer US-Sperrliste stehst. Apple und seine Tochtergesellschaften sind Drittbegünstigte dieser Bedingungen und können sie dir gegenüber durchsetzen. Kontakt für Fragen und Beschwerden: Lumavis GmbH, Anschrift wie oben, support@felie.app."
           }
         ]
       }
@@ -462,6 +462,15 @@ function block(b) {
   return '<p>' + inline(b.text) + '</p>';
 }
 
+/* Je Abschnitt Titel und Inhalt als HTML-Baustein (maskiert, ohne
+   Seitenrahmen) - fuer die Webseite unten und die Webapp, die seit K6
+   (Marcel 01.10.) ihr Impressum daraus zeigt. */
+export function felieRechtstextAbschnitte(art) {
+  var r = felieRechtstext(art);
+  if (!r) return [];
+  return r.abschnitte.map(function (a) { return { titel: a.titel || '', html: a.bloecke.map(block).join('') }; });
+}
+
 /* Die Webseite fuer den Store-Eintrag: dieselben Abschnitte, Wort fuer Wort. */
 export function felieRechtstextHtml(art) {
   var r = felieRechtstext(art);
@@ -469,8 +478,8 @@ export function felieRechtstextHtml(art) {
   return '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
     + '<title>' + maskieren(r.titel) + ' – felie</title></head><body>'
     + '<h1>' + maskieren(r.titel) + '</h1><p>' + maskieren(felieRechtstextKennung(art)) + '</p>'
-    + r.abschnitte.map(function (a) {
-      return (a.titel ? '<h2>' + maskieren(a.titel) + '</h2>' : '') + a.bloecke.map(block).join('');
+    + felieRechtstextAbschnitte(art).map(function (a) {
+      return (a.titel ? '<h2>' + maskieren(a.titel) + '</h2>' : '') + a.html;
     }).join('')
     + '</body></html>';
 }

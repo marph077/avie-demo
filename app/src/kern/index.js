@@ -86,6 +86,7 @@ export * from './gedaechtnisansicht.js';
 export * from './persoenlichkeit.js';
 export * from './einwilligung.js';
 export * from './profil.js';
+export * from './sicherung.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';

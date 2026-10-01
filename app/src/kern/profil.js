@@ -15,6 +15,7 @@
 import { FELIE_LS_KEYS, FELIE_LS_KEYS_ALTLAST, felieSpeicherLoeschen } from './speicher.js';
 import { felieArbeitsspeicherLeeren } from './store.js';
 import { felieDatenEpocheErhoehen } from './abschluss.js';
+import { felieKoerperZuruecksetzen } from './zyklus.js';
 import { klNameAblehnung, klNameSetzen, klUebergabeInvalidieren } from './aufnahme.js';
 import { FELIE_EINSTELLUNGEN_TEXTE, felieProfil, felieProfilSichern } from './einwilligung.js';
 
@@ -49,5 +50,8 @@ export function felieAlleDatenLoeschen() {
     try { felieSpeicherLoeschen(k); } catch (e) {}
   });
   try { felieArbeitsspeicherLeeren(); } catch (e) {}
+  /* AL-89-Rest (F7a, L1): auch der Zyklus im Arbeitsspeicher - sonst
+     schreibt ihn das naechste felieKoerperSpeichern zurueck. */
+  try { felieKoerperZuruecksetzen(); } catch (e) {}
   try { felieDatenEpocheErhoehen(); } catch (e) {}
 }

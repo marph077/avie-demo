@@ -23,7 +23,7 @@
 
    Der urspruengliche Wortlaut folgt unveraendert. */
 
-import { felieNotizSchluessel, felieNotizText } from './text.js';
+import { felieNotizSchluessel, felieNotizText, felieTitelKuerzen } from './text.js';
 import { felieSpeicherLesen, felieSpeicherLoeschen, felieSpeicherSchreiben } from './speicher.js';
 import { getSavedChats } from './gespraeche.js';
 import { felieGedaechtnisLetzterChatSetzen, felieMerkUebernehmenFuer, felieMerkVorschlaege, felieNotizenLesen, felieNotizPruefen, felieNotizVorschau } from './gedaechtnis.js';
@@ -39,6 +39,9 @@ import { bodySnapshotText } from './kontext.js';
 let epoche = 0;
 let wartend = null;
 let laufend = {};
+/* F6a (Befund 4): Auftraege, deren Gespraech geloescht wurde, waehrend die
+   Auswertung lief. Ihr Ergebnis legt keinen Eintrag mehr an. */
+let verworfen = {};
 
 /* Laeuft die Auswertung dieses Auftrags in dieser Sitzung noch? Die
    Startseiten-Karte liest das fuer ihren Text. */
@@ -52,6 +55,7 @@ export function felieAbschlussZuruecksetzen() {
   epoche = 0;
   wartend = null;
   laufend = {};
+  verworfen = {};
 }
 
 /* Umgebung (seit D4b). Die Sicherung auf dem Geraet (felieAutosave,
@@ -75,8 +79,26 @@ export function felieAbschlussSichern() {
    zeigt die normale Liste ihn. */
 export function felieGespraecheInArbeit() {
   var liste = [];
-  try { liste = felieAbschlussListe().filter(function (a) { return a.chatId == null; }); } catch (e) { return []; }
+  /* B-9a: ein Auftrag, dessen frueher Eintrag schon im Archiv steht, ist
+     dort zu sehen - keine zweite Karte. */
+  try {
+    var mitEintrag = {};
+    getSavedChats().forEach(function (c) { if (c && c.auftragId) mitEintrag[c.auftragId] = true; });
+    liste = felieAbschlussListe().filter(function (a) { return a.chatId == null && !mitEintrag[a.id]; });
+  } catch (e) { return []; }
   return liste.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+}
+
+/* Riegel fuer Krisentitel (Marcel 29.09., B-9 v3): enthaelt ein Titel einen
+   Begriff aus der festen Krisenliste - Suizid, Selbstverletzung, umbringen,
+   ritzen und Verwandte -, heisst das Gespraech "Unser Gespräch", angezeigt
+   wie gespeichert. Der Prompt verlangt ohnehin einen neutralen Titel; das
+   hier ist das Netz darunter. Wortgrenzen, damit "Kritzeleien" oder
+   "Umbau" nicht greifen. */
+var KRISENBEGRIFFE = /suizid|selbstmord|selbstt(ö|oe)tung|freitod|selbstverletz|selbstgef(ä|ae)hrd|selbst\s+(zu\s+)?verletz|selbstsch(ä|ae)dig|umbring|umzubring|umgebracht|\britz(en|t|te|test|ung)?\b|\bgeritzt|lebensm(ü|ue)d|todeswunsch|(etwas|was)\s+an(zu)?tun|nicht\s+mehr\s+(zu\s+)?leben/i;
+export function felieKrisenTitel(titel) {
+  var t = titel == null ? '' : String(titel);
+  return KRISENBEGRIFFE.test(t) ? 'Unser Gespräch' : t;
 }
 
 /* Prueft die Vorschlagsliste des neuen Extraktionsauftrags. Die Ausgabe
@@ -88,7 +110,7 @@ export function felieGespraecheInArbeit() {
    (notizen/fakten/faeden). Neu ist, dass jeder Eintrag seinen Bezug zum
    Bestand mitbringt. */
 export function felieVorschlaegePruefen(o, source, bestand) {
-  var out = { thema: felieNotizText(o.thema).slice(0, 60) || 'Unser Gespräch',
+  var out = { thema: felieKrisenTitel(felieTitelKuerzen(o.thema)) || 'Unser Gespräch',
     zusammenfassung: null,
     notizen: [], erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], feldQuelle: {}, version: 6,
     weitere_notizen: o.weitere_notizen === true, listenformat: true, verworfen: 0,
@@ -162,7 +184,7 @@ export function felieVorschlaegePruefen(o, source, bestand) {
          Inhalt darin auch zusaetzlicher Inhalt ist. Eine Altnotiz ohne
          dieses Feld ist eine Zusammenfassung und wird anders behandelt. */
       out.notizen.push({ id: 'notiz:' + out.notizen.length, art: 'notiz',
-        thema: felieNotizText(v.thema).slice(0, 60) || out.thema,
+        thema: felieKrisenTitel(felieTitelKuerzen(v.thema)) || out.thema,
         text: n.text, merken: true, bezug: bezug, zielId: gemeinsam.zielId,
         nachweis: { quelle: 'zusammenfassung', text: n.text, belege: n.belege } });
       return;
@@ -190,7 +212,7 @@ export function felieZusammenfassungPruefen(o, source, bestand) {
      alte Weg bleibt lesbar, solange ein Worker mit dem alten Auftrag
      antwortet — dort ist jeder Eintrag zwangslaeufig „neu". */
   if (o && Array.isArray(o.vorschlaege)) return felieVorschlaegePruefen(o, source, bestand);
-  var out = { thema: felieNotizText(o.thema).slice(0, 60) || 'Unser Gespräch',
+  var out = { thema: felieKrisenTitel(felieTitelKuerzen(o.thema)) || 'Unser Gespräch',
     notizen: [], erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], feldQuelle: {}, version: 5,
     weitere_notizen: o.weitere_notizen === true, listenformat: Array.isArray(o.notizen), verworfen: 0,
     geprueft: 0, verworfenJeGrund: {} };
@@ -201,7 +223,7 @@ export function felieZusammenfassungPruefen(o, source, bestand) {
     if (!n) { if (item != null) felieVerwerfen(out, 'beleg'); return; }
     var existing = out.notizen.find(function(e) { return felieNotizSchluessel(e.text) === felieNotizSchluessel(n.text); });
     if (existing) { if (merken) existing.merken = true; return; }
-    out.notizen.push({ id: 'notiz:' + out.notizen.length, thema: felieNotizText(thema).slice(0, 60) || out.thema,
+    out.notizen.push({ id: 'notiz:' + out.notizen.length, thema: felieKrisenTitel(felieTitelKuerzen(thema)) || out.thema,
       text: n.text, merken: merken, nachweis: { quelle: 'zusammenfassung', text: n.text, belege: n.belege } });
   }
   if (Array.isArray(o.notizen)) {
@@ -320,7 +342,7 @@ export function felieAbschlussAnlegen(messages, fortsetzungVon, gewaehltesThema)
   /* F4-6: kam felies Abschied an, bevor dieser Auftrag entstand, gehoert er
      ans Ende seines Verlaufs. */
   var k = abschiedKennung(auftrag.messages), n = k ? abschiedNachtraege()[k] : null;
-  if (n) { auftrag.messages.push(Object.assign({}, n)); abschiedNachtragLoesen(k); }
+  if (n) { mitAbschied(auftrag.messages, n); abschiedNachtragLoesen(k); }
   /* Fortschreiben (F2b-2): der Eintrag, den dieser Auftrag fortschreibt -
      auch fuer das Nachholen nach einem Neustart. */
   if (fortsetzungVon != null) auftrag.fortsetzungVon = fortsetzungVon;
@@ -346,6 +368,19 @@ export function felieAbschlussEntfernen(id) {
   felieAbschlussSpeichern();
 }
 
+/* Das Gespraech wurde geloescht (felieGespraechLoeschen, F6a Befund 4):
+   bis F6a blieb sein Auftrag liegen, und die fertige Auswertung legte das
+   geloeschte Gespraech als neuen Eintrag wieder an. Jetzt verschwindet der
+   Auftrag, und sein spaetes Ergebnis wird verworfen: felieAbschlussVollziehen
+   (auch der Notlauf kommt dort an) und der fruehe Eintrag
+   (felieAbschlussVorlaeufig) pruefen es. Das Nachholen sieht ihn nicht mehr,
+   er steht nicht mehr in der Liste. */
+export function felieAbschlussVerwerfen(id) {
+  if (!id) return;
+  verworfen[id] = true;
+  felieAbschlussEntfernen(id);
+}
+
 /* ── Abschied an der Grenze (F4-6 A) ─────────────────────────────────
    Die Auswertung laeuft parallel zu felies Abschied (Zusatz 1). Der
    Abschied gehoert als letzte Nachricht zu dem Gespraech, dessen Verlauf
@@ -365,10 +400,13 @@ function abschiedNachtragLoesen(k) {
   var o = abschiedNachtraege(); delete o[k];
   try { if (Object.keys(o).length) felieSpeicherSchreiben(ABSCHIED_NACHTRAG_KEY, JSON.stringify(o)); else felieSpeicherLoeschen(ABSCHIED_NACHTRAG_KEY); } catch (e) {}
 }
+/* Seit B-8 zwei Blasen (abschied 'dank' und true); jede nur einmal. */
 function mitAbschied(messages, m) {
-  if (messages.some(function (x) { return x && x.abschied; })) return false;
-  messages.push(Object.assign({}, m));
-  return true;
+  var neu = (Array.isArray(m) ? m : [m]).filter(function (x) {
+    return x && !messages.some(function (y) { return y && y.abschied === x.abschied; });
+  });
+  neu.forEach(function (x) { messages.push(Object.assign({}, x)); });
+  return neu.length > 0;
 }
 /* Liefert, wo der Abschied gelandet ist: 'auftrag', 'archiv' oder 'nachtrag'. */
 export function felieAbschiedNachtragen(kennung, m) {
@@ -378,16 +416,65 @@ export function felieAbschiedNachtragen(kennung, m) {
   var chats = getSavedChats();
   var c = chats.filter(function (x) { return hat(x.messages); })[0];
   if (c) { if (mitAbschied(c.messages, m)) felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats)); return 'archiv'; }
-  var o = abschiedNachtraege(); o[kennung] = Object.assign({}, m);
+  var o = abschiedNachtraege(); o[kennung] = (Array.isArray(m) ? m : [m]).map(function (x) { return Object.assign({}, x); });
   try { felieSpeicherSchreiben(ABSCHIED_NACHTRAG_KEY, JSON.stringify(o)); } catch (e) {}
   return 'nachtrag';
 }
 
+/* B-9a (Marcel 29.09.): der fruehe Archiveintrag. Sobald die gepruefte
+   Zusammenfassung da ist, legt ihn dieser Auftrag an - mit Zusammenfassung
+   und Titel, noch ohne Notizen, markiert auswertungLaeuft und vorlaeufig
+   'unvollstaendig' (stimmt auch, wenn die App vorher endet). Der Auftrag
+   bleibt in 'auswertung'; der Schritt 'archiv' ergaenzt spaeter denselben
+   Eintrag (archivVervollstaendigen). Nicht fuer Fortsetzungen: deren
+   Eintrag gibt es schon. Liefert die Kennung des Eintrags oder null. */
+export function felieAbschlussVorlaeufig(auftrag, frueh) {
+  if (!auftrag || !frueh || !frueh.zusammenfassung || auftrag.status !== 'auswertung' || auftrag.fortsetzungVon != null || verworfen[auftrag.id]) return null;
+  if (auftrag.epoche !== felieDatenEpoche()) return null;
+  if (getSavedChats().some(function (c) { return c.auftragId === auftrag.id; })) return null;
+  var summary = { thema: felieTitelKuerzen(frueh.thema) || 'Unser Gespräch', zusammenfassung: frueh.zusammenfassung,
+    notizen: [], fakten: [], faeden: [], notizenStatus: 'unvollstaendig', auswertungLaeuft: true, version: 6 };
+  return saveChat(summary, auftrag.messages, auftrag.id, null, auftrag.gewaehltesThema);
+}
+
+/* Der fruehe Eintrag wird fertig: Notizen, Status und Protokoll aus der
+   Auswertung; die Zusammenfassung und der Titel bleiben, wenn sie keine
+   bringt (Notlauf, AL-100). Der Verlauf kommt aus dem Auftrag - mit dem,
+   was inzwischen dazukam (felies Abschied, B-8). */
+function archivVervollstaendigen(chats, ziel, summary, messages) {
+  var verlauf = felieSichererVerlauf(messages).filter(function (m) { return !m.gesperrt; }).map(ohneHilfsfelder);
+  if (verlauf.length < (ziel.messages || []).length) verlauf = ziel.messages;
+  var s = Object.assign({}, summary);
+  if ((!s.thema || s.thema === 'Unser Gespräch') && ziel.thema) s.thema = ziel.thema;
+  var id = ziel.id || ziel.timestamp;
+  var neu = archivEintrag(s, verlauf, id, ziel.auftragId, ziel.gewaehltesThema);
+  if (!summary.zusammenfassung && ziel.zusammenfassung) neu.zusammenfassung = ziel.zusammenfassung;
+  neu.notizenGrund = felieArchivNotizenGrund(neu, summary.notizenGrund);
+  chats.splice(chats.indexOf(ziel), 1, neu);
+  felieGedaechtnisLetzterChatSetzen(id);
+  felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats));
+  return id;
+}
+
 /* Die Notiz, wenn die Auswertung ausfaellt: das Gespraech wird trotzdem
    archiviert und traegt notizenStatus 'unvollstaendig' — die Archivkarte
-   zeigt das an und bietet dort das erneute Erzeugen. */
+   zeigt das an und bietet dort das erneute Erzeugen. Seit F6a mit dem
+   Grund 'ausgefallen' (AL-97). */
 export function felieAbschlussNotlaufNotiz() {
-  return { thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5 };
+  return { thema: 'Unser Gespräch', notizen: [], notizenStatus: 'unvollstaendig', notizenGrund: 'ausgefallen', erkenntnis: '', felie_lernt: '', fakten: [], faeden: [], version: 5 };
+}
+
+/* Warum ein Eintrag 'unvollstaendig' ist (F6a, AL-97; Marcel 29.09.):
+   'nichts' - die Auswertung lief durch und fand nichts; 'ausgefallen' -
+   sie scheiterte (Notlauf); sonst 'teilweise'. "nichts" gilt nur, solange
+   der Eintrag weder Notiz noch Zusammenfassung hat. Vollstaendig: kein
+   Grund. Aeltere Eintraege ohne Grund liest felieArchivZustand als
+   'teilweise'. */
+export function felieArchivNotizenGrund(eintrag, grund) {
+  if (!eintrag || eintrag.notizenStatus !== 'unvollstaendig') return undefined;
+  var g = grund === 'nichts' || grund === 'ausgefallen' ? grund : 'teilweise';
+  if (g === 'nichts' && ((eintrag.notizen || []).length || eintrag.zusammenfassung)) g = 'teilweise';
+  return g;
 }
 
 /* Fuehrt einen Auftrag so weit wie moeglich. true, wenn er abgeschlossen
@@ -403,8 +490,13 @@ export function felieAbschlussAusfuehren(auftrag) {
     felieAbschlussAktualisieren(auftrag, { summary: felieAbschlussNotlaufNotiz(), status: 'archiv' });
   }
   if (auftrag.status === 'archiv') {
-    var vorhanden = getSavedChats().filter(function(c) { return c.auftragId === auftrag.id; })[0];
+    var alle = getSavedChats();
+    var vorhanden = alle.filter(function(c) { return c.auftragId === auftrag.id; })[0];
     var chatId = vorhanden ? (vorhanden.id || vorhanden.timestamp) : null;
+    /* B-9a: der fruehe Eintrag wird ergaenzt, nicht ein zweiter angelegt. */
+    if (vorhanden && vorhanden.auswertungLaeuft) {
+      try { chatId = archivVervollstaendigen(alle, vorhanden, auftrag.summary, auftrag.messages); } catch (e) { chatId = null; }
+    }
     if (chatId == null && auftrag.fortsetzungVon != null && !getSavedChats().some(function (c) {
       return (c.id || c.timestamp) === auftrag.fortsetzungVon; })) {
       /* Der fortgeschriebene Eintrag wurde inzwischen geloescht: sein alter
@@ -472,7 +564,8 @@ export function felieAbschlussVollziehen(summary, messages, auftrag) {
   delete laufend[auftrag.id];
   /* Ergebnis aus einer frueheren Datenepoche: die Nutzerin hat inzwischen
      alles geloescht. Nichts davon darf wieder auftauchen (B4). */
-  if (auftrag.epoche !== felieDatenEpoche()) {
+  /* Seit F6a auch: das Gespraech wurde waehrenddessen geloescht. */
+  if (auftrag.epoche !== felieDatenEpoche() || verworfen[auftrag.id]) {
     felieAbschlussEntfernen(auftrag.id);
     return { verworfen: true, archiviert: false, fertig: false };
   }
@@ -571,13 +664,26 @@ export function saveChat(summary, messages, auftragId, fortsetzungVon, gewaehlte
     /* Ein neuer Eintrag traegt keine gesperrte Stelle und keine Hilfsfelder. */
     messages = messages.filter(function (m) { return !m.gesperrt; }).map(ohneHilfsfelder);
     var ts = Math.max(Date.now(), chats.reduce(function(max, c) { return Math.max(max, Number(c.id || c.timestamp) || 0); }, 0) + 1);
+    felieGedaechtnisLetzterChatSetzen(ts);
+    chats.push(archivEintrag(summary, messages, ts, auftragId, gewaehltesThema));
+    // Keine stillschweigende Löschung früherer Gespräche wegen einer Mengenregel.
+    felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats));
+    return ts;
+  } catch(e) {}
+  return null;
+}
+
+/* Ein neuer Archiveintrag (bis B-9a in saveChat). Derselbe Aufbau fuer den
+   fertigen fruehen Eintrag (archivVervollstaendigen): beide Wege ergeben
+   denselben Datensatz (Gate F2). messages ist schon gesichert und ohne
+   Hilfsfelder. */
+function archivEintrag(summary, messages, ts, auftragId, gewaehltesThema) {
     var feldQuelle = {};
     ['erkenntnis', 'felie_lernt'].forEach(function(k) {
       var q = felieArchivFeldQuelle(summary[k], summary.feldQuelle && summary.feldQuelle[k], messages);
       if (q) feldQuelle[k] = q;
     });
-    felieGedaechtnisLetzterChatSetzen(ts);
-    chats.push({
+    var e = {
       id: ts,
       version: 5,
       /* Die Zusammenfassung gehoert dem Gespraech, nicht dem Gedaechtnis
@@ -592,8 +698,10 @@ export function saveChat(summary, messages, auftragId, fortsetzungVon, gewaehlte
           nachweis: felieArchivFeldQuelle(n.text, n.nachweis, messages) };
       }) : undefined,
       notizenStatus: summary.notizenStatus || 'vollstaendig',
+      /* B-9a: frueher Eintrag, die Auswertung laeuft noch. */
+      auswertungLaeuft: summary.auswertungLaeuft === true ? true : undefined,
       feldQuelle: feldQuelle,
-      thema: summary.thema,
+      thema: felieKrisenTitel(summary.thema) || summary.thema,
       erkenntnis: summary.erkenntnis,
       felie_lernt: summary.felie_lernt,
       koerper: bodySnapshotText(),
@@ -609,12 +717,10 @@ export function saveChat(summary, messages, auftragId, fortsetzungVon, gewaehlte
       gewaehltesThema: typeof gewaehltesThema === 'string' && gewaehltesThema ? gewaehltesThema : undefined,
       /* Das Auswertungsprotokoll (AL-11): nur Zahlen und Gruende. */
       auswertung: summary.auswertung || undefined
-    });
-    // Keine stillschweigende Löschung früherer Gespräche wegen einer Mengenregel.
-    felieSpeicherSchreiben('felie_saved_chats', JSON.stringify(chats));
-    return ts;
-  } catch(e) {}
-  return null;
+    };
+    /* F6a: warum unvollstaendig (felieArchivNotizenGrund). */
+    e.notizenGrund = felieArchivNotizenGrund(e, summary.notizenGrund);
+    return e;
 }
 
 function ohneHilfsfelder(m) {
@@ -653,6 +759,7 @@ function fortschreiben(chats, ziel, summary, messages, auftragId) {
     nachweis: felieArchivFeldQuelle(summary.zusammenfassung.text, summary.zusammenfassung.nachweis, messages) };
   ziel.notizen = liste;
   ziel.notizenStatus = summary.notizenStatus || 'vollstaendig';
+  ziel.notizenGrund = felieArchivNotizenGrund(ziel, summary.notizenGrund);
   ziel.version = 5;
   felieNotizVorschau(ziel);
   ziel.koerper = bodySnapshotText();

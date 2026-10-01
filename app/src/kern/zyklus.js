@@ -174,6 +174,13 @@ export function cycleDayPart(cd, pre, post) {
          (cd.selectedLen && !spaet ? ' von ' + cd.selectedLen : '') + (post || '');
 }
 
+/* Das heutige Datum als 'YYYY-MM-DD' in Ortszeit (F6e-0, Befund 2: die
+   Webapp nahm toISOString, also UTC - kurz nach Mitternacht "gestern"). */
+export function felieZyklusHeute(jetztMs) {
+  var d = new Date(jetztMs == null ? Date.now() : jetztMs);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 export function cycleMidnight(v) {
   if (v instanceof Date) {
     if (!Number.isFinite(v.getTime())) return null;

@@ -10,12 +10,14 @@
      App: mobile/netz/netz-fetch.js. Hier - und nur hier - wird der Kern
      asynchron (Plan 2.1).
    - die Umgebung (felieModellVerbinden), beim Aufruf nachgeschlagen:
-       personalitaet()       -> Stufen; ohne: PERSONALITY_DEFAULTS
+       personalitaet()       -> Stufen; ohne: die gespeicherten (feliePersoenlichkeit, F6d-1)
        ritualFrisch()        -> Flag fuer den Worker
        homeKontext()         -> Kontext der Startseite (Modus willkommen)
        kennenlernenKontext() -> Uebergabe aus dem Kennenlernen (Modus chat)
-     Startseite (D-20) und Kennenlernen bleiben bis F5 in der Webapp, die
-     Persoenlichkeit laden bis F6.
+     Seit F5 liegen Startseite (startseite.js, felieHomeKontext) und
+     Kennenlernen (aufnahme.js) im Kern; die Uebergabe an das erste
+     Gespraech (klUebergabeKontext) und das Laden der Persoenlichkeit
+     bleiben bis F5c/F6 in der Webapp.
    felie_grenze bleibt in der Antwort; einen Zustand bekommt es, wenn eine
    Oberflaeche es liest (AL-99, F2b).
 
@@ -27,10 +29,12 @@ import { felieKontoToken, felieKontoVerbunden } from './konto.js';
 import { felieLauf, felieLaufPruefen, felieUeberholt } from './lauf.js';
 import { getSavedChats } from './gespraeche.js';
 import { felieSichererVerlauf, felieExtraktionsDaten } from './archiv.js';
-import { felieFakten, felieEpisoden, felieNotizVorschau } from './gedaechtnis.js';
+import { felieFakten, felieEpisoden, felieNotizPruefen, felieNotizVorschau } from './gedaechtnis.js';
 import { felieAuswertungNeu, felieAuswertungProtokoll, felieAuswertungZaehlen, felieZusammenfassungPruefen } from './abschluss.js';
 import { felieExtraktionsBestand } from './bruecke.js';
 import { felieNotizSchluessel } from './text.js';
+import { felieDatenverarbeitungErlaubt, felieOhneEinwilligung } from './einwilligung.js';
+import { feliePersoenlichkeit } from './persoenlichkeit.js';
 
 let netz = null;
 let umgebung = null;
@@ -55,9 +59,8 @@ function aus(name, sonst) {
   return umgebung && typeof umgebung[name] === 'function' ? umgebung[name]() : sonst;
 }
 
-/* Voreinstellung der Persoenlichkeit (bis F2a in index.html). Die Webapp
-   laedt und speichert die Stufen weiter selbst (loadPersonality, F6). */
-export var PERSONALITY_DEFAULTS = { waerme: 3, direktheit: 4, ausfuehrlichkeit: 3, koerperbezug: 4, ton: 3, humor: false };
+/* Die Voreinstellung der Persoenlichkeit steht seit F6d-1 in
+   persoenlichkeit.js (PERSONALITY_DEFAULTS, feliePersoenlichkeit). */
 
 /* Antworten koennen der eigentlichen Antwort einen Denk-Block voranstellen
    — content[0] ist dann kein Text mehr, sondern
@@ -144,6 +147,10 @@ export function felieRequest(mode, messages, opts) {
      an - sonst ginge sie mit dem Token des neuen Kontos raus. */
   var lauf = opts.lauf != null ? opts.lauf : felieLauf();
   if (lauf !== felieLauf()) return Promise.reject(felieUeberholt());
+  /* F6d-1 (D-1 A, Marcel 30.09.): ohne Einwilligung in die Datenverarbeitung
+     verlaesst nichts das Geraet - in jedem Modus, auch ohne Neuladen nach
+     einem Widerruf. Der Fehler traegt den festen Satz (felieAnfrageFehler). */
+  if (!felieDatenverarbeitungErlaubt()) return Promise.reject(felieOhneEinwilligung());
   var msgs = (messages || []).map(function(m) { return { role: m.role, content: m.content }; });
   if (opts.context !== false) {
     var ctx = opts.context || (mode === 'willkommen' ? aus('homeKontext', {}) : felieKontextDaten());
@@ -162,7 +169,8 @@ export function felieRequest(mode, messages, opts) {
      Flag abschluss, das nie gesetzt wurde (AL-74): alles Sache des Workers
      (C-4, C-5). Die Variante bleibt - sie ist der Schluessel in die
      Modelltabelle des Workers, keine Modell-ID. */
-  var p = aus('personalitaet', null) || PERSONALITY_DEFAULTS;
+  /* F6d-1: liefert die Plattform keine eigene (App), die gespeicherte. */
+  var p = aus('personalitaet', null) || feliePersoenlichkeit();
   var body = { vertrag: FELIE_VERTRAG, felie_variant: FELIE_MODELL.variante, mode: mode,
     personality: { waerme: p.waerme, direktheit: p.direktheit,
       ausfuehrlichkeit: p.ausfuehrlichkeit, koerperbezug: p.koerperbezug,
@@ -181,12 +189,29 @@ export function felieRequest(mode, messages, opts) {
   var zeit = opts.timeout || FELIE_ANFRAGE.timeout;
   /* F3: mit Konto-Port das Zugangs-Token im Kopf (felieKontoToken); ohne
      Port - die Webapp - geht die Anfrage wie bisher synchron ab. */
+  /* B-9a (Marcel 29.09.): mit opts.strom kommt die Antwort als Zeilenstrom,
+     wenn der Port ihn kann (strom); opts.strom(text) bekommt nach jedem
+     Stueck den bisherigen Text. Am Ende dieselbe Antwort wie ohne Strom.
+     Ohne strom() im Port - oder von einem Worker, der nicht stroemt - wie
+     bisher. */
+  var stroemen = typeof opts.strom === 'function' && typeof port.strom === 'function';
+  var bisher = '';
+  if (stroemen) optionen.headers.Accept = 'application/x-ndjson';
+  function senden() {
+    if (!stroemen) return port.anfragen(FELIE_MODELL.endpunkt, optionen, zeit);
+    return port.strom(FELIE_MODELL.endpunkt, optionen, zeit, function (z) {
+      if (!z || z.t !== 'text' || typeof z.d !== 'string') return;
+      bisher += z.d;
+      if (lauf !== felieLauf()) return;
+      try { opts.strom(bisher); } catch (e) {}
+    });
+  }
   var abgeschickt = felieKontoVerbunden()
     ? felieKontoToken().then(function(t) {
         if (t) optionen.headers.Authorization = 'Bearer ' + t;
-        return port.anfragen(FELIE_MODELL.endpunkt, optionen, zeit);
+        return senden();
       })
-    : port.anfragen(FELIE_MODELL.endpunkt, optionen, zeit);
+    : senden();
   return abgeschickt.then(function(r) {
     if (!r.ok) {
       var fehler = new Error('felie HTTP ' + r.status);
@@ -215,6 +240,52 @@ export function felieRequest(mode, messages, opts) {
     if (opts.json && data.stop_reason === 'max_tokens') throw new Error('JSON wurde abgeschnitten');
     return data;
   });
+}
+
+/* B-9a: die Zusammenfassung aus einer noch unfertigen Auswertung (JSON im
+   Strom). Liefert { zusammenfassung, thema } erst, wenn ihr Eintrag in
+   vorschlaege geschlossen ist, sonst null. Liest Zeichenketten mit
+   Anfuehrungszeichen, Klammern und Maskierung richtig; die Reihenfolge der
+   Eintraege ist egal (sie steht aber meist zuerst, B-9-IST 46/46). */
+export function felieStromZusammenfassung(text) {
+  var s = typeof text === 'string' ? text : '';
+  var anfang = s.indexOf('{');
+  if (anfang < 0) return null;
+  var schluessel = s.indexOf('"vorschlaege"', anfang);
+  if (schluessel < 0) return null;
+  var i = s.indexOf('[', schluessel);
+  if (i < 0) return null;
+  i++;
+  while (i < s.length) {
+    while (i < s.length && /[\s,]/.test(s[i])) i++;
+    if (i >= s.length || s[i] === ']') return null;
+    if (s[i] !== '{') return null;
+    var start = i, tiefe = 0, inText = false;
+    for (; i < s.length; i++) {
+      var ch = s[i];
+      if (inText) { if (ch === '\\') i++; else if (ch === '"') inText = false; continue; }
+      if (ch === '"') inText = true;
+      else if (ch === '{') tiefe++;
+      else if (ch === '}') { tiefe--; if (tiefe === 0) { i++; break; } }
+    }
+    if (tiefe !== 0) return null;
+    var eintrag;
+    try { eintrag = JSON.parse(s.slice(start, i)); } catch (e) { return null; }
+    if (eintrag && eintrag.art === 'zusammenfassung') {
+      var thema = null, m = /"thema"\s*:\s*("(?:[^"\\]|\\.)*")/.exec(s.slice(anfang, schluessel));
+      if (m) { try { thema = JSON.parse(m[1]); } catch (e) {} }
+      return { zusammenfassung: eintrag, thema: thema };
+    }
+  }
+  return null;
+}
+
+/* B-9a: dieselbe Pruefung wie felieVorschlaegePruefen fuer die
+   Zusammenfassung (felieNotizPruefen: Text bis 600 Zeichen, keine
+   spitzen Klammern, ein bis sechs woertliche Belege aus ihren Nachrichten).
+   null, wenn sie durchfaellt. */
+function fruehPruefen(eintrag, source) {
+  return felieNotizPruefen(eintrag, source, 600);
 }
 
 export function felieJSON(data) {
@@ -270,8 +341,33 @@ export async function felieNotizErzeugen(history, vorhanden, mode, optionen) {
   } catch (e) {}
   var bestand = [];
   try { bestand = felieExtraktionsBestand(); } catch (e) {}
+  /* B-9a (Marcel 29.09.): die Zusammenfassung geht heraus, sobald ihr
+     Eintrag im Strom vollstaendig ist - nach derselben Pruefung wie am
+     Ende; faellt sie durch, sofort leer (nur der Schlusssatz). Genau einmal
+     gemeldet; gestroemt wird nur, solange sie noch fehlt. */
+  /* zusammenfassungDa(text) bekommt den Text ('' wenn durchgefallen),
+     zusammenfassungFrueh({ zusammenfassung, thema }) den gepruefften
+     Eintrag fuers Archiv (generateChatSummary, jedes Gespraechsende). */
+  var warten = !!(optionen && (typeof optionen.zusammenfassungDa === 'function' || typeof optionen.zusammenfassungFrueh === 'function'));
+  var gemeldet = false;
+  function melden(n, thema) {
+    if (gemeldet || !warten) return;
+    gemeldet = true;
+    if (typeof optionen.zusammenfassungDa === 'function') { try { optionen.zusammenfassungDa(n ? n.text || '' : ''); } catch (e) {} }
+    if (n && typeof optionen.zusammenfassungFrueh === 'function') {
+      try { optionen.zusammenfassungFrueh({ zusammenfassung: { text: n.text, belege: n.belege, nachweis: n.nachweis || { quelle: 'zusammenfassung', text: n.text, belege: n.belege } }, thema: thema || null }); } catch (e) {}
+    }
+  }
+  function stromLesen(text) {
+    if (gemeldet || out.zusammenfassung) return;
+    var f = felieStromZusammenfassung(text);
+    if (!f) return;
+    melden(fruehPruefen(f.zusammenfassung, source), f.thema);
+  }
   function unvollstaendig() {
     out.notizenStatus = 'unvollstaendig';
+    /* F6a (AL-97): der Grund - hier ist etwas liegengeblieben. */
+    out.notizenGrund = 'teilweise';
     out.hinweis = 'Die Notizen sind noch nicht vollständig. Du kannst sie im Archiv ergänzen; bereits erfasste Einträge bleiben erhalten.';
   }
   while (true) {
@@ -292,7 +388,8 @@ export async function felieNotizErzeugen(history, vorhanden, mode, optionen) {
         },
         antwortpaket: { maximalNeueEintraege: groesse, hinweis: 'Nur die Größe dieser Antwort ist begrenzt. weitere_notizen=true, solange noch wichtige neue Informationen fehlen. Keine bereits erfassten Inhalte wiederholen.' },
         formathinweis: fehlerOhneFortschritt ? 'Prüfe text, Nutzer-ID und Originalauszug. Formuliere fehlende Notizen mit passenden Belegen. Keine ausdrückliche Selbsterkenntnis erforderlich.' : null
-      }) }], { context: false, json: true, lauf: lauf });
+      }) }], { context: false, json: true, lauf: lauf,
+        strom: warten && !gemeldet && !out.zusammenfassung ? stromLesen : undefined });
       page = felieZusammenfassungPruefen(felieJSON(page), source, bestand);
     } catch (e) {
       if (e && e.felieUeberholt) throw e;
@@ -310,7 +407,13 @@ export async function felieNotizErzeugen(history, vorhanden, mode, optionen) {
        Eintrag (zaehlt fuer die Pruefung ohne Fortschritt, nicht fuers
        Protokoll: felieAuswertungZaehlen bekommt nur die Eintraege). */
     var neueZusammenfassung = false;
-    if (!out.zusammenfassung && page.zusammenfassung) { out.zusammenfassung = page.zusammenfassung; neueZusammenfassung = true; }
+    if (!out.zusammenfassung && page.zusammenfassung) {
+      out.zusammenfassung = page.zusammenfassung; neueZusammenfassung = true;
+      /* B-8 (Marcel 29.09.): die Zusammenfassung steht nach der ersten
+         Runde fest - wer auf sie wartet (felies Abschied an der Grenze),
+         bekommt sie sofort; weitere Runden sammeln im Hintergrund Notizen. */
+      melden(out.zusammenfassung, page.thema);
+    }
     ['notizen', 'fakten', 'faeden'].forEach(function(k) {
       page[k].forEach(function(n) {
         if (k === 'notizen' && bekannt.some(function(t) { return felieNotizSchluessel(t) === felieNotizSchluessel(n.text); })) return;
@@ -365,7 +468,14 @@ export async function felieNotizErzeugen(history, vorhanden, mode, optionen) {
      Fall trat auf, wenn das Modell den bezug wegliess (siehe oben).
        'profil' ist ausgenommen: die Extraktion aus dem Kennenlernen
      liefert nie eine Zusammenfassung, dort ist ihr Fehlen kein Mangel. */
-  if (mode !== 'profil' && !out.zusammenfassung && !out.notizen.length) unvollstaendig();
+  if (mode !== 'profil' && !out.zusammenfassung && !out.notizen.length) {
+    /* F6a (AL-97, Marcel 29.09.): lief die Auswertung durch und fand gar
+       nichts - kein Eintrag, keine Angabe, kein Thema -, ist das "nichts
+       zu merken" (Smalltalk, eine Frage an die KI), kein Ausfall. */
+    var nichts = out.notizenStatus !== 'unvollstaendig' && !out.fakten.length && !out.faeden.length;
+    unvollstaendig();
+    if (nichts) out.notizenGrund = 'nichts';
+  }
   out.runden = runden;
   /* Das Kennenlernen fuehrt kein Protokoll: sein Archiveintrag entsteht
      anders, und es bleibt unberuehrt. */

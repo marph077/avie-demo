@@ -901,10 +901,13 @@ export function felieBrueckeProjektion(d) {
             && !felieBrueckeEindeutig(d, belege)));
     var erfasst = felieBrueckeMs(entry.createdAt) || felieBrueckeMs(rev.recordedAt);
     var bestaetigt = felieBrueckeMs(rev.confirmation.at) || felieBrueckeMs(rev.recordedAt) || erfasst;
+    /* F6c: wann die heutige Fassung notiert wurde (Anzeige "notiert",
+       Zeitraum im Kontext). */
+    var notiert = felieBrueckeMs(rev.recordedAt) || erfasst;
 
     if (entry.kind === 'topic') {
       var ep = { id: entry.id, text: rev.text, status: 'offen',
-        erfasstAm: erfasst, zuletztAm: bestaetigt,
+        erfasstAm: erfasst, zuletztAm: bestaetigt, notiertAm: notiert,
         faelligBis: felieBrueckeMs(rev.expiresAt),
         erwaehnungen: Math.max(1, (rev.supportSets || []).length),
         belege: belege };
@@ -922,7 +925,7 @@ export function felieBrueckeProjektion(d) {
     } else {
       var f = { id: entry.id, text: rev.text, kategorie: entry.category,
         klasse: rev.retention === 'stable' ? 'stabil' : 'volatil',
-        erfasstAm: erfasst, bestaetigtAm: bestaetigt,
+        erfasstAm: erfasst, bestaetigtAm: bestaetigt, notiertAm: notiert,
         quelle: felieBrueckeQuelleLesen(d, entry, rev), belege: belege };
       if (gespraeche.length) f.gespraechIds = gespraeche;
       if (ohneHerkunft) f.herkunftUnklar = true;

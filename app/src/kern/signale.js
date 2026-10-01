@@ -355,22 +355,49 @@ export function felieBaueAltSicht() {
    Eintraege desselben Tages werden entfernt, damit im Verlauf nicht
    drei Korrekturversuche als drei Angaben stehen. Messwerte bleiben
    unberuehrt — die gehoeren dem Geraet, nicht der Korrektur. */
+/* Der Tag der Selbstauskunft beginnt um 04:00 Uhr Ortszeit (Marcel 01.10.,
+   F6f N-4): wer um halb eins noch etwas eintraegt, gehoert zum Abend davor,
+   und um Mitternacht wird niemand zurueckgesetzt. Danach sind Nacht, Energie
+   und Stimmung "geleert" - nicht geloescht: der Verlauf (Kontext, Muster)
+   bleibt. */
+export const FELIE_TAG_BEGINN_STUNDE = 4;
+
+export function felieTagesbeginn(jetztMs) {
+  var jetzt = new Date(jetztMs == null ? Date.now() : jetztMs);
+  var b = new Date(jetzt.getTime()); b.setHours(FELIE_TAG_BEGINN_STUNDE, 0, 0, 0);
+  if (jetzt.getTime() < b.getTime()) { b.setDate(b.getDate() - 1); b.setHours(FELIE_TAG_BEGINN_STUNDE, 0, 0, 0); }
+  return b.getTime();
+}
+
 export function felieSignalKorrigieren(key, wert, meta) {
   var s = felieStore();
-  var heute = new Date(); heute.setHours(0, 0, 0, 0);
+  /* Seit F6f N-4: der Tag ab 04:00 statt des Kalendertags. */
+  var beginn = felieTagesbeginn();
   s.signale = s.signale.filter(function (e) {
     if (e.key !== key || e.quelle !== 'selbst') return true;
-    var d = new Date(e.ts); d.setHours(0, 0, 0, 0);
-    return d.getTime() !== heute.getTime();
+    return !(Number(e.ts) >= beginn);
   });
   felieRevision(true);
   if (wert != null) felieSchreibeSignal(key, wert, 'selbst', meta || null);
   return true;
 }
 
-/* Loescht die heutige Selbstauskunft zu einem Signal, ohne Ersatz. */
+/* Loescht die Selbstauskunft zu einem Signal, die gerade angezeigt wird,
+   ohne Ersatz. F6f-0 (Befund 1): angeboten wird "Angabe löschen", solange
+   felieAktuell sie findet (24 h) - geloescht wurde aber nur der heutige
+   Kalendertag; eine Angabe von gestern Abend blieb stehen. Jetzt: alles,
+   was heute ist oder noch frisch; Aelteres bleibt im Verlauf, Messwerte
+   bleiben. */
 export function felieSignalLoeschen(key) {
-  return felieSignalKorrigieren(key, null, null);
+  var s = felieStore(), jetzt = Date.now();
+  var heute = new Date(jetzt); heute.setHours(0, 0, 0, 0);
+  s.signale = s.signale.filter(function (e) {
+    if (e.key !== key || e.quelle !== 'selbst') return true;
+    var d = new Date(e.ts); d.setHours(0, 0, 0, 0);
+    return !(d.getTime() === heute.getTime() || felieIstFrisch(e, jetzt));
+  });
+  felieRevision(true);
+  return true;
 }
 
 /* Was weiss felie ueber diese Phase schon? Grundlage fuer den

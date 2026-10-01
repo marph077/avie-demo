@@ -73,10 +73,19 @@ kern.felieKontextVerbinden({
   rueckblickAuswahl: function () { return window._felieRueckblickAuswahl; }
 });
 
+/* Seit F6d-1: Profil-Anschluss (einwilligung.js). Name, Alter und
+   Einwilligungen bleiben Variablen der Webapp; gelesen und geschrieben wird
+   beim Aufruf ueber index.html (felieWebappProfilLesen/-Schreiben). */
+kern.felieProfilVerbinden({
+  lesen: function () { return window.felieWebappProfilLesen(); },
+  schreiben: function (p) { return window.felieWebappProfilSchreiben(p); }
+});
+
 /* Seit F2a fragt der Kern das Modell an (modell.js). Das Netz ist
    felieFetch aus index.html, beim Aufruf nachgeschlagen (netz-fetch.js).
-   Persoenlichkeit, Ritual-Flag, Startseiten- und Kennenlernen-Kontext
-   bleiben in der Webapp (F5, F6); nachgeschlagen wird erst beim Aufruf. */
+   Persoenlichkeit, Ritual-Flag und die Uebergabe aus dem Kennenlernen
+   kommen aus der Webapp; der Startseiten-Kontext ist seit F5b der des
+   Kerns (felieHomeKontext am window). Nachgeschlagen wird beim Aufruf. */
 kern.felieNetzVerbinden(felieFetchPort(window));
 kern.felieModellVerbinden({
   personalitaet: function () { return window._personality || window.loadPersonality(); },
@@ -118,11 +127,35 @@ Object.defineProperty(window, '_klState', {
   get: function () { return kern.felieKlStand(); },
   set: function (wert) { kern.felieKlStandSetzen(wert); }
 });
+/* Das Kennenlernen, an das das erste Gespraech anschliesst (seit der
+   F5c-Vorarbeit im Kern) - Sicht wie _klState. */
+Object.defineProperty(window, '_felieOnboardingChatId', {
+  configurable: true,
+  get: function () { return kern.felieKlUebergabeChat(); },
+  set: function (wert) { kern.felieKlUebergabeChatSetzen(wert); }
+});
 kern.felieKlVerbinden({
   profilSetzen: function (p) { window.klProfilSetzen(p); },
   profilSichern: function () { return window.saveUserProfile(); },
   entwurfSichern: function () { return window.klEntwurfSpeichern(); },
   verlauf: function (v) { window.klVerlaufUebernehmen(v); }
+});
+
+/* Seit F5b fuehrt der Kern die Startseite (startseite.js). Gezeigt wird
+   hier: der Satz (felieHomeTextZeigen), das Leeren der Rueckmeldung zur
+   Selbstreflexion, die Anzeige nach der Landung; die Webapp sagt, ob die
+   Startseite aufgebaut und sichtbar ist, und baut sie neu auf. Alles beim
+   Aufruf nachgeschlagen. */
+kern.felieStartseiteVerbinden({
+  textZeigen: function (t) { window.felieHomeTextZeigen(t); },
+  ritualLeeren: function (frisch) { window._felieRitualEchoText = null; if (frisch) window._felieRitualFrisch = null; window.renderRitualEcho(false); },
+  ersterEinstieg: function () { return window.klErsterEinstiegZeigen(); },
+  einstiegGezeigt: function () { window.klEinstiegAnzeigen(); },
+  bereit: function () { return !!document.getElementById('home-open-question'); },
+  sichtbar: function () { return window.felieHomeIstSichtbar(); },
+  neuAufbauen: function () { window.homeInit(false); },
+  kennenlernenSichern: function () { window.klEntwurfSpeichern(); },
+  uebergabeGestartet: function () { var el = document.getElementById('kl-first-step'); if (el) el.hidden = true; }
 });
 
 const namen = Object.keys(kern).sort();

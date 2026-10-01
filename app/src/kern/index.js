@@ -33,12 +33,18 @@
    (archiv.js), Kontext-Daten (kontext.js); saveChat in abschluss.js.
    Seit AL-73: die Kennenlern-Schritte als Daten (kennenlernen.js).
    Seit F5a: Ablauf und Aufnahme des Kennenlernens (aufnahme.js).
+   Seit F5b: die Startseite - Besuch, Begruessung, Bezug, Ereignisse,
+   Landung, Kontext-Verteiler, Loeschen eines Gespraechs (startseite.js).
+   Seit F5c: die Rechtstexte der App als Daten (rechtstexte.js).
    Seit D7b: Koerperdaten speichern und laden, Lebensphasen, Eintragen
    aus dem Zyklus-Sheet (koerper.js); der Zyklus-Zustand in zyklus.js.
    Seit F2a: Modell-Anbindung und Auswertung (modell.js) mit Netz-Port -
    die einzige asynchrone Stelle des Kerns.
    Seit F2b: der Gespraechsablauf ohne Oberflaeche (gespraech.js) - die
-   Sitzung, Senden, Rueckblick, Abschluss, Verwerfen, Fortsetzen. */
+   Sitzung, Senden, Rueckblick, Abschluss, Verwerfen, Fortsetzen.
+   Seit F6d-1: Persoenlichkeit (persoenlichkeit.js), Einwilligungen mit
+   Widerruf und die Sperre vor dem Senden (einwilligung.js), Name, Alter und
+   Alle Daten loeschen (profil.js). */
 
 export { felieKernProbe } from './probe.js';
 
@@ -57,6 +63,10 @@ export * from './vorgang.js';
 export * from './zyklus.js';
 export * from './signale.js';
 export * from './koerper.js';
+export * from './zyklusansicht.js';
+export * from './ritual.js';
+export * from './spiegel.js';
+export * from './rundgaenge.js';
 export * from './gedaechtnis.js';
 export * from './selbstauskunft.js';
 export * from './archiv.js';
@@ -64,11 +74,18 @@ export * from './kontext.js';
 export * from './abschluss.js';
 export * from './kennenlernen.js';
 export * from './aufnahme.js';
+export * from './startseite.js';
+export * from './rechtstexte.js';
 export * from './modell.js';
 export * from './gespraech.js';
 export * from './anzeige.js';
 export * from './konto.js';
 export * from './lauf.js';
+export * from './archivansicht.js';
+export * from './gedaechtnisansicht.js';
+export * from './persoenlichkeit.js';
+export * from './einwilligung.js';
+export * from './profil.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';
@@ -80,10 +97,13 @@ import { felieGedaechtnisVerbinden } from './gedaechtnis.js';
 import { felieAbschlussVerbinden, felieAbschlussZuruecksetzen } from './abschluss.js';
 import { felieKontextVerbinden } from './kontext.js';
 import { felieNetzVerbinden, felieModellVerbinden } from './modell.js';
+import { felieProfilVerbinden } from './einwilligung.js';
 import { felieGespraechZuruecksetzen } from './gespraech.js';
 import { felieKontoVerbinden } from './konto.js';
 import { felieLaufNeu } from './lauf.js';
 import { felieKlZuruecksetzen } from './aufnahme.js';
+import { felieStartseiteZuruecksetzen } from './startseite.js';
+import { felieArchivansichtZuruecksetzen } from './archivansicht.js';
 
 /* Setzt jeden Modulzustand des Kerns zurueck, auch den Speicher-Port. Die
    Tests rufen es vor jeder frischen Laufzeit und verbinden danach ihre
@@ -107,6 +127,9 @@ export function felieKernZuruecksetzen() {
   felieGespraechZuruecksetzen();
   felieKontoVerbinden(null);
   felieKlZuruecksetzen();
+  felieStartseiteZuruecksetzen();
+  felieArchivansichtZuruecksetzen();
+  felieProfilVerbinden(null);
   /* Ein neuer Lauf: fruehere asynchrone Arbeit bricht ab (lauf.js). */
   felieLaufNeu();
 }

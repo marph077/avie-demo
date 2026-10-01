@@ -6,8 +6,9 @@
    ausdrueckliche Rueckblick; dazu das Koerperbild fuer das Archiv
    (bodySnapshotText). Geprueft vor dem Umzug: felie-d5-kontext (D5a).
 
-   In der Webapp bleiben der Verteiler felieKontextFuer und die
-   Startseite (felieHomeKontext, Begruessungsbezug) - Entscheidung D-20.
+   Bis F5b blieben der Verteiler felieKontextFuer und die Startseite
+   (felieHomeKontext, Begruessungsbezug) in der Webapp (D-20); seit F5b
+   stehen sie in startseite.js.
 
    Geaendert sind nur drei Zugriffe: Profil, offenes Archivgespraech und
    Rueckblick-Auswahl kommen ueber die verbundene Umgebung
@@ -19,9 +20,10 @@ import { felieRepoFind } from './repository.js';
 import { FELIE_AUFBEWAHRUNG, felieDatensatzStand, felieStore } from './store.js';
 import { getSavedChats } from './gespraeche.js';
 import { felieStelleBereinigt } from './bruecke.js';
-import { cycleMidnight, cycleRefresh } from './zyklus.js';
+import { cycleMidnight, cycleRefresh, felieZyklusHeute } from './zyklus.js';
 import { felieBand, felieIstFrisch, felieSignalVerwendbar, felieVerlauf } from './signale.js';
-import { FELIE_MERK_VERNEINUNG, felieEpisoden, felieErinnerungAusChat, felieFakten, felieMerkWortDrin, felieMerkWorte, felieNotizenLesen } from './gedaechtnis.js';
+import { FELIE_MERK_VERNEINUNG, felieEpisoden, felieErinnerungAusChat, felieFakten, felieMerkWortDrin, felieMerkWorte, felieNotizenLesen, felieVorschlaegeRoh } from './gedaechtnis.js';
+import { felieTextMitZeitraum, felieZeitraum, felieZeitVorbei } from './text.js';
 import { FELIE_SKALEN, felieStimmungLabel, felieStimmungListe, felieStufenWort } from './selbstauskunft.js';
 import { felieArchivNotizNutzbar, felieArchivNotizQuelle } from './archiv.js';
 
@@ -209,8 +211,10 @@ export function felieKombiMuster() {
     if (!deutlich || qA <= qB) return;
 
     out.push({ id: h.id, text: h.text(schlecht, gut), schlecht: schlecht, gut: gut,
-      von: tage.length ? new Date(tage[0].tag).toISOString() : null,
-      bis: tage.length ? new Date(tage[tage.length - 1].tag).toISOString() : null,
+      /* F6f-0 (Befund 6): Kalendertage in Ortszeit - toISOString einer
+         Ortsmitternacht war in Deutschland der Vortag (22:00Z). */
+      von: tage.length ? felieZyklusHeute(tage[0].tag) : null,
+      bis: tage.length ? felieZyklusHeute(tage[tage.length - 1].tag) : null,
       hinweis: 'Kleine beobachtete Stichprobe, kein Nachweis einer Ursache; nicht auf heute übertragbar.' });
   });
 
@@ -656,18 +660,39 @@ export function felieAngabenDaten() {
          'kennenlernen' war bisher mit den Gespraechsfakten in einen Topf
        geworfen und trug die Warnung "kann überholt sein" — dabei ist es
        ihre eigene Auskunft. */
-    return { text: f.text, kategorie: f.kategorie, klasse: f.klasse,
-      alterTage: f.alterTage, bestaetigtAm: f.bestaetigtAm,
+    /* F6c (Marcel 30.09.): kein Datum und kein Zeitstempel, sondern ein
+       gerundeter Zeitraum im Text ("... (notiert letzte Woche)", F6c-M1 A),
+       dazu der Hinweis auf vergangene Zukunftswoerter (F6c-M3 A);
+       ein offener Vorschlag als Vermerk an der Angabe, die weiter gilt (V-6). */
+    var v = vorschlagZu(f.id);
+    var raus = { text: felieTextMitZeitraum(f.text, felieZeitraum(f.notiertAm), felieZeitVorbei(f.text, f.notiertAm)), kategorie: f.kategorie, klasse: f.klasse,
       quelle: f.bearbeitetAm ? 'von der Nutzerin korrigiert; ersetzt frühere Fassungen' : f.quelle === 'selbst' ? 'von der Nutzerin selbst eingetragen'
         : f.quelle === 'kennenlernen' ? 'Selbstauskunft aus dem Kennenlernen'
         : 'aus einem Gespräch mitgenommen, kann überholt sein' };
+    if (v) raus.vorschlag = vorschlagVermerk(v);
+    return raus;
   });
+}
+
+/* Der offene Vorschlag zu einem Eintrag (F6c) und sein Vermerk fuers Modell. */
+function vorschlagZu(id) {
+  var chats = {};
+  try { getSavedChats().forEach(function (c) { chats[String(c.id || c.timestamp)] = true; }); } catch (e) {}
+  return felieVorschlaegeRoh().filter(function (v) {
+    return v.zielId === id && (v.gespraechId == null || chats[String(v.gespraechId)]); })[0] || null;
+}
+function vorschlagVermerk(v) {
+  return 'offen: im Gespräch ' + felieZeitraum(v.notiertAm) + ' klang es anders („' + v.neu + '“) — noch nicht bestätigt; bis sie entscheidet, gilt die Angabe.';
 }
 
 export function felieKontextDaten(ohne) {
   var fakten = felieAngabenDaten();
   var episoden = felieEpisoden({ nurAktuell: true }).map(function(e) {
-    return { text: e.text, status: e.status, faelligBis: e.faelligBis };
+    var seit = e.notiertAm || e.zuletztAm || e.erfasstAm;
+    var raus = { text: felieTextMitZeitraum(e.text, felieZeitraum(seit), felieZeitVorbei(e.text, seit)), status: e.status, faelligBis: e.faelligBis };
+    var v = vorschlagZu(e.id);
+    if (v) raus.vorschlag = vorschlagVermerk(v);
+    return raus;
   });
   var muster = [];
   try { var km = felieKombiMuster(); muster = (km.muster || []).slice(0, 2); } catch (e) {}

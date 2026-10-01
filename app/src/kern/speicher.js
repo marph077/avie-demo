@@ -81,8 +81,10 @@ export const FELIE_LS_KEYS = [
      einzigen Fassung je Angabe eingeebnet. */
   FELIE_DATENSATZ_KEY,
   'felie_personality',
-  'felie_guide_archiv', 'felie_guide_dashboard', 'felie_guide_profil',
-  'felie_guide_gedaechtnis', 'felie_guide_home',
+  /* Rundgang (F6g): nur noch "App-Guide gesehen"; die vier Schluessel
+     felie_guide_archiv/-dashboard/-profil/-gedaechtnis las und schrieb
+     niemand (R3). */
+  'felie_guide_home',
   'felie_backup_hint_off',
   /* Merkzettel: welche Eintraege stammen aus dem zuletzt gespeicherten
      Gespraech und hat die Nutzerin sie schon gesehen. Gehoert in die

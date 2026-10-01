@@ -20,7 +20,7 @@
 
 import { felieSpeicherLesen, felieSpeicherSchreiben } from './speicher.js';
 import { felieStoreLaden, felieStoreSpeichern } from './store.js';
-import { cycleCompute, cycleRefresh, felieKoerperZeit, felieKoerperZeitSetzen,
+import { cycleCompute, cycleMidnight, cycleRefresh, felieKoerperZeit, felieKoerperZeitSetzen,
   felieZyklusLesen, felieZyklusPlanZuruecksetzen, felieZyklusSetzen } from './zyklus.js';
 import { felieUebernehmeAltObjekt } from './signale.js';
 
@@ -204,17 +204,27 @@ export function felieZyklusEintrag(eingabe, vorher) {
      der eigentliche Punkt — in Stillzeit, Wechseljahren, Postmenopause
      und bei unregelmaessigem Zyklus kommen Blutungen weiter vor, und
      gerade dort lohnt das Mitschreiben. */
-  var mitZyklus = !!lastPeriodVal && !(p && p.zyklus === false);
-  var c = mitZyklus ? cycleCompute(lastPeriodVal, eingabe.selectedLen) : null;
+  /* Ein Datum, das sich nicht lesen laesst, zaehlt wie keins (so liefert es
+     auch der Browser). */
+  var datum = cycleMidnight(lastPeriodVal) ? lastPeriodVal : '';
+  var mitZyklus = !!datum && !(p && p.zyklus === false);
+  var c = mitZyklus ? cycleCompute(datum, eingabe.selectedLen) : null;
+  /* F6e-1 (Z-4 A): ein Datum, aus dem sich nichts rechnen laesst (in der
+     Zukunft), speichert nichts - vorher fiel es neben einer Lebensphase
+     still weg. Die Vorschau sagt, warum (felieZyklusVorschau). */
+  if (mitZyklus && !c) return null;
   if (!c && !p) return null;
   vorher = vorher || {};
+  /* F6e-0 (Befund 1): dieselbe Lebensphase behaelt ihren Beginn, eine
+     andere beginnt jetzt - in beiden Zweigen gleich. */
+  var ab = p && vorher.unknownType === p.val && vorher.phaseAb ? vorher.phaseAb : Date.now();
   if (c) {
     /* unknown bleibt false: der Zyklus IST berechenbar. Die Lebensphase
        steht daneben, nicht an seiner Stelle — alles Nachgelagerte
        (Karte, Kontext, Zuordnung von Eintraegen) haengt an unknown und
        darf durch die Zusatzangabe nicht abgeschaltet werden. */
     return { zustand: Object.assign(c, p
-      ? { unknownType: p.val, lebensphase: p.phase, phaseAb: vorher.phaseAb || Date.now(), quelle: 'selbst' }
+      ? { unknownType: p.val, lebensphase: p.phase, phaseAb: ab, quelle: 'selbst' }
       : { unknownType: null, lebensphase: null, quelle: 'selbst' }), neuerStart: true };
   }
   return { zustand: {
@@ -223,7 +233,7 @@ export function felieZyklusEintrag(eingabe, vorher) {
        Eintraege weiter zu. phaseAb markiert, ab wann die Phase gilt. */
     lastPeriod:  vorher.lastPeriod  || null,
     selectedLen: vorher.selectedLen || null,
-    phaseAb: Date.now(),
+    phaseAb: ab,
     cycleDay: null, daysLeft: null,
     unknown: true, unknownType: p.val, lebensphase: p.phase, quelle: 'selbst'
   }, neuerStart: false };

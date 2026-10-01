@@ -120,7 +120,8 @@ export function felieFakten(opts) {
   }).map(function(f) {
     return {
       id: f.id, text: f.text, kategorie: f.kategorie, klasse: f.klasse,
-      erfasstAm: f.erfasstAm, bestaetigtAm: f.bestaetigtAm, quelle: f.quelle, bearbeitetAm: f.bearbeitetAm || null,
+      erfasstAm: f.erfasstAm, bestaetigtAm: f.bestaetigtAm, notiertAm: f.notiertAm || f.bestaetigtAm || f.erfasstAm,
+      quelle: f.quelle, bearbeitetAm: f.bearbeitetAm || null,
       /* Lange nicht bestaetigt: felie formuliert vorsichtiger */
       alterTage: Math.floor((jetzt - (f.bestaetigtAm || f.erfasstAm)) / 86400000)
     };
@@ -303,7 +304,9 @@ export function felieStandFehler(meldung) {
    Vergangenheit der Angabe — fuer eine Aenderung, die inhaltlich keine
    war. Die Unterscheidung kommt von der Nutzerin, nie aus
    Textaehnlichkeit: raten waere hier schlimmer als fragen. */
-export function felieErinnerungBearbeiten(art, id, text, wie) {
+/* optionen.still (F6c): ohne eigenes Ereignis - der Aufrufer meldet selbst
+   (Vorschlag uebernommen: der feste Satz, nicht der Aenderungssatz). */
+export function felieErinnerungBearbeiten(art, id, text, wie, optionen) {
   /* Was tatsaechlich passiert ist - erst hier drin steht es fest. Der
      Aufrufer weiss nicht, ob sein Text am Ende eine Aenderung war: bei
      unveraendertem Wortlaut passiert naemlich nichts (entschieden am
@@ -323,6 +326,8 @@ export function felieErinnerungBearbeiten(art, id, text, wie) {
     if (text === null) {
       felieBrueckeBefehl({ kind: 'forgetEntry', entryId: eintrag.id,
         expectedHeadRevisionId: kopf ? kopf.id : null });
+      /* F6c: ein offener Vorschlag zu diesem Eintrag geht mit. */
+      felieVorschlaegeAufraeumen(s, function (v) { return v.zielId === id; });
       vorgang = { was: was, wie: 'geloescht', text: alterText };
       return;
     }
@@ -358,7 +363,7 @@ export function felieErinnerungBearbeiten(art, id, text, wie) {
   /* Kein Vorgang, keine Meldung. Bisher meldete auch das unveraenderte
      Speichern "gespeichert" - eine Bestaetigung fuer etwas, das gar nicht
      stattgefunden hat. */
-  if (ok && vorgang) felieGedaechtnisEreignis(
+  if (ok && vorgang && !(optionen && optionen.still)) felieGedaechtnisEreignis(
     vorgang.wie === 'geloescht' ? 'gedaechtnis_geloescht' : 'gedaechtnis_geaendert', vorgang);
   return ok;
 }
@@ -655,6 +660,13 @@ export function felieMerkUebernehmenFuer(cid, v) {
     (v.fakten || []).forEach(function(f) {
       if (!f) return;
       if (f.bekannt) { bekannt++; return; }
+      /* F6c (B-5a, AL-87, AL-110): ein Widerspruch zu jeder Angabe und eine
+         Aktualisierung IHRER Angabe werden ein Vorschlag - die Angabe bleibt.
+         Gezaehlt wie bisher als abgelehnt (nicht uebernommen). */
+      var zielF = f.zielId ? store.fakten.filter(function (x) { return x.id === f.zielId; })[0] : null;
+      if (zielF && (f.bezug === 'widerspruch' || (f.bezug === 'aktualisierung' && felieAngabeIhre(zielF)))) {
+        vorschlagAnlegen(store, 'angabe', zielF, f, cid); abgelehnt++; return;
+      }
       var id = felieBrueckeVorschlag('personal', { text:f.text, kategorie:f.kategorie,
         klasse:f.klasse, quelle:'gespraech', belege:f.belege || [],
         bezug:f.bezug, zielId:f.zielId }, cid);
@@ -663,6 +675,11 @@ export function felieMerkUebernehmenFuer(cid, v) {
     (v.faeden || []).forEach(function(e) {
       if (!e) return;
       if (e.bekannt) { bekannt++; return; }
+      /* F6c (V-2): Themen gleich. */
+      var zielE = e.zielId ? store.episoden.filter(function (x) { return x.id === e.zielId; })[0] : null;
+      if (zielE && (e.bezug === 'widerspruch' || (e.bezug === 'aktualisierung' && felieAngabeIhre(zielE)))) {
+        vorschlagAnlegen(store, 'thema', zielE, e, cid); abgelehnt++; return;
+      }
       var id = felieBrueckeVorschlag('topic', { text:e.text, quelle:'gespraech',
         faelligBis:Date.now() + (e.tage || 7) * 86400000, belege:e.belege || [],
         bezug:e.bezug, zielId:e.zielId }, cid);
@@ -680,4 +697,56 @@ export function felieMerkUebernehmenFuer(cid, v) {
     }
   });
   return { ok: !!ok, ids: ok ? ids : [] };
+}
+
+/* ── Offene Vorschlaege (F6c, Marcel 30.09., B-5a, V-1 bis V-6) ─────────
+   Ein Widerspruch zu jeder Angabe und eine Aktualisierung ihrer eigenen
+   Angabe aendern nichts; sie liegen als Vorschlag im Store (zusatz), bis sie
+   entscheidet. Bewusst nicht als Konflikt im Datensatz: der nimmt die alte
+   Angabe aus Gedaechtnis und Kontext (gemessen 30.09.) - B-5a verlangt, dass
+   sie bis zur Entscheidung weiter gilt. Je Eintrag hoechstens einer, der
+   neueste gilt. Nach "So lassen" merkt sich felie den Wert (V-5): derselbe
+   kommt nicht wieder, ein anderer schon. Geschrieben wird nur im Vorgang. */
+
+/* Ihre eigene Angabe: im Kennenlernen oder selbst eingetragen, oder von ihr
+   bearbeitet. */
+export function felieAngabeIhre(e) {
+  return !!e && (e.quelle === 'selbst' || e.quelle === 'kennenlernen' || !!e.bearbeitetAm || e.bearbeitetVon === 'selbst');
+}
+
+export function felieVorschlaegeRoh() {
+  var z = (felieStore() || {}).zusatz || {};
+  return Array.isArray(z.vorschlaege) ? z.vorschlaege : [];
+}
+
+export function felieVorschlaegeAbgelehnt() {
+  var z = (felieStore() || {}).zusatz || {};
+  return Array.isArray(z.vorschlaegeAbgelehnt) ? z.vorschlaegeAbgelehnt : [];
+}
+
+function vorschlagListen(s) {
+  s.zusatz = s.zusatz || {};
+  if (!Array.isArray(s.zusatz.vorschlaege)) s.zusatz.vorschlaege = [];
+  if (!Array.isArray(s.zusatz.vorschlaegeAbgelehnt)) s.zusatz.vorschlaegeAbgelehnt = [];
+  return s.zusatz;
+}
+
+function vorschlagAnlegen(s, art, ziel, v, cid) {
+  var z = vorschlagListen(s);
+  var schluessel = felieNotizSchluessel(v.text);
+  if (!schluessel || schluessel === felieNotizSchluessel(ziel.text)) return false;
+  if (z.vorschlaegeAbgelehnt.some(function (a) { return a.zielId === ziel.id && a.schluessel === schluessel; })) return false;
+  z.vorschlaege = z.vorschlaege.filter(function (x) { return x.zielId !== ziel.id; });
+  z.vorschlaege.push({ id: felieRepoId('vs'), art: art, zielId: ziel.id, bisher: ziel.text, neu: felieNotizText(v.text),
+    belege: Array.isArray(v.belege) ? v.belege : [], gespraechId: cid == null ? null : cid, notiertAm: Date.now(),
+    bezug: v.bezug, gesehen: false });
+  return true;
+}
+
+/* Vorschlaege (und gemerkte Ablehnungen), auf die passt, entfernen - im
+   laufenden Vorgang (s = Store des Vorgangs). */
+export function felieVorschlaegeAufraeumen(s, passt) {
+  var z = vorschlagListen(s);
+  z.vorschlaege = z.vorschlaege.filter(function (v) { return !passt(v); });
+  z.vorschlaegeAbgelehnt = z.vorschlaegeAbgelehnt.filter(function (v) { return !passt(v); });
 }

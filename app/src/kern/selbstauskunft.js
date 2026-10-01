@@ -64,7 +64,8 @@ export const FELIE_STIMMUNGEN = [
 /* Bis zu zwei Nennungen. Gefuehle kommen selten allein — "müde und
    gereizt" ist eine andere Lage als nur "müde". Der Store haelt deshalb
    immer eine Liste, auch bei einer einzelnen Angabe. */
-export const FELIE_STIMMUNG_MAX = 2;
+/* Seit F6f N-5 (Marcel 01.10.) bis drei statt zwei. */
+export const FELIE_STIMMUNG_MAX = 3;
 
 export function felieStimmungListe(wert) {
   if (wert == null) return [];
@@ -111,7 +112,7 @@ export const FELIE_FRAGEN = {
      hatten gar keinen Platz. */
   stimmung: {
     frage: 'Was beschreibt gerade am besten, wie du dich fühlst?',
-    sub: 'Wähle gern bis zu zwei Antworten.',
+    sub: 'Wähle gern bis zu drei Antworten.',
     kategorial: true,
     mehrfach: FELIE_STIMMUNG_MAX,
     chips: FELIE_STIMMUNGEN.map(function (st) { return { label: st.label, wert: st.key, ico: st.ico }; })

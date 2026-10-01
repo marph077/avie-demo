@@ -72,7 +72,7 @@ export const KL_SCHRITTE = tiefFrieren({
      Gedaechtnis vor dem, worauf er sich bezieht. */
   zusammenfassung: { title: 'So können wir anfangen:', group: 'Dein Einstieg',
     hint: 'Das war\u2019s mit dem Kennenlernen, danke für deine Zeit.',
-    hintDanach: 'Das Wichtigste habe ich mir gemerkt — ändern kannst du das jederzeit im Abschnitt **Gedächtnis**. Wie es dir gerade geht, kannst du später auf der Startseite unter **Selbstreflexion** festhalten.' }
+    hintDanach: 'Das Wichtigste habe ich mir gemerkt — ändern kannst du das jederzeit im Abschnitt **Gedächtnis**. Wie es dir gerade geht, kannst du später unter **Selbstreflexion** festhalten — über die Karte oben auf der Startseite.' }
 });
 
 /* Die Schritte, mit denen jedes Kennenlernen endet, in dieser Folge. Bis

@@ -31,7 +31,7 @@
    Ohne profilSetzen/profilSichern bricht das Kennenlernen laut ab - ein
    still verlorener Name waere schlimmer. */
 
-import { felieSpeicherSchreiben } from './speicher.js';
+import { felieSpeicherLesen, felieSpeicherSchreiben } from './speicher.js';
 import { felieStore, felieStoreSpeichern, felieStoreSetzen } from './store.js';
 import { felieFaktSetzen, felieEpisode } from './gedaechtnis.js';
 import { felieSchreibeSignal } from './signale.js';
@@ -41,9 +41,13 @@ import { getSavedChats } from './gespraeche.js';
 import { felieNeueSnippetsSetzen } from './neu-hinweise.js';
 import { felieSichererVerlauf } from './archiv.js';
 import { klV2Definition, KL_SCHRITTE_ENDE } from './kennenlernen.js';
+import { felieKontextProfil } from './kontext.js';
 
 var klStand = null;
 var klPort = null;
+/* Das Kennenlernen, an das das erste Gespraech anschliesst (frueher
+   window._felieOnboardingChatId): nur fuer diese Sitzung, nie gespeichert. */
+var klUebergabeChat = null;
 
 export function felieKlVerbinden(port) { klPort = port || null; }
 
@@ -51,7 +55,9 @@ export function felieKlVerbinden(port) { klPort = port || null; }
    window._klState. klZustand() legt ihn an, wenn er fehlt. */
 export function felieKlStand() { return klStand; }
 export function felieKlStandSetzen(s) { klStand = s || null; }
-export function felieKlZuruecksetzen() { klStand = null; klPort = null; }
+export function felieKlZuruecksetzen() { klStand = null; klPort = null; klUebergabeChat = null; }
+export function felieKlUebergabeChat() { return klUebergabeChat; }
+export function felieKlUebergabeChatSetzen(id) { klUebergabeChat = id == null ? null : id; }
 
 function profilPort() {
   if (!klPort || typeof klPort.profilSetzen !== 'function' || typeof klPort.profilSichern !== 'function')
@@ -64,6 +70,12 @@ function entwurfSichern() {
   try { felieSpeicherSchreiben('felie_onboarding_v1', JSON.stringify(klZustand())); return true; }
   catch (e) { return false; }
 }
+
+/* Den Stand dauerhaft schreiben, nach jeder Bedienung (F5c Schritt 4): die
+   App ruft das nach jeder Eingabe, Wahl und jedem Schritt; die Webapp
+   sichert weiter mit klEntwurfSpeichern (dort mit Anzeige-Feldern).
+   true/false wie der Entwurfsweg. */
+export function felieKlEntwurfSichern() { return entwurfSichern(); }
 
 export function klZustand() {
   if (!klStand) klStand = { version: 1, id: 'kl-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9),
@@ -135,6 +147,43 @@ export function klV2Validieren(key, f) {
   if (d.options && !(f.selected || []).length && !(key === 'themen' && (f.text || '').trim())) return 'Wähle eine Antwort oder überspringe diesen Schritt.';
   if (key === 'themen' && f.selected.length === 1 && f.selected[0] === 'Etwas anderes' && !(f.text || '').trim()) return 'Erzähl kurz, was dich beschäftigt, oder überspringe diesen Schritt.';
   return '';
+}
+
+/* Der sichtbare Text in felies Blase. Er muss allein stehen koennen: die
+   Frage selbst steht in der Karte darunter, nicht hier. Fruehere Hints
+   begannen mit "So kann ich…", "Damit…", "Das hilft mir…" — Woerter, die
+   auf die Frage darunter zeigen und als eigenstaendige Nachricht ins
+   Leere laufen. Die Texte sind deshalb durchgehend auf Saetze umgestellt,
+   die ihren eigenen Bezug mitbringen. */
+export function klV2Erklaerung(key) {
+  if (key === 'name') return 'Schön, dass du da bist. Ich bin felie und begleite dich. Wir lernen uns jetzt kurz kennen, danach geht es um das, was dich gerade beschäftigt.';
+  var hint = klV2Definition(key).hint || '';
+  /* Eigener Vorspann statt Namensanrede vor kleingeschriebenem Hint.
+     Die alte Verkettung (Name + ", " + hint kleingeschrieben) erzeugte
+     zwangslaeufig "Lena, dein Alter hilft mir…": eine Anrede, die an eine
+     Erklaerung geklebt ist. felie quittiert den Namen jetzt erst und
+     erklaert dann — zwei Saetze, wie im Gespraech. */
+  var userName = felieKontextProfil().userName || '';
+  if (key === 'alter' && userName) return 'Danke, ' + userName + '. ' + hint;
+  /* Die Ruecksicht auf ihre Angaben stand frueher als grauer Fliesstext
+     in der Antwortkarte, direkt unter der Ueberschrift. Dort las sie sich
+     wie ein Protokoll. Gesagt hat es ohnehin felie — also gehoert es in
+     ihre Blase, und die Karte darunter traegt nur noch die Auswahl. */
+  if (key === 'zusammenfassung') return hint + ' ' + klV2Zusammenfassung() + ' ' + klV2Definition(key).hintDanach;
+  /* Die Lebenssituation wird bewusst NICHT mehr vorgelesen ("Du hast
+     Kinder und arbeitest in Teilzeit"). Das las sich wie eine
+     Datenbestaetigung, nicht wie eine Gespraechspartnerin, und jede
+     Aufzaehlung war zugleich eine Deutung ihrer Lage. Es bleibt eine
+     kurze Quittung — sie zeigt, dass die Angabe angekommen ist, ohne sie
+     zu bewerten. Verallgemeinerte Bedingung: frueher haing der Vorspann an
+     Kindern oder genau einer Arbeitsform, was bei einem generischen Dank
+     willkuerlich waere. */
+  if (key === 'themen') {
+    var life = (klZustand().committed || {}).leben;
+    if (life && !life.skipped && ((life.selected || []).length || (life.text || '').trim()))
+      return 'Danke, das nehme ich mit. ' + hint;
+  }
+  return hint;
 }
 
 /* ── Bedienung: aendert den Stand, zeichnet nicht ─────────────────── */
@@ -647,4 +696,57 @@ export function felieKlSichern() {
   s.extraction = 'fertig'; s.stage = 'bereit'; s.input = ''; s.completedAt = Date.now();
   if (!entwurfSichern()) { s.stage = 'aufnahme'; return { ok: false }; }
   return { ok: true };
+}
+
+/* ── Uebergabe an das erste Gespraech (seit F5c-Vorarbeit) ─────────
+   Das erste Gespraech nach dem Kennenlernen bekommt dessen Verlauf mit
+   (Modus chat, Feld kennenlernen; modell.js). Sie gilt, bis sie danach
+   etwas korrigiert (contextChanged) oder das Kennenlernen loescht. */
+export function felieKlUebergabeStarten() {
+  var s = klStand;
+  if (!s || s.stage !== 'bereit') return false;
+  klUebergabeChat = s.archiveId;
+  s.stage = 'chat'; entwurfSichern();
+  return true;
+}
+
+export function klUebergabeKontext() {
+  var id = klUebergabeChat;
+  if (!id || klStand && klStand.contextChanged) return null;
+  var c = getSavedChats().find(function(x) { return x.id === id; });
+  if (!c) return null;
+  return { quelle: 'vorangegangene Informationsaufnahme, keine aktuelle Zustandsmessung',
+    erfasstAm: new Date(c.timestamp).toISOString(),
+    einstiegswahl: klStand && klStand.landing ? { wahl: klStand.landing.choice, angenommenerVorschlag: klStand.landing.plan } : null,
+    gefuehlsbezug: 'Wie fühlst du dich damit bezieht sich auf das genannte Anliegen, nicht automatisch auf die allgemeine Tagesstimmung. Zyklusmitte ist eine ungefähre Selbstauskunft, kein bestätigter Eisprung.',
+    hinweis: 'Nur für Gesprächsanschlüsse verwenden. Aktuelle Nutzerkorrekturen und bearbeitete Erinnerungen haben Vorrang. Profilfragen nicht wiederholen. Das aktuelle Anliegen steht in der letzten echten Nachricht.',
+    verlauf: felieSichererVerlauf(c.messages).map(function(m) { return { rolle: m.role, text: m.content }; }) };
+}
+
+export function klUebergabeInvalidieren() {
+  if (klStand) { klStand.contextChanged = true; entwurfSichern(); }
+}
+
+/* ── Einen gespeicherten Stand pruefen und laden ──────────────────
+   Pruefen: nur Kennenlernen v2 (flow 2, version 1) mit Form, Antworten
+   und einem bekannten Schritt; der entfallene Wearable-Schritt (F5-2) geht
+   beim naechsten weiter, "reflexion" wird "bereit". Sonst null - dann
+   beginnt das Kennenlernen von vorn. Laden: aus felie_onboarding_v1, fuer
+   die App (die Webapp stellt zusaetzlich ihre Anzeige und Profilwerte
+   wieder her, klV2Wiederherstellen). */
+export function felieKlEntwurfPruefen(s) {
+  if (!s || s.flow !== 2 || s.version !== 1 || typeof s.id !== 'string') return null;
+  if (s.phase === 'daten') s.phase = 'schlafqualitaet';
+  if (!s.form || typeof s.form !== 'object' || !s.committed || typeof s.committed !== 'object' || !klV2Definition(s.phase)) return null;
+  if (s.stage === 'reflexion') s.stage = 'bereit';
+  return s;
+}
+
+export function felieKlEntwurfLaden() {
+  var s = null;
+  try { s = JSON.parse(felieSpeicherLesen('felie_onboarding_v1') || 'null'); } catch (e) { return null; }
+  var g = felieKlEntwurfPruefen(s);
+  if (!g) return null;
+  klStand = g;
+  return { phase: g.phase, stage: g.stage };
 }

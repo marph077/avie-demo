@@ -20,6 +20,7 @@
 
 import { felieBereinigen, felieRevision, felieStore } from './store.js';
 import { CYCLE_PHASES, cycleMidnight, felieKoerperZeitSetzen, felieZyklusAttribut } from './zyklus.js';
+import { felieMessSignale } from './messwerte.js';
 
 export const FELIE_FRISCHE_MS   = 24 * 60 * 60 * 1000;   /* 24 h, generell */
 
@@ -104,7 +105,7 @@ export function felieUebernehmeAltObjekt(obj, quelleHint) {
       var messtag = cycleMidnight(obj.messTag);
       if (!messtag || messtag > cycleMidnight(new Date())) return;
       feldTs = messtag.getTime();
-      meta.datumsquelle = 'Messtag aus Oura';
+      meta.datumsquelle = 'Messtag';   /* AL-71b: kein Herstellername */
       meta.importiertAm = ts;
     }
     if (def.key === 'schlaf' && obj.sleepStr) meta.str = obj.sleepStr;
@@ -152,7 +153,7 @@ export function felieIstFrisch(e, jetzt) {
 export function felieAktuell(key, opts) {
   opts = opts || {};
   var jetzt = opts.jetzt || Date.now();
-  var kandidaten = felieStore().signale.filter(function(e) {
+  var kandidaten = felieStore().signale.concat(felieMessSignale(jetzt)).filter(function(e) {
     return e.key === key && felieSignalVerwendbar(e) && felieIstFrisch(e, jetzt);
   });
   if (!kandidaten.length) return null;
@@ -176,7 +177,7 @@ export function felieAktuell(key, opts) {
    einer Korrektur des Periodenstarts. */
 export function felieVerlauf(key, opts) {
   opts = opts || {};
-  var liste = felieStore().signale.filter(function(e) {
+  var liste = felieStore().signale.concat(felieMessSignale()).filter(function(e) {
     if (!felieSignalVerwendbar(e)) return false;
     if (key && e.key !== key) return false;
     if (opts.quelle && e.quelle !== opts.quelle) return false;
@@ -453,5 +454,8 @@ export function felieSignalVerwendbar(e) {
   if (e.quelle === 'screenshot') return !!(e.meta && e.meta.bestaetigt === true);
   // Die bisherige Oura-Anbindung war eine Demo ohne Anmeldung der Nutzerin.
   // Ein Messtag allein bestätigt weder die Person noch die Herkunft.
-  return e.quelle === 'messung' && !!(e.meta && e.meta.kontoVerifiziert === true);
+  /* F8a (H2): ein Messwert ist verwendbar, wenn er aus Apple Health kommt
+     (Messwert-Port, nur Arbeitsspeicher, messwerte.js) - die gespeicherten
+     Werte der Oura-Demo nicht mehr. */
+  return e.quelle === 'messung' && !!(e.meta && e.meta.herkunft === 'apple_health');
 }

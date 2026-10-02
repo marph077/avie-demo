@@ -202,8 +202,9 @@ export function felieRitualKarte(jetztMs) {
   }
   var eS = holen('schlafqualitaet'), eE = holen('energie'), eM = holen('stimmung');
   var nacht = { key: 'schlafqualitaet', label: FELIE_SIGNAL_META.schlafqualitaet.label, punkte: 0, stimmung: null };
+  /* Nur ihre eigene Angabe (F8a, Befund H6): gemessener Schlaf als Punkte
+     waere eine Einordnung (AL-84) - der Messwert steht benannt im Spiegel. */
   if (eS) nacht.punkte = punkte('schlafqualitaet', eS);
-  else { var mS = holen('schlaf', 'messung'); if (mS) nacht.punkte = punkte('schlaf', mS); }
   var energie = { key: 'energie', label: FELIE_SIGNAL_META.energie.label, punkte: eE ? punkte('energie', eE) : 0, stimmung: null };
   var dritte = { key: 'stimmung', label: FELIE_SIGNAL_META.stimmung.label, punkte: 0, stimmung: null };
   if (eM) dritte.stimmung = felieStimmungListe(eM.wert);

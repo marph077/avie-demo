@@ -87,6 +87,7 @@ export * from './persoenlichkeit.js';
 export * from './einwilligung.js';
 export * from './profil.js';
 export * from './sicherung.js';
+export * from './messwerte.js';
 
 import { felieRepoUhrSetzen, felieRepoZufallSetzen } from './repository.js';
 import { felieSpeicherVerbinden } from './speicher.js';
@@ -99,6 +100,7 @@ import { felieAbschlussVerbinden, felieAbschlussZuruecksetzen } from './abschlus
 import { felieKontextVerbinden } from './kontext.js';
 import { felieNetzVerbinden, felieModellVerbinden } from './modell.js';
 import { felieProfilVerbinden } from './einwilligung.js';
+import { felieMesswerteFuerModell, felieMesswerteVerbinden } from './messwerte.js';
 import { felieGespraechZuruecksetzen } from './gespraech.js';
 import { felieKontoVerbinden } from './konto.js';
 import { felieLaufNeu } from './lauf.js';
@@ -131,6 +133,8 @@ export function felieKernZuruecksetzen() {
   felieStartseiteZuruecksetzen();
   felieArchivansichtZuruecksetzen();
   felieProfilVerbinden(null);
+  felieMesswerteVerbinden(null);
+  felieMesswerteFuerModell(true);
   /* Ein neuer Lauf: fruehere asynchrone Arbeit bricht ab (lauf.js). */
   felieLaufNeu();
 }

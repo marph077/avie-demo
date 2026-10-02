@@ -8,7 +8,7 @@
    (S-2). Kopf "Selbstreflexion" / "Wie du dich gerade fühlst" (Marcel
    01.10., ersetzt S-3 "Wie es dir zuletzt ging"); uebrige Texte 1:1 Webapp
    (Marcel 30.09., docs/f6f-spiegel-ist-soll.md 5). */
-import { FELIE_MESSPARTNER, felieAktuell, felieBand, felieSchlafFmt, felieSignalKorrigieren } from './signale.js';
+import { felieAktuell, felieSignalKorrigieren } from './signale.js';
 import { FELIE_FRAGEN, felieStimmungLabel, felieStimmungListe, felieStufenWort } from './selbstauskunft.js';
 import { felieKombiMuster } from './kontext.js';
 import { felieKoerperSpeichern } from './koerper.js';
@@ -43,11 +43,6 @@ export function felieAlterText(ts, jetztMs) {
   return 'vor ' + tage + ' Tagen';
 }
 
-function messText(mkey, key, e) {
-  if (mkey === 'schlaf') return (e.meta && e.meta.str) || felieSchlafFmt(e.wert) || (e.wert + ' min');
-  return felieStufenWort(key, e.wert) || String(e.wert);
-}
-
 /* Eine Zeile je Signal: das Wort, das sie heute gewaehlt hat (nie eine
    Zahl), Herkunft und Alter; ohne eigene Angabe der Messwert. Seit F6f N-4
    nur Angaben von heute (ab 04:00): Aelteres ist geleert, nicht geloescht
@@ -56,24 +51,17 @@ function messText(mkey, key, e) {
 export function felieSpiegelHeute(jetztMs) {
   var T = FELIE_SPIEGEL_TEXTE, jetzt = jetztMs == null ? Date.now() : jetztMs, raus = [];
   FELIE_SPIEGEL_SIGNALE.forEach(function (key) {
-    var meta = FELIE_SIGNAL_META[key], mkey = FELIE_MESSPARTNER[key] || key, selbst = null, mess = null;
-    selbst = felieAngabeHeute(key, jetzt);
-    try { mess = felieAktuell(mkey, { quelle: 'messung', jetzt: jetzt }); } catch (e) {}
-    if (key === 'anspannung' && !selbst && !mess) return;
+    var meta = FELIE_SIGNAL_META[key], selbst = felieAngabeHeute(key, jetzt);
+    if (key === 'anspannung' && !selbst) return;
     var z = { key: key, label: meta.label, ico: meta.ico, wert: null, herkunft: null, alter: null, abweichung: null };
     if (selbst) {
       z.wert = key === 'stimmung' ? felieStimmungLabel(selbst.wert) : felieStufenWort(key, selbst.wert);
       z.herkunft = T.deineAngabe;
       z.alter = felieAlterText(selbst.ts, jetzt);
-    } else if (mess) {
-      z.wert = messText(mkey, key, mess);
-      z.herkunft = T.vomWearable;
-      z.alter = felieAlterText(mess.ts, jetzt);
     }
-    if (selbst && mess && key !== 'stimmung') {
-      var bs = felieBand(key, selbst.wert, 'selbst'), bg = felieBand(mkey, mess.wert, 'messung');
-      if (bs && bg && bs !== bg) z.abweichung = messText(mkey, key, mess);
-    }
+    /* F8a (Befund H4): kein Messwert an ihrer Stelle und keine Abweichung
+       ueber Baender (AL-84, C1h) - Messwerte stehen benannt in einer eigenen
+       Zeile (felieSpiegelMessung). */
     raus.push(z);
   });
   return raus;

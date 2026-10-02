@@ -26,6 +26,7 @@ import { FELIE_MERK_VERNEINUNG, felieEpisoden, felieErinnerungAusChat, felieFakt
 import { felieTextMitZeitraum, felieZeitraum, felieZeitVorbei } from './text.js';
 import { FELIE_SKALEN, felieStimmungLabel, felieStimmungListe, felieStufenWort } from './selbstauskunft.js';
 import { felieArchivNotizNutzbar, felieArchivNotizQuelle } from './archiv.js';
+import { felieMessDauerText, felieMessSignale, felieMessTagesliste, felieMesswerteFuerModell } from './messwerte.js';
 
 /* Umgebung der Kontext-Daten (seit D5b, wie D-11/D-13). Drei Dinge weiss
    nur die Webapp: das Profil aus dem Kennenlernen (userName, klAnswers),
@@ -417,10 +418,12 @@ export function felieSignalDaten() {
     schlaf: 'Schlafdauer', hrv: 'HRV', rhr: 'Ruhepuls', recovery: 'Erholungswert des Geräts',
     deep: 'Tiefschlaf', rem: 'REM-Schlaf', temp: 'Temperaturabweichung von der Gerätebasis', wachphasen: 'Wachphasen' };
   var units = { schlaf: 'min', hrv: 'ms', rhr: 'bpm', recovery: 'Gerätescore/100', deep: 'min', rem: 'min', temp: '°C Differenz', wachphasen: 'Anzahl' };
+  /* F8a: Messwerte aus Apple Health kommen aus dem Port (nur Arbeitsspeicher). */
+  var alle = felieStore().signale.concat(felieMesswerteFuerModell() ? felieMessSignale(jetzt) : []);   /* M-1 */
   Object.keys(labels).forEach(function(key) {
     var sources = ['selbst', 'messung', 'screenshot'];
     sources.forEach(function(quelle) {
-      var entries = felieStore().signale.filter(function(e) {
+      var entries = alle.filter(function(e) {
         return felieSignalVerwendbar(e) && e.key === key && e.quelle === quelle && Number.isFinite(e.ts)
           && e.ts <= jetzt && jetzt - e.ts <= FELIE_AUFBEWAHRUNG;
       }).sort(function(a, b) { return b.ts - a.ts; });
@@ -434,9 +437,18 @@ export function felieSignalDaten() {
         : selbst && FELIE_SKALEN[key] ? felieStufenWort(key, e.wert) : e.wert;
       if (wert == null || wert === '') return;
       var meta = e.meta || {};
-      out.push({ signal: key, bezeichnung: labels[key], wert: wert, einheit: selbst && FELIE_SKALEN[key] ? 'Selbstauskunft in Worten' : units[key] || 'Selbstauskunft',
-        quelle: quelle, geraet: meta.geraet || null,
-        zeitpunkt: new Date(e.ts).toISOString(), datum: new Date(e.ts).toLocaleDateString('de-DE'),
+      var einheit = selbst && FELIE_SKALEN[key] ? 'Selbstauskunft in Worten' : units[key] || 'Selbstauskunft';
+      /* F8a (Messung N-1): Werte aus Apple Health lesbar - Dauer in Stunden
+         und Minuten statt "340 min", Ruhepuls in Schlaegen pro Minute, die
+         Nacht eindeutig ("Nacht auf den ..."). */
+      var ausHealth = quelle === 'messung' && meta.herkunft === 'apple_health';
+      var dauerFeld = ausHealth && (key === 'schlaf' || key === 'deep' || key === 'rem');
+      if (dauerFeld) { wert = felieMessDauerText(e.wert); einheit = 'Stunden und Minuten'; }
+      if (ausHealth && key === 'rhr') einheit = 'Schläge pro Minute';
+      out.push({ signal: key, bezeichnung: labels[key], wert: wert, einheit: einheit,
+        /* F8a (H3, AL-71b): kein Geraete- oder Herstellername ans Modell. */
+        quelle: quelle,
+        zeitpunkt: new Date(e.ts).toISOString(), datum: (dauerFeld ? 'Nacht auf den ' : '') + new Date(e.ts).toLocaleDateString('de-DE'),
         aktuell: felieIstFrisch(e, jetzt), datumsquelle: meta.datumsquelle || 'Eintragszeitpunkt',
         bestaetigt: meta.bestaetigt === true, importiertAm: meta.importiertAm || null });
     });
@@ -728,9 +740,10 @@ export function felieKontextDaten(ohne) {
 }
 
 export function felieGeraeteVergleiche() {
-  if (felieStore().zusatz.messKontoVerifiziert !== true) return [];
-  var history = (felieStore().zusatz || {}).messHistory30;
-  if (!Array.isArray(history)) return [];
+  /* F8a: die 30 Tage aus dem Messwert-Port (Apple Health); ohne Port keine. */
+  if (!felieMesswerteFuerModell()) return [];   /* M-1 */
+  var history = felieMessTagesliste();
+  if (!history.length) return [];
   var daily = {};
   history.forEach(function(h) {
     var d = h && cycleMidnight(h.day);
@@ -740,7 +753,7 @@ export function felieGeraeteVergleiche() {
   if (keys.length < 4) return [];
   var last = daily[keys[keys.length - 1]], end = cycleMidnight(last.day).getTime();
   var prior = keys.filter(function(k) { var t = cycleMidnight(k).getTime(); return t < end && end - t <= 7 * 86400000; });
-  var units = { sleepMins: 'min', hrv: 'ms', rhr: 'bpm', readiness: 'Oura Readiness/100', deep: 'min', rem: 'min' };
+  var units = { sleepMins: 'min', hrv: 'ms', rhr: 'bpm', deep: 'min', rem: 'min' };   /* AL-71b: ohne Readiness */
   var out = [];
   Object.keys(units).forEach(function(field) {
     var observed = prior.filter(function(k) { return typeof daily[k][field] === 'number' && Number.isFinite(daily[k][field]); });

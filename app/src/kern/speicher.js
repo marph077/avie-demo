@@ -126,12 +126,16 @@ export const FELIE_LS_KEYS = [
    - felie_home_zuletzt, felie_abschied_index: letzter Besuch der Startseite
      und Zaehler der Abschiedssaetze - kein Inhalt, aber nach dem Loeschen
      soll die App wie neu beginnen.
+   - felie_apple_health (F8b, App): die Einwilligung zu Apple Health mit
+     Datum und Wortlaut, dazu "einmal gefragt" - Werte liegen dort nie
+     (H-5 A). Loeschen ja (danach ist sie widerrufen); sichern nein - eine
+     zurueckgespielte Einwilligung auf einem anderen Geraet waere keine.
    Bis F7a fehlten diese drei (L2, gemessen 01.10.). Seitdem prueft
    tests/felie-f7a-loeschen-kern.test.cjs (L3) jeden felie_*-Schluessel im
    Code gegen diese beiden Listen. */
 export const FELIE_LAUFEND_KEY = 'felie_laufendes_gespraech';
 export const FELIE_LS_KEYS_ALTLAST = ['felie_body_history', 'felie_store_migrated', 'felie_session_id', 'felie_checkins', 'felie_body_reminder_date', 'felie_wearable', FELIE_LAUFEND_KEY,
-  'felie_abschied_nachtrag', 'felie_home_zuletzt', 'felie_abschied_index'];
+  'felie_abschied_nachtrag', 'felie_home_zuletzt', 'felie_abschied_index', 'felie_apple_health'];
 
 /* ── Speicheradapter M2c (Auszug) ─────────────────────────────────────
    Aktiv ist die Altablage: mehrere Schluessel, wie bisher. Neu daran ist
